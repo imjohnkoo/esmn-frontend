@@ -126,6 +126,9 @@ jobs:
       # 서버는 띄우지 않는다 — 거부 경로 · dry-run 출력 · PATH 앞 가짜 node/lsof 로 실제 기동 줄(env · 인자 · cwd)까지.
       - name: walk 봉투 회귀 테스트
         run: bash .claude/scripts/client-walk-server.test.sh
+      # 합성 DB 준비(schema)는 55432 리스너가 로컬 컨테이너이고 표식이 맞을 때만 push — 가짜 netstat · docker · node 로
+      - name: walk 합성 DB 준비 회귀 테스트
+        run: bash .claude/scripts/client-walk-db.test.sh
 
   # client 판매 사이트 D-17 — 확정 전 콘텐츠(P9_4_PENDING)가 main 에 들어가지 않게. main = 다음 prod 승격 대상이다.
   # finish-branch Step 0 이 먼저 막는다. 이 job 은 **알림**이다 — main 에 required check 가 설정되지 않은 동안(2026-09-23)
