@@ -430,66 +430,69 @@ import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
       :closable="false"
       :width="340"
     >
-      <div v-if="order" class="select-date-page__confirm">
-        <div class="select-date-page__confirm-row">
-          <span>상품</span><b>{{ order.planNameKr }}</b>
+      <!-- 본문만 스크롤 — 문구가 길어도(05-A · 글자 확대) «뒤로 · 발급하기» 는 화면 안에 남는다(팝업은 페이지 스크롤을 잠근다) -->
+      <div class="select-date-page__confirm-scroll">
+        <div v-if="order" class="select-date-page__confirm">
+          <div class="select-date-page__confirm-row">
+            <span>상품</span><b>{{ order.planNameKr }}</b>
+          </div>
+          <div class="select-date-page__confirm-row">
+            <span>시작 국가</span><b>{{ selectedCountry }}</b>
+          </div>
+          <div class="select-date-page__confirm-row">
+            <span>시작 날짜</span><b>{{ startDateLabel }}</b>
+          </div>
+          <div class="select-date-page__confirm-row">
+            <span>사용 기간</span><b>{{ order.planDataDuration }}일</b>
+          </div>
+          <div class="select-date-page__confirm-row">
+            <span>수량</span><b>{{ order.quantity }}개</b>
+          </div>
         </div>
-        <div class="select-date-page__confirm-row">
-          <span>시작 국가</span><b>{{ selectedCountry }}</b>
-        </div>
-        <div class="select-date-page__confirm-row">
-          <span>시작 날짜</span><b>{{ startDateLabel }}</b>
-        </div>
-        <div class="select-date-page__confirm-row">
-          <span>사용 기간</span><b>{{ order.planDataDuration }}일</b>
-        </div>
-        <div class="select-date-page__confirm-row">
-          <span>수량</span><b>{{ order.quantity }}개</b>
-        </div>
-      </div>
-      <div class="select-date-page__confirm-policy">
-        <svg
-          class="select-date-page__confirm-policy-icon"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path
-            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-          />
-          <line x1="12" y1="9" x2="12" y2="13" />
-          <line x1="12" y1="17" x2="12.01" y2="17" />
-        </svg>
-        <p>
-          <!-- 05-A 14행(client-shell spec D-32) — 약관 12조③ 의 «발급 요청 화면에 미리 표시» -->
-          <b>{{ ISSUE_NOTICE.refund }}</b>
-          사용하실 기기가 eSIM 지원 기기인지 발급 전에 꼭 확인해 주세요.
-          <a
-            class="select-date-page__confirm-policy-link"
-            href="/supported-devices"
-            target="_blank"
-            rel="noopener"
-            >지원 기기 목록 보기</a
+        <div class="select-date-page__confirm-policy">
+          <svg
+            class="select-date-page__confirm-policy-icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           >
-          <!-- 법정 링크(client-shell spec F-20) — 05-A 원문 전체(5줄 · 링크 3)는 W1-2 K3(F-21) -->
-          <span aria-hidden="true"> · </span>
-          <a
-            class="select-date-page__confirm-policy-link"
-            href="/terms"
-            target="_blank"
-            rel="noopener"
-            >이용약관 보기</a
-          >
-        </p>
-      </div>
-      <div class="select-date-page__confirm-agree">
-        <!-- 05-A 19행(D-35) — 약관 6조④ 의 발급 화면 약관 동의 · 체크 구조 · 서버 기록은 W1-2 K3 · W1-6 -->
-        <NCheckbox v-model="isPolicyAgreed" :label="ISSUE_NOTICE.consent" />
+            <path
+              d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+            />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <p>
+            <!-- 05-A 14행(client-shell spec D-32) — 약관 12조③ 의 «발급 요청 화면에 미리 표시» -->
+            <b>{{ ISSUE_NOTICE.refund }}</b>
+            사용하실 기기가 eSIM 지원 기기인지 발급 전에 꼭 확인해 주세요.
+            <a
+              class="select-date-page__confirm-policy-link"
+              href="/supported-devices"
+              target="_blank"
+              rel="noopener"
+              >지원 기기 목록 보기<span class="sr-only"> (새 창)</span></a
+            >
+            <!-- 법정 링크(client-shell spec F-20) — 05-A 원문 전체(5줄 · 링크 3)는 W1-2 K3(F-21) -->
+            <span aria-hidden="true"> · </span>
+            <a
+              class="select-date-page__confirm-policy-link"
+              href="/terms"
+              target="_blank"
+              rel="noopener"
+              >이용약관 보기<span class="sr-only"> (새 창)</span></a
+            >
+          </p>
+        </div>
+        <div class="select-date-page__confirm-agree">
+          <!-- 05-A 19행(D-35) — 약관 6조④ 의 발급 화면 약관 동의 · 체크 구조 · 서버 기록은 W1-2 K3 · W1-6 -->
+          <NCheckbox v-model="isPolicyAgreed" :label="ISSUE_NOTICE.consent" />
+        </div>
       </div>
       <template #actions>
         <div class="select-date-page__confirm-actions">
@@ -664,7 +667,17 @@ import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
   color: #111827;
 }
 
+.select-date-page__confirm-scroll {
+  width: 100%;
+  max-height: max(160px, calc(100vh - 260px));
+  max-height: max(160px, calc(100dvh - 260px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .select-date-page__confirm-policy {
+  word-break: keep-all;
+  overflow-wrap: break-word;
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -696,10 +709,13 @@ import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
-  color: #dc2626;
+  /* 분홍 바탕(#fef2f2) 위 12px — 대비 4.5:1 이상(약관 12조③ 의 표시 문장) */
+  color: #b91c1c;
 }
 
 .select-date-page__confirm-agree {
+  word-break: keep-all;
+  overflow-wrap: break-word;
   width: 100%;
   margin-top: 10px;
   display: flex;

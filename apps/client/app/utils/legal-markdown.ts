@@ -138,10 +138,14 @@ export function parseLegalMarkdown(markdown: string): LegalBlock[] {
     }
     if (LIST_RE.test(line)) {
       const start = i
+      const indentOf = (l: string) => /^(\s*)/.exec(l)![1]!.length
+      const base = indentOf(line)
+      i++
+      // 첫 항목보다 얕게 들여쓴 항목은 새 목록이다(앞 항목 글자에 삼켜지지 않게)
       while (
         i < lines.length &&
         lines[i]!.trim() &&
-        (LIST_RE.test(lines[i]!) || /^\s{2,}\S/.test(lines[i]!))
+        (LIST_RE.test(lines[i]!) ? indentOf(lines[i]!) >= base : /^\s{2,}\S/.test(lines[i]!))
       )
         i++
       blocks.push(parseList(lines.slice(start, i), 0))
@@ -172,23 +176,25 @@ function parseList(lines: string[], depth: number): Extract<LegalBlock, { t: 'li
   const base = indentOf(lines[0]!)
   const first = LIST_RE.exec(lines[0]!)!
   const ordered = first[2] !== undefined
-  const items: { item: ListItem; nested: string[] }[] = []
+  // 항목 글자는 이어지는 줄까지 모은 뒤 한 번에 해석한다(줄을 넘는 **굵게** · 링크가 갈리지 않게)
+  const items: { raw: string[]; nested: string[]; item: ListItem }[] = []
   for (const line of lines) {
     const m = LIST_RE.exec(line)
     if (m && indentOf(line) === base) {
-      items.push({ item: { text: parseInline(m[3]!), children: [] }, nested: [] })
+      items.push({ raw: [m[3]!], nested: [], item: { text: [], children: [] } })
       continue
     }
     const cur = items[items.length - 1]
     if (!cur) continue
     if (m && indentOf(line) > base) cur.nested.push(line)
     else if (cur.nested.length) cur.nested.push(line)
-    else cur.item.text.push(...parseInline(' ' + line.trim()))
+    else cur.raw.push(line.trim())
   }
-  for (const { item, nested } of items) {
-    if (!nested.length) continue
-    if (depth < 1 && LIST_RE.test(nested[0]!)) item.children.push(parseList(nested, depth + 1))
-    else item.text.push(...parseInline(' ' + nested.map((l) => l.trim()).join(' ')))
+  for (const { raw, nested, item } of items) {
+    if (nested.length && depth < 1 && LIST_RE.test(nested[0]!)) {
+      item.text = parseInline(raw.join(' '))
+      item.children.push(parseList(nested, depth + 1))
+    } else item.text = parseInline([...raw, ...nested.map((l) => l.trim())].join(' '))
   }
   return {
     t: 'list',

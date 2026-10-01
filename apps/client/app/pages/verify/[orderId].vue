@@ -138,11 +138,11 @@ const onSubmit = async () => {
           href="/privacy"
           target="_blank"
           rel="noopener"
-          >개인정보처리방침</a
+          >개인정보처리방침<span class="sr-only"> (새 창)</span></a
         >
         <span class="verify-page__policy-sep" aria-hidden="true">·</span>
         <a class="verify-page__policy-link" href="/terms" target="_blank" rel="noopener"
-          >이용약관</a
+          >이용약관<span class="sr-only"> (새 창)</span></a
         >
       </p>
 

@@ -24,9 +24,11 @@ describe('발급기 법정 링크(F-20)', () => {
   it('verify — 개인정보처리방침(굵게 · 색 구분 클래스) · 이용약관, 새 탭', () => {
     const t = template(read('./verify/[orderId].vue'))
     expect(t).toMatch(
-      /<a\s+class="verify-page__policy-link verify-page__policy-link--privacy"\s+href="\/privacy"\s+target="_blank"\s+rel="noopener"\s*>개인정보처리방침<\/a/,
+      /<a\s+class="verify-page__policy-link verify-page__policy-link--privacy"\s+href="\/privacy"\s+target="_blank"\s+rel="noopener"\s*>개인정보처리방침<span class="sr-only"> \(새 창\)<\/span><\/a/,
     )
-    expect(t).toMatch(/href="\/terms"\s+target="_blank"\s+rel="noopener"\s*>\s*이용약관\s*<\/a/)
+    expect(t).toMatch(
+      /href="\/terms"\s+target="_blank"\s+rel="noopener"\s*>이용약관<span class="sr-only"> \(새 창\)<\/span><\/a/,
+    )
     // 방침은 굵게 · 색으로 다른 링크와 구분(처리방침 작성지침) · 터치 영역 24px 이상
     const css = read('./verify/[orderId].vue')
     expect(css).toMatch(
@@ -41,19 +43,27 @@ describe('발급기 법정 링크(F-20)', () => {
     const popup = t.slice(open)
     const refund = popup.indexOf('<b>{{ ISSUE_NOTICE.refund }}</b>')
     const link = popup.search(
-      /href="\/terms"\s+target="_blank"\s+rel="noopener"\s*>이용약관 보기<\/a\s*>/,
+      /href="\/terms"\s+target="_blank"\s+rel="noopener"\s*>이용약관 보기<span class="sr-only"> \(새 창\)<\/span><\/a\s*>/,
     )
     const consent = popup.indexOf(
       '<NCheckbox v-model="isPolicyAgreed" :label="ISSUE_NOTICE.consent" />',
     )
     expect([refund, link, consent].every((i) => i > 0)).toBe(true)
+    // 본문(요약 · 안내 · 동의)은 스크롤 영역 안 — 문구가 길어도 «발급하기» 가 화면 밖으로 밀리지 않는다
+    const scroll = popup.indexOf('<div class="select-date-page__confirm-scroll">')
+    expect(scroll >= 0 && scroll < refund && consent < popup.indexOf('<template #actions>')).toBe(true)
+    expect(read('./select-date/[orderId].vue')).toMatch(
+      /\.select-date-page__confirm-scroll \{[^}]*max-height: max\(160px, calc\(100dvh - 260px\)\);[^}]*overflow-y: auto;/,
+    )
     // 같은 팝업 — 환불 안내 → 링크 → 동의 체크 순서, 그 뒤에 발급하기
-    expect(refund < link && link < consent && consent < popup.indexOf('발급하기')).toBe(true)
+    expect(refund < link && link < consent && consent < popup.lastIndexOf('발급하기')).toBe(true)
   })
 
   it('«발급 후 취소 · 환불 불가» 문장이 앱 어디에도 없다 — 같은 자리는 05-A 14행(D-32)', () => {
     for (const f of code(APP))
-      expect(readFileSync(f, 'utf8'), f).not.toMatch(/취소와 환불이 불가|환불이 불가/)
+      expect(readFileSync(f, 'utf8'), f).not.toMatch(
+        /(?:취소|환불)[와과·\s]*(?:환불)?\s*(?:이|가|은)?\s*불가|환불(?:이|은)?\s*안\s*(?:돼|됩)|환불(?:할|해\s*드릴)\s*수\s*없/,
+      )
     expect(read('./supported-devices.vue')).toContain('${ISSUE_NOTICE.refund}')
     expect(read('../components/popup/ConfirmOrderModal.vue')).toContain(
       '*{{ ISSUE_NOTICE.refund }}',

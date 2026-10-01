@@ -5,6 +5,7 @@
  *
  *   yarn workspace nomacom-client legal:import --from <legal-pages 의 사업운영/2026-09-23_client-법정페이지-초안>
  *   (기본: 문서 terms · privacy + 조각 business · issue-notice — `--docs terms,business` 로 고른다)
+ *   ⚠️ 약관 8조② 의 «자정» 예시가 정본에 있는 동안(spec D-33)은 terms 가 공개 금지어로 실패한다 — 나머지만 `--docs privacy,business,issue-notice`
  *
  * 모두 먼저 변환 · 검사하고, 전부 통과했을 때만 쓴다(일부만 새 판이 되지 않게). 모르는 태그 · 공개 금지어 · 지원하지 않는 문법 ·
  * 정본이 바뀌어 메모/값 자리를 못 찾으면 멈춘다(exit 1) — legal-posting.ts 의 규칙을 사람이 고친 뒤 다시 돌린다.
@@ -16,7 +17,8 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 const APP_DIR = join(dirname(fileURLToPath(import.meta.url)), '..')
-const OUT_DIR = join(APP_DIR, 'app/content/legal')
+// LEGAL_IMPORT_OUT_DIR — 테스트가 임시 폴더로 돌릴 때만(평소에는 비운다)
+const OUT_DIR = process.env.LEGAL_IMPORT_OUT_DIR || join(APP_DIR, 'app/content/legal')
 /** 자리표시자 상수 이름(app/content/pending.ts) — 이 파일이 콘텐츠 게이트(D-17)에 걸리지 않게 조립한다 */
 const PENDING_IDENT = ['P9', '4', 'PENDING'].join('_')
 
@@ -50,7 +52,11 @@ function args(rules) {
 /** 정본 커밋 — 그 파일이 커밋된 판과 다르면 +dirty */
 function sourceRev(from, file) {
   const git = (argv) =>
-    execFileSync('git', ['-C', from, ...argv], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+    // 정본은 읽기 전용 — --no-optional-locks 로 그 체크아웃의 index 를 갱신하지 않는다
+    execFileSync('git', ['--no-optional-locks', '-C', from, ...argv], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()
   try {
     const sha = git(['rev-parse', '--short', 'HEAD'])
     return git(['status', '--porcelain', '--', file]) ? `${sha}+dirty` : sha

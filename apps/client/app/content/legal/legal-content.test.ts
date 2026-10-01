@@ -43,16 +43,24 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file }) => {
     expect(doc.markdown.replace(/\[[^\]\n]+\]\((?:https:\/\/|\/)[^)\s]*\)/g, '')).not.toMatch(
       /[[\]]/,
     )
-    expect(forbiddenIn(doc.title + '\n' + unmark(doc.markdown))).toEqual([])
+    // 알고 있는 예외 하나 — D-33(약관 8조② «자정» 예시, 리뷰 blocker · ready PR 보류) — 아래 it.fails 가 따로 잡는다
+    const known = (h: string) => doc.slug === 'terms' && h.includes('자정/')
+    expect(forbiddenIn(doc.title + '\n' + unmark(doc.markdown)).filter((h) => !known(h))).toEqual([])
     expect(unsupportedIn(doc.markdown)).toEqual([])
   })
 
   it('해외 공급사 명칭(영문 · 한글) · 내부 용어 · 자리표시자 상수 이름이 화면 글자에 없다(John)', () => {
     expect(text).not.toMatch(/spark|maya|airalo|tsim/i)
     expect(text).not.toMatch(/스파크|티심|마야|에어알로/)
-    expect(text).not.toMatch(/\bphase\b|proposal|브리프/i)
+    expect(text).not.toMatch(/\bphase|proposal|브리프/i)
     expect(text).not.toMatch(/[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+/)
   })
+})
+
+// ⛔ spec D-33 open — 약관 8조② «(예: 한국시간 자정 기준)» 이 eSIM 불변식(첫 연결부터 24시간 단위)과 부딪힌다.
+// it.fails 는 «지금 실패하는 것이 정상» 이다. legal-pages rev(괄호 삭제)를 가져오면 이 테스트가 빨간불이 된다 → it 으로 바꾸고 위 known 예외를 지운다.
+it.fails('D-33 — 공개 약관에 자정 기준 서술이 없다(풀리면 it 으로)', () => {
+  expect(blocksText(parseLegalMarkdown(TERMS_DOC.markdown))).not.toMatch(/(?<![가-힣])자정/)
 })
 
 describe('이용약관 — 구조 · 확정 문장', () => {
@@ -82,7 +90,16 @@ describe('이용약관 — 구조 · 확정 문장', () => {
     expect(text).toContain('자동 발급 기능을 개시하여 서비스 화면에 공지한 날부터 시행하며')
   })
 
-  it('제12조 ③ · ④ — 설치 전 폐기 비용 · 전액 환불 예외 · 환불 기한 기산(D-28 · D-30 — 정본 그대로)', () => {
+  it('제7조 ② — 발급 요청 화면의 표시 · 동의(05-A 와 짝)', () => {
+    expect(text).toContain(
+      '회사는 발급 요청 화면에서 이 사실과 청약철회 제한 내용을 표시하고 이용자의 동의를 받습니다.',
+    )
+  })
+
+  it('제12조 ③ · ④ — 설치 전 폐기 비용 · 표시 요건 · 전액 환불 예외 · 환불 기한 기산(D-28 · D-30 — 정본 그대로)', () => {
+    expect(text).toContain(
+      '폐기 비용은 발급 요청 화면(제7조 제4항에 따라 자동 발급된 주문은 구매 당시 상품 상세·판매 채널의 안내, 제7조 제5항에 따라 회사가 직접 발급한 주문은 발급 전 고객센터의 안내)에 미리 표시된 경우에만 부담합니다.',
+    )
     expect(text).toContain(
       '발급 후 설치 전에 이용자가 환불을 요청하는 경우, 회사는 eSIM이 설치되지 않았음을 확인한 뒤 이미 발급된 eSIM의 폐기 비용 3,500원을 이용자가 부담하는 조건으로 환불합니다.',
     )
@@ -107,6 +124,12 @@ describe('개인정보처리방침 — 구조 · 확정 문장 · 자리표시�
       blocks.filter((b) => b.t === 'h2').map((b) => Number(/^(\d+)\./.exec(blocksText([b]))?.[1])),
     ).toEqual(Array.from({ length: 12 }, (_, i) => i + 1))
   })
+  it('서문 — 첫 문단(인용 블록 바로 뒤 · 빈 줄 다음)이 빠지지 않는다', () => {
+    expect(blocks[0]).toMatchObject({ t: 'p' })
+    expect(blocksText([blocks[0]!])).toBe(
+      '노마컴(이하 「회사」)은 「개인정보 보호법」 제30조에 따라 정보주체의 개인정보를 보호하고 관련 고충을 신속하게 처리하기 위하여 다음과 같이 개인정보처리방침을 수립·공개합니다.',
+    )
+  })
   it('발급 화면(verify)에서 받는 이름 · 전화의 처리 고지(1장 — F-20 의 이유) · 국외 이전 없음 · 시행일', () => {
     expect(text).toContain(
       '이름·휴대전화번호(주문 정보와 대조해 본인을 확인하는 데에만 쓰고 저장하지 않음)',
@@ -122,12 +145,15 @@ describe('개인정보처리방침 — 구조 · 확정 문장 · 자리표시�
 })
 
 describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05-A · D-32 · D-35)', () => {
-  it('손으로 고치지 않았다 — 머리줄 해시 = 지금 줄들', () => {
-    for (const [file, lines] of [
-      ['./business.ts', BUSINESS_INFO],
-      ['./issue-notice.ts', ISSUE_NOTICE],
-    ] as const)
+  it('손으로 고치지 않았다 — 머리줄 해시 = 지금 줄들 · 정본 출처(파일 · 절 · 커밋, dirty 아님)는 주석에만', () => {
+    for (const [file, lines, origin] of [
+      ['./business.ts', BUSINESS_INFO, /^\/\/ 정본: 04_[^ ]+\.md ## 1\. · legal-pages @[0-9a-f]{7}$/m],
+      ['./issue-notice.ts', ISSUE_NOTICE, /^\/\/ 정본: 05_[^ ]+\.md ## A\. · legal-pages @[0-9a-f]{7}$/m],
+    ] as const) {
       expect(header(read(file))).toBe(sha(unmark(Object.values(lines).join('\n') + '\n')))
+      expect(read(file)).toMatch(origin)
+      expect(JSON.stringify(lines)).not.toMatch(/legal-pages|\.md/)
+    }
   })
   it('사업자정보 7줄 — 순서 · 공정위 조회 링크 · 호스팅 칸만 확정 전', () => {
     expect(Object.keys(BUSINESS_INFO)).toEqual([
@@ -149,8 +175,8 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
     expect(ISSUE_NOTICE.refund).toBe(
       '발급 후 설치 전에는 이미 발급된 eSIM의 폐기 비용 3,500원을 부담하시면 환불됩니다. 설치 후에는 단순 변심에 의한 환불이 되지 않습니다(eSIM 하자나 표시와 다른 경우는 재발급 또는 환불).',
     )
-    expect(ISSUE_NOTICE.consent).toMatch(
-      /^\(필수\) 이용약관과 위 내용을 확인했으며, .*폐기 비용 3,500원을 부담하는 것에 동의합니다\.$/,
+    expect(ISSUE_NOTICE.consent).toBe(
+      '(필수) 이용약관과 위 내용을 확인했으며, 발급 후 청약철회가 제한되고 설치 전 환불 시 폐기 비용 3,500원을 부담하는 것에 동의합니다.',
     )
   })
   it('공개 금지어 · 대괄호 태그 없음', () => {

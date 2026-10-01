@@ -118,9 +118,12 @@ describe('parseLegalMarkdown — 약관 · 방침의 모양', () => {
   })
 
   it('표 구분행은 둘째 줄 하나(`-` 1개 이상 · `:` 허용) — 다른 줄의 `---` 칸은 본문으로 남는다', () => {
-    const [a] = parseLegalMarkdown('| a | b |\n|:-:|-|\n| ---없음 | x |') as Table[]
+    const [a] = parseLegalMarkdown('| a | b |\n|:-:|-|\n| --- | x |\n| 1 | 2 |') as Table[]
     expect(a!.head.map(inlineText)).toEqual(['a', 'b'])
-    expect(a!.rows.map((r) => r.map(inlineText))).toEqual([['---없음', 'x']])
+    expect(a!.rows.map((r) => r.map(inlineText))).toEqual([
+      ['---', 'x'],
+      ['1', '2'],
+    ])
     const [b] = parseLegalMarkdown('| a | b |\n| - | - |\n| 1 | 2 |') as Table[]
     expect(b!.rows).toHaveLength(1)
   })
@@ -130,6 +133,47 @@ describe('parseLegalMarkdown — 약관 · 방침의 모양', () => {
     expect(text).toContain('제1조 (목적)')
     expect(text).toContain('(확정 전) | 발송')
     expect(text).not.toContain('**')
-    expect(text).not.toContain('|---')
+  })
+})
+
+describe('parseLegalMarkdown — 목록 · 문단 경계', () => {
+  it('목록 항목의 이어지는 줄은 모아서 한 번에 — 줄을 넘는 **굵게** 가 기호로 남지 않는다', () => {
+    const [l] = parseLegalMarkdown('1. **가 나\n   다** 끝\n   - **하위\n     둘** 끝') as List[]
+    expect(l!.items[0]!.text).toEqual([
+      { t: 'b', children: [{ t: 'text', text: '가 나 다' }] },
+      { t: 'text', text: ' 끝' },
+    ])
+    const sub = l!.items[0]!.children[0] as List
+    expect(sub.items[0]!.text).toEqual([
+      { t: 'b', children: [{ t: 'text', text: '하위 둘' }] },
+      { t: 'text', text: ' 끝' },
+    ])
+  })
+
+  it('첫 항목보다 얕게 들여쓴 항목은 새 목록 — 앞 항목 글자에 삼켜지지 않는다', () => {
+    const blocks = parseLegalMarkdown('1. 가\n\n   - 나\n2. 다') as List[]
+    expect(blocks.map((b) => [b.ordered, b.start, b.items.map((i) => inlineText(i.text))])).toEqual([
+      [true, 1, ['가']],
+      [false, 1, ['나']],
+      [true, 2, ['다']],
+    ])
+  })
+
+  it.each([
+    ['한 줄 굵게', '문단\n**제1조 (목적)**', 'h3'],
+    ['제목', '문단\n## 제1장', 'h2'],
+    ['### 제목', '문단\n### 소제목', 'h3'],
+    ['표', '문단\n| a | b |\n| - | - |', 'table'],
+    ['* 글머리', '문단\n* 항목', 'list'],
+  ])('문단은 빈 줄 없이 오는 %s 앞에서 끝난다', (_, md, t) => {
+    expect(parseLegalMarkdown(md).map((b) => b.t)).toEqual(['p', t])
+  })
+
+  it('굵게 안의 링크 · 링크 안의 굵게(1단)', () => {
+    expect(parseInline('**[약관](/terms)** · [**방침**](/privacy)')).toEqual([
+      { t: 'b', children: [{ t: 'a', href: '/terms', children: [{ t: 'text', text: '약관' }] }] },
+      { t: 'text', text: ' · ' },
+      { t: 'a', href: '/privacy', children: [{ t: 'b', children: [{ t: 'text', text: '방침' }] }] },
+    ])
   })
 })

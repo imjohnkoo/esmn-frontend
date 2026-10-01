@@ -112,11 +112,19 @@ export const FORBIDDEN: readonly RegExp[] = [
   /airalo/i,
   /tsim/i,
   /스파크|티심|마야|에어알로/,
-  /\bphase\b|proposal|초안|브리프/i,
+  /\bphase|proposal|초안|브리프|\bTODO\b|\bTBD\b|변호사/i,
   /\bjohn\b/i,
   /\{N\}/,
-  /\b(?:W\d-\d|P\d{1,2}-\d{1,2}|H-\d{3}|D-\d{1,2}|L\d~L\d|[A-Z]-?\d{1,2})\b/,
-  /apps\/|\/checkout-preview|\.vue\b|\.mjs\b|\.ts\b|legal-pages/i,
+  // 결정 · 과제 · 브리프 번호(대소문자 무관) · 한 글자 코드(대문자만 — «5G» 같은 일반 표기와 구분)
+  /\b(?:W\d-\d|P\d{1,2}-\d{1,2}|H-\d{3}|D-\d{1,3}|INF-\d|E2E-\d|L\d~L\d)\b/i,
+  /\b[A-Z]-?\d{1,2}\b/,
+  // 개발 경로 · 파일 · 리포 이름 — 링크가 아닌 «/경로» 표기 포함(08 D절)
+  /apps\/|server\/api|\.vue\b|\.mjs\b|\.ts\b|\.md\b|legal-pages|nomacom|esim-manager/i,
+  /(?:^|[\s«「]|(?<!\])\()\/(?:checkout-preview|business|support|refund|terms|privacy|my|verify|details|select-date|view)\b/,
+  // 경쟁사 이름
+  /유심사|도시락|로밍도깨비|로깨비|말톡/,
+  // eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 자정 기준 서술 금지(«사업자정보» 처럼 낱말 안의 글자는 제외)
+  /(?<![가-힣])자정/,
 ]
 
 export interface Posting {
@@ -125,8 +133,8 @@ export interface Posting {
   pendingCount: number
 }
 
-/** 백틱으로 감싼 대괄호 태그 — 검토 메모 · 값 자리의 후보 */
-const TICK_TAG = /`\[[^`\n]*\]`/g
+/** 검토 메모 · 값 자리의 후보 — 백틱으로 감싼 대괄호 태그(해시는 백틱 포함) 또는 맨 대괄호 태그(뒤에 «(» 가 붙은 링크 글자는 제외) */
+const DOC_TAG = /`\[[^`\n]*\]`|\[[^\]\n]*\](?!\()/g
 /** 인용 블록이 빈 줄 없이 끝나는 줄 — 제목 · 목록 · 표 · 한 줄 굵게 · 구분선은 새 블록이다(이어지는 줄이 아니다) */
 const BLOCK_START = /^(?:#{1,6}\s|\s*(?:\d+\.|[-*])\s|\s*\||\*\*[^*]+\*\*\s*$|-{3,}\s*$)/
 
@@ -175,7 +183,7 @@ function finish(body: string, rules: TagRules): { body: string; pendingCount: nu
     .filter((l) => /[[\]]/.test(l))
     .map((l) => {
       const tag = /\[[^\]\n]*\]?/.exec(l)?.[0] ?? l
-      return `${tag} (백틱 포함 sha256 ${sha256('`' + tag + '`')})`
+      return `${tag} (sha256 — 맨 글자 ${sha256(tag)} · 백틱 포함 ${sha256('`' + tag + '`')})`
     })
   if (left.length)
     throw new Error(`처음 보는 태그(메모인지 값 자리인지 정해 sha256 을 규칙에 넣는다): ${left.join(' · ')}`)
@@ -193,14 +201,16 @@ export function toPosting(source: string, rules: TagRules): Posting {
     if (end < 0) throw new Error('frontmatter 가 닫히지 않았다')
     text = text.slice(end + 5)
   }
-  text = applyTags(text, rules, TICK_TAG)
+  text = applyTags(text, rules, DOC_TAG)
   const out: string[] = []
   let title = ''
   let inQuote = false
   let skipLevel = 0
   for (const raw of text.split('\n')) {
     const line = raw.replace(/\s+$/, '')
-    const heading = /^(#{1,6})\s+(.*)$/.exec(line)
+    // 한 줄 전체 굵게는 조 제목(###) 수준으로 본다 — «**결정 기록**» 도 걷는다
+    const bold = /^\*\*([^*]+)\*\*\s*$/.exec(line)
+    const heading = /^(#{1,6})\s+(.*)$/.exec(line) ?? (bold ? [line, '###', bold[1]!] : null)
     if (inQuote) {
       if (!line.trim()) {
         inQuote = false
@@ -214,13 +224,13 @@ export function toPosting(source: string, rules: TagRules): Posting {
       continue
     }
     if (skipLevel && heading && heading[1]!.length <= skipLevel) skipLevel = 0
-    if (heading && /^결정 기록/.test(heading[2]!)) {
+    if (heading && /결정\s*기록/.test(heading[2]!)) {
       skipLevel = heading[1]!.length
       continue
     }
     if (skipLevel) continue
-    // 인용 블록 — `>` 줄과 빈 줄(또는 새 블록) 전까지 이어지는 줄(lazy continuation)까지
-    if (line.startsWith('>')) {
+    // 인용 블록 — `>` 줄(들여쓴 것 포함 — 목록 항 아래 메모)과 빈 줄(또는 새 블록) 전까지 이어지는 줄(lazy continuation)까지
+    if (/^\s*>/.test(line)) {
       inQuote = true
       continue
     }
@@ -228,6 +238,7 @@ export function toPosting(source: string, rules: TagRules): Posting {
     out.push(line)
   }
   if (!title) throw new Error('문서 제목(# …)이 없다')
+  if (/[[\]`]/.test(title)) throw new Error(`제목에 태그 · 백틱이 남았다: ${title}`)
   let body = out.join('\n')
   // 메모를 지운 자리의 앞 공백 정리(문장 끝 «. ` [..]`» → «.»)
   body = body.replace(/[ \t]+\n/g, '\n').replace(/(?<=\S)[ \t]{2,}(?=\S)/g, ' ')
@@ -261,8 +272,12 @@ export function toBlock(source: string, rules: BlockRules): BlockPosting {
       throw new Error(`«${p.startsWith}» 로 시작하는 줄이 ${hit.length}개다(1개여야 한다 — 정본이 바뀌었다)`)
     let line = hit[0]!.trim()
     if (p.strip && line.startsWith(p.strip)) line = line.slice(p.strip.length)
+    // 이미 [글자](주소) 로 쓰인 것은 그대로 — 주소가 두 번 붙지 않게
     for (const [label, href] of Object.entries(rules.links))
-      line = line.split(label).join(`${label}(${href})`)
+      line = line.replace(
+        new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?!\\()', 'g'),
+        `${label}(${href})`,
+      )
     picked[p.key] = line
   }
   const { body, pendingCount } = finish(Object.values(picked).join('\n') + '\n', rules)
@@ -284,37 +299,57 @@ function splitRow(line: string): string[] {
 
 /**
  * 렌더러(app/utils/legal-markdown.ts)가 지원하지 않는 문법 — 조용히 깨져 그려지는 것들. 줄 번호 · 이유 목록(없으면 []).
- * 지원: `##` · `###` · 한 줄 굵게 · 문단 · `1.` / `-` 목록(2단 · 같은 들여쓰기에 한 종류) · 표(둘째 줄 = 구분행) · 굵게 · [글자](https 또는 /경로)
+ * 지원: `##` · `###` · 한 줄 굵게 · 문단 · `1.` / `-` 목록(2단 · 같은 들여쓰기에 한 종류 · 첫 항목보다 얕지 않게) ·
+ * 표(앞뒤 `|` · 둘째 줄 = 구분행 · 칸 수 = 머리행) · 굵게 `**` · [글자](https 또는 /경로)
  */
 export function unsupportedIn(body: string): string[] {
   const out: string[] = []
   let levels: { indent: number; ordered: boolean }[] | null = null
   let tableRow = -1
+  let cols = 0
   body.split('\n').forEach((line, i) => {
     const n = i + 1
-    if (/^#{1,6}\s/.test(line) && !/^#{2,3}\s/.test(line)) out.push(`${n}: 제목은 ## · ### 만`)
-    if (/\\[\\`*_{}[\]()#+\-.!|>]/.test(line)) out.push(`${n}: 백슬래시 이스케이프`)
-    if (/\]\([^)\s]*\(/.test(line)) out.push(`${n}: 링크 주소 안의 괄호`)
-    if (/^\s+\|/.test(line)) out.push(`${n}: 들여쓴 표`)
+    const bad = (why: string) => out.push(`${n}: ${why}`)
+    if (/^\s*#{1,6}\s/.test(line) && !/^#{2,3}\s/.test(line)) bad('제목은 줄 맨 앞 ## · ### 만')
+    if (/^#{2,3}\s.*\s#+\s*$/.test(line)) bad('닫는 # 이 붙은 제목')
+    if (/^\s*(?:={3,}|-{3,}|\*{3,}|_{3,})\s*$/.test(line)) bad('구분선 · 밑줄식 제목')
+    if (/^\s*>/.test(line)) bad('인용')
+    if (/<\/?[a-zA-Z!][^>]*>|&[a-zA-Z]+;|&#\d+;/.test(line)) bad('HTML 태그 · 개체')
+    if (/!\[/.test(line)) bad('이미지')
+    if (/\\[\\`*_{}[\]()#+\-.!|>]/.test(line)) bad('백슬래시 이스케이프')
+    if (/\]\([^)\s]*\(/.test(line)) bad('링크 주소 안의 괄호')
+    if (/__/.test(line)) bad('밑줄 굵게(__)')
+    // 굵게는 ** 짝으로만 — 홀수면 기호가 화면에 남는다 · 남은 별표 하나는 기울임(지원 안 함)
+    const body2 = line.replace(/^\s*[-*]\s+/, '')
+    if ((body2.match(/\*\*/g) ?? []).length % 2) bad('짝 없는 **')
+    if (/\*/.test(body2.replace(/\*\*/g, ''))) bad('별표 하나(기울임)')
+    if (/^\s*(?:\+\s|\d+\)\s)/.test(line)) bad('목록 기호는 «1.» · «-» 만')
+    if (/^\s+\|/.test(line)) bad('들여쓴 표')
     if (line.startsWith('|')) {
+      const cells = splitRow(line)
       tableRow = tableRow < 0 ? 0 : tableRow + 1
-      const isSep = splitRow(line).every((c) => /^:?-+:?$/.test(c))
-      if (tableRow === 1 && !isSep) out.push(`${n}: 표 둘째 줄이 구분행이 아니다`)
-      if (tableRow !== 1 && isSep) out.push(`${n}: 표 구분행이 둘째 줄이 아니다`)
-      if (/\*\*[^*]*\|[^*]*\*\*/.test(line)) out.push(`${n}: 표 칸 안 굵게에 |`)
+      if (tableRow === 0) cols = cells.length
+      else if (cells.length !== cols) bad(`표 칸 수 ${cells.length} ≠ 머리행 ${cols}`)
+      const isSep = cells.every((c) => /^:?-+:?$/.test(c))
+      if (tableRow === 1 && !isSep) bad('표 둘째 줄이 구분행이 아니다')
+      if (tableRow !== 1 && isSep) bad('표 구분행이 둘째 줄이 아니다')
+      if (!/\|\s*$/.test(line)) bad('표 줄이 | 로 끝나지 않는다')
     } else tableRow = -1
-    const m = /^(\s*)(?:(\d+)\.|[-*])\s+/.exec(line)
+    const m = /^(\s*)(?:(\d+)\.|[-*])(\s+|$)(.*)$/.exec(line)
     if (m) {
       const indent = m[1]!.length
       const ordered = m[2] !== undefined
-      if (ordered && Number(m[2]) > 99) out.push(`${n}: 줄 머리 «${m[2]}.» 가 번호 목록으로 읽힌다`)
+      if (!m[4]!.trim()) bad('내용 없는 목록 항목(메모를 걷어 낸 자리?)')
+      if (ordered && Number(m[2]) > 99) bad(`줄 머리 «${m[2]}.» 가 번호 목록으로 읽힌다`)
       levels ??= []
+      if (levels.length && indent < levels[0]!.indent) bad('목록 항목이 첫 항목보다 얕게 들여쓰였다')
       const lvl = levels.find((l) => l.indent === indent)
       if (!lvl) {
         levels.push({ indent, ordered })
-        if (levels.length > 2) out.push(`${n}: 목록 3단`)
-      } else if (lvl.ordered !== ordered) out.push(`${n}: 같은 들여쓰기에 번호 · 글머리가 섞였다`)
+        if (levels.length > 2) bad('목록 3단')
+      } else if (lvl.ordered !== ordered) bad('같은 들여쓰기에 번호 · 글머리가 섞였다')
     } else if (!line.trim() || !/^\s{2,}\S/.test(line)) levels = null
+    else if (/^\s{2,}#/.test(line)) bad('목록 안의 제목')
   })
   return out
 }

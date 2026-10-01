@@ -47,6 +47,8 @@ describe('renderBlocks — 그린 HTML', () => {
       /<ol class="legal-md__ol" start="3"><li>셋째 <strong>굵게<\/strong> 항<\/li><li>넷째 항<ul class="legal-md__ul"><li>하위<\/li><\/ul><\/li><\/ol>/,
     )
     expect(html).toContain('<th scope="col">수탁자</th>')
+    expect(html).toContain('role="region"')
+    expect(html).toContain('tabindex="0"')
     expect(html).toContain('<span class="legal-md__pending">(확정 전)</span>')
     expect(html).not.toContain(P9_4_PENDING)
   })
@@ -92,6 +94,11 @@ describe('renderBlocks — 그린 HTML', () => {
     expect(html).not.toContain('<span class="legal-md__nb">아주긴덩어리')
   })
 
+  it('문단은 <p> — 제목 태그가 아니다(낭독기 제목 탐색)', async () => {
+    const html = await render('## 장\n\n첫 문단\n\n둘째 문단')
+    expect(html).toContain('<p class="legal-md__p">첫 문단</p><p class="legal-md__p">둘째 문단</p>')
+  })
+
   it('HTML · 스크립트는 글자로 — 태그가 만들어지지 않는다', async () => {
     const html = await render('문단 <script>alert(1)</script> <img src=x onerror=alert(1)>')
     expect(html).not.toContain('<script>')
@@ -122,6 +129,16 @@ describe.each([TERMS_DOC, PRIVACY_DOC])('renderDoc($slug) — 실문서를 그�
     expect(shown.startsWith(doc.title)).toBe(true)
     expect(shown.slice(doc.title.length).replace(/\s+/g, '')).toBe(expected)
     expect(shown).not.toMatch(/[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+/)
+  })
+
+  it('블록 수 그대로 — 문단 · 제목 · 표 개수가 파싱 결과와 같다', async () => {
+    const html = await ssr(() => renderDoc(doc))
+    const blocks = parseLegalMarkdown(doc.markdown)
+    const count = (t: string) => blocks.filter((b) => b.t === t).length
+    expect((html.match(/<p class="legal-md__p">/g) ?? []).length).toBe(count('p'))
+    expect((html.match(/<h2 class="legal-md__h2">/g) ?? []).length).toBe(count('h2'))
+    expect((html.match(/<h3 class="legal-md__h3">/g) ?? []).length).toBe(count('h3'))
+    expect((html.match(/role="region" aria-label="[^"]+" tabindex="0"/g) ?? []).length).toBe(count('table'))
   })
 
   it('표시 번호 = 원문 번호(목록마다 시작 번호 + 차례)', async () => {
