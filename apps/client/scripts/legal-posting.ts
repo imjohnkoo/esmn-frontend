@@ -111,6 +111,10 @@ function fenceMarks(lines: readonly string[]): FenceMark[] {
  *  끝 = 코드 블록 밖의 다음 «## » */
 function sectionLines(lines: readonly string[], section: string): string[] {
   const marks = fenceMarks(lines)
+  // 닫히지 않은 펜스가 있으면 «코드 블록 밖» 판정이 문서 끝까지 무너진다(다음 절이 이 절에 섞인다) — 멈춘다
+  let open = false
+  for (const m of marks) open = m === 'open' ? true : m === 'close' ? false : open
+  if (open) throw new Error(`닫히지 않은 코드 블록이 있다 — 절 경계를 정할 수 없다: ${section}`)
   const outside = (i: number) => marks[i] === null
   const starts = lines.flatMap((l, i) =>
     outside(i) && (l === section || l.startsWith(`${section} `)) ? [i] : [],
@@ -216,14 +220,18 @@ export const PENDING_MARK = '\u0000PENDING\u0000'
 const slotMark = (i: number) => `\u0000SLOT${i}\u0000`
 
 /** eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 날짜 경계 낱말 자체를 금지: 자정(«당일자정» 처럼 붙여 써도) ·
- *  0시 · 00시 · 24시(«24시간» 은 제외) · 00:00 · 24:00 · 오전/밤/새벽 12시. 법정 문서에 정상으로 쓰일 일이 없어 시끄럽게 멈추는 쪽.
+ *  0시 · 00시 · 24시(«24시간» 은 제외) · 0:00 · 00:00 · 24:00 · 23:59(공백 허용) · 오전/밤/새벽 12시 · 영시 · 열두 시 · 12 AM · midnight. 법정 문서에 정상으로 쓰일 일이 없어 시끄럽게 멈추는 쪽.
  *  «사업자정보 · 판매자정보 · 이용자정보» 처럼 «…자 + 정보» 의 글자만 제외(«자정보다» 는 잡는다) */
 export const MIDNIGHT = new RegExp(
   [
     '자정(?!보(?!다))',
     '(?<!\\d)(?:0|00|24)\\s*시(?!\\s*간)',
-    '(?<![\\d:])(?:00|24):00(?!\\d)',
+    '(?<![\\d:])(?:0?0|24)\\s*:\\s*00(?!\\d)',
+    '(?<![\\d:])23\\s*:\\s*59(?!\\d)',
     '(?:오전|밤|새벽)\\s*12\\s*시',
+    '(?<![가-힣])(?:영|열두)\\s*시(?!\\s*간)',
+    '\\b12\\s*(?:AM|am|a\\.m\\.)',
+    '[Mm]idnight',
   ].join('|'),
 )
 
@@ -361,9 +369,13 @@ export function toPosting(source: string, rules: TagRules): Posting {
     }
     if (skip) continue
     // «결정 기록 · 로그» 가 든 제목인데 위 판정(걷는 절)이 아니면 멈춘다 — 걷을지(내부 메모) 남길지(본문 장) 사람이 정한다
-    if (headText && /결정\s*(?:기록|로그)/.test(headText))
+    // 제목이 아닌 줄(목록 · 표 · «결정 기록:» · 제목 안 굵게)도 «결정 기록» 으로 시작하면 같다
+    if (
+      (headText && /결정\s*(?:기록|로그)/.test(headText)) ||
+      /^[\s>#*_\-+|\d.)]*결정[\s*_·-]*(?:기록|로그)/.test(line)
+    )
       throw new Error(
-        `«결정 기록» 이 든 제목을 걷을지 남길지 정하지 못했다(DECISION 규칙에 넣거나 정본 제목을 고친다): ${headText.slice(0, 40)}`,
+        `«결정 기록» 이 든 제목 · 줄을 걷을지 남길지 정하지 못했다(DECISION 규칙에 넣거나 정본을 고친다): ${(headText ?? line).slice(0, 40)}`,
       )
     // 인용 블록 — `>` 줄(들여쓴 것 포함 — 목록 항 아래 메모)과 빈 줄(또는 새 블록) 전까지 이어지는 줄(lazy continuation)까지
     if (/^\s*>/.test(line)) {

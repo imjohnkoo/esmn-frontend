@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import ts from 'typescript'
 import { parse } from 'vue/compiler-sfc'
 
 /**
@@ -14,7 +15,14 @@ const read = (p: string) => readFileSync(fileURLToPath(new URL(p, import.meta.ur
 interface TNode {
   type: number
   tag?: string
-  props?: { type: number; name: string; rawName?: string; value?: { content: string }; exp?: { content: string } }[]
+  props?: {
+    type: number
+    name: string
+    rawName?: string
+    value?: { content: string }
+    exp?: { content: string }
+    arg?: { content: string; isStatic?: boolean }
+  }[]
   children?: TNode[]
   loc: { source: string }
 }
@@ -154,34 +162,53 @@ describe('발급기 법정 링크(F-20)', () => {
     // 처음 값 · 결제 조건은 utils 에서만 — 페이지가 체크 값을 쓰지 않는다(미리 체크 금지)
     // 동의 상태는 utils 의 useCheckoutConsent 하나에서 — 페이지는 받아서 그리기만 한다. 같은 이름의 로컬 함수 · 별칭 import ·
     // 항목 · 체크 값 손대기(미리 체크 · 필수 해제 · 캐스트 · 저장소 복원)는 아래 이름 수가 늘거나 금지어로 막힌다
-    const script = src
-      .slice(src.indexOf('<script setup'), src.indexOf('</script>'))
-      .replace(/^[ \t]*\/\/[^\n]*$/gm, '') // 줄 전체 주석만 — 문자열 안의 «//» 뒤를 지우면 그 뒤 코드가 검사를 비껴간다
-    const count = (s: string, name: string) => (s.match(new RegExp(`\\b${name}\\b`, 'g')) ?? []).length
+    // 이름 세기는 TypeScript 구문 트리로 — 주석 · 문자열 · 템플릿 문자열로 감춘 코드도 식별자로 센다(글자 검색은 주석 · 문자열에 속는다)
+    const script = src.slice(src.indexOf('<script setup lang="ts">') + '<script setup lang="ts">'.length, src.indexOf('</script>'))
+    const sf = ts.createSourceFile('checkout-preview.ts', script, ts.ScriptTarget.Latest, true)
+    const idents: string[] = []
+    const aliased: string[] = []
+    const visit = (n: ts.Node): void => {
+      if (ts.isIdentifier(n)) idents.push(n.text)
+      if (ts.isImportSpecifier(n) && n.propertyName) aliased.push(n.propertyName.getText(sf))
+      ts.forEachChild(n, visit)
+    }
+    visit(sf)
+    const count = (name: string) => idents.filter((i) => i === name).length
     expect(script).toMatch(/\nconst \{ items: consentItems, agreed, canPay \} = useCheckoutConsent\(\)\n/)
-    expect([count(script, 'useCheckoutConsent'), count(script, 'agreed'), count(script, 'consentItems'), count(script, 'canPay')]).toEqual([2, 1, 1, 2])
-    expect(script).not.toMatch(/\b(?:initialConsent|canPayWith|CONSENT_ITEMS|reactive)\b/)
-    for (const m of script.matchAll(/import \{([^}]*)\} from '~\/utils\/checkout-preview'/g)) expect(m[1]).not.toMatch(/\bas\b/)
+    expect([count('useCheckoutConsent'), count('agreed'), count('consentItems'), count('canPay')]).toEqual([2, 1, 1, 2])
+    expect(['initialConsent', 'canPayWith', 'CONSENT_ITEMS', 'reactive', 'eval', 'Function'].map(count)).toEqual([0, 0, 0, 0, 0, 0])
+    expect(aliased).toEqual([])
     const tplText = template(src)
-    expect([count(tplText, 'agreed'), count(tplText, 'consentItems'), count(tplText, 'canPay')]).toEqual([1, 1, 1])
-    // 동의 영역을 숨기지 않는다(05-B 글자 · 체크가 화면에서 사라진다) — ① 템플릿: 동의 영역 아래 모든 요소에 hidden · style · :style ·
-    // :class 속성과 숨김 클래스 금지(sr-only 는 링크 안 «(새 창)» 낭독 안내만) ② 스코프 CSS: 페이지 전체에 숨김 속성 금지 + 동의 영역
-    // 규칙에 투명 글자 · 화면 밖 배치 · 0 크기 금지. 전역 CSS 등 정적 검사 밖의 숨김은 spec D-38(사람 판정)
+    const tcount = (name: string) => (tplText.match(new RegExp(`\\b${name}\\b`, 'g')) ?? []).length
+    expect([tcount('agreed'), tcount('consentItems'), tcount('canPay')]).toEqual([1, 1, 1])
+    // 동의 영역을 숨기지 않는다(05-B 글자 · 체크가 화면에서 사라진다) — ① 템플릿: 동의 영역 아래 모든 요소에 숨기는 속성(hidden · style ·
+    // inert · popover · aria-hidden — 어떤 철자 · 수식어로든) · 동적 class · 객체 v-bind · v-html/v-text · 숨김 유틸 클래스(반응형 · ! 포함 ·
+    // 임의 값 [..] 전부) · 숨기는 태그(details · template · dialog …) 금지. sr-only 는 링크 안 «(새 창)» 낭독 안내만
+    // ② 스코프 CSS: 페이지 전체에 숨기는 속성 금지. 전역 CSS · 레이아웃 등 정적 검사 밖은 spec D-38(사람 판정)
+    const HIDE_ATTR = /^(?:hidden|style|class|inert|popover|aria-hidden)$/
+    const HIDE_CLASS =
+      /^(?:hidden|invisible|collapse|sr-only|contents|absolute|fixed|opacity-|h-0|h-px|w-0|w-px|size-0|size-px|max-h-0|max-h-px|max-w-0|text-transparent|scale-|translate-|inset-|top-|left-|right-|bottom-|overflow-hidden|overflow-clip|indent-)/
+    const HIDE_TAG = /^(?:details|summary|template|dialog|noscript|iframe|object|slot|teleport|Teleport|keep-alive|KeepAlive)$/
     for (const { node } of findAll(agree, () => true)) {
-      const names = (node.props ?? []).map((p) => p.rawName ?? p.name)
-      expect(names.filter((n) => /^(?:hidden|style|:style|v-bind:style|:class|v-bind:class|:hidden|v-bind)$/.test(n)), text(node).slice(0, 40)).toEqual([])
-      const classes = cls(node).split(/\s+/)
-      expect(classes.filter((c) => /^(?:hidden|invisible|collapse|opacity-0|h-0|w-0|text-transparent)$/.test(c)), text(node).slice(0, 40)).toEqual([])
-      if (classes.includes('sr-only')) expect(text(node)).toBe('<span class="sr-only"> (새 창)</span>')
+      const where = text(node).slice(0, 40)
+      expect(HIDE_TAG.test(node.tag ?? ''), `태그 ${node.tag} · ${where}`).toBe(false)
+      for (const p of node.props ?? []) {
+        if (p.type === 6) expect(HIDE_ATTR.test(p.name) && p.name !== 'class', `속성 ${p.name} · ${where}`).toBe(false)
+        if (p.type === 7 && p.name === 'bind')
+          expect(!p.arg || p.arg.isStatic === false || HIDE_ATTR.test(p.arg.content), `v-bind ${p.rawName} · ${where}`).toBe(false)
+        if (p.type === 7) expect(['html', 'text'].includes(p.name), `v-${p.name} · ${where}`).toBe(false)
+      }
+      for (const token of cls(node).split(/\s+/).filter(Boolean)) {
+        expect(token.includes('['), `임의 값 클래스 ${token}`).toBe(false)
+        const base = token.split(':').pop()!.replace(/^!|!$/g, '').replace(/^-/, '')
+        if (token === 'sr-only') expect(text(node)).toBe('<span class="sr-only"> (새 창)</span>')
+        else expect(HIDE_CLASS.test(base), `숨김 클래스 ${token} · ${where}`).toBe(false)
+      }
     }
     const style = src.slice(src.indexOf('<style'))
-    expect(style).not.toMatch(/display:\s*none|visibility:\s*hidden|opacity:\s*0(?![.\d])|font-size:\s*0(?![.\d])|(?:max-)?height:\s*0(?![.\d])|clip(?:-path)?:|text-indent:\s*-/)
-    for (const rule of style.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-      if (!/checkout__(?:agree|consent|notice|link)/.test(rule[1]!)) continue
-      expect(rule[2], rule[1]!.trim()).not.toMatch(
-        /color:\s*transparent|position:\s*(?:absolute|fixed)|(?:^|[;\s])(?:left|right|top|bottom|margin(?:-\w+)?|text-indent):\s*-\d{3,}|transform:[^;]*(?:scale\(\s*0|-\d{3,})|(?:max-)?width:\s*0(?![.\d])|line-height:\s*0(?![.\d])/,
-      )
-    }
+    expect(style).not.toMatch(
+      /display:\s*none|visibility:\s*(?:hidden|collapse)|content-visibility|opacity\s*:|filter\s*:|(?:^|[\s;{])(?:scale|zoom|translate|inset|transform)\s*:|position:\s*(?:absolute|fixed)|overflow(?:-[xy])?\s*:\s*(?:hidden|clip)|clip(?:-path)?\s*:|text-indent\s*:|color:\s*(?:transparent|rgba\([^)]*,\s*0(?:\.0+)?\s*\)|#0000\b|#00000000\b)|font-size:\s*(?:0|[1-7])(?:\.\d+)?px|font-size:\s*0(?![.\d])|(?:max-)?(?:height|width):\s*[01](?:px)?(?![.\d])|line-height:\s*0(?![.\d])|-\d{3,}(?:\.\d+)?px|-\d+(?:\.\d+)?(?:vw|vh|%)/,
+    )
     // 체크박스에는 v-model · :label 만 — :disabled · v-if · v-show 등이 붙으면 필수 체크를 못 하거나 숨는다
     expect(boxes[0]!.node.props!.map((p) => p.rawName ?? p.name)).toEqual(['v-model', ':label'])
     // 동의 영역 안의 조건부 표시는 «알릴 사항이 있는 항목만» 하나 — 05-B 글자를 숨기는 v-if · v-show · <template v-if> 금지
