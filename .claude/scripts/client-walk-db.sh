@@ -8,6 +8,8 @@
 #  - schema 는 호스트의 127.0.0.1:55432 로 붙는다 → 그 전에 두 겹 확인(2026-10-02 — 55432 에 ssh 터널(prod RDS)이 떠 있던 적이 있다):
 #      ① 연결 전 — 55432 를 듣는 프로세스가 **전부** 로컬 컨테이너 계열(client-walk-server.sh 와 같은 netstat 판정). 터널이면 붙지 않고 거부
 #      ② push 직전 — 컨테이너 안에서 무작위 표식을 DB 주석으로 쓰고(docker exec), 호스트 포트로 읽어(SELECT 만) 같을 때만 push
+#         (표식 확인 뒤 push 직전에 ① 을 한 번 더 — 그 사이 컨테이너가 내려가고 터널이 포트를 잡는 틈을 줄인다)
+#  - docker 는 이 기계의 데몬만 — DOCKER_HOST · 현재 컨텍스트가 unix 소켓이 아니면(원격 데몬) 거부
 #  - 가짜 주문만: 이름 «테스트고객» · 전화 010-0000-xxxx(할당되지 않는 대역) · activationCode 는 LPA 모양의 가짜 값
 #  - 아무것도 지우지 않는다 — 컨테이너 · 볼륨 제거 명령은 없다(다시 쓰려면 seed 가 같은 키로 upsert 한다)
 #
@@ -31,6 +33,14 @@ DB_URL="postgres://walk:walk@127.0.0.1:55432/walk"
 
 psql_in() { docker exec -i "$NAME" psql -v ON_ERROR_STOP=1 -U walk -d walk "$@"; }
 NODE="$(command -v node || true)"
+
+# docker 대상 = 이 기계의 데몬(unix 소켓)만 — 원격 데몬이면 컨테이너 · 가짜 행이 남의 기계에 생긴다
+check_docker() {
+  [[ -z "${DOCKER_HOST:-}" || "$DOCKER_HOST" == unix://* ]] || refuse "DOCKER_HOST 가 원격이다($DOCKER_HOST) — 로컬 데몬만"
+  local endpoint
+  endpoint="$(docker context inspect --format '{{.Endpoints.docker.Host}}' 2>/dev/null)" || refuse "docker 컨텍스트를 확인할 수 없다"
+  [[ "$endpoint" == unix://* ]] || refuse "docker 컨텍스트가 원격이다($endpoint) — 로컬 데몬만"
+}
 
 # ① 55432 리스너 — client-walk-server.sh 와 같은 판정(netstat: lsof 는 다른 uid 리스너를 못 보고 «없음» · «오류» 가 같은 exit 1)
 check_listeners() {
@@ -68,6 +78,10 @@ host_marker() {
 }
 
 case "${1:-}" in
+  up | schema | seed | counts) check_docker ;;
+esac
+
+case "${1:-}" in
   url)
     echo "$DB_URL"
     ;;
@@ -90,6 +104,7 @@ case "${1:-}" in
     psql_in -c "COMMENT ON DATABASE walk IS '$marker'" >/dev/null || refuse "$NAME 컨테이너에 표식을 쓰지 못했다 — up 부터"
     [[ "$(host_marker)" == "$marker" ]] ||
       refuse "127.0.0.1:55432 가 $NAME 컨테이너가 아니다(표식 불일치) — 다른 DB(터널이면 prod)에 push 하지 않는다"
+    check_listeners
     cd "$ROOT/apps/client"
     env -i "PATH=/usr/bin:/bin:$(dirname "$NODE")" "HOME=$HOME" "DATABASE_URL=$DB_URL" \
       "$NODE" "$ROOT/node_modules/drizzle-kit/bin.cjs" push --config drizzle.config.ts --force

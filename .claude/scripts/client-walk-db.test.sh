@@ -22,12 +22,21 @@ echo "Active Internet connections (including servers)"
 echo "Proto Recv-Q Send-Q  Local Address  Foreign Address  (state)  rxbytes txbytes rhiwat shiwat process:pid state options"
 row() { echo "$1       0      0  $2         *.*                    LISTEN                 0            0  131072  131072  $3:4242  00100 00000106"; }
 row tcp4 "*.631" "cupsd"
+# 표식을 읽은 뒤 리스너가 바뀌는 경우 — 가짜 node 가 $FAKE_DIR/net_after 를 net_now 로 옮기면 그 뒤 호출은 그 값을 쓴다
+[ -f "$FAKE_DIR/net_now" ] && FAKE_NET_55432="$(cat "$FAKE_DIR/net_now")"
 for n in $FAKE_NET_55432; do row tcp4 "127.0.0.1.55432" "$n"; done
 EOF
-# 가짜 docker — 부른 것을 기록. exec … psql -c "COMMENT ON DATABASE walk IS '<표식>'" 이면 표식을 파일에
+# 가짜 docker — 부른 것을 기록. exec … psql -c "COMMENT ON DATABASE walk IS '<표식>'" 이면 표식을 파일에 ·
+# context inspect 는 $FAKE/endpoint · inspect -f 이미지는 스크립트가 기대하는 이미지
 cat >"$FAKE/docker" <<'EOF'
 #!/bin/sh
+case "$1 $2" in
+  "context inspect") cat "$FAKE_DIR/endpoint"; exit 0 ;;
+esac
 echo "docker $*" >>"$FAKE_DIR/calls"
+case "$*" in
+  *"{{.Config.Image}}"*) echo "postgres:15.12-alpine"; exit 0 ;;
+esac
 prev=""
 for a in "$@"; do
   if [ "$prev" = "-c" ]; then echo "$a" | sed -nE "s/^COMMENT ON DATABASE walk IS '([^']*)'$/\1/p" >"$FAKE_DIR/marker"; fi
@@ -43,6 +52,7 @@ FAKE_DIR="@FAKE@"
 case "$*" in
   *--input-type=module*)
     echo "node marker DATABASE_URL=$DATABASE_URL SPARK=${SPARK_API_TOKEN:-}" >>"$FAKE_DIR/calls"
+    [ -f "$FAKE_DIR/net_after" ] && cp "$FAKE_DIR/net_after" "$FAKE_DIR/net_now"
     case "$(cat "$FAKE_DIR/host")" in
       same) cat "$FAKE_DIR/marker" ;;
       other) echo "nomacom-walk-0000000000000000" ;;
@@ -53,7 +63,13 @@ case "$*" in
   *) echo "node other $*" >>"$FAKE_DIR/calls" ;;
 esac
 EOF
+# 덫 — 호스트에서 DB 포트에 붙을 만한 도구는 부르는 순간 기록 + 실패(실제 도구가 실제 포트에 닿지 않게)
+for tool in psql pg_dump pg_isready nc ncat telnet curl wget socat ssh; do
+  printf '#!/bin/sh\necho "TRIPWIRE %s $*" >>"%s/calls"\nexit 1\n' "$tool" "$FAKE" >"$FAKE/$tool"
+  chmod +x "$FAKE/$tool"
+done
 sed -i.bak "s#@FAKE@#$FAKE#" "$FAKE/node"
+echo "unix:///var/run/docker.sock" >"$FAKE/endpoint"
 chmod +x "$FAKE/netstat" "$FAKE/docker" "$FAKE/node"
 export FAKE_DIR="$FAKE" SPARK_API_TOKEN=leak DATABASE_URL=postgres://u:p@prod.example.com:5432/db
 
@@ -73,6 +89,22 @@ for case in "ssh" "" "com.docker.backend ssh" "session-manager-plugin" "kubectl"
   [[ -z "$(calls)" ]] && ok || ng "리스너 «$case» — 아무것도 부르지 않아야 함: $(calls | tr '\n' ';')"
 done
 
+# ── 원격 docker 는 어떤 명령이든 거부 — DOCKER_HOST · 컨텍스트
+for cmd in up schema seed counts; do
+  : >"$FAKE/calls"
+  DOCKER_HOST=tcp://remote.example:2376 FAKE_NET_55432="com.docker.backend" PATH="$FAKE:$PATH" bash "$S" "$cmd" >/dev/null 2>&1
+  [[ $? == 2 ]] && ok || ng "DOCKER_HOST 원격 · $cmd — exit 2 여야 함"
+  [[ -z "$(calls)" ]] && ok || ng "DOCKER_HOST 원격 · $cmd — 아무것도 부르지 않아야 함: $(calls | tr '\n' ';')"
+done
+echo "ssh://me@remote.example" >"$FAKE/endpoint"
+for cmd in up schema seed counts; do
+  : >"$FAKE/calls"
+  FAKE_NET_55432="com.docker.backend" PATH="$FAKE:$PATH" bash "$S" "$cmd" >/dev/null 2>&1
+  [[ $? == 2 ]] && ok || ng "원격 컨텍스트 · $cmd — exit 2 여야 함"
+  [[ -z "$(calls)" ]] && ok || ng "원격 컨텍스트 · $cmd — 아무것도 부르지 않아야 함"
+done
+echo "unix:///var/run/docker.sock" >"$FAKE/endpoint"
+
 # ── 리스너는 로컬 계열인데 호스트 포트가 그 컨테이너가 아니다(표식 불일치 · 읽기 실패) — push 없음
 for host in other fail; do
   code="$(schema "com.docker.backend" "$host")"
@@ -90,12 +122,30 @@ grep -qE "^docker exec -i nomacom-walk-pg psql .* -c COMMENT ON DATABASE walk IS
 # 순서 — 표식 쓰기 → 표식 읽기 → push
 order="$(calls | awk '{print $1, $2}' | tr '\n' ';')"
 [[ "$order" == "docker exec;node marker;node push;" ]] && ok || ng "순서: $order"
+# push 직전 리스너 재확인 — 표식 확인 뒤 리스너가 터널로 바뀌면 push 하지 않는다(가짜 node 가 표식을 읽을 때 netstat 결과를 바꾼다)
+echo "ssh" >"$FAKE/net_after"
+code="$(schema "com.docker.backend" same)"
+[[ "$code" == 2 ]] && ok || ng "표식 뒤 리스너가 터널로 — exit 2 여야 함(받은 값 $code)"
+grep -q '^node push' <<<"$(calls)" && ng "표식 뒤 리스너가 터널로 — push 하면 안 됨" || ok
+mv "$FAKE/net_after" "$FAKE/net_after.used"
+mv "$FAKE/net_now" "$FAKE/net_now.used"
 
-# ── seed · counts 는 컨테이너 안에서만(docker exec) — 호스트 포트로 붙지 않는다
+# ── up · seed · counts · url 은 호스트 포트로 붙지 않는다(55432 가 터널이어도) — docker 만 · 덫 0
+for cmd in up seed counts url; do
+  : >"$FAKE/calls"
+  FAKE_NET_55432="ssh" PATH="$FAKE:$PATH" bash "$S" "$cmd" >/dev/null 2>&1
+  grep -qE '^(node|TRIPWIRE)' <<<"$(calls)" && ng "$cmd — 호스트 연결 금지: $(calls | tr '\n' ';')" || ok
+  calls | grep -vE '^docker ' | grep -q . && ng "$cmd — docker 밖 호출: $(calls | tr '\n' ';')" || ok
+done
+: >"$FAKE/calls"
+FAKE_NET_55432="ssh" PATH="$FAKE:$PATH" bash "$S" seed >/dev/null 2>&1
+grep -q '^docker exec -i nomacom-walk-pg psql' <<<"$(calls)" && ok || ng "seed — docker exec 로"
 : >"$FAKE/calls"
 FAKE_NET_55432="ssh" PATH="$FAKE:$PATH" bash "$S" counts >/dev/null 2>&1
-grep -q '^node' <<<"$(calls)" && ng "counts — 호스트 연결 금지" || ok
 grep -q '^docker exec -i nomacom-walk-pg psql' <<<"$(calls)" && ok || ng "counts — docker exec 로"
+# 정상 schema 에서도 덫은 0
+schema "com.docker.backend" same >/dev/null
+grep -q '^TRIPWIRE' <<<"$(calls)" && ng "schema — 덫 호출: $(calls | tr '\n' ';')" || ok
 
 echo "client-walk-db.test: $pass pass · $fail fail"
 [[ "$fail" == 0 ]]
