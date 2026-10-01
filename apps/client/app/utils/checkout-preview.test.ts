@@ -196,6 +196,15 @@ describe('05-B 동의 모델(F-22) — 화면이 그리는 것은 이것뿐', ()
     expect(fresh.canPay.value).toBe(false)
   })
 
+  it('개인정보 안내 · 결제 전 안내도 얼어 있다 — 실행 중에 문구 · 링크 · 줄을 바꿀 수 없다', () => {
+    expect([Object.isFrozen(PRIVACY_NOTICE), Object.isFrozen(PRIVACY_NOTICE.links), ...PRIVACY_NOTICE.links.map(Object.isFrozen)]).toEqual([true, true, true])
+    expect([Object.isFrozen(BEFORE_NOTICE), Object.isFrozen(BEFORE_NOTICE.lines)]).toEqual([true, true])
+    expect(() => {
+      ;(BEFORE_NOTICE.lines as unknown as string[]).length = 1
+    }).toThrow(TypeError)
+    expect(BEFORE_NOTICE.lines).toHaveLength(3)
+  })
+
   it('항목은 얼어 있다 — 실행 중에 필수 여부 · 문구 · 링크를 바꿀 수 없다', () => {
     expect(Object.isFrozen(CONSENT_ITEMS)).toBe(true)
     for (const item of CONSENT_ITEMS) {

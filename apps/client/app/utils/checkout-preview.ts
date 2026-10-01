@@ -148,11 +148,17 @@ export function useCheckoutConsent() {
   return { items: CONSENT_ITEMS, agreed, canPay }
 }
 
-/** 개인정보 수집 · 이용 «안내» — 체크 없음(계약 이행 근거 · 2026-10-01 John (b)) */
-export const PRIVACY_NOTICE = { ...splitConsent(CHECKOUT_NOTICE.privacyTitle), info: CHECKOUT_NOTICE.privacyInfo }
+const privacyHead = splitConsent(CHECKOUT_NOTICE.privacyTitle)
 
-/** 결제 전 안내 — 제목 + 3줄(환불 기준 · 공제 문장 그대로 — D-28) */
-export const BEFORE_NOTICE = {
+/** 개인정보 수집 · 이용 «안내» — 체크 없음(계약 이행 근거 · 2026-10-01 John (b)). 얼려 둔다(실행 중에 문구 · 링크를 못 바꾼다) */
+export const PRIVACY_NOTICE = Object.freeze({
+  label: privacyHead.label,
+  links: Object.freeze(privacyHead.links.map((link) => Object.freeze(link))),
+  info: CHECKOUT_NOTICE.privacyInfo,
+})
+
+/** 결제 전 안내 — 제목 + 3줄(환불 기준 · 공제 문장 그대로 — D-28). 얼려 둔다 */
+export const BEFORE_NOTICE = Object.freeze({
   title: CHECKOUT_NOTICE.beforeTitle,
-  lines: [CHECKOUT_NOTICE.beforeRefund, CHECKOUT_NOTICE.beforeMinor, CHECKOUT_NOTICE.beforeNotify],
-} as const
+  lines: Object.freeze([CHECKOUT_NOTICE.beforeRefund, CHECKOUT_NOTICE.beforeMinor, CHECKOUT_NOTICE.beforeNotify] as const),
+})

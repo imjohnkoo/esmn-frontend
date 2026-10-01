@@ -232,6 +232,8 @@ export const MIDNIGHT = new RegExp(
     `(?<!\\d)(?:0|00|24)\\s*시${HOUR_END}`,
     '(?<![\\d:])(?:0?0|24)\\s*:\\s*00(?!\\d)',
     '(?<![\\d:])23\\s*:\\s*59(?!\\d)',
+    '(?<!\\d)23\\s*시\\s*59\\s*분',
+    '오후\\s*11\\s*시\\s*59\\s*분',
     '(?:오전|밤|새벽)\\s*12\\s*(?:시|:\\s*00)',
     `(?:(?<![가-힣])|(?<=밤|새벽|오전))(?:영|열두)\\s*시${WORD_HOUR_END}`,
     '\\b12(?:\\s*:\\s*00)?\\s*a\\.?\\s?m\\b\\.?',
@@ -385,7 +387,8 @@ export function toPosting(source: string, rules: TagRules): Posting {
     }
     if (/^-{3,}$/.test(line)) continue
     // 게시되는 줄(인용 · 걷는 절 밖)이 «결정 기록» 으로 시작하면(목록 · 표 · «결정 기록:» · 제목 안 굵게 · • ※ ( « 머리) 같은 판단을 사람에게
-    if (/^[^가-힣A-Za-z]*결정[\s*_·-]*(?:기록|로그)/.test(line)) throw ambiguousDecision(line)
+    if (/^[^가-힣A-Za-z]*(?:(?:[가-하]|[A-Za-z]{1,2}|제\s*\d+\s*[장절조항관])[.)]?\s*|(?:부록|참고|내부|별첨)\s*[A-Za-z\d]{0,2}[\s.)—–:·-]*)?(?:의사\s*)?결정[\s*_·-]*(?:기록|로그)/.test(line))
+      throw ambiguousDecision(line)
     out.push(line)
   }
   if (!title) throw new Error('문서 제목(# …)이 없다')
