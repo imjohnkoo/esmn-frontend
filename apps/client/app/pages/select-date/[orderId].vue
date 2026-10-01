@@ -227,6 +227,16 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 // 발급 화면 고지 문구(client-shell spec D-32 · D-35 — 05-A) — 스크립트 끝에 둔다(typecheck 기준선 줄 번호 불변)
 import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
 import { confirmScrollFit } from '~/utils/confirm-fit'
+import { renderNoticeList } from '~/utils/legal-render'
+
+// 05-A 안내 5줄 — 정본 순서(제공 개시 · 설치 전 환불 · 이용 기간 · 지원 기기 · 문제 시 연락)
+const NOTICE_LINES = [
+  ISSUE_NOTICE.start,
+  ISSUE_NOTICE.refund,
+  ISSUE_NOTICE.period,
+  ISSUE_NOTICE.device,
+  ISSUE_NOTICE.trouble,
+]
 
 // 발급 확인 팝업 — 안내 · 요약만 스크롤하고 동의 체크 · 버튼은 화면 안. 높이는 열릴 때 실제 크기로(utils/confirm-fit)
 const confirmScrollEl = ref<HTMLElement | null>(null)
@@ -501,27 +511,11 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
               <line x1="12" y1="9" x2="12" y2="13" />
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
-            <p>
-              <!-- 05-A 14행(client-shell spec D-32) — 약관 12조③ 의 «발급 요청 화면에 미리 표시» -->
-              <b>{{ ISSUE_NOTICE.refund }}</b>
-              사용하실 기기가 eSIM 지원 기기인지 발급 전에 꼭 확인해 주세요.
-              <a
-                class="select-date-page__confirm-policy-link"
-                href="/supported-devices"
-                target="_blank"
-                rel="noopener"
-                >지원 기기 목록 보기<span class="sr-only"> (새 창)</span></a
-              >
-              <!-- 법정 링크(client-shell spec F-20) — 05-A 원문 전체(5줄 · 링크 3)는 W1-2 K3(F-21) -->
-              <span aria-hidden="true"> · </span>
-              <a
-                class="select-date-page__confirm-policy-link"
-                href="/terms"
-                target="_blank"
-                rel="noopener"
-                >이용약관 보기<span class="sr-only"> (새 창)</span></a
-              >
-            </p>
+            <!-- 05-A 원문(client-shell spec F-21) — 제목 · 안내 5줄(설치 전 3,500원 줄은 굵게 — 약관 12조③ «미리 표시» · D-32) · 링크는 새 창 -->
+            <div class="select-date-page__confirm-notice">
+              <p class="select-date-page__confirm-notice-title">{{ ISSUE_NOTICE.heading }}</p>
+              <component :is="renderNoticeList(NOTICE_LINES, [1])" />
+            </div>
           </div>
           <div v-if="order" class="select-date-page__confirm">
             <div class="select-date-page__confirm-row">
@@ -549,6 +543,14 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
               v-model="isPolicyAgreed"
               :label="ISSUE_NOTICE.consent"
             />
+            <p class="select-date-page__confirm-links">
+              <a href="/terms" target="_blank" rel="noopener"
+                >이용약관 보기<span class="sr-only"> (새 창)</span></a
+              >
+              <a href="/refund" target="_blank" rel="noopener"
+                >취소·환불 정책 보기<span class="sr-only"> (새 창)</span></a
+              >
+            </p>
           </div>
         </div>
       </div>
@@ -559,6 +561,15 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
       >
         <!-- 05-A 19행(D-35) — 약관 6조④ 의 발급 화면 약관 동의 · 체크 구조 · 서버 기록은 W1-2 K3 · W1-6 -->
         <NCheckbox v-model="isPolicyAgreed" :label="ISSUE_NOTICE.consent" />
+        <!-- 05-A 링크 줄 «이용약관 보기 · 취소·환불 정책 보기»(버튼 «eSIM 발급하기» 와 같은 줄 — 정본 배치) -->
+        <p class="select-date-page__confirm-links">
+          <a href="/terms" target="_blank" rel="noopener"
+            >이용약관 보기<span class="sr-only"> (새 창)</span></a
+          >
+          <a href="/refund" target="_blank" rel="noopener"
+            >취소·환불 정책 보기<span class="sr-only"> (새 창)</span></a
+          >
+        </p>
       </div>
       <template #actions>
         <div class="select-date-page__confirm-actions">
@@ -568,7 +579,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
             :disabled="isSubmitting || !isPolicyAgreed"
             @click="onConfirm"
           >
-            발급하기
+            eSIM 발급하기
           </NButton>
         </div>
       </template>
@@ -790,6 +801,54 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
   text-underline-offset: 2px;
 }
 
+.select-date-page__confirm-notice-title {
+  margin: 0 0 6px;
+  color: #111827;
+  font-weight: 700;
+}
+
+.select-date-page__confirm-policy :deep(.issue-notice__list) {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc outside;
+}
+
+.select-date-page__confirm-policy :deep(.issue-notice__list li) {
+  margin: 0 0 4px;
+}
+
+.select-date-page__confirm-policy :deep(.issue-notice__list strong) {
+  /* 분홍 바탕(#fef2f2) 위 12px — 대비 4.5:1 이상(약관 12조③ 의 표시 문장) */
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.select-date-page__confirm-policy :deep(.legal-md__link) {
+  font-weight: 600;
+  color: #6239ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.select-date-page__confirm-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 6px 0 0 28px;
+  font-size: 12px;
+}
+
+.select-date-page__confirm-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: #6239ff;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
 .select-date-page__confirm-policy b {
   display: block;
   margin-bottom: 6px;
@@ -804,6 +863,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
   width: 100%;
   margin-top: 10px;
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: flex-start;
   text-align: left;
   font-size: 13px;

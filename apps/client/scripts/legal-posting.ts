@@ -120,7 +120,7 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
     notes: [],
     placeholders: ['fbb49b2998f2c4650e47969848dd7c006c102bd6a8ca18e6b429bd40e7a92b69'],
   },
-  // 05-A — 발급 화면의 환불 안내 한 줄(14행 · D-32) · 동의 체크 문구(19행 · D-35)
+  // 05-A — 발급 화면 고지(제목 · 안내 5줄 — F-21) · 환불 안내(14행 · D-32) · 동의 체크 문구(19행 · D-35)
   'issue-notice': {
     file: '05_고지문구-동의체크-FAQ.md',
     exportName: 'ISSUE_NOTICE',
@@ -128,8 +128,13 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
     pick: [
       { key: 'refund', startsWith: '• 발급 후 설치 전에는', strip: '• ' },
       { key: 'consent', startsWith: '☐ (필수)', strip: '☐ ' },
+      { key: 'heading', startsWith: '발급 전에 확인해 주세요' },
+      { key: 'start', startsWith: '• eSIM 발급은 상품 제공을', strip: '• ' },
+      { key: 'period', startsWith: '• 이용 기간은', strip: '• ' },
+      { key: 'device', startsWith: '• eSIM을 설치할 기기가', strip: '• ' },
+      { key: 'trouble', startsWith: '• eSIM에 문제가 있으면', strip: '• ' },
     ],
-    links: {},
+    links: { '[지원 기기 확인]': '/supported-devices' },
     notes: [],
     placeholders: [],
   },

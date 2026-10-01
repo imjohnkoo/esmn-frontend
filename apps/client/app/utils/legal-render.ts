@@ -43,19 +43,20 @@ function renderText(text: string): Child[] {
 // legal-md__sr = 법정 문서 스타일 · sr-only = Tailwind(푸터처럼 LegalMarkdown 스타일이 실리지 않는 화면에서도 숨김)
 const newTabNote = () => h('span', { class: 'legal-md__sr sr-only' }, ' (새 창)')
 
-export function renderInlines(xs: Inline[]): Child[] {
+/** newTab = 사이트 안 경로도 새 창(발급 팝업처럼 입력 · 상태를 잃으면 안 되는 자리) */
+export function renderInlines(xs: Inline[], opts: { newTab?: boolean } = {}): Child[] {
   return merge(
     xs.flatMap((x): Child[] => {
       if (x.t === 'text') return renderText(x.text)
-      if (x.t === 'b') return [h('strong', renderInlines(x.children))]
+      if (x.t === 'b') return [h('strong', renderInlines(x.children, opts))]
       if (x.t === 'pending')
         return [h('span', { class: 'legal-md__pending' }, displayValue(x.token))]
       // 사이트 안 경로는 같은 탭, 바깥(https)은 새 탭 — 화면 낭독기에는 «(새 창)»
-      return x.href.startsWith('/')
-        ? [h('a', { href: x.href, class: 'legal-md__link' }, renderInlines(x.children))]
+      return x.href.startsWith('/') && !opts.newTab
+        ? [h('a', { href: x.href, class: 'legal-md__link' }, renderInlines(x.children, opts))]
         : [
             h('a', { href: x.href, class: 'legal-md__link', target: '_blank', rel: 'noopener' }, [
-              ...renderInlines(x.children),
+              ...renderInlines(x.children, opts),
               newTabNote(),
             ]),
           ]
@@ -143,5 +144,17 @@ export function renderBusinessLines(lines: readonly string[]): VNode {
     'div',
     { class: 'site-footer__info' },
     lines.map((l) => h('p', { class: 'site-footer__line' }, renderInlines(parseInline(l)))),
+  )
+}
+
+/** 발급 화면 고지 목록(05-A — F-21) — 줄마다 한 항목 · 링크는 모두 새 창 · strongAt = 굵게 둘 줄(설치 전 3,500원 환불 — 약관 12조③ «미리 표시») */
+export function renderNoticeList(lines: readonly string[], strongAt: readonly number[] = []): VNode {
+  return h(
+    'ul',
+    { class: 'issue-notice__list' },
+    lines.map((l, i) => {
+      const inner = renderInlines(parseInline(l), { newTab: true })
+      return h('li', strongAt.includes(i) ? [h('strong', inner)] : inner)
+    }),
   )
 }

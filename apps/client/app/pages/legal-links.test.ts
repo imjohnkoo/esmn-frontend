@@ -75,22 +75,34 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(attr(scroll, 'ref')).toBe('confirmScrollEl')
     expect(dir(scroll, ':style')).toBe('confirmScrollStyle')
     expect(dir(scroll, '@scroll')).toBe('updateConfirmMore')
-    // 스크롤 안 — 고지(05-A 14행 · 약관 12조③ «미리 표시») 가 요약보다 먼저 · 이용약관 보기(새 탭)
+    // 스크롤 안 — 고지(05-A 원문 · 약관 12조③ «미리 표시») 가 요약보다 먼저
     const kids = (scroll.children ?? []).filter((c) => c.type === ELEMENT)
     const policyAt = kids.findIndex((c) => cls(c) === 'select-date-page__confirm-policy')
     const summaryAt = kids.findIndex((c) => cls(c) === 'select-date-page__confirm')
     expect(policyAt).toBe(0)
     expect(summaryAt).toBeGreaterThan(policyAt)
-    // D-32 «팝업 본문(굵게)» — 고지는 <b> 로
-    const bold = find(kids[policyAt]!, (n) => n.tag === 'b')!
-    expect(text(bold)).toBe('<b>{{ ISSUE_NOTICE.refund }}</b>')
-    const terms = find(kids[policyAt]!, (n) => n.tag === 'a' && attr(n, 'href') === '/terms')!
-    expect([attr(terms, 'target'), attr(terms, 'rel')]).toEqual(['_blank', 'noopener'])
-    expect(text(terms)).toContain('이용약관 보기')
+    // F-21 — 05-A 제목 + 안내 5줄(정본 순서) · 설치 전 3,500원 줄(둘째)은 굵게(D-32 «팝업 본문(굵게)»)
+    expect(text(kids[policyAt]!)).toContain('{{ ISSUE_NOTICE.heading }}')
+    expect(text(kids[policyAt]!)).toContain('<component :is="renderNoticeList(NOTICE_LINES, [1])" />')
+    expect(src).toMatch(
+      /const NOTICE_LINES = \[\s*ISSUE_NOTICE\.start,\s*ISSUE_NOTICE\.refund,\s*ISSUE_NOTICE\.period,\s*ISSUE_NOTICE\.device,\s*ISSUE_NOTICE\.trouble,\s*\]/,
+    )
     // 동의 체크(05-A 19행) — 둘: 보통은 스크롤 밖(늘 보임), 공간이 모자라면 스크롤 안 끝(compact). 동시에 그려지지 않는다
     const boxes = findAll(dialog!, (n) => n.tag === 'NCheckbox' && dir(n, 'v-model') === 'isPolicyAgreed')
     expect(boxes).toHaveLength(2)
     for (const b of boxes) expect(dir(b.node, ':label')).toBe('ISSUE_NOTICE.consent')
+    // 05-A 링크 줄 — 동의 체크 바로 아래(안 · 밖 둘 다) · 이용약관 보기 · 취소·환불 정책 보기 · 새 창
+    for (const b of boxes) {
+      const agree = b.ancestors[b.ancestors.length - 1]!
+      const links = findAll(agree, (n) => n.tag === 'a').map((l) => [attr(l.node, 'href'), attr(l.node, 'target'), text(l.node)])
+      expect(links.map(([h]) => h)).toEqual(['/terms', '/refund'])
+      for (const [, target, t] of links) {
+        expect(target).toBe('_blank')
+        expect(t).toContain('(새 창)')
+      }
+      expect(links[0]![2]).toContain('이용약관 보기')
+      expect(links[1]![2]).toContain('취소·환불 정책 보기')
+    }
     const inside = boxes.find((b) => b.ancestors.includes(scroll))!
     const outside = boxes.find((b) => !b.ancestors.includes(scroll))!
     expect(inside.ancestors.some((a) => dir(a, 'v-if') === 'confirmCompact')).toBe(true)
@@ -106,7 +118,7 @@ describe('발급기 법정 링크(F-20)', () => {
     // compact 안 체크는 스크롤 영역의 마지막(고지 · 요약 뒤)
     expect(kids[kids.length - 1]).toBe(inside.ancestors[inside.ancestors.length - 1])
     // 체크 전에는 발급하기 비활성 · 눌러도 막힘 · 다시 열면 체크를 지운다(D-35 — 약관 동의 자리)
-    const issue = find(dialog!, (n) => n.tag === 'NButton' && text(n).includes('발급하기'))!
+    const issue = find(dialog!, (n) => n.tag === 'NButton' && text(n).includes('eSIM 발급하기'))!
     expect(dir(issue, ':disabled')).toBe('isSubmitting || !isPolicyAgreed')
     expect(src).toMatch(/if \(isSubmitting\.value \|\| !isPolicyAgreed\.value\) return/)
     expect(src).toMatch(/isPolicyAgreed\.value = false\n\s*isConfirmOrderVisible\.value = true/)

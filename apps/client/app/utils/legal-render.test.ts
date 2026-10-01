@@ -8,7 +8,7 @@ import { REFUND_DOC } from '../content/legal/refund'
 import { TERMS_DOC } from '../content/legal/terms'
 import { P9_4_PENDING } from '../content/pending'
 import { parseLegalMarkdown } from './legal-markdown'
-import { renderBlocks, renderBusinessLines, renderDoc } from './legal-render'
+import { renderBlocks, renderBusinessLines, renderDoc, renderNoticeList } from './legal-render'
 
 /** client-shell spec F-12 · F-20 · D-36 — 블록 · 실문서를 실제 HTML 로 그려 본다(서버 렌더 — 브라우저 없이) */
 const ssr = (node: () => VNode | VNode[]) =>
@@ -191,5 +191,17 @@ describe('renderBusinessLines — 푸터 사업자정보 줄(F-7)', () => {
     )
     expect(copyright).toBe('© 2026 노마컴. All rights reserved.')
     expect(html).not.toContain(P9_4_PENDING)
+  })
+})
+
+describe('renderNoticeList — 발급 화면 고지 목록(05-A · F-21)', () => {
+  it('줄마다 한 항목 · 지정한 줄만 굵게 · 사이트 안 링크도 새 창(팝업 상태를 잃지 않게) · 낭독기 «(새 창)»', async () => {
+    const html = await ssr(() =>
+      renderNoticeList(['첫 줄', '둘째 3,500원', '기기 확인 [지원 기기 확인](/supported-devices)'], [1]),
+    )
+    expect(html).toMatch(/^<div><ul class="issue-notice__list"><li>첫 줄<\/li><li><strong>둘째 3,500원<\/strong><\/li>/)
+    expect(html).toContain(
+      '<a href="/supported-devices" class="legal-md__link" target="_blank" rel="noopener">지원 기기 확인<span class="legal-md__sr sr-only"> (새 창)</span></a>',
+    )
   })
 })
