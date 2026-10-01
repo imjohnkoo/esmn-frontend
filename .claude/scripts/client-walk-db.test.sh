@@ -33,6 +33,7 @@ PSQL="exec -i nomacom-walk-pg env -i PATH=/usr/local/bin:/usr/bin:/bin psql -X -
 case "$*" in
   "inspect -f {{.Config.Image}} nomacom-walk-pg") cat "$F/image"; exit 0 ;;
   "inspect -f {{json .HostConfig.PortBindings}} nomacom-walk-pg") cat "$F/bindings"; exit 0 ;;
+  "inspect -f {{.HostConfig.NetworkMode}} nomacom-walk-pg") cat "$F/netmode"; exit 0 ;;
   "inspect nomacom-walk-pg") [ -f "$F/exists" ]; exit $? ;;
   "port nomacom-walk-pg 5432/tcp") cat "$F/port"; exit 0 ;;
   *"-At -c SELECT table_name FROM information_schema.tables"*) cat "$F/tables"; exit 0 ;;
@@ -74,6 +75,7 @@ reset_state() {
   echo "postgres:15.12-alpine" >"$FAKE/image"
   echo "127.0.0.1:55432" >"$FAKE/port"
   echo '{"5432/tcp":[{"HostIp":"127.0.0.1","HostPort":"55432"}]}' >"$FAKE/bindings"
+  echo bridge >"$FAKE/netmode"
   : >"$FAKE/tables"
   printf '%s\n' "$GOOD_SQL" >"$FAKE/export.sql"
   touch "$FAKE/exists"
@@ -90,7 +92,7 @@ $2
 $(calls)"
 }
 P='docker exec -i nomacom-walk-pg env -i PATH=/usr/local/bin:/usr/bin:/bin psql -X -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk'
-READY='docker exec nomacom-walk-pg env -i PATH=/usr/local/bin:/usr/bin:/bin pg_isready -h /var/run/postgresql -U walk -d walk'
+READY='docker exec nomacom-walk-pg env -i PATH=/usr/local/bin:/usr/bin:/bin pg_isready -h 127.0.0.1 -p 5432 -U walk -d walk'
 TABLES="$P -At -c SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY 1"
 EXPORT='node export cwd=client DATABASE_URL= SPARK='
 
@@ -135,6 +137,7 @@ reset_state
 [[ "$(run up)" == 0 ]] && ok || ng "up(있음) — exit 0"
 expect_calls "up(있음)" "docker inspect nomacom-walk-pg
 docker inspect -f {{.Config.Image}} nomacom-walk-pg
+docker inspect -f {{.HostConfig.NetworkMode}} nomacom-walk-pg
 docker inspect -f {{json .HostConfig.PortBindings}} nomacom-walk-pg
 docker start nomacom-walk-pg
 docker port nomacom-walk-pg 5432/tcp
@@ -149,6 +152,12 @@ for b in '{"5432/tcp":[{"HostIp":"","HostPort":"55432"}]}' '{"5432/tcp":[{"HostI
   echo "$b" >"$FAKE/bindings"
   [[ "$(run up)" == 2 ]] && ok || ng "up(설정 $b) — exit 2"
   grep -q '^docker start' <<<"$(calls)" && ng "up(설정 $b) — start 하면 안 됨" || ok
+done
+for nm in host container:other none; do
+  reset_state
+  echo "$nm" >"$FAKE/netmode"
+  [[ "$(run up)" == 2 ]] && ok || ng "up(네트워크 $nm) — exit 2"
+  grep -q '^docker start' <<<"$(calls)" && ng "up(네트워크 $nm) — start 하면 안 됨" || ok
 done
 for port in "0.0.0.0:55432" "127.0.0.1:55433" "127.0.0.1:55432
 [::]:55432"; do
@@ -181,7 +190,7 @@ order'; do
   [[ "$(run schema)" == 2 ]] && ok || ng "schema(표 집합 다름 «$have») — exit 2"
   grep -q -- '-q -c' <<<"$(calls)" && ng "schema(표 집합 다름) — 넣으면 안 됨" || ok
 done
-for bad in 'CREATE EXTENSION dblink;' 'CREATE SERVER s FOREIGN DATA WRAPPER postgres_fdw;' 'CREATE SUBSCRIPTION s CONNECTION '"'"'host=host.docker.internal port=55432'"'"' PUBLICATION p;' 'CREATE TABLE "x" AS SELECT 1;' 'CREATE FUNCTION f() RETURNS int AS $$ SELECT 1 $$ LANGUAGE sql;' 'DROP TABLE "order";' '  DROP TABLE "order";' 'ALTER TABLE "esim" DROP COLUMN "a";' 'TRUNCATE "order";' 'UPDATE "order" SET "x" = 1;' $'-- note;CREATE TABLE "y" ("a" int)\nDROP TABLE "order";' $'\\! nc -z gateway.docker.internal 55432' $'  \\connect host=192.168.65.254'; do
+for bad in 'DO $$ BEGIN PERFORM 1; END $$;' 'COPY "order" TO PROGRAM '"'"'nc host.docker.internal 55432'"'"';' 'CREATE EXTENSION IF NOT EXISTS dblink;' 'CREATE EXTENSION dblink;' 'CREATE SERVER s FOREIGN DATA WRAPPER postgres_fdw;' 'CREATE SUBSCRIPTION s CONNECTION '"'"'host=host.docker.internal port=55432'"'"' PUBLICATION p;' 'CREATE TABLE "x" AS SELECT 1;' 'CREATE FUNCTION f() RETURNS int AS $$ SELECT 1 $$ LANGUAGE sql;' 'DROP TABLE "order";' '  DROP TABLE "order";' 'ALTER TABLE "esim" DROP COLUMN "a";' 'TRUNCATE "order";' 'UPDATE "order" SET "x" = 1;' $'-- note;CREATE TABLE "y" ("a" int)\nDROP TABLE "order";' $'\\! nc -z gateway.docker.internal 55432' $'  \\connect host=192.168.65.254'; do
   reset_state
   printf '%s\n%s\n' "$GOOD_SQL" "$bad" >"$FAKE/export.sql"
   [[ "$(run schema)" == 2 ]] && ok || ng "schema(«$bad») — exit 2"
@@ -193,6 +202,10 @@ reset_state
 printf '%s\n' 'CREATE TABLE "z" (' '\\! nc -z gateway.docker.internal 55432' '"a" int);' >"$FAKE/export.sql"
 [[ "$(run schema)" == 2 ]] && ok || ng "schema(허용 문장 안 메타 명령) — exit 2"
 grep -q -- '-q -c' <<<"$(calls)" && ng "schema(허용 문장 안 메타 명령) — 넣으면 안 됨" || ok
+# drizzle 실제 모양(스키마 이름 붙은 enum · sequence · index)은 통과해야 한다(정상 동작이 막히면 결함)
+reset_state
+printf '%s\n' 'CREATE TYPE "public"."order_status" AS ENUM('"'"'a'"'"', '"'"'b'"'"');' 'CREATE SEQUENCE "public"."s" INCREMENT BY 1;' "$GOOD_SQL" 'CREATE UNIQUE INDEX "u" ON "esim" USING btree ("esim_id");' 'CREATE INDEX "i" ON "public"."esim" USING btree ("esim_id");' >"$FAKE/export.sql"
+[[ "$(run schema)" == 0 ]] && ok || ng "schema(drizzle 모양 enum · sequence · index) — exit 0"
 reset_state
 touch "$FAKE/export_fail"
 [[ "$(run schema)" == 2 ]] && ok || ng "schema(export 실패) — exit 2"
@@ -212,7 +225,7 @@ $P"
 grep -q "ON CONFLICT" "$FAKE/seed.sql" 2>/dev/null && ok || ng "seed — SQL 이 컨테이너 psql 의 표준 입력으로"
 grep -qE '^[[:space:]]*\\' "$FAKE/seed.sql" && ng "seed — psql 메타 명령 줄 금지" || ok
 # 전화번호 꼴(하이픈 · 공백 · +82 무관)은 전부 010-0000-xxxx 대역 — 숫자만 남겨 01X 로 시작하는 10~11자리를 모은다
-phones="$(grep -oE "(\+82[ -]?|0)1[016789][ -]?[0-9]{3,4}[ -]?[0-9]{4}" "$FAKE/seed.sql" | tr -d ' +-' | sed -E 's/^82/0/' | sort -u)"
+phones="$(grep -oE "(\+82[ .-]?|0)1[016789][ .-]?[0-9]{3,4}[ .-]?[0-9]{4}" "$FAKE/seed.sql" | tr -d ' +.-' | sed -E 's/^82/0/' | sort -u)"
 [[ -n "$phones" ]] && ! grep -qvE '^0100000[0-9]{4}$' <<<"$phones" && ok || ng "seed — 전화는 010-0000-xxxx 대역만: $phones"
 reset_state
 echo "0.0.0.0:55432" >"$FAKE/port"

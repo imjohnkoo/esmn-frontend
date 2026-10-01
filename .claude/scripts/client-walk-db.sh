@@ -6,7 +6,8 @@
 #    ssh · SSM 터널(prod RDS)이 떠 있어도 이 스크립트는 그쪽에 연결하지 않는다(2026-10-02 — 그런 터널이 떠 있던 적이 있다).
 #    호스트 포트로 붙는 것은 봉투 dev 서버뿐이고, 그쪽은 client-walk-server.sh 가 55432 리스너를 따로 판정한다.
 #  - schema = drizzle-kit export(스키마 파일 → SQL · DB 연결 없음 · env -i) → 허용 문장(CREATE TABLE · INDEX · TYPE · SEQUENCE ·
-#    ALTER TABLE … ADD CONSTRAINT)만인지 확인 → 표가 하나도 없을 때만 컨테이너 안 psql 로. 표가 있으면 건너뛴다(덮어쓰지 않는다)
+#    ALTER TABLE … ADD CONSTRAINT — 이름은 "x" 또는 "public"."x")만인지 확인 → 표가 없으면 컨테이너 안 psql 로(한 트랜잭션).
+#    표가 있으면 같은 표 이름 집합일 때만 건너뛰고, 다르면 거부한다(덮어쓰지 · 지우지 않는다)
 #  - 컨테이너 nomacom-walk-pg 의 5432 는 127.0.0.1:55432 하나에만 묶인다 — 다르면(모든 인터페이스 · 다른 포트) 거부
 #  - docker 는 이 기계의 데몬만 — DOCKER_HOST · 현재 컨텍스트가 unix 소켓이 아니면(원격 데몬) 거부
 #  - 가짜 주문만: 이름 «테스트고객» · 전화 010-0000-xxxx(할당되지 않는 대역) · activationCode 는 LPA 모양의 가짜 값
@@ -37,7 +38,8 @@ psql_in() {
   docker exec -i "$NAME" env -i PATH=/usr/local/bin:/usr/bin:/bin \
     psql -X -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk "$@"
 }
-isready_in() { docker exec "$NAME" env -i PATH=/usr/local/bin:/usr/bin:/bin pg_isready -h /var/run/postgresql -U walk -d walk; }
+# 준비 판정 — 컨테이너 env 를 버리고 컨테이너 안 루프백 TCP 로(첫 기동의 임시 init 서버는 TCP 를 열지 않는다 — listen_addresses='')
+isready_in() { docker exec "$NAME" env -i PATH=/usr/local/bin:/usr/bin:/bin pg_isready -h 127.0.0.1 -p 5432 -U walk -d walk; }
 NODE="$(command -v node || true)"
 
 # docker 대상 = 이 기계의 데몬(unix 소켓)만 — 원격 데몬이면 컨테이너 · 가짜 행이 남의 기계에 생긴다
@@ -66,7 +68,9 @@ case "${1:-}" in
   up)
     if docker inspect "$NAME" >/dev/null 2>&1; then
       [[ "$(docker inspect -f '{{.Config.Image}}' "$NAME")" == "$IMAGE" ]] || refuse "$NAME 이 다른 이미지다"
-      # start 전에 묶임 설정부터 — 0.0.0.0 으로 만든 옛 컨테이너를 띄우는 순간 DB 가 LAN 에 열린다
+      # start 전에 네트워크 · 묶임 설정부터 — 0.0.0.0 · host 네트워크로 만든 옛 컨테이너를 띄우는 순간 DB 가 LAN 에 열린다
+      [[ "$(docker inspect -f '{{.HostConfig.NetworkMode}}' "$NAME")" =~ ^(default|bridge)$ ]] ||
+        refuse "$NAME 의 네트워크가 기본(bridge)이 아니다 — 띄우지 않는다(컨테이너를 사람이 확인)"
       [[ "$(docker inspect -f '{{json .HostConfig.PortBindings}}' "$NAME")" == "{\"5432/tcp\":[{\"HostIp\":\"${BIND%:*}\",\"HostPort\":\"${BIND##*:}\"}]}" ]] ||
         refuse "$NAME 의 포트 설정이 $BIND 하나가 아니다 — 띄우지 않는다(컨테이너를 사람이 확인)"
       docker start "$NAME" >/dev/null
@@ -75,10 +79,7 @@ case "${1:-}" in
         -e POSTGRES_USER=walk -e POSTGRES_PASSWORD=walk -e POSTGRES_DB=walk "$IMAGE" >/dev/null
     fi
     check_bind
-    # 준비 판정 — 컨테이너 env 를 버리고 소켓으로. 첫 기동의 임시 init 서버(소켓만 · 곧 내려감)를 지나 본 서버가 TCP 를 열 때까지
-    # 기다리려고 한 번 더 확인한다(init 서버는 listen_addresses='' — 로그의 «ready to accept connections» 가 두 번 나온다)
     for _ in $(seq 1 30); do isready_in >/dev/null 2>&1 && break; sleep 1; done
-    sleep 2
     isready_in >/dev/null || refuse "postgres 가 준비되지 않았다"
     echo "✔ $NAME 준비 — $DB_URL"
     ;;
@@ -93,10 +94,11 @@ case "${1:-}" in
     sql="$(sed -E 's/--.*$//' <<<"$sql")"
     [[ "$sql" == *'CREATE TABLE'* ]] || refuse "스키마 SQL 에 CREATE TABLE 이 없다"
     ! grep -qE '^[[:space:]]*\\' <<<"$sql" || refuse "스키마 SQL 에 psql 메타 명령(\\ 줄)이 있다"
-    # 문장(; 로 나눔)마다 허용 머리로 시작해야 한다 — 들여쓴 DROP · 쪼개진 조각도 거부
+    # 문장(; 로 나눔)마다 허용 머리로 시작해야 한다 — 들여쓴 DROP · 쪼개진 조각도 거부. ⚠️ 보장은 «문장 머리» 까지(머리 뒤 내용은 보지 않는다) —
+    # 그래도 확장 · 외부 연결 문장(EXTENSION · SERVER · SUBSCRIPTION · COPY · DO · FUNCTION)은 머리에서 막히고, 표가 0 일 때 컨테이너 안에서만 돈다
     bad="$(awk 'BEGIN { RS = ";" } {
       gsub(/^[ \t\n]+|[ \t\n]+$/, "")
-      if ($0 != "" && $0 !~ /^(CREATE TABLE "[^"]+" \(|CREATE (UNIQUE )?INDEX "[^"]+" ON "[^"]+" |CREATE TYPE "[^"]+" AS ENUM\(|CREATE SEQUENCE "[^"]+"|ALTER TABLE "[^"]+" ADD CONSTRAINT "[^"]+" )/) print substr($0, 1, 60)
+      if ($0 != "" && $0 !~ /^(CREATE TABLE "[^"]+"(\."[^"]+")? \(|CREATE (UNIQUE )?INDEX "[^"]+" ON "[^"]+"(\."[^"]+")? |CREATE TYPE "[^"]+"(\."[^"]+")? AS ENUM\(|CREATE SEQUENCE "[^"]+"(\."[^"]+")?|ALTER TABLE "[^"]+"(\."[^"]+")? ADD CONSTRAINT "[^"]+" )/) print substr($0, 1, 60)
     }' <<<"$sql")"
     [[ -z "$bad" ]] || refuse "스키마 SQL 에 허용하지 않는 문장이 있다: $(head -1 <<<"$bad")"
     want="$(grep -oE '^CREATE TABLE "[^"]+"' <<<"$sql" | sed -E 's/^CREATE TABLE "([^"]+)"$/\1/' | sort)"
