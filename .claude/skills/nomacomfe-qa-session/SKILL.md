@@ -107,7 +107,8 @@ f) 보고 끝에 git status --porcelain 을 다시 찍어 a) 와 같은지 적�
   nuxt / npx nuxt <무엇이든> · typecheck-gate.sh · typecheck-gate.test.sh. 테스트 실행은 yarn workspace nomacom-client
   test(vitest 만 — 빌드 없음)와 절의 레시피만.
   .claude/scripts/client-walk-server.test.sh 는 리포 루트에 임시 .env 심링크를 만드므로 복사본에서만. git 쓰기 · gh 쓰기(PR ·
-  설정) 금지.
+  설정) 금지 — .git 에 object 를 남기는 «읽기» 도 쓰기다(git merge-tree --write-tree · git hash-object -w 등).
+  머지 커밋의 충돌 해소분은 git show --remerge-diff <sha>(임시 object 만 쓴다).
 출력: findings 를 blocker(머지 불가) / major(수정 필요) / minor(선택) 로 분류하고,
 각 항목에 파일:라인 + 구체 반증 시나리오(어떤 입력·상태에서 어떻게 틀리는가).
 findings 없으면 "0건" + 실제로 검토한 범위를 보고. 수정은 금지 — 보고만. + a)·f) 의 porcelain 두 값.
@@ -187,7 +188,8 @@ g) Orca 브라우저 명령은 전부 --page <browserPageId> 로 고정한다 �
   nuxt / npx nuxt <무엇이든> · typecheck-gate.sh · typecheck-gate.test.sh. 테스트 실행은 yarn workspace nomacom-client
   test(vitest 만 — 빌드 없음)와 절의 레시피만.
   .claude/scripts/client-walk-server.test.sh 는 리포 루트에 임시 .env 심링크를 만드므로 복사본에서만. git 쓰기 · gh 쓰기(PR ·
-  설정) 금지.
+  설정) 금지 — .git 에 object 를 남기는 «읽기» 도 쓰기다(git merge-tree --write-tree · git hash-object -w 등).
+  머지 커밋의 충돌 해소분은 git show --remerge-diff <sha>(임시 object 만 쓴다).
 출력: DoD 체크리스트 항목별 pass/fail + 발견 이슈(blocker/major/minor) +
 걸은 시나리오 중 회귀 스위트 편입 가치가 있는 것 + 스크린샷 경로(전용 폴더 절대경로) + a)·f) 의 porcelain 두 값.
 ```
