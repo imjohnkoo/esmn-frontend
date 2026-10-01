@@ -86,12 +86,12 @@ export function docSource(source: string, rules: Pick<DocRules, 'section' | 'tit
 
 type FenceMark = 'open' | 'in' | 'close' | null
 
-/** 코드 펜스(CommonMark 부분집합) — 여는 줄 = 들여쓰기 3칸 이하 + ``` 또는 ~~~ 3개 이상(백틱 펜스면 뒤 정보 글자에 백틱 없음),
+/** 코드 펜스 — 여는 줄 = 들여쓰기 · 인용 «>» 뒤라도(목록 · 인용 안 펜스도 블록으로 센다 — 세지 않으면 조용히 버려진다) ``` 또는 ~~~ 3개 이상(백틱 펜스면 뒤 정보 글자에 백틱 없음),
  *  닫는 줄 = 같은 글자 · 같거나 긴 길이 · 뒤에 공백만. «```코드``` 설명» 은 펜스가 아니고, ~~~ 안의 ``` 는 닫지 않는다 */
 function fenceMarks(lines: readonly string[]): FenceMark[] {
   let open: string | null = null
   return lines.map((l) => {
-    const m = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(l)
+    const m = /^[\s>]*(`{3,}|~{3,})(.*)$/.exec(l)
     if (open) {
       if (m && m[1]![0] === open[0] && m[1]!.length >= open.length && !m[2]!.trim()) {
         open = null
@@ -215,14 +215,14 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
 export const PENDING_MARK = '\u0000PENDING\u0000'
 const slotMark = (i: number) => `\u0000SLOT${i}\u0000`
 
-/** eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 날짜 경계 기준 서술 금지: 자정(«당일자정» 처럼 붙여 써도) ·
- *  0시 · 00시 · 24시(를 · 에 · 부터 · 까지 · 기준 · 정각) · 00:00 · 24:00(괄호 시간대 허용) · 오전/밤/새벽 12시.
+/** eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 날짜 경계 낱말 자체를 금지: 자정(«당일자정» 처럼 붙여 써도) ·
+ *  0시 · 00시 · 24시(«24시간» 은 제외) · 00:00 · 24:00 · 오전/밤/새벽 12시. 법정 문서에 정상으로 쓰일 일이 없어 시끄럽게 멈추는 쪽.
  *  «사업자정보 · 판매자정보 · 이용자정보» 처럼 «…자 + 정보» 의 글자만 제외(«자정보다» 는 잡는다) */
 export const MIDNIGHT = new RegExp(
   [
     '자정(?!보(?!다))',
-    '(?<!\\d)(?:0|00|24)\\s*시(?:\\s*\\([^)]{0,12}\\))?\\s*(?:를|을|에|부터|까지|기준|정각|이후|초기화)',
-    '(?<!\\d)(?:00|24):00(?:\\s*\\([^)]{0,12}\\))?\\s*(?:에|을|를|기준|부터|까지|이후|초기화)',
+    '(?<!\\d)(?:0|00|24)\\s*시(?!\\s*간)',
+    '(?<![\\d:])(?:00|24):00(?!\\d)',
     '(?:오전|밤|새벽)\\s*12\\s*시',
   ].join('|'),
 )
@@ -360,6 +360,11 @@ export function toPosting(source: string, rules: TagRules): Posting {
       continue
     }
     if (skip) continue
+    // «결정 기록 · 로그» 가 든 제목인데 위 판정(걷는 절)이 아니면 멈춘다 — 걷을지(내부 메모) 남길지(본문 장) 사람이 정한다
+    if (headText && /결정\s*(?:기록|로그)/.test(headText))
+      throw new Error(
+        `«결정 기록» 이 든 제목을 걷을지 남길지 정하지 못했다(DECISION 규칙에 넣거나 정본 제목을 고친다): ${headText.slice(0, 40)}`,
+      )
     // 인용 블록 — `>` 줄(들여쓴 것 포함 — 목록 항 아래 메모)과 빈 줄(또는 새 블록) 전까지 이어지는 줄(lazy continuation)까지
     if (/^\s*>/.test(line)) {
       inQuote = true

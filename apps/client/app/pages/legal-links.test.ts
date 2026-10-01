@@ -156,7 +156,7 @@ describe('발급기 법정 링크(F-20)', () => {
     // 항목 · 체크 값 손대기(미리 체크 · 필수 해제 · 캐스트 · 저장소 복원)는 아래 이름 수가 늘거나 금지어로 막힌다
     const script = src
       .slice(src.indexOf('<script setup'), src.indexOf('</script>'))
-      .replace(/\/\/[^\n]*/g, '')
+      .replace(/^[ \t]*\/\/[^\n]*$/gm, '') // 줄 전체 주석만 — 문자열 안의 «//» 뒤를 지우면 그 뒤 코드가 검사를 비껴간다
     const count = (s: string, name: string) => (s.match(new RegExp(`\\b${name}\\b`, 'g')) ?? []).length
     expect(script).toMatch(/\nconst \{ items: consentItems, agreed, canPay \} = useCheckoutConsent\(\)\n/)
     expect([count(script, 'useCheckoutConsent'), count(script, 'agreed'), count(script, 'consentItems'), count(script, 'canPay')]).toEqual([2, 1, 1, 2])
@@ -164,9 +164,24 @@ describe('발급기 법정 링크(F-20)', () => {
     for (const m of script.matchAll(/import \{([^}]*)\} from '~\/utils\/checkout-preview'/g)) expect(m[1]).not.toMatch(/\bas\b/)
     const tplText = template(src)
     expect([count(tplText, 'agreed'), count(tplText, 'consentItems'), count(tplText, 'canPay')]).toEqual([1, 1, 1])
-    // 동의 영역을 CSS 로 숨기지 않는다(05-B 글자 · 체크가 화면에서 사라진다)
+    // 동의 영역을 숨기지 않는다(05-B 글자 · 체크가 화면에서 사라진다) — ① 템플릿: 동의 영역 아래 모든 요소에 hidden · style · :style ·
+    // :class 속성과 숨김 클래스 금지(sr-only 는 링크 안 «(새 창)» 낭독 안내만) ② 스코프 CSS: 페이지 전체에 숨김 속성 금지 + 동의 영역
+    // 규칙에 투명 글자 · 화면 밖 배치 · 0 크기 금지. 전역 CSS 등 정적 검사 밖의 숨김은 spec D-38(사람 판정)
+    for (const { node } of findAll(agree, () => true)) {
+      const names = (node.props ?? []).map((p) => p.rawName ?? p.name)
+      expect(names.filter((n) => /^(?:hidden|style|:style|v-bind:style|:class|v-bind:class|:hidden|v-bind)$/.test(n)), text(node).slice(0, 40)).toEqual([])
+      const classes = cls(node).split(/\s+/)
+      expect(classes.filter((c) => /^(?:hidden|invisible|collapse|opacity-0|h-0|w-0|text-transparent)$/.test(c)), text(node).slice(0, 40)).toEqual([])
+      if (classes.includes('sr-only')) expect(text(node)).toBe('<span class="sr-only"> (새 창)</span>')
+    }
     const style = src.slice(src.indexOf('<style'))
     expect(style).not.toMatch(/display:\s*none|visibility:\s*hidden|opacity:\s*0(?![.\d])|font-size:\s*0(?![.\d])|(?:max-)?height:\s*0(?![.\d])|clip(?:-path)?:|text-indent:\s*-/)
+    for (const rule of style.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (!/checkout__(?:agree|consent|notice|link)/.test(rule[1]!)) continue
+      expect(rule[2], rule[1]!.trim()).not.toMatch(
+        /color:\s*transparent|position:\s*(?:absolute|fixed)|(?:^|[;\s])(?:left|right|top|bottom|margin(?:-\w+)?|text-indent):\s*-\d{3,}|transform:[^;]*(?:scale\(\s*0|-\d{3,})|(?:max-)?width:\s*0(?![.\d])|line-height:\s*0(?![.\d])/,
+      )
+    }
     // 체크박스에는 v-model · :label 만 — :disabled · v-if · v-show 등이 붙으면 필수 체크를 못 하거나 숨는다
     expect(boxes[0]!.node.props!.map((p) => p.rawName ?? p.name)).toEqual(['v-model', ':label'])
     // 동의 영역 안의 조건부 표시는 «알릴 사항이 있는 항목만» 하나 — 05-B 글자를 숨기는 v-if · v-show · <template v-if> 금지
