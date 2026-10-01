@@ -4,8 +4,10 @@
  * `app/content/legal/<이름>.ts` 를 만든다. 정본은 읽기만 한다. 변환 규칙은 scripts/legal-posting.ts(테스트가 같이 쓴다).
  *
  *   yarn workspace nomacom-client legal:import --from <legal-pages 의 사업운영/2026-09-23_client-법정페이지-초안>
- *   (기본: 문서 terms · privacy + 조각 business · issue-notice — `--docs terms,business` 로 고른다)
- *   ⚠️ 약관 8조② 의 «자정» 예시가 정본에 있는 동안(spec D-33)은 terms 가 공개 금지어로 실패한다 — 나머지만 `--docs privacy,business,issue-notice`
+ *   (기본: 규칙의 전부 — 문서 terms · privacy · refund · business-page + 조각 business · issue-notice · checkout-notice.
+ *    `--docs terms,business` 로 고른다)
+ *   ⚠️ 약관 8조② 의 «자정» 예시가 정본에 있는 동안(spec D-33)은 terms 가 공개 금지어로 실패한다 — 나머지만
+ *   `--docs privacy,refund,business-page,business,issue-notice,checkout-notice`
  *
  * 모두 먼저 변환 · 검사하고, 전부 통과했을 때만 쓴다(일부만 새 판이 되지 않게). 모르는 태그 · 공개 금지어 · 지원하지 않는 문법 ·
  * 정본이 바뀌어 메모/값 자리를 못 찾으면 멈춘다(exit 1) — legal-posting.ts 의 규칙을 사람이 고친 뒤 다시 돌린다.
@@ -37,12 +39,12 @@ function args(rules) {
     const i = a.indexOf(k)
     return i >= 0 ? a[i + 1] : undefined
   }
+  const all = [...Object.keys(rules.DOC_RULES), ...Object.keys(rules.BLOCK_RULES)]
   const from = get('--from')
   if (!from) {
-    console.error('사용: legal-import.mjs --from <legal-pages 초안 폴더> [--docs terms,privacy,business,issue-notice]')
+    console.error(`사용: legal-import.mjs --from <legal-pages 초안 폴더> [--docs ${all.join(',')}]`)
     process.exit(2)
   }
-  const all = [...Object.keys(rules.DOC_RULES), ...Object.keys(rules.BLOCK_RULES)]
   const docs = (get('--docs') ?? all.join(',')).split(',').map((s) => s.trim())
   for (const d of docs) if (!all.includes(d)) throw new Error(`모르는 문서: ${d}`)
   // yarn workspace 는 cwd 를 apps/client 로 바꾼다 — 상대 경로는 명령을 친 곳(INIT_CWD) 기준

@@ -6,6 +6,7 @@ import {
   DOC_RULES,
   PENDING_MARK,
   blockModuleSource,
+  docSource,
   forbiddenIn,
   moduleSource,
   sha256,
@@ -78,6 +79,8 @@ describe('toPosting — 걷어 낼 것', () => {
       '## 제2장\n본문\n',
     ],
     ['괄호 머리', '## (내부) 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['부록 머리', '## 부록 — 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['부록 콜론 · 붙여 씀', '## 부록: 결정기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
     ['본문 장 이름에 낱말이 있을 뿐이면 남긴다', '## 제5장 결정 기록의 보관\n본문', '## 제5장 결정 기록의 보관\n본문\n'],
   ])('«결정 기록» 절 — %s', (_, body, out) => {
     expect(toPosting(`# 문서\n${body}`, none).body).toBe(out)
@@ -141,6 +144,23 @@ describe('toPosting — 걷어 낼 것', () => {
     expect(
       toPosting('# 문서\n[사업자정보확인](https://www.ftc.go.kr/x) · [약관](/terms)', none).body,
     ).toBe('[사업자정보확인](https://www.ftc.go.kr/x) · [약관](/terms)\n')
+  })
+})
+
+describe('docSource — 절 하나만 떼어 «# 제목» 을 붙인다(04 2절 → /business)', () => {
+  const src = '# 문서\r\n## 1. 첫\n하나\n## 2. 둘\n본문\n```\n## 코드 안\n```\n끝\n## 2.5 다음\n남\n## 3. 셋\n'
+  it('그 절의 줄만 · 제목은 규칙의 것 · 코드 블록 안 «## » 는 끝이 아니다 · «## 2.5» 는 다른 절(거기서 끝난다)', () => {
+    expect(docSource(src, { section: '## 2.', title: '둘째' })).toBe('# 둘째\n본문\n```\n## 코드 안\n```\n끝')
+    expect(docSource(src, { section: '## 2.5', title: '다음' })).toBe('# 다음\n남')
+    expect(docSource(src, { section: '## 3.', title: '셋째' })).toBe('# 셋째\n')
+  })
+  it('section 이 없으면 원문 그대로', () => {
+    expect(docSource(src, {})).toBe(src)
+  })
+  it('절이 없거나 머리가 둘이거나 제목이 없으면 멈춘다', () => {
+    expect(() => docSource(src, { section: '## 9.', title: 'x' })).toThrow(/절 머리가 0개/)
+    expect(() => docSource('## 2. 가\n## 2. 나\n', { section: '## 2.', title: 'x' })).toThrow(/절 머리가 2개/)
+    expect(() => docSource(src, { section: '## 2.' })).toThrow(/제목/)
   })
 })
 
@@ -333,7 +353,12 @@ describe('forbiddenIn — 공개 금지어(공급사 명칭 영문 · 한글 · 
     '익일자정까지',
     '한국시간자정 기준',
     '0시 기준',
+    '00시 기준',
+    '24시 기준',
+    '0시부터',
     '00:00 기준',
+    '24:00 기준',
+    '00:00까지',
     '[결제 테스트](/checkout-preview)',
     'esimmany.com/checkout-preview',
     '/api/v1/activate',
@@ -354,6 +379,9 @@ describe('forbiddenIn — 공개 금지어(공급사 명칭 영문 · 한글 · 
     '070-8064-5232',
     '[약관](/terms) · [고객센터](/support)',
     '사업자정보확인',
+    '판매자정보',
+    '24시간 이상 연속 장애',
+    '10:00 기준',
     'tools.google.com/dlpage/gaoptout',
     '5G 망',
     '보존합니다',

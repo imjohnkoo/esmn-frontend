@@ -28,11 +28,15 @@ describe('고객센터 값 = 정본(04) — 손으로 적은 값이 정본 밖�
     ['전화', SUPPORT_PHONE],
     ['이메일', SUPPORT_EMAIL],
     ['운영 시간', SUPPORT_HOURS],
-  ])('%s — 04 1절 푸터 줄에 그대로', (_, value) => {
-    expect(footer).toContain(value)
+  ])('%s — 04 1절 푸터 줄에 그대로(값 전체 — 잘리거나 빈 값이면 실패)', (_, value) => {
+    expect(value.trim().length).toBeGreaterThan(5)
+    expect(footer).toMatch(new RegExp(`(?:^|[\\s:(])${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:$|[\\s)|])`, 'm'))
   })
-  it('카카오톡 채널명 — 04 2절 고객센터 행에 그대로 · 채널 URL 은 확정 전(D-29③)', () => {
-    expect(BUSINESS_DOC.markdown).toContain(`카카오톡 채널 ${SUPPORT_KAKAO}`)
+  it('카카오톡 채널명 · 네이버 톡톡(스마트스토어) — 04 2절 고객센터 행에 그대로 · 채널 URL 은 확정 전(D-29③)', () => {
+    expect(SUPPORT_KAKAO).toMatch(/^@\S{2,}$/)
+    expect(BUSINESS_DOC.markdown).toMatch(new RegExp(`카카오톡 채널 ${SUPPORT_KAKAO} ·`))
+    expect(BUSINESS_DOC.markdown).toContain('네이버 톡톡(스마트스토어)')
+    expect(SMARTSTORE_URL).toBe('https://smartstore.naver.com/esimmany')
     expect(SUPPORT_CHANNELS.find((c) => c.key === 'kakao')?.href).toBe(P9_4_PENDING)
   })
 })
@@ -68,12 +72,12 @@ describe('supportRows', () => {
     expect(email?.href).toBe('mailto:help@example.com')
   })
 
-  it('채널 5종 · 순서', () => {
+  it('채널 5종 · 순서 = 04 3절 권장 배치(카카오톡 → 전화 → 이메일 → 네이버 톡톡) + 운영 시간', () => {
     expect(SUPPORT_CHANNELS.map((channel) => channel.key)).toEqual([
       'kakao',
-      'naver',
       'phone',
       'email',
+      'naver',
       'hours',
     ])
   })

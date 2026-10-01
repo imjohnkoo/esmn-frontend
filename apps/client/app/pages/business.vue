@@ -4,10 +4,11 @@
 import LegalMarkdown from '~/components/legal/LegalMarkdown.vue'
 import { BUSINESS_INFO } from '~/content/legal/business'
 import { BUSINESS_DOC } from '~/content/legal/business-page'
+import { ftcCheckUrl } from '~/utils/legal-render'
 
 useHead({ title: BUSINESS_DOC.title })
 
-const ftcUrl = /\((https:\/\/www\.ftc\.go\.kr\/[^)\s]+)\)/.exec(BUSINESS_INFO.registration)?.[1]
+const ftcUrl = ftcCheckUrl(BUSINESS_INFO.registration)
 </script>
 
 <template>
@@ -17,7 +18,6 @@ const ftcUrl = /\((https:\/\/www\.ftc\.go\.kr\/[^)\s]+)\)/.exec(BUSINESS_INFO.re
       <a :href="ftcUrl" target="_blank" rel="noopener"
         >사업자정보확인<span class="sr-only"> (새 창)</span></a
       >
-      <span class="business-page__ftc-note">공정거래위원회 통신판매사업자 정보 조회</span>
     </p>
   </div>
 </template>
@@ -40,10 +40,5 @@ const ftcUrl = /\((https:\/\/www\.ftc\.go\.kr\/[^)\s]+)\)/.exec(BUSINESS_INFO.re
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-.business-page__ftc-note {
-  color: var(--n-color-neutral-500, #737373);
-  font-size: 13px;
 }
 </style>

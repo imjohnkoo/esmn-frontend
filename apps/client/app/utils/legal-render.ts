@@ -1,5 +1,5 @@
 /**
- * 법정 문서 블록 → VNode(client-shell spec F-12 · F-20 · D-36). LegalMarkdown.vue · IssuerBusinessInfo.vue 가 부르고,
+ * 법정 문서 블록 → VNode(client-shell spec F-12 · F-20 · F-21 · F-22). LegalMarkdown.vue · SiteFooter · 발급 팝업 · 체크아웃이 부르고,
  * 테스트는 vue/server-renderer 로 실문서를 그려 본다. HTML 해석 없음(innerHTML · v-html 금지) — 글자는 전부 텍스트 노드.
  * 확정 전 값은 pending.ts 의 표기(displayValue).
  * ⚠️ 이 파일에 자리표시자 이름 · 화면 표기를 직접 쓰지 않는다(콘텐츠 게이트 D-17).
@@ -113,9 +113,10 @@ export function renderBlock(b: LegalBlock, tableLabel = '표'): VNode {
   )
 }
 
-/** 블록 목록 — 표 영역 이름은 바로 앞 장 · 조 제목(같은 제목 아래 둘째 표부터 번호)이라 낭독기에서 서로 구분된다 */
-export function renderBlocks(blocks: LegalBlock[]): VNode[] {
-  let heading = ''
+/** 블록 목록 — 표 영역 이름은 바로 앞 장 · 조 제목(같은 제목 아래 둘째 표부터 번호)이라 낭독기에서 서로 구분된다.
+ *  앞에 제목이 없는 표는 fallback(문서 제목 — 절만 떼어 온 /business 표가 «표 1» 로 읽히지 않게) */
+export function renderBlocks(blocks: LegalBlock[], fallback = ''): VNode[] {
+  let heading = fallback
   let nth = 0
   let all = 0
   return blocks.map((b) => {
@@ -134,8 +135,14 @@ export function renderBlocks(blocks: LegalBlock[]): VNode[] {
 export function renderDoc(doc: LegalMarkdownDoc): VNode {
   return h('article', { class: 'legal-md' }, [
     h('h1', { class: 'legal-md__title' }, doc.title),
-    ...renderBlocks(parseLegalMarkdown(doc.markdown)),
+    ...renderBlocks(parseLegalMarkdown(doc.markdown), doc.title),
   ])
+}
+
+/** 04 1절 줄의 «사업자정보확인»(공정위 조회) 주소 — /business 가 푸터와 같은 주소를 쓴다(출처 하나). 공정위 주소가 아니면 null */
+export function ftcCheckUrl(line: string): string | null {
+  const link = parseInline(line).find((x) => x.t === 'a' && inlineText(x.children) === '사업자정보확인')
+  return link?.t === 'a' && /^https:\/\/www\.ftc\.go\.kr\//.test(link.href) ? link.href : null
 }
 
 /** 사업자정보 줄(F-7 푸터 — 04 1절 줄 그대로 · «사업자정보확인» 은 공정위 조회 새 창) */

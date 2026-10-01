@@ -134,30 +134,57 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src).toMatch(/window\.addEventListener\('resize', fitConfirm\)/)
   })
 
-  it('체크아웃(템플릿 AST · F-22) — 필수 2 + 선택 1 체크 · 개인정보는 체크 없는 안내 · 결제는 필수 2 뒤 · 링크는 새 창', () => {
+  it('체크아웃(템플릿 AST · F-22) — 동의는 05-B 항목 목록(CONSENT_ITEMS)만 그린다 · 처음 값 해제 · 결제는 필수 뒤 · 링크는 새 창', () => {
     const src = read('./checkout-preview.vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
-    const boxes = findAll(tpl, (n) => n.tag === 'NCheckbox').map((b) => dir(b.node, 'v-model'))
-    expect(boxes).toEqual(['agreedTerms', 'agreedAge', 'agreedMarketing'])
-    expect(src).toMatch(/const canPay = computed\(\(\) => agreedTerms\.value && agreedAge\.value\)/)
+    const agree = find(tpl, (n) => cls(n) === 'checkout__agree')!
+    // 체크박스는 하나뿐 — 항목 목록을 돌며 그린다(문구 · 필수 여부 · 링크 · 알릴 사항은 utils 의 05-B 모델이 정한다)
+    const boxes = findAll(tpl, (n) => n.tag === 'NCheckbox')
+    expect(boxes).toHaveLength(1)
+    const item = boxes[0]!.ancestors.find((a) => dir(a, 'v-for') !== undefined)!
+    expect(dir(item, 'v-for')).toBe('item in CONSENT_ITEMS')
+    expect(boxes[0]!.ancestors).toContain(agree)
+    expect(dir(boxes[0]!.node, 'v-model')).toBe('agreed[item.key]')
+    expect(dir(boxes[0]!.node, ':label')).toBe('item.label')
+    // 항목의 링크 · 알릴 사항(선택 동의의 항목 · 목적 · 보유)이 그 항목 안에서 그려진다
+    const itemLinks = find(item, (n) => n.tag === 'a')!
+    expect(dir(itemLinks, 'v-for')).toBe('link in item.links')
+    const info = find(item, (n) => dir(n, 'v-if') === 'item.info')!
+    expect(text(info)).toContain('{{ item.info }}')
+    // 처음 값 · 결제 조건은 utils 에서만 — 페이지가 체크 값을 쓰지 않는다(미리 체크 금지)
+    expect(src).toMatch(/const agreed = reactive\(initialConsent\(\)\)/)
+    expect(src).toMatch(/const canPay = computed\(\(\) => canPayWith\(agreed\)\)/)
+    expect(src).not.toMatch(/agreed(?:\.\w+|\[[^\]]*\])\s*=(?!=)|Object\.assign\(\s*agreed/)
     const pay = find(tpl, (n) => n.tag === 'NButton' && /결제하기/.test(text(n)))!
     expect(dir(pay, ':disabled')).toBe('!isConfigured || !canPay')
     expect(src).toMatch(/if \(!isConfigured \|\| !canPay\.value \|\| isRequesting\.value\) return/)
-    const agree = find(tpl, (n) => cls(n) === 'checkout__agree')!
-    for (const a of findAll(agree, (n) => n.tag === 'a')) {
-      expect(attr(a.node, 'target')).toBe('_blank')
-      expect(text(a.node)).toContain('(새 창)')
-    }
-    // 개인정보 «안내» 블록 안에는 체크가 없다(2026-10-01 John (b) — 계약 이행 근거)
+    // 개인정보 «안내» — 체크 없음(2026-10-01 John (b) — 계약 이행 근거) · 제목 · 링크 · 알릴 사항은 PRIVACY_NOTICE
     const privacy = find(agree, (n) => cls(n) === 'checkout__notice')!
     expect(findAll(privacy, (n) => n.tag === 'NCheckbox')).toHaveLength(0)
-    expect(text(privacy)).toContain('{{ CHECKOUT_NOTICE.privacyInfo }}')
-    expect(text(agree)).toContain('<component :is="renderNoticeList(BEFORE_LINES)" />')
+    expect(text(privacy)).toContain('{{ PRIVACY_NOTICE.label }}')
+    expect(dir(find(privacy, (n) => n.tag === 'a')!, 'v-for')).toBe('link in PRIVACY_NOTICE.links')
+    expect(text(privacy)).toContain('{{ PRIVACY_NOTICE.info }}')
+    // 결제 전 안내 — 제목 + 줄 전부
+    const before = findAll(agree, (n) => cls(n) === 'checkout__notice')[1]!.node
+    expect(text(before)).toContain('{{ BEFORE_NOTICE.title }}')
+    expect(text(before)).toContain('<component :is="renderNoticeList(BEFORE_NOTICE.lines)" />')
+    // 이 화면의 링크는 모두 새 창 — 다녀와도 체크가 풀리지 않게(지원 기기 확인 포함)
+    const links = findAll(tpl, (n) => n.tag === 'a' || n.tag === 'NuxtLink')
+    expect(links.length).toBeGreaterThanOrEqual(3)
+    for (const a of links) {
+      expect(a.node.tag).toBe('a')
+      expect(attr(a.node, 'target')).toBe('_blank')
+      expect(attr(a.node, 'rel')).toBe('noopener')
+      expect(text(a.node)).toContain('(새 창)')
+    }
   })
 
   it('«발급 후 취소 · 환불 불가» 문장이 앱 어디에도 없다 — 같은 자리는 05-A 14행(D-32)', () => {
-    // 화면 코드만 — 법정 문서 생성물(content/legal)은 정본 문장(«설치 후 단순 변심 환불 불가» 등 — 설치 뒤 이야기)이라 제외
-    for (const f of code(APP).filter((f) => !f.includes('/content/legal/')))
+    // 제외는 취소·환불 정책 생성물 하나 — 정본 03 의 «설치 후 단순 변심 환불 불가»(설치 뒤 이야기 · 4곳)라서.
+    // 발급 팝업(05-A) · 체크아웃(05-B) 등 다른 생성물은 그대로 본다(정본 rev 로 이 문장이 들어오면 막힌다)
+    const REFUND = '/content/legal/refund.ts'
+    expect(code(APP).some((f) => f.endsWith(REFUND))).toBe(true)
+    for (const f of code(APP).filter((f) => !f.endsWith(REFUND)))
       expect(readFileSync(f, 'utf8'), f).not.toMatch(
         /(?:취소|환불)[와과·/\s]*(?:환불)?\s*(?:이|가|은|을)?\s*(?:불가|X\b)|환불(?:이|은)?\s*안\s*(?:돼|됩)|(?:환불|취소)(?:을|를)?\s*(?:받을|할|해\s*드릴)\s*수\s*없|환불받을\s*수\s*없|환불되지\s*않아요|환불이\s*어려|취소할\s*수\s*없/,
       )
@@ -170,7 +197,7 @@ describe('발급기 법정 링크(F-20)', () => {
   it('푸터(F-7) — 04 1절 줄(생성물) · 링크 줄(방침 굵게 · 색) · © 줄(생성물) · 모든 레이아웃', () => {
     const footer = read('../components/shell/SiteFooter.vue')
     expect(footer).toContain("import { BUSINESS_INFO } from '~/content/legal/business'")
-    expect(footer).toMatch(/const \{ copyright, \.\.\.info \} = BUSINESS_INFO/)
+    expect(footer).toMatch(/const \{ copyright, \.\.\.info \} = BUSINESS_INFO\nconst lines = Object\.values\(info\)\n/)
     expect(template(footer)).toContain('<component :is="renderBusinessLines(lines)" />')
     expect(template(footer)).toContain('{{ copyright }}')
     expect(template(footer)).toContain("'site-footer__link--privacy': link.to === '/privacy'")
@@ -181,7 +208,7 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(template(read('./refund.vue'))).toContain('<LegalMarkdown :doc="REFUND_DOC" />')
     const biz = read('./business.vue')
     expect(template(biz)).toContain('<LegalMarkdown :doc="BUSINESS_DOC" />')
-    expect(biz).toContain('.exec(BUSINESS_INFO.registration)')
+    expect(biz).toContain('const ftcUrl = ftcCheckUrl(BUSINESS_INFO.registration)')
     expect(template(biz)).toMatch(/:href="ftcUrl" target="_blank" rel="noopener"/)
   })
 

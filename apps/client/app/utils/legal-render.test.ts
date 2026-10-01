@@ -8,7 +8,7 @@ import { REFUND_DOC } from '../content/legal/refund'
 import { TERMS_DOC } from '../content/legal/terms'
 import { P9_4_PENDING } from '../content/pending'
 import { parseLegalMarkdown } from './legal-markdown'
-import { renderBlocks, renderBusinessLines, renderDoc, renderNoticeList } from './legal-render'
+import { ftcCheckUrl, renderBlocks, renderBusinessLines, renderDoc, renderNoticeList } from './legal-render'
 
 /** client-shell spec F-12 · F-20 · D-36 — 블록 · 실문서를 실제 HTML 로 그려 본다(서버 렌더 — 브라우저 없이) */
 const ssr = (node: () => VNode | VNode[]) =>
@@ -66,6 +66,11 @@ describe('renderBlocks — 그린 HTML', () => {
       '1. 목적 표 2',
       '제2조 (정의) 표',
     ])
+  })
+
+  it('앞에 제목이 없는 표는 문서 제목으로 — /business(04 2절만)가 «표 1» 로 읽히지 않는다', async () => {
+    const html = await ssr(() => renderDoc(BUSINESS_DOC))
+    expect([...html.matchAll(/aria-label="([^"]+)"/g)].map((m) => m[1])).toEqual(['사업자정보 표'])
   })
 
   it('표 최소 폭 = 열마다 120px(최소 320)', async () => {
@@ -205,3 +210,15 @@ describe('renderNoticeList — 발급 화면 고지 목록(05-A · F-21)', () =>
     )
   })
 })
+
+describe('ftcCheckUrl — /business 의 공정위 조회 주소 = 푸터(04 1절)와 같은 주소', () => {
+  it('04 1절 사업자등록번호 줄에서 «사업자정보확인» 링크 주소', () => {
+    expect(ftcCheckUrl(BUSINESS_INFO.registration)).toBe('https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7042401747')
+  })
+  it('링크가 없거나 · 글자가 다르거나 · 공정위 주소가 아니면 null', () => {
+    expect(ftcCheckUrl('사업자등록번호: 704-24-01747')).toBeNull()
+    expect(ftcCheckUrl('[조회](https://www.ftc.go.kr/x)')).toBeNull()
+    expect(ftcCheckUrl('[사업자정보확인](https://example.com/x)')).toBeNull()
+  })
+})
+

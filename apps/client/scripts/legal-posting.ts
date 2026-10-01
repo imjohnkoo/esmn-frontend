@@ -77,14 +77,25 @@ export const DOC_RULES: Record<DocKey, DocRules> = {
   },
 }
 
-/** 문서 규칙에 section 이 있으면 그 절만 떼어 «# 제목» 을 붙인 원문으로 — 없으면 원문 그대로 */
+/** 문서 규칙에 section 이 있으면 그 절만 떼어 «# 제목» 을 붙인 원문으로 — 없으면 원문 그대로.
+ *  절 머리는 «## 2.» 가 정확히 그 번호일 때만(«## 2.5» · «## 20.» 은 다른 절) · 코드 블록 안의 «## » 줄은 절의 끝이 아니다 */
 export function docSource(source: string, rules: Pick<DocRules, 'section' | 'title'>): string {
   if (!rules.section) return source
-  const lines = normalize(source).split('\n')
-  const start = lines.findIndex((l) => l.startsWith(rules.section!))
-  if (start < 0) throw new Error(`절을 찾지 못했다: ${rules.section}`)
-  const end = lines.findIndex((l, i) => i > start && /^## /.test(l))
   if (!rules.title) throw new Error('절만 가져올 때는 제목(title)이 있어야 한다')
+  const lines = normalize(source).split('\n')
+  const isHead = (l: string) => l === rules.section || l.startsWith(`${rules.section} `)
+  const starts = lines.flatMap((l, i) => (isHead(l) ? [i] : []))
+  if (starts.length !== 1) throw new Error(`절 머리가 ${starts.length}개다(정확히 1개여야 한다): ${rules.section}`)
+  const start = starts[0]!
+  let fenced = false
+  let end = -1
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^\s*(?:```|~~~)/.test(lines[i]!)) fenced = !fenced
+    else if (!fenced && /^## /.test(lines[i]!)) {
+      end = i
+      break
+    }
+  }
   return [`# ${rules.title}`, ...lines.slice(start + 1, end < 0 ? undefined : end)].join('\n')
 }
 
@@ -169,8 +180,9 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
 export const PENDING_MARK = '\u0000PENDING\u0000'
 const slotMark = (i: number) => `\u0000SLOT${i}\u0000`
 
-/** eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 자정 · 0시 기준 서술 금지(«당일자정» 처럼 붙여 써도). «사업자정보» 만 제외 */
-export const MIDNIGHT = /(?<!사업)자정|(?<!\d)0시\s*(?:기준|부터|까지)|00:00\s*기준/
+/** eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 자정 · 0시/00시/24시 · 00:00/24:00 기준 서술 금지(«당일자정» 처럼
+ *  붙여 써도). «사업자정보» · «판매자정보» 의 «자정» 글자만 제외 */
+export const MIDNIGHT = /(?<!사업|판매)자정|(?<!\d)(?:0|00|24)시\s*(?:기준|부터|까지)|(?<!\d)(?:00|24):00\s*(?:기준|부터|까지)/
 
 /** 공개 화면에 남으면 안 되는 말(John — 해외 공급사 명칭 영문 · 한글 · 내부 용어 · 사람 · 결정/브리프/과제 번호 · 개발 경로) */
 export const FORBIDDEN: readonly RegExp[] = [
@@ -200,8 +212,8 @@ export interface Posting {
   pendingCount: number
 }
 
-/** «결정 기록» 절 제목 — 맨 앞(번호 · 괄호 머리 허용)에서만. «제5장 결정 기록의 보관» 같은 본문 장은 걷지 않는다 */
-const DECISION = /^(?:[\d.]+\s*|\([^)]*\)\s*)?결정\s*기록/
+/** «결정 기록» 절 제목 — 맨 앞(번호 · 괄호 · «부록 —» 머리 허용)에서만. «제5장 결정 기록의 보관» 같은 본문 장은 걷지 않는다 */
+const DECISION = /^(?:[\d.]+\s*|\([^)]*\)\s*|부록\s*[—–:·-]?\s*)?결정\s*기록/
 
 /** 검토 메모 · 값 자리의 후보 — 백틱으로 감싼 대괄호 태그(해시는 백틱 포함) 또는 맨 대괄호 태그(뒤에 «(» 가 붙은 링크 글자는 제외) */
 const DOC_TAG = /`\[[^`\n]*\]`|\[[^\]\n]*\](?!\()/g
