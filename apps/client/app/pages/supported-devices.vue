@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // eSIM 지원 기기 목록 — 근거: docs/data/2026-08-19-esim-supported-devices-kr.md (웹검색 검증본)
 import { NPageHeading, NInfoChip } from '@imjohnkoo/design-vue'
+// 환불 안내는 05-A 14행(client-shell spec D-32 — 약관 12조③ 과 같은 말)
+import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
 
 // 아코디언 상태 — 복수 열림 허용, 기본 전부 접힘 (view 페이지 multi-QR 패턴)
 const openKeys = ref<string[]>([])
@@ -107,7 +109,7 @@ const unsupportedItems: UnsupportedItem[] = [
       <NPageHeading
         eyebrow="eSIM 지원 기기"
         :title="`내 기기가 eSIM 을\n지원하는지 확인해 주세요`"
-        :description="`한국 정식 발매 기기 기준이에요.\n발급 후에는 취소와 환불이 불가하니 발급 전에 꼭 확인해 주세요.`"
+        :description="`한국 정식 발매 기기 기준이에요. 발급 전에 꼭 확인해 주세요.\n${ISSUE_NOTICE.refund}`"
       />
     </div>
 

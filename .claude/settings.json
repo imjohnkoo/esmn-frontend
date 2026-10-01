@@ -66,8 +66,6 @@
       "Bash(python3 /Users/johnkoo/dev/current-projects/nomacom-manager/scripts/*)"
     ],
     "ask": [
-      "Bash(rm -rf *)",
-      "Bash(rm -r *)",
       "Bash(git worktree remove*)"
     ],
     "deny": [
