@@ -32,7 +32,11 @@ BIND=127.0.0.1:55432
 DB_URL="postgres://walk:walk@127.0.0.1:55432/walk"
 [[ "$DB_URL" =~ ^postgres(ql)?://[A-Za-z0-9_]+:[A-Za-z0-9_]+@127\.0\.0\.1:55432/[A-Za-z0-9_]+$ ]] || refuse "URL 형식"
 
-psql_in() { docker exec -i "$NAME" psql -v ON_ERROR_STOP=1 -U walk -d walk "$@"; }
+# 컨테이너 안 psql — 컨테이너 env(PGHOST · PGSERVICE 등)를 버리고(env -i) 컨테이너 자기 소켓으로만 붙는다
+psql_in() {
+  docker exec -i "$NAME" env -i PATH=/usr/local/bin:/usr/bin:/bin \
+    psql -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk "$@"
+}
 NODE="$(command -v node || true)"
 
 # docker 대상 = 이 기계의 데몬(unix 소켓)만 — 원격 데몬이면 컨테이너 · 가짜 행이 남의 기계에 생긴다
@@ -61,6 +65,9 @@ case "${1:-}" in
   up)
     if docker inspect "$NAME" >/dev/null 2>&1; then
       [[ "$(docker inspect -f '{{.Config.Image}}' "$NAME")" == "$IMAGE" ]] || refuse "$NAME 이 다른 이미지다"
+      # start 전에 묶임 설정부터 — 0.0.0.0 으로 만든 옛 컨테이너를 띄우는 순간 DB 가 LAN 에 열린다
+      [[ "$(docker inspect -f '{{json .HostConfig.PortBindings}}' "$NAME")" == "{\"5432/tcp\":[{\"HostIp\":\"${BIND%:*}\",\"HostPort\":\"${BIND##*:}\"}]}" ]] ||
+        refuse "$NAME 의 포트 설정이 $BIND 하나가 아니다 — 띄우지 않는다(컨테이너를 사람이 확인)"
       docker start "$NAME" >/dev/null
     else
       docker run -d --name "$NAME" -p "$BIND:5432" \
@@ -79,20 +86,28 @@ case "${1:-}" in
     sql="$(cd "$ROOT/apps/client" && env -i "PATH=/usr/bin:/bin:$(dirname "$NODE")" "HOME=$HOME" \
       "$NODE" "$ROOT/node_modules/drizzle-kit/bin.cjs" export --dialect postgresql --schema ./server/db/schema.ts)" ||
       refuse "스키마 SQL 을 만들지 못했다"
+    # 주석을 먼저 걷고(주석 안의 «;» 로 문장 경계를 속이지 못하게) — 검사하는 글자 = 넣는 글자
+    sql="$(sed -E 's/--.*$//' <<<"$sql")"
     [[ "$sql" == *'CREATE TABLE'* ]] || refuse "스키마 SQL 에 CREATE TABLE 이 없다"
-    # 문장(; 로 나눔 · -- 주석 제외)마다 허용 머리로 시작해야 한다 — 들여쓴 DROP · 쪼개진 조각도 거부
+    ! grep -qE '^[[:space:]]*\\' <<<"$sql" || refuse "스키마 SQL 에 psql 메타 명령(\\ 줄)이 있다"
+    # 문장(; 로 나눔)마다 허용 머리로 시작해야 한다 — 들여쓴 DROP · 쪼개진 조각도 거부
     bad="$(awk 'BEGIN { RS = ";" } {
-      gsub(/--[^\n]*/, ""); gsub(/^[ \t\n]+|[ \t\n]+$/, "")
+      gsub(/^[ \t\n]+|[ \t\n]+$/, "")
       if ($0 != "" && $0 !~ /^(CREATE (TABLE|UNIQUE INDEX|INDEX|TYPE|SEQUENCE) |ALTER TABLE "[^"]+" ADD CONSTRAINT )/) print substr($0, 1, 60)
     }' <<<"$sql")"
     [[ -z "$bad" ]] || refuse "스키마 SQL 에 허용하지 않는 문장이 있다: $(head -1 <<<"$bad")"
-    tables="$(psql_in -At -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'")" ||
-      refuse "표 수를 읽지 못했다"
-    if [[ "$tables" != 0 ]]; then
-      echo "✔ 스키마가 이미 있다(표 $tables 개) — 건너뜀(덮어쓰지 않는다)"
+    want="$(grep -oE '^CREATE TABLE "[^"]+"' <<<"$sql" | sed -E 's/^CREATE TABLE "([^"]+)"$/\1/' | sort)"
+    have="$(psql_in -At -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY 1")" ||
+      refuse "표 목록을 읽지 못했다"
+    have="$(sort <<<"$have")"
+    if [[ -n "$have" ]]; then
+      # 이미 있으면 같은 표 집합일 때만 «있음» — 반쯤 만든 · 낡은 스키마는 거부(지우는 명령은 없다 — 사람이 정리)
+      [[ "$have" == "$want" ]] || refuse "컨테이너의 표 집합이 스키마와 다르다(반쯤 만들었거나 낡았다) — 사람이 확인"
+      echo "✔ 스키마가 이미 있다(표 $(wc -l <<<"$have" | tr -d ' ') 개 · 같은 집합) — 건너뜀"
       exit 0
     fi
-    printf '%s\n' "$sql" | psql_in -q >/dev/null
+    # -c 한 번 = 한 트랜잭션(중간 실패면 아무 표도 남지 않는다) · -c 는 psql 메타 명령을 해석하지 않는다
+    psql_in -q -c "$sql" >/dev/null
     echo "✔ 스키마 — 컨테이너 $NAME 안에 표를 만들었다"
     ;;
   seed)

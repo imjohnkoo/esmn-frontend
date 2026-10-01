@@ -15,22 +15,29 @@ fail=0
 ok() { pass=$((pass + 1)); }
 ng() { fail=$((fail + 1)); echo "FAIL: $1"; }
 
-# 가짜 docker — 부른 것을 한 줄씩 기록. 상태는 $FAKE 의 파일(exists · image · port · tables · endpoint)로 준다.
-# psql 의 표준 입력은 -q(스키마) → applied.sql, 그 밖(seed) → seed.sql 에 남긴다
+# 가짜 docker — 부른 것을 한 줄씩 기록(-q -c 의 SQL 은 <SQL> 로 줄이고 applied.sql 에). 상태는 $FAKE 의 파일
+# (exists · image · bindings · port · tables · endpoint)로 준다. 표준 입력은 seed → seed.sql · counts → counts.sql
 cat >"$FAKE/docker" <<'EOF'
 #!/bin/sh
 F="@FAKE@"
 case "$1 $2" in
   "context inspect") cat "$F/endpoint"; exit 0 ;;
 esac
-echo "docker $*" >>"$F/calls"
+line="docker"; p1=""; p2=""
+for a in "$@"; do
+  if [ "$p1" = "-c" ] && [ "$p2" = "-q" ]; then printf '%s' "$a" >"$F/applied.sql"; line="$line <SQL>"; else line="$line $a"; fi
+  p2="$p1"; p1="$a"
+done
+echo "$line" >>"$F/calls"
+PSQL="exec -i nomacom-walk-pg env -i PATH=/usr/local/bin:/usr/bin:/bin psql -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk"
 case "$*" in
   "inspect -f {{.Config.Image}} nomacom-walk-pg") cat "$F/image"; exit 0 ;;
+  "inspect -f {{json .HostConfig.PortBindings}} nomacom-walk-pg") cat "$F/bindings"; exit 0 ;;
   "inspect nomacom-walk-pg") [ -f "$F/exists" ]; exit $? ;;
   "port nomacom-walk-pg 5432/tcp") cat "$F/port"; exit 0 ;;
-  *"-At -c SELECT count(*) FROM information_schema.tables"*) cat "$F/tables"; exit 0 ;;
-  "exec -i nomacom-walk-pg psql -v ON_ERROR_STOP=1 -U walk -d walk -q") cat >"$F/applied.sql"; exit 0 ;;
-  "exec -i nomacom-walk-pg psql -v ON_ERROR_STOP=1 -U walk -d walk") cat >"$F/seed.sql"; exit 0 ;;
+  *"-At -c SELECT table_name FROM information_schema.tables"*) cat "$F/tables"; exit 0 ;;
+  "$PSQL") cat >"$F/seed.sql"; exit 0 ;;
+  "$PSQL -At") cat >"$F/counts.sql"; exit 0 ;;
 esac
 exit 0
 EOF
@@ -48,7 +55,7 @@ case "$*" in
 esac
 EOF
 # 덫 — 호스트에서 DB 포트에 붙을 만한 도구는 부르는 순간 기록 + 실패
-for tool in psql pg_dump pg_isready nc ncat telnet curl wget socat ssh netstat lsof; do
+for tool in psql pg_dump pg_isready nc ncat telnet curl wget socat ssh netstat lsof python3 python perl ruby osascript; do
   printf '#!/bin/sh\necho "TRIPWIRE %s $*" >>"%s/calls"\nexit 1\n' "$tool" "$FAKE" >"$FAKE/$tool"
   chmod +x "$FAKE/$tool"
 done
@@ -66,10 +73,11 @@ reset_state() {
   echo "unix:///var/run/docker.sock" >"$FAKE/endpoint"
   echo "postgres:15.12-alpine" >"$FAKE/image"
   echo "127.0.0.1:55432" >"$FAKE/port"
-  echo 0 >"$FAKE/tables"
+  echo '{"5432/tcp":[{"HostIp":"127.0.0.1","HostPort":"55432"}]}' >"$FAKE/bindings"
+  : >"$FAKE/tables"
   printf '%s\n' "$GOOD_SQL" >"$FAKE/export.sql"
   touch "$FAKE/exists"
-  for f in applied.sql seed.sql export_fail; do [[ -e "$FAKE/$f" ]] && mv "$FAKE/$f" "$FAKE/$f.old.$RANDOM"; done
+  for f in applied.sql seed.sql counts.sql export_fail; do [[ -e "$FAKE/$f" ]] && mv "$FAKE/$f" "$FAKE/$f.old.$RANDOM"; done
   return 0
 }
 run() { PATH="$FAKE:$PATH" bash "$S" "$@" >/dev/null 2>&1; echo $?; }
@@ -81,15 +89,18 @@ $2
 --- 받은 것
 $(calls)"
 }
-P='docker exec -i nomacom-walk-pg psql -v ON_ERROR_STOP=1 -U walk -d walk'
-COUNT="$P -At -c SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'"
+P='docker exec -i nomacom-walk-pg env -i PATH=/usr/local/bin:/usr/bin:/bin psql -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk'
+TABLES="$P -At -c SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY 1"
 EXPORT='node export cwd=client DATABASE_URL= SPARK='
 
 # ── 정적 — 스크립트에 호스트 DB 연결 길이 없다(주석 제외)
 code_only="$(grep -vE '^[[:space:]]*#' "$S")"
-for pat in 'DATABASE_URL=' '/dev/tcp' 'host\.docker\.internal' 'drizzle-kit/bin\.cjs" push' 'psql -h' '--network'; do
+for pat in 'DATABASE_URL=' '/dev/tcp' 'host\.docker\.internal' 'gateway\.docker' 'drizzle-kit/bin\.cjs" push' 'psql -h [^/]' '--network'; do
   grep -qE -- "$pat" <<<"$code_only" && ng "스크립트에 «$pat» 가 있다" || ok
 done
+# 포트 55432 글자는 BIND · DB_URL · URL 형식 검사 세 줄에만(호스트 포트로 붙는 새 길이 생기면 여기서 막힌다)
+[[ "$(grep -c '55432' <<<"$code_only")" == 3 ]] && ok || ng "55432 가 나오는 코드 줄이 3 이 아니다: $(grep -n 55432 <<<"$code_only" | tr '\n' ';')"
+grep -qE '^BIND=127\.0\.0\.1:55432$' <<<"$code_only" && ok || ng "BIND 줄"
 
 # ── 원격 docker 는 어떤 명령이든 거부 — 아무것도 부르지 않는다
 for cmd in up schema seed counts; do
@@ -120,6 +131,7 @@ reset_state
 [[ "$(run up)" == 0 ]] && ok || ng "up(있음) — exit 0"
 expect_calls "up(있음)" "docker inspect nomacom-walk-pg
 docker inspect -f {{.Config.Image}} nomacom-walk-pg
+docker inspect -f {{json .HostConfig.PortBindings}} nomacom-walk-pg
 docker start nomacom-walk-pg
 docker port nomacom-walk-pg 5432/tcp
 docker exec nomacom-walk-pg pg_isready -h 127.0.0.1 -U walk -d walk
@@ -127,6 +139,13 @@ docker exec nomacom-walk-pg pg_isready -h 127.0.0.1 -U walk -d walk"
 reset_state
 echo "postgres:16" >"$FAKE/image"
 [[ "$(run up)" == 2 ]] && ok || ng "up(다른 이미지) — exit 2"
+# 옛 컨테이너가 0.0.0.0 · 다른 포트로 만들어져 있으면 start 하지 않는다(띄우는 순간 LAN 에 열린다)
+for b in '{"5432/tcp":[{"HostIp":"","HostPort":"55432"}]}' '{"5432/tcp":[{"HostIp":"0.0.0.0","HostPort":"55432"}]}' '{"5432/tcp":[{"HostIp":"127.0.0.1","HostPort":"55433"}]}' '{}'; do
+  reset_state
+  echo "$b" >"$FAKE/bindings"
+  [[ "$(run up)" == 2 ]] && ok || ng "up(설정 $b) — exit 2"
+  grep -q '^docker start' <<<"$(calls)" && ng "up(설정 $b) — start 하면 안 됨" || ok
+done
 for port in "0.0.0.0:55432" "127.0.0.1:55433" "127.0.0.1:55432
 [::]:55432"; do
   reset_state
@@ -140,22 +159,36 @@ reset_state
 [[ "$(run schema)" == 0 ]] && ok || ng "schema — exit 0"
 expect_calls "schema" "docker port nomacom-walk-pg 5432/tcp
 $EXPORT
-$COUNT
-$P -q"
-[[ "$(cat "$FAKE/applied.sql" 2>/dev/null)" == "$GOOD_SQL" ]] && ok || ng "schema — 넣은 SQL = export 출력 그대로"
+$TABLES
+$P -q -c <SQL>"
+applied="$(cat "$FAKE/applied.sql" 2>/dev/null)"
+grep -q '^CREATE TABLE "esim"' <<<"$applied" && grep -q '^ALTER TABLE "esim" ADD CONSTRAINT' <<<"$applied" && ok || ng "schema — 두 문장이 -c 한 번으로"
+grep -q -- '--' <<<"$applied" && ng "schema — 주석은 걷고 넣는다(검사한 글자 = 넣은 글자)" || ok
 reset_state
-echo 3 >"$FAKE/tables"
-[[ "$(run schema)" == 0 ]] && ok || ng "schema(표 있음) — exit 0(건너뜀)"
-expect_calls "schema(표 있음)" "docker port nomacom-walk-pg 5432/tcp
+echo esim >"$FAKE/tables"
+[[ "$(run schema)" == 0 ]] && ok || ng "schema(같은 표 집합) — exit 0(건너뜀)"
+expect_calls "schema(같은 표 집합)" "docker port nomacom-walk-pg 5432/tcp
 $EXPORT
-$COUNT"
-for bad in 'DROP TABLE "order";' '  DROP TABLE "order";' 'ALTER TABLE "esim" DROP COLUMN "a";' 'TRUNCATE "order";' 'UPDATE "order" SET "x" = 1;'; do
+$TABLES"
+for have in 'order' 'esim
+order'; do
+  reset_state
+  printf '%s\n' "$have" >"$FAKE/tables"
+  [[ "$(run schema)" == 2 ]] && ok || ng "schema(표 집합 다름 «$have») — exit 2"
+  grep -q -- '-q -c' <<<"$(calls)" && ng "schema(표 집합 다름) — 넣으면 안 됨" || ok
+done
+for bad in 'DROP TABLE "order";' '  DROP TABLE "order";' 'ALTER TABLE "esim" DROP COLUMN "a";' 'TRUNCATE "order";' 'UPDATE "order" SET "x" = 1;' $'-- note;CREATE TABLE "y" ("a" int)\nDROP TABLE "order";' $'\\! nc -z gateway.docker.internal 55432' $'  \\connect host=192.168.65.254'; do
   reset_state
   printf '%s\n%s\n' "$GOOD_SQL" "$bad" >"$FAKE/export.sql"
   [[ "$(run schema)" == 2 ]] && ok || ng "schema(«$bad») — exit 2"
   expect_calls "schema(«$bad»)" "docker port nomacom-walk-pg 5432/tcp
 $EXPORT"
 done
+# 허용 문장 안에 숨긴 psql 메타 명령 — 문장 머리 검사는 통과하므로 «\\ 줄 금지» 가 따로 막아야 한다
+reset_state
+printf '%s\n' 'CREATE TABLE "z" (' '\\! nc -z gateway.docker.internal 55432' '"a" int);' >"$FAKE/export.sql"
+[[ "$(run schema)" == 2 ]] && ok || ng "schema(허용 문장 안 메타 명령) — exit 2"
+grep -q -- '-q -c' <<<"$(calls)" && ng "schema(허용 문장 안 메타 명령) — 넣으면 안 됨" || ok
 reset_state
 touch "$FAKE/export_fail"
 [[ "$(run schema)" == 2 ]] && ok || ng "schema(export 실패) — exit 2"
@@ -173,6 +206,7 @@ reset_state
 expect_calls "seed" "docker port nomacom-walk-pg 5432/tcp
 $P"
 grep -q "ON CONFLICT" "$FAKE/seed.sql" 2>/dev/null && ok || ng "seed — SQL 이 컨테이너 psql 의 표준 입력으로"
+grep -qE '^[[:space:]]*\\' "$FAKE/seed.sql" && ng "seed — psql 메타 명령 줄 금지" || ok
 grep -qE "010-0000-000[12]" "$FAKE/seed.sql" && ! grep -qE "010-[1-9]" "$FAKE/seed.sql" && ok || ng "seed — 전화는 010-0000-xxxx 대역만"
 reset_state
 echo "0.0.0.0:55432" >"$FAKE/port"
@@ -181,6 +215,8 @@ expect_calls "seed(묶임 다름)" "docker port nomacom-walk-pg 5432/tcp"
 reset_state
 [[ "$(run counts)" == 0 ]] && ok || ng "counts — exit 0"
 expect_calls "counts" "$P -At"
+grep -q '^SELECT' "$FAKE/counts.sql" 2>/dev/null && ok || ng "counts — SQL 이 컨테이너 psql 의 표준 입력으로"
+grep -qE '^[[:space:]]*\\' "$FAKE/counts.sql" && ng "counts — psql 메타 명령 줄 금지" || ok
 
 echo "client-walk-db.test: $pass pass · $fail fail"
 [[ "$fail" == 0 ]]
