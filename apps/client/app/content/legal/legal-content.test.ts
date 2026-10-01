@@ -6,6 +6,7 @@ import { forbiddenIn, unsupportedIn } from '../../../scripts/legal-posting'
 import { blocksText, parseLegalMarkdown } from '../../utils/legal-markdown'
 import { P9_4_PENDING } from '../pending'
 import { BUSINESS_INFO } from './business'
+import { CHECKOUT_NOTICE } from './checkout-notice'
 import { ISSUE_NOTICE } from './issue-notice'
 import { BUSINESS_DOC } from './business-page'
 import { PRIVACY_DOC } from './privacy'
@@ -201,6 +202,7 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
     for (const [file, lines, origin] of [
       ['./business.ts', BUSINESS_INFO, /^\/\/ 정본: 04_[^ ]+\.md ## 1\. · legal-pages @[0-9a-f]{7}$/m],
       ['./issue-notice.ts', ISSUE_NOTICE, /^\/\/ 정본: 05_[^ ]+\.md ## A\. · legal-pages @[0-9a-f]{7}$/m],
+      ['./checkout-notice.ts', CHECKOUT_NOTICE, /^\/\/ 정본: 05_[^ ]+\.md ## B\. · legal-pages @[0-9a-f]{7}$/m],
     ] as const) {
       expect(header(read(file))).toBe(sha(unmark(Object.values(lines).join('\n') + '\n')))
       expect(read(file)).toMatch(origin)
@@ -239,8 +241,22 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
     expect(ISSUE_NOTICE.device).toMatch(/\[지원 기기 확인\]\(\/supported-devices\)$/)
     expect(ISSUE_NOTICE.trouble).toMatch(/^eSIM에 문제가 있으면 삭제하지 말고 고객센터로/)
   })
+  it('05-B 원문 — 필수 2 · 선택 1(구매와 무관) · 개인정보는 «안내»(계약 이행 근거 · 체크 없음) · 결제 전 공제 안내(D-28)', () => {
+    expect(CHECKOUT_NOTICE.terms).toBe('(필수) 이용약관에 동의합니다 [보기](/terms)')
+    expect(CHECKOUT_NOTICE.age).toBe('(필수) 만 14세 이상입니다')
+    expect(CHECKOUT_NOTICE.marketing).toMatch(/^\(선택\) /)
+    expect(CHECKOUT_NOTICE.marketingInfo).toMatch(/동의하지 않아도 구매할 수 있습니다$/)
+    expect(CHECKOUT_NOTICE.privacyTitle).toBe('개인정보 수집·이용 안내 [개인정보처리방침 보기](/privacy)')
+    expect(CHECKOUT_NOTICE.privacyInfo).toContain('근거: 계약 이행(「개인정보 보호법」 제15조 제1항 제4호)')
+    expect(CHECKOUT_NOTICE.beforeRefund).toContain('발급 후 설치 전에는 폐기 비용 3,500원을 부담하시면 환불되며')
+    expect(CHECKOUT_NOTICE.beforeRefund).toMatch(/\[취소·환불 정책\]\(\/refund\)$/)
+  })
   it('공개 금지어 · 대괄호 태그 없음', () => {
-    for (const l of [...Object.values(BUSINESS_INFO), ...Object.values(ISSUE_NOTICE)]) {
+    for (const l of [
+      ...Object.values(BUSINESS_INFO),
+      ...Object.values(ISSUE_NOTICE),
+      ...Object.values(CHECKOUT_NOTICE),
+    ]) {
       expect(forbiddenIn(unmark(l))).toEqual([])
       expect(l.replace(/\[[^\]\n]+\]\((?:https:\/\/|\/)[^)\s]*\)/g, '')).not.toMatch(/[[\]]/)
     }

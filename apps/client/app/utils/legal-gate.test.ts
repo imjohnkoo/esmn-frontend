@@ -15,6 +15,7 @@ const CODE = [
   '../components/shell/SiteFooter.vue',
   '../pages/business.vue',
   '../pages/refund.vue',
+  '../pages/checkout-preview.vue',
   '../content/legal/issue-notice.ts',
   '../pages/index.vue',
   '../pages/select-date/[orderId].vue',

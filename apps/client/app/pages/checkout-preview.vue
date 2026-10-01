@@ -22,7 +22,11 @@ const storeId = config.public.portone.storeId
 const channelKey = config.public.portone.testChannelKey
 const isConfigured = Boolean(storeId && channelKey)
 
-const agreed = ref(false)
+// 05-B(client-shell spec F-22) — 필수 2(이용약관 · 만 14세)가 체크돼야 결제 · 선택 1(마케팅)은 결제와 무관 · 서버 저장 0(F-19)
+const agreedTerms = ref(false)
+const agreedAge = ref(false)
+const agreedMarketing = ref(false)
+const canPay = computed(() => agreedTerms.value && agreedAge.value)
 const isRequesting = ref(false)
 const openError = ref<string | null>(null)
 // 이 탭이 만든 결제 ID(sessionStorage) — 복귀 쿼리가 이것과 같을 때만 결과 줄을 그린다(링크로 만든 임의 문구 차단)
@@ -55,7 +59,7 @@ onMounted(() => {
 onBeforeUnmount(() => window.removeEventListener('pageshow', onPageShow))
 
 const onPay = async () => {
-  if (!isConfigured || !agreed.value || isRequesting.value) return
+  if (!isConfigured || !canPay.value || isRequesting.value) return
   isRequesting.value = true
   openError.value = null
   try {
@@ -89,6 +93,15 @@ const onPay = async () => {
     isRequesting.value = false
   }
 }
+
+// 05-B 문구(생성물) — 스크립트 끝(위 줄 번호를 밀지 않게)
+import { CHECKOUT_NOTICE } from '~/content/legal/checkout-notice'
+import { splitConsent } from '~/utils/checkout-preview'
+import { renderNoticeList } from '~/utils/legal-render'
+
+const TERMS = splitConsent(CHECKOUT_NOTICE.terms)
+const PRIVACY = splitConsent(CHECKOUT_NOTICE.privacyTitle)
+const BEFORE_LINES = [CHECKOUT_NOTICE.beforeRefund, CHECKOUT_NOTICE.beforeMinor, CHECKOUT_NOTICE.beforeNotify]
 </script>
 
 <template>
@@ -131,16 +144,49 @@ const onPay = async () => {
       </p>
     </section>
 
-    <section class="checkout__agree">
-      <NCheckbox
-        v-model="agreed"
-        label="주문 내용을 확인했고, 이용약관 · 개인정보 수집 · 이용 · 환불정책에 동의해요"
-      />
-      <p class="checkout__policy-links">
-        <NuxtLink to="/terms" class="checkout__link">이용약관</NuxtLink>
-        <NuxtLink to="/privacy" class="checkout__link">개인정보 수집 · 이용</NuxtLink>
-        <NuxtLink to="/refund" class="checkout__link">환불정책</NuxtLink>
-      </p>
+    <!-- 05-B 원문(client-shell spec F-22) — 필수 2 · 선택 1 · 개인정보 수집 · 이용 «안내»(체크 없음 — 계약 이행 근거) · 결제 전 안내.
+         링크는 새 창(이 화면의 체크 상태를 잃지 않게) -->
+    <section class="checkout__agree" aria-label="약관 동의 · 개인정보 안내">
+      <div class="checkout__consent">
+        <NCheckbox v-model="agreedTerms" :label="TERMS.label" />
+        <a
+          v-for="link in TERMS.links"
+          :key="link.href"
+          :href="link.href"
+          target="_blank"
+          rel="noopener"
+          class="checkout__link"
+          >{{ link.text }}<span class="sr-only"> (새 창)</span></a
+        >
+      </div>
+      <div class="checkout__consent">
+        <NCheckbox v-model="agreedAge" :label="CHECKOUT_NOTICE.age" />
+      </div>
+      <div class="checkout__consent">
+        <NCheckbox v-model="agreedMarketing" :label="CHECKOUT_NOTICE.marketing" />
+      </div>
+      <p class="checkout__consent-info">{{ CHECKOUT_NOTICE.marketingInfo }}</p>
+
+      <div class="checkout__notice">
+        <p class="checkout__notice-title">
+          {{ PRIVACY.label }}
+          <a
+            v-for="link in PRIVACY.links"
+            :key="link.href"
+            :href="link.href"
+            target="_blank"
+            rel="noopener"
+            class="checkout__link"
+            >{{ link.text }}<span class="sr-only"> (새 창)</span></a
+          >
+        </p>
+        <p class="checkout__consent-info">{{ CHECKOUT_NOTICE.privacyInfo }}</p>
+      </div>
+
+      <div class="checkout__notice">
+        <p class="checkout__notice-title">{{ CHECKOUT_NOTICE.beforeTitle }}</p>
+        <component :is="renderNoticeList(BEFORE_LINES)" />
+      </div>
     </section>
 
     <div class="checkout__cta">
@@ -148,7 +194,7 @@ const onPay = async () => {
         variant="primary"
         size="xl"
         full-width
-        :disabled="!isConfigured || !agreed"
+        :disabled="!isConfigured || !canPay"
         :loading="isRequesting"
         @click="onPay"
       >
@@ -282,15 +328,67 @@ const onPay = async () => {
 }
 
 .checkout__agree {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   font-size: 14px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
-.checkout__policy-links {
+.checkout__consent {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
-  margin: 8px 0 0 28px;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.checkout__consent .checkout__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   font-size: 13px;
+}
+
+.checkout__consent-info {
+  margin: -4px 0 0 28px;
+  color: var(--n-color-neutral-500, #737373);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.checkout__notice {
+  margin-top: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--n-color-neutral-50, #fafafa);
+}
+
+.checkout__notice .checkout__consent-info {
+  margin: 4px 0 0;
+}
+
+.checkout__notice-title {
+  margin: 0;
+  color: var(--n-color-neutral-800, #262626);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.checkout__notice :deep(.issue-notice__list) {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  list-style: disc outside;
+  color: var(--n-color-neutral-600, #525252);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.checkout__notice :deep(.legal-md__link) {
+  color: var(--n-color-primary-600, #5025e8);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .checkout__cta {

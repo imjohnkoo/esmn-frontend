@@ -88,3 +88,9 @@ export function buildReturnQuery(
     pgMessage: response.pgMessage,
   }
 }
+
+/** 동의 · 안내 문구에서 링크([글자](주소))를 떼어 낸다 — 체크 라벨은 글자만, 링크는 따로 새 창(05-B · client-shell spec F-22) */
+export function splitConsent(line: string): { label: string; links: { text: string; href: string }[] } {
+  const links = [...line.matchAll(/\[([^\]]+)\]\(([^)\s]+)\)/g)].map((m) => ({ text: m[1]!, href: m[2]! }))
+  return { label: line.replace(/\s*\[[^\]]+\]\([^)\s]+\)/g, '').trim(), links }
+}

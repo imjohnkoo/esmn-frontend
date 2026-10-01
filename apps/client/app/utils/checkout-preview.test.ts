@@ -7,6 +7,7 @@ import {
   createPaymentId,
   formatWon,
   readPaymentResult,
+  splitConsent,
 } from './checkout-preview'
 
 describe('createPaymentId', () => {
@@ -124,5 +125,15 @@ describe('buildReturnQuery (창 없이 끝난 응답 — spec F-19)', () => {
       paymentId: LOCAL,
       message: 'PG 사유',
     })
+  })
+})
+
+describe('splitConsent — 05-B 동의 · 안내 문구에서 링크 떼기(F-22)', () => {
+  it('라벨은 글자만 · 링크는 차례대로', () => {
+    expect(splitConsent('(필수) 이용약관에 동의합니다 [보기](/terms)')).toEqual({
+      label: '(필수) 이용약관에 동의합니다',
+      links: [{ text: '보기', href: '/terms' }],
+    })
+    expect(splitConsent('(필수) 만 14세 이상입니다')).toEqual({ label: '(필수) 만 14세 이상입니다', links: [] })
   })
 })

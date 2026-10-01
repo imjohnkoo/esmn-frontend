@@ -134,6 +134,27 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src).toMatch(/window\.addEventListener\('resize', fitConfirm\)/)
   })
 
+  it('체크아웃(템플릿 AST · F-22) — 필수 2 + 선택 1 체크 · 개인정보는 체크 없는 안내 · 결제는 필수 2 뒤 · 링크는 새 창', () => {
+    const src = read('./checkout-preview.vue')
+    const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
+    const boxes = findAll(tpl, (n) => n.tag === 'NCheckbox').map((b) => dir(b.node, 'v-model'))
+    expect(boxes).toEqual(['agreedTerms', 'agreedAge', 'agreedMarketing'])
+    expect(src).toMatch(/const canPay = computed\(\(\) => agreedTerms\.value && agreedAge\.value\)/)
+    const pay = find(tpl, (n) => n.tag === 'NButton' && /결제하기/.test(text(n)))!
+    expect(dir(pay, ':disabled')).toBe('!isConfigured || !canPay')
+    expect(src).toMatch(/if \(!isConfigured \|\| !canPay\.value \|\| isRequesting\.value\) return/)
+    const agree = find(tpl, (n) => cls(n) === 'checkout__agree')!
+    for (const a of findAll(agree, (n) => n.tag === 'a')) {
+      expect(attr(a.node, 'target')).toBe('_blank')
+      expect(text(a.node)).toContain('(새 창)')
+    }
+    // 개인정보 «안내» 블록 안에는 체크가 없다(2026-10-01 John (b) — 계약 이행 근거)
+    const privacy = find(agree, (n) => cls(n) === 'checkout__notice')!
+    expect(findAll(privacy, (n) => n.tag === 'NCheckbox')).toHaveLength(0)
+    expect(text(privacy)).toContain('{{ CHECKOUT_NOTICE.privacyInfo }}')
+    expect(text(agree)).toContain('<component :is="renderNoticeList(BEFORE_LINES)" />')
+  })
+
   it('«발급 후 취소 · 환불 불가» 문장이 앱 어디에도 없다 — 같은 자리는 05-A 14행(D-32)', () => {
     // 화면 코드만 — 법정 문서 생성물(content/legal)은 정본 문장(«설치 후 단순 변심 환불 불가» 등 — 설치 뒤 이야기)이라 제외
     for (const f of code(APP).filter((f) => !f.includes('/content/legal/')))

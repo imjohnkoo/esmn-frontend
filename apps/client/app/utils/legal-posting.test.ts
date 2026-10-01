@@ -381,6 +381,7 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
       PRIVACY_DOC: '02_개인정보처리방침.md',
       REFUND_DOC: '03_취소환불정책.md',
       BUSINESS_DOC: '04_사업자정보-고객센터.md',
+      CHECKOUT_NOTICE: '05_고지문구-동의체크-FAQ.md',
       BUSINESS_INFO: '04_사업자정보-고객센터.md',
       ISSUE_NOTICE: '05_고지문구-동의체크-FAQ.md',
     })

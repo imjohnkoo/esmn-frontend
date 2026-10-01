@@ -12,7 +12,7 @@
 import { createHash } from 'node:crypto'
 
 export type DocKey = 'terms' | 'privacy' | 'refund' | 'business-page'
-export type BlockKey = 'business' | 'issue-notice'
+export type BlockKey = 'business' | 'issue-notice' | 'checkout-notice'
 
 export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex')
 
@@ -135,6 +135,31 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
       { key: 'trouble', startsWith: '• eSIM에 문제가 있으면', strip: '• ' },
     ],
     links: { '[지원 기기 확인]': '/supported-devices' },
+    notes: [],
+    placeholders: [],
+  },
+  // 05-B — 체크아웃 동의(F-22): 필수 2(약관 · 만 14세) · 선택 1(마케팅 + 알릴 사항) · 개인정보 수집 · 이용 «안내»(체크 없음) · 결제 전 안내 3줄
+  'checkout-notice': {
+    file: '05_고지문구-동의체크-FAQ.md',
+    exportName: 'CHECKOUT_NOTICE',
+    section: '## B.',
+    pick: [
+      { key: 'terms', startsWith: '☐ (필수) 이용약관에 동의합니다', strip: '☐ ' },
+      { key: 'age', startsWith: '☐ (필수) 만 14세', strip: '☐ ' },
+      { key: 'marketing', startsWith: '☐ (선택)', strip: '☐ ' },
+      { key: 'marketingInfo', startsWith: '   수집 항목: 이메일 주소' },
+      { key: 'privacyTitle', startsWith: '개인정보 수집·이용 안내' },
+      { key: 'privacyInfo', startsWith: '   수집 항목: 이름' },
+      { key: 'beforeTitle', startsWith: '결제 전 안내' },
+      { key: 'beforeRefund', startsWith: '• 결제 후 발급 전에는', strip: '• ' },
+      { key: 'beforeMinor', startsWith: '• 만 19세 미만', strip: '• ' },
+      { key: 'beforeNotify', startsWith: '• 결제 완료 사실은', strip: '• ' },
+    ],
+    links: {
+      '[보기]': '/terms',
+      '[개인정보처리방침 보기]': '/privacy',
+      '[취소·환불 정책]': '/refund',
+    },
     notes: [],
     placeholders: [],
   },
