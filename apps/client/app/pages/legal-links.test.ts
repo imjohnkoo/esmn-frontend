@@ -49,12 +49,22 @@ describe('발급기 법정 링크(F-20)', () => {
       '<NCheckbox v-model="isPolicyAgreed" :label="ISSUE_NOTICE.consent" />',
     )
     expect([refund, link, consent].every((i) => i > 0)).toBe(true)
-    // 본문(요약 · 안내 · 동의)은 스크롤 영역 안 — 문구가 길어도 «발급하기» 가 화면 밖으로 밀리지 않는다
-    const scroll = popup.indexOf('<div class="select-date-page__confirm-scroll">')
-    expect(scroll >= 0 && scroll < refund && consent < popup.indexOf('<template #actions>')).toBe(true)
-    expect(read('./select-date/[orderId].vue')).toMatch(
-      /\.select-date-page__confirm-scroll \{[^}]*max-height: max\(160px, calc\(100dvh - 280px\)\);[^}]*overflow-y: auto;/,
-    )
+    // 요약 · 안내는 스크롤 영역 안, 필수 동의 체크는 그 밖(늘 보임) · 버튼 앞 — 작은 화면에서 체크가 접힌 채 «발급하기» 만 비활성이지 않게
+    const scrollOpen = popup.indexOf('class="select-date-page__confirm-scroll"')
+    const scrollEnd = popup.indexOf('<!-- /confirm-scroll -->')
+    const actions = popup.indexOf('<template #actions>')
+    expect(scrollOpen >= 0 && scrollOpen < refund && link < scrollEnd).toBe(true)
+    expect(scrollEnd < consent && consent < actions).toBe(true)
+    const src = read('./select-date/[orderId].vue')
+    // 스크롤 높이 = 화면 − (다이얼로그 − 스크롤 영역) — 열릴 때 · 화면 크기가 바뀔 때 실제 크기로
+    expect(src).toMatch(/const fixed = dialog\.offsetHeight - el\.offsetHeight/)
+    expect(src).toMatch(/watch\(isConfirmOrderVisible,[\s\S]*?requestAnimationFrame\(fitConfirm\)/)
+    expect(src).toMatch(/visualViewport\?\.addEventListener\('resize', fitConfirm\)/)
+    expect(src).toMatch(/\.select-date-page__confirm-scroll \{[^}]*overflow-y: auto;/)
+    // 체크 전에는 발급하기 비활성 · 눌러도 막힘 · 팝업을 다시 열면 체크를 지운다(D-35 — 약관 동의 자리)
+    expect(popup).toMatch(/:disabled="isSubmitting \|\| !isPolicyAgreed"/)
+    expect(src).toMatch(/if \(isSubmitting\.value \|\| !isPolicyAgreed\.value\) return/)
+    expect(src).toMatch(/isPolicyAgreed\.value = false\n\s*isConfirmOrderVisible\.value = true/)
     // 같은 팝업 — 환불 안내 → 링크 → 동의 체크 순서, 그 뒤에 발급하기
     expect(refund < link && link < consent && consent < popup.lastIndexOf('발급하기')).toBe(true)
   })
@@ -62,7 +72,7 @@ describe('발급기 법정 링크(F-20)', () => {
   it('«발급 후 취소 · 환불 불가» 문장이 앱 어디에도 없다 — 같은 자리는 05-A 14행(D-32)', () => {
     for (const f of code(APP))
       expect(readFileSync(f, 'utf8'), f).not.toMatch(
-        /(?:취소|환불)[와과·\s]*(?:환불)?\s*(?:이|가|은)?\s*불가|환불(?:이|은)?\s*안\s*(?:돼|됩)|환불(?:할|해\s*드릴)\s*수\s*없/,
+        /(?:취소|환불)[와과·/\s]*(?:환불)?\s*(?:이|가|은|을)?\s*(?:불가|X\b)|환불(?:이|은)?\s*안\s*(?:돼|됩)|(?:환불|취소)(?:을|를)?\s*(?:받을|할|해\s*드릴)\s*수\s*없|환불받을\s*수\s*없|환불되지\s*않아요|환불이\s*어려|취소할\s*수\s*없/,
       )
     expect(read('./supported-devices.vue')).toContain('${ISSUE_NOTICE.refund}')
     expect(read('../components/popup/ConfirmOrderModal.vue')).toContain(

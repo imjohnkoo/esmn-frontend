@@ -105,6 +105,9 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
 export const PENDING_MARK = '\u0000PENDING\u0000'
 const slotMark = (i: number) => `\u0000SLOT${i}\u0000`
 
+/** eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 자정 · 0시 기준 서술 금지(«당일자정» 처럼 붙여 써도). «사업자정보» 만 제외 */
+export const MIDNIGHT = /(?<!사업)자정|(?<!\d)0시\s*(?:기준|부터|까지)|00:00\s*기준/
+
 /** 공개 화면에 남으면 안 되는 말(John — 해외 공급사 명칭 영문 · 한글 · 내부 용어 · 사람 · 결정/브리프/과제 번호 · 개발 경로) */
 export const FORBIDDEN: readonly RegExp[] = [
   /spark/i,
@@ -116,15 +119,15 @@ export const FORBIDDEN: readonly RegExp[] = [
   /\bjohn\b/i,
   /\{N\}/,
   // 결정 · 과제 · 브리프 번호(대소문자 무관) · 한 글자 코드(대문자만 — «5G» 같은 일반 표기와 구분)
-  /\b(?:W\d-\d|P\d{1,2}-\d{1,2}|H-\d{3}|D-\d{1,3}|INF-\d|E2E-\d|L\d~L\d)\b/i,
+  /\b(?:W\d-\d{1,2}|P\d{1,2}-\d{1,2}|H-\d{3}|D-\d{1,3}|INF-\d|E2E-\d|L\d~L\d)\b/i,
   /\b[A-Z]-?\d{1,2}\b/,
+  /\br\d{1,2}\b/,
   // 개발 경로 · 파일 · 리포 이름 — 링크가 아닌 «/경로» 표기 포함(08 D절)
-  /apps\/|server\/api|\.vue\b|\.mjs\b|\.ts\b|\.md\b|legal-pages|nomacom|esim-manager/i,
+  /apps\/|server\/api|\/api\/v\d|checkout-preview|\.vue\b|\.mjs\b|\.ts\b|\.md\b|legal-pages|nomacom|esim-manager/i,
   /(?:^|[\s«「]|(?<!\])\()\/(?:checkout-preview|business|support|refund|terms|privacy|my|verify|details|select-date|view)\b/,
   // 경쟁사 이름
   /유심사|도시락|로밍도깨비|로깨비|말톡/,
-  // eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 자정 기준 서술 금지(«사업자정보» 처럼 낱말 안의 글자는 제외)
-  /(?<![가-힣])자정/,
+  MIDNIGHT,
 ]
 
 export interface Posting {
@@ -132,6 +135,9 @@ export interface Posting {
   body: string
   pendingCount: number
 }
+
+/** «결정 기록» 절 제목 — 맨 앞(번호 · 괄호 머리 허용)에서만. «제5장 결정 기록의 보관» 같은 본문 장은 걷지 않는다 */
+const DECISION = /^(?:[\d.]+\s*|\([^)]*\)\s*)?결정\s*기록/
 
 /** 검토 메모 · 값 자리의 후보 — 백틱으로 감싼 대괄호 태그(해시는 백틱 포함) 또는 맨 대괄호 태그(뒤에 «(» 가 붙은 링크 글자는 제외) */
 const DOC_TAG = /`\[[^`\n]*\]`|\[[^\]\n]*\](?!\()/g
@@ -205,12 +211,12 @@ export function toPosting(source: string, rules: TagRules): Posting {
   const out: string[] = []
   let title = ''
   let inQuote = false
-  let skipLevel = 0
+  let skip: { level: number; bold: boolean } | null = null
   for (const raw of text.split('\n')) {
     const line = raw.replace(/\s+$/, '')
-    // 한 줄 전체 굵게는 조 제목(###) 수준으로 본다 — «**결정 기록**» 도 걷는다
+    const heading = /^(#{1,6})\s+(.*)$/.exec(line)
+    // 한 줄 전체 굵게(조 제목 꼴) — «**결정 기록**» 도 걷는다
     const bold = /^\*\*([^*]+)\*\*\s*$/.exec(line)
-    const heading = /^(#{1,6})\s+(.*)$/.exec(line) ?? (bold ? [line, '###', bold[1]!] : null)
     if (inQuote) {
       if (!line.trim()) {
         inQuote = false
@@ -223,12 +229,16 @@ export function toPosting(source: string, rules: TagRules): Posting {
       title = heading[2]!.replace(/\s+—\s+초안.*$/, '').trim()
       continue
     }
-    if (skipLevel && heading && heading[1]!.length <= skipLevel) skipLevel = 0
-    if (heading && /결정\s*기록/.test(heading[2]!)) {
-      skipLevel = heading[1]!.length
+    // «결정 기록» 절 — `#` 제목으로 시작했으면 같거나 높은 단계의 `#` 제목에서만 끝난다(안의 굵은 줄 · 낮은 제목은 함께 걷는다).
+    // 한 줄 굵게로 시작했으면 다음 굵은 줄이나 제목에서 끝난다
+    if (skip && heading && heading[1]!.length <= skip.level) skip = null
+    else if (skip?.bold && (bold || heading)) skip = null
+    const headText = heading?.[2] ?? bold?.[1]
+    if (headText && DECISION.test(headText)) {
+      skip = heading ? { level: heading[1]!.length, bold: false } : { level: 0, bold: true }
       continue
     }
-    if (skipLevel) continue
+    if (skip) continue
     // 인용 블록 — `>` 줄(들여쓴 것 포함 — 목록 항 아래 메모)과 빈 줄(또는 새 블록) 전까지 이어지는 줄(lazy continuation)까지
     if (/^\s*>/.test(line)) {
       inQuote = true
@@ -307,10 +317,13 @@ export function unsupportedIn(body: string): string[] {
   let levels: { indent: number; ordered: boolean }[] | null = null
   let tableRow = -1
   let cols = 0
+  let prevBlank = false
   body.split('\n').forEach((line, i) => {
     const n = i + 1
     const bad = (why: string) => out.push(`${n}: ${why}`)
     if (/^\s*#{1,6}\s/.test(line) && !/^#{2,3}\s/.test(line)) bad('제목은 줄 맨 앞 ## · ### 만')
+    if (/^#{1,6}\s*$/.test(line)) bad('내용 없는 제목(메모를 걷어 낸 자리?)')
+    if (prevBlank && /^\s{2,}\S/.test(line)) bad('빈 줄 뒤 들여쓴 줄 — 하위 목록 · 둘째 문단은 빈 줄 없이')
     if (/^#{2,3}\s.*\s#+\s*$/.test(line)) bad('닫는 # 이 붙은 제목')
     if (/^\s*(?:={3,}|-{3,}|\*{3,}|_{3,})\s*$/.test(line)) bad('구분선 · 밑줄식 제목')
     if (/^\s*>/.test(line)) bad('인용')
@@ -334,6 +347,7 @@ export function unsupportedIn(body: string): string[] {
       if (tableRow === 1 && !isSep) bad('표 둘째 줄이 구분행이 아니다')
       if (tableRow !== 1 && isSep) bad('표 구분행이 둘째 줄이 아니다')
       if (!/\|\s*$/.test(line)) bad('표 줄이 | 로 끝나지 않는다')
+      if (cells.some((c) => (c.match(/\*\*/g) ?? []).length % 2)) bad('표 칸 경계를 넘는 굵게')
     } else tableRow = -1
     const m = /^(\s*)(?:(\d+)\.|[-*])(\s+|$)(.*)$/.exec(line)
     if (m) {
@@ -350,6 +364,7 @@ export function unsupportedIn(body: string): string[] {
       } else if (lvl.ordered !== ordered) bad('같은 들여쓰기에 번호 · 글머리가 섞였다')
     } else if (!line.trim() || !/^\s{2,}\S/.test(line)) levels = null
     else if (/^\s{2,}#/.test(line)) bad('목록 안의 제목')
+    prevBlank = !line.trim()
   })
   return out
 }

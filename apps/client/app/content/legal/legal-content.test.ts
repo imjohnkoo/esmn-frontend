@@ -22,6 +22,8 @@ const read = (f: string) => readFileSync(fileURLToPath(new URL(f, import.meta.ur
 const sha = (s: string) => createHash('sha256').update(s).digest('hex')
 /** 생성 때 해시는 값 자리 표시(NUL 감싼 PENDING) 기준 — 런타임 문자열을 되돌려 잰다 */
 const unmark = (s: string) => s.split(P9_4_PENDING).join('\u0000PENDING\u0000')
+/** spec D-33 의 알려진 예외 문장(약관 8조②) — 이 글자 그대로만 */
+const D33 = '(예: 한국시간 자정 기준)'
 const header = (src: string) => /^\/\/ sha256\(본문\): ([0-9a-f]{64})$/m.exec(src)?.[1]
 
 describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file }) => {
@@ -43,9 +45,9 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file }) => {
     expect(doc.markdown.replace(/\[[^\]\n]+\]\((?:https:\/\/|\/)[^)\s]*\)/g, '')).not.toMatch(
       /[[\]]/,
     )
-    // 알고 있는 예외 하나 — D-33(약관 8조② «자정» 예시, 리뷰 blocker · ready PR 보류) — 아래 it.fails 가 따로 잡는다
-    const known = (h: string) => doc.slug === 'terms' && h.includes('자정/')
-    expect(forbiddenIn(doc.title + '\n' + unmark(doc.markdown)).filter((h) => !known(h))).toEqual([])
+    // 알고 있는 예외는 그 한 문장뿐 — D-33(약관 8조② 자정 예시, 리뷰 blocker · ready PR 보류). 아래 it.fails 가 따로 잡는다
+    const md = unmark(doc.markdown)
+    expect(forbiddenIn(doc.title + '\n' + (doc.slug === 'terms' ? md.replace(D33, '') : md))).toEqual([])
     expect(unsupportedIn(doc.markdown)).toEqual([])
   })
 
@@ -59,8 +61,8 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file }) => {
 
 // ⛔ spec D-33 open — 약관 8조② «(예: 한국시간 자정 기준)» 이 eSIM 불변식(첫 연결부터 24시간 단위)과 부딪힌다.
 // it.fails 는 «지금 실패하는 것이 정상» 이다. legal-pages rev(괄호 삭제)를 가져오면 이 테스트가 빨간불이 된다 → it 으로 바꾸고 위 known 예외를 지운다.
-it.fails('D-33 — 공개 약관에 자정 기준 서술이 없다(풀리면 it 으로)', () => {
-  expect(blocksText(parseLegalMarkdown(TERMS_DOC.markdown))).not.toMatch(/(?<![가-힣])자정/)
+it.fails('D-33 — 약관 8조② 의 자정 예시가 없다(풀리면 it 으로 · D33 예외도 지운다)', () => {
+  expect(TERMS_DOC.markdown).not.toContain(D33)
 })
 
 describe('이용약관 — 구조 · 확정 문장', () => {

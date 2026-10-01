@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -41,6 +41,29 @@ describe('legal-import CLI', () => {
     })
     expect(r.stderr).not.toMatch(/ENOENT/)
     expect(r.stderr).toMatch(/찾지 못했다/)
+  })
+
+  // 05 는 메모 · 값 자리 규칙이 비어 있어 가짜 정본으로 성공 경로를 걸을 수 있다
+  const FAKE_05 = '# 고지\n## A. 발급 화면\n```\n• 발급 후 설치 전에는 가짜 안내.\n☐ (필수) 가짜 동의.\n```\n'
+
+  it('성공하면 지정한 출력 폴더에만 쓴다(LEGAL_IMPORT_OUT_DIR)', () => {
+    const from = tmp('src')
+    const out = tmp('out')
+    writeFileSync(join(from, '05_고지문구-동의체크-FAQ.md'), FAKE_05)
+    const r = run(['--from', from, '--docs', 'issue-notice'], { LEGAL_IMPORT_OUT_DIR: out })
+    expect(r.status).toBe(0)
+    expect(readdirSync(out)).toEqual(['issue-notice.ts'])
+    expect(readFileSync(join(out, 'issue-notice.ts'), 'utf8')).toContain("refund: '발급 후 설치 전에는 가짜 안내.'")
+  })
+
+  it('하나라도 실패하면 통과한 문서도 쓰지 않는다(전부 아니면 0)', () => {
+    const from = tmp('src')
+    const out = tmp('out')
+    writeFileSync(join(from, '05_고지문구-동의체크-FAQ.md'), FAKE_05)
+    writeFileSync(join(from, '01_이용약관.md'), '# 이용약관\n본문\n')
+    const r = run(['--from', from, '--docs', 'issue-notice,terms'], { LEGAL_IMPORT_OUT_DIR: out })
+    expect(r.status).toBe(1)
+    expect(readdirSync(out)).toEqual([])
   })
 
   it('모르는 문서 이름 · --from 없음은 실패', () => {
