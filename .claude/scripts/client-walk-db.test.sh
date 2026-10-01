@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# client-walk-db.sh 회귀 테스트 — DB · 컨테이너에 닿지 않는다(PATH 앞의 가짜 netstat · docker · node).
-# 지키는 것: schema 의 drizzle-kit push 는 ① 55432 리스너가 전부 로컬 컨테이너 계열이고 ② 컨테이너에 쓴 표식을
-# 호스트 포트로 읽어 같을 때만 돈다 — ssh 터널(prod RDS)이면 호스트 연결 자체를 하지 않는다.
+# client-walk-db.sh 회귀 테스트 — DB · 컨테이너에 닿지 않는다(PATH 앞의 가짜 docker · node + 호스트 DB 도구 덫).
+# 지키는 것: 어느 명령도 호스트의 55432 에 붙지 않는다 — 명령마다 docker 호출 목록이 정확히 정해져 있고(그 밖의 호출 0),
+# schema 는 drizzle-kit export(DB 연결 없음)를 컨테이너 안 psql 로 넣으며, 원격 docker · 잘못 묶인 컨테이너는 거부한다.
 # 사용: bash .claude/scripts/client-walk-db.test.sh
 set -uo pipefail
 
@@ -15,137 +15,172 @@ fail=0
 ok() { pass=$((pass + 1)); }
 ng() { fail=$((fail + 1)); echo "FAIL: $1"; }
 
-# 가짜 netstat — macOS netstat -anv -p tcp 모양. 55432 리스너 이름은 FAKE_NET_55432(공백 구분)
-cat >"$FAKE/netstat" <<'EOF'
-#!/bin/sh
-echo "Active Internet connections (including servers)"
-echo "Proto Recv-Q Send-Q  Local Address  Foreign Address  (state)  rxbytes txbytes rhiwat shiwat process:pid state options"
-row() { echo "$1       0      0  $2         *.*                    LISTEN                 0            0  131072  131072  $3:4242  00100 00000106"; }
-row tcp4 "*.631" "cupsd"
-# 표식을 읽은 뒤 리스너가 바뀌는 경우 — 가짜 node 가 $FAKE_DIR/net_after 를 net_now 로 옮기면 그 뒤 호출은 그 값을 쓴다
-[ -f "$FAKE_DIR/net_now" ] && FAKE_NET_55432="$(cat "$FAKE_DIR/net_now")"
-for n in $FAKE_NET_55432; do row tcp4 "127.0.0.1.55432" "$n"; done
-EOF
-# 가짜 docker — 부른 것을 기록. exec … psql -c "COMMENT ON DATABASE walk IS '<표식>'" 이면 표식을 파일에 ·
-# context inspect 는 $FAKE/endpoint · inspect -f 이미지는 스크립트가 기대하는 이미지
+# 가짜 docker — 부른 것을 한 줄씩 기록. 상태는 $FAKE 의 파일(exists · image · port · tables · endpoint)로 준다.
+# psql 의 표준 입력은 -q(스키마) → applied.sql, 그 밖(seed) → seed.sql 에 남긴다
 cat >"$FAKE/docker" <<'EOF'
 #!/bin/sh
+F="@FAKE@"
 case "$1 $2" in
-  "context inspect") cat "$FAKE_DIR/endpoint"; exit 0 ;;
+  "context inspect") cat "$F/endpoint"; exit 0 ;;
 esac
-echo "docker $*" >>"$FAKE_DIR/calls"
+echo "docker $*" >>"$F/calls"
 case "$*" in
-  *"{{.Config.Image}}"*) echo "postgres:15.12-alpine"; exit 0 ;;
+  "inspect -f {{.Config.Image}} nomacom-walk-pg") cat "$F/image"; exit 0 ;;
+  "inspect nomacom-walk-pg") [ -f "$F/exists" ]; exit $? ;;
+  "port nomacom-walk-pg 5432/tcp") cat "$F/port"; exit 0 ;;
+  *"-At -c SELECT count(*) FROM information_schema.tables"*) cat "$F/tables"; exit 0 ;;
+  "exec -i nomacom-walk-pg psql -v ON_ERROR_STOP=1 -U walk -d walk -q") cat >"$F/applied.sql"; exit 0 ;;
+  "exec -i nomacom-walk-pg psql -v ON_ERROR_STOP=1 -U walk -d walk") cat >"$F/seed.sql"; exit 0 ;;
 esac
-prev=""
-for a in "$@"; do
-  if [ "$prev" = "-c" ]; then echo "$a" | sed -nE "s/^COMMENT ON DATABASE walk IS '([^']*)'$/\1/p" >"$FAKE_DIR/marker"; fi
-  prev="$a"
-done
 exit 0
 EOF
-# 가짜 node — 표식 읽기(--input-type=module)는 $FAKE/host(same · other · fail)대로, drizzle-kit 은 기록만.
-# 스크립트가 env -i 로 부르므로 경로는 환경변수가 아니라 파일 안에 박는다
+# 가짜 node — drizzle-kit export 만 응답($FAKE/export.sql · export_fail 이면 실패). env 를 기록한다(env -i 안에서 불린다)
 cat >"$FAKE/node" <<'EOF'
 #!/bin/sh
-FAKE_DIR="@FAKE@"
+F="@FAKE@"
 case "$*" in
-  *--input-type=module*)
-    echo "node marker DATABASE_URL=$DATABASE_URL SPARK=${SPARK_API_TOKEN:-}" >>"$FAKE_DIR/calls"
-    [ -f "$FAKE_DIR/net_after" ] && cp "$FAKE_DIR/net_after" "$FAKE_DIR/net_now"
-    case "$(cat "$FAKE_DIR/host")" in
-      same) cat "$FAKE_DIR/marker" ;;
-      other) echo "nomacom-walk-0000000000000000" ;;
-      *) exit 1 ;;
-    esac
+  *drizzle-kit/bin.cjs\ export\ --dialect\ postgresql\ --schema\ ./server/db/schema.ts)
+    echo "node export cwd=$(basename "$(pwd)") DATABASE_URL=${DATABASE_URL:-} SPARK=${SPARK_API_TOKEN:-}" >>"$F/calls"
+    [ -f "$F/export_fail" ] && exit 1
+    cat "$F/export.sql"
     ;;
-  *drizzle-kit*) echo "node push DATABASE_URL=$DATABASE_URL SPARK=${SPARK_API_TOKEN:-}" >>"$FAKE_DIR/calls" ;;
-  *) echo "node other $*" >>"$FAKE_DIR/calls" ;;
+  *) echo "node other $*" >>"$F/calls"; exit 1 ;;
 esac
 EOF
-# 덫 — 호스트에서 DB 포트에 붙을 만한 도구는 부르는 순간 기록 + 실패(실제 도구가 실제 포트에 닿지 않게)
-for tool in psql pg_dump pg_isready nc ncat telnet curl wget socat ssh; do
+# 덫 — 호스트에서 DB 포트에 붙을 만한 도구는 부르는 순간 기록 + 실패
+for tool in psql pg_dump pg_isready nc ncat telnet curl wget socat ssh netstat lsof; do
   printf '#!/bin/sh\necho "TRIPWIRE %s $*" >>"%s/calls"\nexit 1\n' "$tool" "$FAKE" >"$FAKE/$tool"
   chmod +x "$FAKE/$tool"
 done
-sed -i.bak "s#@FAKE@#$FAKE#" "$FAKE/node"
-echo "unix:///var/run/docker.sock" >"$FAKE/endpoint"
-chmod +x "$FAKE/netstat" "$FAKE/docker" "$FAKE/node"
-export FAKE_DIR="$FAKE" SPARK_API_TOKEN=leak DATABASE_URL=postgres://u:p@prod.example.com:5432/db
+sed -i.bak "s#@FAKE@#$FAKE#" "$FAKE/docker" "$FAKE/node"
+chmod +x "$FAKE/docker" "$FAKE/node"
+export SPARK_API_TOKEN=leak DATABASE_URL=postgres://u:p@prod.example.com:5432/db
+GOOD_SQL='CREATE TABLE "esim" (
+	"esim_id" bigserial PRIMARY KEY NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "esim" ADD CONSTRAINT "esim_fk" FOREIGN KEY ("x") REFERENCES "public"."order"("y");'
 
-schema() { # 리스너 · 호스트 표식 → exit 코드(호출 기록은 $FAKE/calls)
+reset_state() {
   : >"$FAKE/calls"
-  : >"$FAKE/marker"
-  echo "$2" >"$FAKE/host"
-  FAKE_NET_55432="$1" PATH="$FAKE:$PATH" bash "$S" schema >/dev/null 2>&1
-  echo $?
+  echo "unix:///var/run/docker.sock" >"$FAKE/endpoint"
+  echo "postgres:15.12-alpine" >"$FAKE/image"
+  echo "127.0.0.1:55432" >"$FAKE/port"
+  echo 0 >"$FAKE/tables"
+  printf '%s\n' "$GOOD_SQL" >"$FAKE/export.sql"
+  touch "$FAKE/exists"
+  for f in applied.sql seed.sql export_fail; do [[ -e "$FAKE/$f" ]] && mv "$FAKE/$f" "$FAKE/$f.old.$RANDOM"; done
+  return 0
 }
+run() { PATH="$FAKE:$PATH" bash "$S" "$@" >/dev/null 2>&1; echo $?; }
 calls() { cat "$FAKE/calls"; }
+expect_calls() { # 이름 · 기대 호출(줄바꿈 구분) — 정확히 같아야 한다(그 밖의 호출 0)
+  [[ "$(calls)" == "$2" ]] && ok || ng "$1 — 호출 목록이 다르다:
+--- 기대
+$2
+--- 받은 것
+$(calls)"
+}
+P='docker exec -i nomacom-walk-pg psql -v ON_ERROR_STOP=1 -U walk -d walk'
+COUNT="$P -At -c SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'"
+EXPORT='node export cwd=client DATABASE_URL= SPARK='
 
-# ── 연결 전에 거부 — 컨테이너에도 호스트 포트에도 붙지 않는다
-for case in "ssh" "" "com.docker.backend ssh" "session-manager-plugin" "kubectl"; do
-  code="$(schema "$case" same)"
-  [[ "$code" == 2 ]] && ok || ng "리스너 «$case» — exit 2 여야 함(받은 값 $code)"
-  [[ -z "$(calls)" ]] && ok || ng "리스너 «$case» — 아무것도 부르지 않아야 함: $(calls | tr '\n' ';')"
+# ── 정적 — 스크립트에 호스트 DB 연결 길이 없다(주석 제외)
+code_only="$(grep -vE '^[[:space:]]*#' "$S")"
+for pat in 'DATABASE_URL=' '/dev/tcp' 'host\.docker\.internal' 'drizzle-kit/bin\.cjs" push' 'psql -h' '--network'; do
+  grep -qE -- "$pat" <<<"$code_only" && ng "스크립트에 «$pat» 가 있다" || ok
 done
 
-# ── 원격 docker 는 어떤 명령이든 거부 — DOCKER_HOST · 컨텍스트
+# ── 원격 docker 는 어떤 명령이든 거부 — 아무것도 부르지 않는다
 for cmd in up schema seed counts; do
-  : >"$FAKE/calls"
-  DOCKER_HOST=tcp://remote.example:2376 FAKE_NET_55432="com.docker.backend" PATH="$FAKE:$PATH" bash "$S" "$cmd" >/dev/null 2>&1
-  [[ $? == 2 ]] && ok || ng "DOCKER_HOST 원격 · $cmd — exit 2 여야 함"
-  [[ -z "$(calls)" ]] && ok || ng "DOCKER_HOST 원격 · $cmd — 아무것도 부르지 않아야 함: $(calls | tr '\n' ';')"
-done
-echo "ssh://me@remote.example" >"$FAKE/endpoint"
-for cmd in up schema seed counts; do
-  : >"$FAKE/calls"
-  FAKE_NET_55432="com.docker.backend" PATH="$FAKE:$PATH" bash "$S" "$cmd" >/dev/null 2>&1
-  [[ $? == 2 ]] && ok || ng "원격 컨텍스트 · $cmd — exit 2 여야 함"
-  [[ -z "$(calls)" ]] && ok || ng "원격 컨텍스트 · $cmd — 아무것도 부르지 않아야 함"
-done
-echo "unix:///var/run/docker.sock" >"$FAKE/endpoint"
-
-# ── 리스너는 로컬 계열인데 호스트 포트가 그 컨테이너가 아니다(표식 불일치 · 읽기 실패) — push 없음
-for host in other fail; do
-  code="$(schema "com.docker.backend" "$host")"
-  [[ "$code" == 2 ]] && ok || ng "표식 $host — exit 2 여야 함(받은 값 $code)"
-  grep -q '^node push' <<<"$(calls)" && ng "표식 $host — push 하면 안 됨" || ok
+  reset_state
+  [[ "$(DOCKER_HOST=tcp://remote.example:2376 run "$cmd")" == 2 ]] && ok || ng "DOCKER_HOST 원격 · $cmd — exit 2"
+  expect_calls "DOCKER_HOST 원격 · $cmd" ""
+  reset_state
+  echo "ssh://me@remote.example" >"$FAKE/endpoint"
+  [[ "$(run "$cmd")" == 2 ]] && ok || ng "원격 컨텍스트 · $cmd — exit 2"
+  expect_calls "원격 컨텍스트 · $cmd" ""
 done
 
-# ── 둘 다 맞으면 push 한 번 — 합성 DB URL 만 · 셸의 DATABASE_URL · 벤더 키는 넘기지 않는다
-code="$(schema "com.docker.backend" same)"
-[[ "$code" == 0 ]] && ok || ng "정상 — exit 0 여야 함(받은 값 $code)"
-[[ "$(grep -c '^node push' <<<"$(calls)")" == 1 ]] && ok || ng "정상 — push 정확히 한 번"
-grep -qxF 'node push DATABASE_URL=postgres://walk:walk@127.0.0.1:55432/walk SPARK=' <<<"$(calls)" && ok || ng "push env — 합성 URL 만 · 벤더 키 없음: $(calls | tr '\n' ';')"
-grep -qxF 'node marker DATABASE_URL=postgres://walk:walk@127.0.0.1:55432/walk SPARK=' <<<"$(calls)" && ok || ng "표식 읽기 env"
-grep -qE "^docker exec -i nomacom-walk-pg psql .* -c COMMENT ON DATABASE walk IS 'nomacom-walk-[0-9a-f]{16}'$" <<<"$(calls)" && ok || ng "표식 쓰기는 컨테이너 안에서(docker exec)"
-# 순서 — 표식 쓰기 → 표식 읽기 → push
-order="$(calls | awk '{print $1, $2}' | tr '\n' ';')"
-[[ "$order" == "docker exec;node marker;node push;" ]] && ok || ng "순서: $order"
-# push 직전 리스너 재확인 — 표식 확인 뒤 리스너가 터널로 바뀌면 push 하지 않는다(가짜 node 가 표식을 읽을 때 netstat 결과를 바꾼다)
-echo "ssh" >"$FAKE/net_after"
-code="$(schema "com.docker.backend" same)"
-[[ "$code" == 2 ]] && ok || ng "표식 뒤 리스너가 터널로 — exit 2 여야 함(받은 값 $code)"
-grep -q '^node push' <<<"$(calls)" && ng "표식 뒤 리스너가 터널로 — push 하면 안 됨" || ok
-mv "$FAKE/net_after" "$FAKE/net_after.used"
-mv "$FAKE/net_now" "$FAKE/net_now.used"
+# ── url — 아무것도 부르지 않는다
+reset_state
+[[ "$(run url)" == 0 ]] && ok || ng "url — exit 0"
+expect_calls "url" ""
 
-# ── up · seed · counts · url 은 호스트 포트로 붙지 않는다(55432 가 터널이어도) — docker 만 · 덫 0
-for cmd in up seed counts url; do
-  : >"$FAKE/calls"
-  FAKE_NET_55432="ssh" PATH="$FAKE:$PATH" bash "$S" "$cmd" >/dev/null 2>&1
-  grep -qE '^(node|TRIPWIRE)' <<<"$(calls)" && ng "$cmd — 호스트 연결 금지: $(calls | tr '\n' ';')" || ok
-  calls | grep -vE '^docker ' | grep -q . && ng "$cmd — docker 밖 호출: $(calls | tr '\n' ';')" || ok
+# ── up — 새로 만들 때 127.0.0.1:55432 에만 · 있으면 이미지 확인 뒤 start · 묶임이 다르면 거부 · 준비 판정은 컨테이너 안 TCP
+reset_state
+mv "$FAKE/exists" "$FAKE/exists.old.$RANDOM"
+[[ "$(run up)" == 0 ]] && ok || ng "up(새로) — exit 0"
+expect_calls "up(새로)" "docker inspect nomacom-walk-pg
+docker run -d --name nomacom-walk-pg -p 127.0.0.1:55432:5432 -e POSTGRES_USER=walk -e POSTGRES_PASSWORD=walk -e POSTGRES_DB=walk postgres:15.12-alpine
+docker port nomacom-walk-pg 5432/tcp
+docker exec nomacom-walk-pg pg_isready -h 127.0.0.1 -U walk -d walk
+docker exec nomacom-walk-pg pg_isready -h 127.0.0.1 -U walk -d walk"
+reset_state
+[[ "$(run up)" == 0 ]] && ok || ng "up(있음) — exit 0"
+expect_calls "up(있음)" "docker inspect nomacom-walk-pg
+docker inspect -f {{.Config.Image}} nomacom-walk-pg
+docker start nomacom-walk-pg
+docker port nomacom-walk-pg 5432/tcp
+docker exec nomacom-walk-pg pg_isready -h 127.0.0.1 -U walk -d walk
+docker exec nomacom-walk-pg pg_isready -h 127.0.0.1 -U walk -d walk"
+reset_state
+echo "postgres:16" >"$FAKE/image"
+[[ "$(run up)" == 2 ]] && ok || ng "up(다른 이미지) — exit 2"
+for port in "0.0.0.0:55432" "127.0.0.1:55433" "127.0.0.1:55432
+[::]:55432"; do
+  reset_state
+  printf '%s\n' "$port" >"$FAKE/port"
+  [[ "$(run up)" == 2 ]] && ok || ng "up(묶임 «$port») — exit 2"
+  grep -q 'pg_isready' <<<"$(calls)" && ng "up(묶임 «$port») — 준비 판정까지 가면 안 됨" || ok
 done
-: >"$FAKE/calls"
-FAKE_NET_55432="ssh" PATH="$FAKE:$PATH" bash "$S" seed >/dev/null 2>&1
-grep -q '^docker exec -i nomacom-walk-pg psql' <<<"$(calls)" && ok || ng "seed — docker exec 로"
-: >"$FAKE/calls"
-FAKE_NET_55432="ssh" PATH="$FAKE:$PATH" bash "$S" counts >/dev/null 2>&1
-grep -q '^docker exec -i nomacom-walk-pg psql' <<<"$(calls)" && ok || ng "counts — docker exec 로"
-# 정상 schema 에서도 덫은 0
-schema "com.docker.backend" same >/dev/null
-grep -q '^TRIPWIRE' <<<"$(calls)" && ng "schema — 덫 호출: $(calls | tr '\n' ';')" || ok
+
+# ── schema — export(DB 연결 없음 · 셸 env 없음) → 허용 문장 → 표가 없을 때만 컨테이너 안 psql
+reset_state
+[[ "$(run schema)" == 0 ]] && ok || ng "schema — exit 0"
+expect_calls "schema" "docker port nomacom-walk-pg 5432/tcp
+$EXPORT
+$COUNT
+$P -q"
+[[ "$(cat "$FAKE/applied.sql" 2>/dev/null)" == "$GOOD_SQL" ]] && ok || ng "schema — 넣은 SQL = export 출력 그대로"
+reset_state
+echo 3 >"$FAKE/tables"
+[[ "$(run schema)" == 0 ]] && ok || ng "schema(표 있음) — exit 0(건너뜀)"
+expect_calls "schema(표 있음)" "docker port nomacom-walk-pg 5432/tcp
+$EXPORT
+$COUNT"
+for bad in 'DROP TABLE "order";' '  DROP TABLE "order";' 'ALTER TABLE "esim" DROP COLUMN "a";' 'TRUNCATE "order";' 'UPDATE "order" SET "x" = 1;'; do
+  reset_state
+  printf '%s\n%s\n' "$GOOD_SQL" "$bad" >"$FAKE/export.sql"
+  [[ "$(run schema)" == 2 ]] && ok || ng "schema(«$bad») — exit 2"
+  expect_calls "schema(«$bad»)" "docker port nomacom-walk-pg 5432/tcp
+$EXPORT"
+done
+reset_state
+touch "$FAKE/export_fail"
+[[ "$(run schema)" == 2 ]] && ok || ng "schema(export 실패) — exit 2"
+reset_state
+printf 'SELECT 1;\n' >"$FAKE/export.sql"
+[[ "$(run schema)" == 2 ]] && ok || ng "schema(CREATE TABLE 없음) — exit 2"
+reset_state
+echo "0.0.0.0:55432" >"$FAKE/port"
+[[ "$(run schema)" == 2 ]] && ok || ng "schema(묶임 다름) — exit 2"
+expect_calls "schema(묶임 다름)" "docker port nomacom-walk-pg 5432/tcp"
+
+# ── seed · counts — 컨테이너 안 psql 한 번씩만
+reset_state
+[[ "$(run seed)" == 0 ]] && ok || ng "seed — exit 0"
+expect_calls "seed" "docker port nomacom-walk-pg 5432/tcp
+$P"
+grep -q "ON CONFLICT" "$FAKE/seed.sql" 2>/dev/null && ok || ng "seed — SQL 이 컨테이너 psql 의 표준 입력으로"
+grep -qE "010-0000-000[12]" "$FAKE/seed.sql" && ! grep -qE "010-[1-9]" "$FAKE/seed.sql" && ok || ng "seed — 전화는 010-0000-xxxx 대역만"
+reset_state
+echo "0.0.0.0:55432" >"$FAKE/port"
+[[ "$(run seed)" == 2 ]] && ok || ng "seed(묶임 다름) — exit 2"
+expect_calls "seed(묶임 다름)" "docker port nomacom-walk-pg 5432/tcp"
+reset_state
+[[ "$(run counts)" == 0 ]] && ok || ng "counts — exit 0"
+expect_calls "counts" "$P -At"
 
 echo "client-walk-db.test: $pass pass · $fail fail"
 [[ "$fail" == 0 ]]

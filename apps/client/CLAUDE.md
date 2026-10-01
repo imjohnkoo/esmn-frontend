@@ -166,9 +166,9 @@ yarn turbo run build --filter=nomacom-client
 bash .claude/scripts/client-walk-server.sh dev  3005                                             # shell · 비-DB 4-step
 bash .claude/scripts/client-walk-server.sh prod 3006                                             # 헤더 · noindex (DB 없음)
 # 합성 DB walk(E2E-3 · 4 · 7) — .claude/scripts/client-walk-db.sh(spec D-24 · John 승인): 로컬 Docker postgres nomacom-walk-pg 만 ·
-# up → schema → seed(가짜 주문 2건 · 010-0000-xxxx) → 봉투 dev 서버에 그 URL → counts(E2E-7 행 수). seed · counts 는 docker exec(컨테이너 안)만,
-# schema(drizzle-kit push)는 호스트 55432 로 붙으므로 ① 55432 리스너가 전부 로컬 컨테이너 계열(netstat — ssh · SSM 터널이면 붙지 않고 거부)
-# ② 컨테이너에 쓴 무작위 표식을 호스트 포트로 읽어 같을 때만 push. 회귀: bash .claude/scripts/client-walk-db.test.sh
+# up → schema → seed(가짜 주문 2건 · 010-0000-xxxx) → 봉투 dev 서버에 그 URL → counts(E2E-7 행 수). 이 스크립트는 **어느 명령도 호스트 55432 에
+# 붙지 않는다** — schema 는 drizzle-kit export(DB 연결 없음) SQL 을 컨테이너 안 psql 로 · seed · counts 도 docker exec. 컨테이너는 127.0.0.1:55432 에만 ·
+# 원격 docker 거부. 호스트 포트로 붙는 것은 봉투 dev 서버뿐(55432 리스너 판정). 회귀: bash .claude/scripts/client-walk-db.test.sh
 # ⛔ drizzle-kit push / db:push 금지(drizzle.config 는 셸의 DATABASE_URL 을 쓴다). 실발급 성공 경로는 prod 승격 당일 operator AC.
 
 # Docker
