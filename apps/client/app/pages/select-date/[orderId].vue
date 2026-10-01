@@ -227,6 +227,9 @@ onMounted(() => {
     router.push(`/details/${orderId.value}`)
   }
 })
+
+// 발급 화면 고지 문구(client-shell spec D-32 · D-35 — 05-A) — 스크립트 끝에 둔다(typecheck 기준선 줄 번호 불변)
+import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
 </script>
 
 <template>
@@ -463,20 +466,30 @@ onMounted(() => {
           <line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
         <p>
-          <b>발급 후에는 취소와 환불이 불가해요.</b>
+          <!-- 05-A 14행(client-shell spec D-32) — 약관 12조③ 의 «발급 요청 화면에 미리 표시» -->
+          <b>{{ ISSUE_NOTICE.refund }}</b>
           사용하실 기기가 eSIM 지원 기기인지 발급 전에 꼭 확인해 주세요.
           <a
             class="select-date-page__confirm-policy-link"
             href="/supported-devices"
             target="_blank"
             rel="noopener"
+            >지원 기기 목록 보기</a
           >
-            지원 기기 목록 보기
-          </a>
+          <!-- 법정 링크(client-shell spec F-20) — 05-A 원문 전체(5줄 · 링크 3)는 W1-2 K3(F-21) -->
+          <span aria-hidden="true"> · </span>
+          <a
+            class="select-date-page__confirm-policy-link"
+            href="/terms"
+            target="_blank"
+            rel="noopener"
+            >이용약관 보기</a
+          >
         </p>
       </div>
       <div class="select-date-page__confirm-agree">
-        <NCheckbox v-model="isPolicyAgreed" label="위 내용을 확인했고 동의해요" />
+        <!-- 05-A 19행(D-35) — 약관 6조④ 의 발급 화면 약관 동의 · 체크 구조 · 서버 기록은 W1-2 K3 · W1-6 -->
+        <NCheckbox v-model="isPolicyAgreed" :label="ISSUE_NOTICE.consent" />
       </div>
       <template #actions>
         <div class="select-date-page__confirm-actions">

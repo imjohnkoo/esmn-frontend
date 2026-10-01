@@ -2,6 +2,7 @@
 // 랜딩 안내 — 발급 흐름은 주문별 링크 (/verify/{orderId}) 로만 진입.
 // 직접 접속한 방문자에게 이용 방법을 안내한다.
 import { NLogo } from '@imjohnkoo/design-vue'
+import IssuerBusinessInfo from '~/components/legal/IssuerBusinessInfo.vue'
 </script>
 
 <template>
@@ -43,6 +44,9 @@ import { NLogo } from '@imjohnkoo/design-vue'
         eSIM 지원 기기 확인하기
       </NuxtLink>
     </div>
+
+    <!-- ⏳ 임시(client-shell spec D-36) — W1-2 홈 · 푸터 머지 때 걷어 낸다 -->
+    <IssuerBusinessInfo class="landing-page__biz" />
   </div>
 </template>
 
@@ -101,6 +105,10 @@ import { NLogo } from '@imjohnkoo/design-vue'
   font-size: 13px;
   color: #6b7280;
   line-height: 1.6;
+}
+
+.landing-page__biz {
+  max-width: 400px;
 }
 
 .landing-page__link {
