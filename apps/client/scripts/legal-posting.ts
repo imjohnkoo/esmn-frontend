@@ -221,8 +221,8 @@ const slotMark = (i: number) => `\u0000SLOT${i}\u0000`
 export const MIDNIGHT = new RegExp(
   [
     '자정(?!보(?!다))',
-    '(?<!\\d)(?:0|00|24)\\s*시\\s*(?:를|을|에|부터|까지|기준|정각)',
-    '(?<!\\d)(?:00|24):00(?:\\s*\\([^)]{0,12}\\))?\\s*(?:에|을|를|기준|부터|까지)',
+    '(?<!\\d)(?:0|00|24)\\s*시(?:\\s*\\([^)]{0,12}\\))?\\s*(?:를|을|에|부터|까지|기준|정각|이후|초기화)',
+    '(?<!\\d)(?:00|24):00(?:\\s*\\([^)]{0,12}\\))?\\s*(?:에|을|를|기준|부터|까지|이후|초기화)',
     '(?:오전|밤|새벽)\\s*12\\s*시',
   ].join('|'),
 )
@@ -255,8 +255,10 @@ export interface Posting {
   pendingCount: number
 }
 
-/** «결정 기록» 절 제목 — 맨 앞(번호 · 괄호 · «부록 (A) —» · «내부» 머리 허용)에서만. «제5장 결정 기록의 보관» 같은 본문 장은 걷지 않는다 */
-const DECISION = /^(?:[\d.]+\s*)?(?:\([^)]*\)\s*)?(?:부록\s*[A-Za-z\d]?\s*[—–:·-]?\s*)?(?:내부\s*)?결정\s*기록/
+/** «결정 기록» 절 제목 — 맨 앞(번호 · 괄호 · «부록 · 참고 (A. · 1)) —» · «내부» · «의사» 머리 허용)에서만 · «결정 로그» 도.
+ *  뒤에 한글이 붙으면(«결정 기록의 보관») 본문 장이라 걷지 않는다. «제5장 결정 기록의 보관» 같은 본문 장은 걷지 않는다 */
+const DECISION =
+  /^(?:[\d.]+\s*)?(?:\([^)]*\)\s*)?(?:(?:부록|참고)\s*(?:[A-Za-z\d]{1,2}[.)]?)?\s*[—–:·-]?\s*)?(?:내부\s*|의사)?결정\s*(?:기록|로그)(?![가-힣])/
 
 /** 검토 메모 · 값 자리의 후보 — 백틱으로 감싼 대괄호 태그(해시는 백틱 포함) 또는 맨 대괄호 태그(뒤에 «(» 가 붙은 링크 글자는 제외) */
 const DOC_TAG = /`\[[^`\n]*\]`|\[[^\]\n]*\](?!\()/g
@@ -385,9 +387,13 @@ export interface BlockPosting {
 export function toBlock(source: string, rules: BlockRules): BlockPosting {
   const sec = sectionLines(normalize(source).split('\n'), rules.section)
   const marks = fenceMarks(sec)
+  // 코드 블록은 그 절에 정확히 1개 — 둘째 블록(새 동의 · 새 고지)을 조용히 버리지 않는다
+  const opens = marks.filter((m) => m === 'open').length
+  if (opens === 0) throw new Error(`${rules.section} 절에 코드 블록이 없다`)
+  if (opens > 1) throw new Error(`${rules.section} 절에 코드 블록이 ${opens}개다(1개여야 한다 — 정본이 바뀌었다)`)
   const open = marks.indexOf('open')
-  const close = open < 0 ? -1 : marks.indexOf('close', open)
-  if (open < 0 || close < 0) throw new Error(`${rules.section} 절에 코드 블록이 없다`)
+  const close = marks.indexOf('close', open)
+  if (close < 0) throw new Error(`${rules.section} 절의 코드 블록이 닫히지 않았다`)
   const raw = sec.slice(open + 1, close)
   // 코드 블록 안 태그는 백틱이 없다 — 대괄호 태그 그대로(줄 수는 그대로 — 태그는 줄 안에서만 바뀐다)
   const code = applyTags(raw.join('\n'), rules, /\[[^\]\n]*\]/g).split('\n')

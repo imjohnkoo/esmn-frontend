@@ -261,6 +261,14 @@ describe('푸터(04 1절) = /business 표(04 2절) — 같은 값이 두 생성�
     else if (mode === 'head') expect(row(label)).toMatch(new RegExp(`^${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?: [(·]|$)`))
     else expect(row(label).split(' · ')).toContain(`이메일 ${value}`)
   })
+  it('운영 시간 · 서비스명 — 푸터 연락처 줄의 괄호 ↔ 표 «운영 시간» 첫머리 · 푸터 첫 토막 ↔ 표 «서비스명» 첫머리', () => {
+    const hours = /\((평일 [^,()]+), ([^()]+휴무)\)/.exec(BUSINESS_INFO.contact)
+    expect(hours).not.toBeNull()
+    expect(row('운영 시간').startsWith(`${hours![1]} (${hours![2]})`)).toBe(true)
+    const brand = BUSINESS_INFO.brand.split(' | ')[0]!
+    expect(brand).toBe('이심마니')
+    expect(row('서비스명').startsWith(`${brand} — `)).toBe(true)
+  })
   it('호스팅은 둘 다 값 자리(D-29①) — 값이 오면 함께 바뀐다', () => {
     expect(BUSINESS_INFO.hosting).toContain(P9_4_PENDING)
     expect(row('호스팅 서비스 제공자')).toBe(P9_4_PENDING)

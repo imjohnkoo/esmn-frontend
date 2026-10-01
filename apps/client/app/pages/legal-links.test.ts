@@ -134,7 +134,7 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src).toMatch(/window\.addEventListener\('resize', fitConfirm\)/)
   })
 
-  it('체크아웃(템플릿 AST · F-22) — 동의는 05-B 항목 목록(CONSENT_ITEMS)만 그린다 · 처음 값 해제 · 결제는 필수 뒤 · 링크는 새 창', () => {
+  it('체크아웃(템플릿 AST · F-22) — 동의는 useCheckoutConsent 하나(항목 · 처음 값 · 결제 조건 — 행동은 utils 테스트) · 결제는 필수 뒤 · 링크는 새 창', () => {
     const src = read('./checkout-preview.vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
     const agree = find(tpl, (n) => cls(n) === 'checkout__agree')!
@@ -142,7 +142,7 @@ describe('발급기 법정 링크(F-20)', () => {
     const boxes = findAll(tpl, (n) => n.tag === 'NCheckbox')
     expect(boxes).toHaveLength(1)
     const item = boxes[0]!.ancestors.find((a) => dir(a, 'v-for') !== undefined)!
-    expect(dir(item, 'v-for')).toBe('item in CONSENT_ITEMS')
+    expect(dir(item, 'v-for')).toBe('item in consentItems')
     expect(boxes[0]!.ancestors).toContain(agree)
     expect(dir(boxes[0]!.node, 'v-model')).toBe('agreed[item.key]')
     expect(dir(boxes[0]!.node, ':label')).toBe('item.label')
@@ -152,13 +152,21 @@ describe('발급기 법정 링크(F-20)', () => {
     const info = find(item, (n) => dir(n, 'v-if') === 'item.info')!
     expect(text(info)).toContain('{{ item.info }}')
     // 처음 값 · 결제 조건은 utils 에서만 — 페이지가 체크 값을 쓰지 않는다(미리 체크 금지)
-    // 체크 값(agreed)이 나오는 곳은 셋뿐 — 선언 · 결제 조건 · 체크박스 v-model. 그 밖의 읽기 · 쓰기(미리 체크 · 캐스트 우회 ·
-    // 저장소 복원 · ||= 등)는 이 수가 늘어 막힌다
-    const script = src.slice(src.indexOf('<script setup'), src.indexOf('</script>'))
-    expect(script.match(/\bagreed\b/g)).toHaveLength(2)
-    expect(script).toMatch(/\nconst agreed = reactive\(initialConsent\(\)\)\n/)
-    expect(script).toMatch(/\nconst canPay = computed\(\(\) => canPayWith\(agreed\)\)\n/)
-    expect(template(src).match(/\bagreed\b/g)).toHaveLength(1)
+    // 동의 상태는 utils 의 useCheckoutConsent 하나에서 — 페이지는 받아서 그리기만 한다. 같은 이름의 로컬 함수 · 별칭 import ·
+    // 항목 · 체크 값 손대기(미리 체크 · 필수 해제 · 캐스트 · 저장소 복원)는 아래 이름 수가 늘거나 금지어로 막힌다
+    const script = src
+      .slice(src.indexOf('<script setup'), src.indexOf('</script>'))
+      .replace(/\/\/[^\n]*/g, '')
+    const count = (s: string, name: string) => (s.match(new RegExp(`\\b${name}\\b`, 'g')) ?? []).length
+    expect(script).toMatch(/\nconst \{ items: consentItems, agreed, canPay \} = useCheckoutConsent\(\)\n/)
+    expect([count(script, 'useCheckoutConsent'), count(script, 'agreed'), count(script, 'consentItems'), count(script, 'canPay')]).toEqual([2, 1, 1, 2])
+    expect(script).not.toMatch(/\b(?:initialConsent|canPayWith|CONSENT_ITEMS|reactive)\b/)
+    for (const m of script.matchAll(/import \{([^}]*)\} from '~\/utils\/checkout-preview'/g)) expect(m[1]).not.toMatch(/\bas\b/)
+    const tplText = template(src)
+    expect([count(tplText, 'agreed'), count(tplText, 'consentItems'), count(tplText, 'canPay')]).toEqual([1, 1, 1])
+    // 동의 영역을 CSS 로 숨기지 않는다(05-B 글자 · 체크가 화면에서 사라진다)
+    const style = src.slice(src.indexOf('<style'))
+    expect(style).not.toMatch(/display:\s*none|visibility:\s*hidden|opacity:\s*0(?![.\d])|font-size:\s*0(?![.\d])|(?:max-)?height:\s*0(?![.\d])|clip(?:-path)?:|text-indent:\s*-/)
     // 체크박스에는 v-model · :label 만 — :disabled · v-if · v-show 등이 붙으면 필수 체크를 못 하거나 숨는다
     expect(boxes[0]!.node.props!.map((p) => p.rawName ?? p.name)).toEqual(['v-model', ':label'])
     // 동의 영역 안의 조건부 표시는 «알릴 사항이 있는 항목만» 하나 — 05-B 글자를 숨기는 v-if · v-show · <template v-if> 금지
@@ -229,6 +237,15 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(link.props!.map((p) => p.rawName ?? p.name)).toEqual([':href', 'target', 'rel'])
     expect(dir(link, ':href')).toBe('ftcUrl')
     expect(text(link)).toContain('사업자정보확인')
+  })
+
+  it('/my 고객센터 — 새 창으로 여는 링크(http)에는 낭독기 «(새 창)» 이 같은 조건으로 붙는다', () => {
+    const tpl = parse(read('./my.vue')).descriptor.template!.ast! as unknown as TNode
+    const a = find(tpl, (n) => n.tag === 'a' && dir(n, 'v-if') === 'channel.href')!
+    expect(dir(a, ':target')).toBe("channel.href.startsWith('http') ? '_blank' : undefined")
+    const sr = find(a, (n) => cls(n) === 'sr-only')!
+    expect(dir(sr, 'v-if')).toBe("channel.href.startsWith('http')")
+    expect(text(sr)).toContain('(새 창)')
   })
 
   it('D-36 임시 블록(`/` 하단)은 W1-2 홈에서 걷었다 — 사업자정보는 모든 화면 푸터(F-7)가 맡는다', () => {

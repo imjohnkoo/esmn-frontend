@@ -1,3 +1,4 @@
+import { computed, reactive } from 'vue'
 import { CHECKOUT_NOTICE } from '../content/legal/checkout-notice'
 
 /**
@@ -111,15 +112,21 @@ export interface ConsentItem {
 
 const consentItem = (key: ConsentKey, line: string, info: string | null = null): ConsentItem => {
   const { label, links } = splitConsent(line)
-  return { key, required: label.startsWith('(필수)'), label, links, info }
+  return Object.freeze({
+    key,
+    required: label.startsWith('(필수)'),
+    label,
+    links: Object.freeze(links.map((link) => Object.freeze(link))) as ConsentItem['links'],
+    info,
+  })
 }
 
-/** 05-B 동의 항목(spec F-22) — 화면은 이 목록만 그린다. 문구 · 링크는 생성물(CHECKOUT_NOTICE)에서만 */
-export const CONSENT_ITEMS: readonly ConsentItem[] = [
+/** 05-B 동의 항목(spec F-22) — 화면은 이 목록만 그린다. 문구 · 링크는 생성물(CHECKOUT_NOTICE)에서만. 얼려 둔다(필수 여부를 실행 중에 못 바꾼다) */
+export const CONSENT_ITEMS: readonly ConsentItem[] = Object.freeze([
   consentItem('terms', CHECKOUT_NOTICE.terms),
   consentItem('age', CHECKOUT_NOTICE.age),
   consentItem('marketing', CHECKOUT_NOTICE.marketing, CHECKOUT_NOTICE.marketingInfo),
-]
+])
 
 /** 처음 값 — 모두 해제(PG 심사 요건 · spec 불변식 «동의 기본 해제») */
 export function initialConsent(): Record<ConsentKey, boolean> {
@@ -132,6 +139,13 @@ export function canPayWith(
   items: readonly ConsentItem[] = CONSENT_ITEMS,
 ): boolean {
   return items.every((item) => !item.required || agreed[item.key] === true)
+}
+
+/** 체크아웃 동의 상태 — 페이지는 이것만 쓴다(항목 · 체크 값 · 결제 조건). 부를 때마다 새 상태 · 처음 값은 모두 해제 */
+export function useCheckoutConsent() {
+  const agreed = reactive(initialConsent())
+  const canPay = computed(() => canPayWith(agreed))
+  return { items: CONSENT_ITEMS, agreed, canPay }
 }
 
 /** 개인정보 수집 · 이용 «안내» — 체크 없음(계약 이행 근거 · 2026-10-01 John (b)) */

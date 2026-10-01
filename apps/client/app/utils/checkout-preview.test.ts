@@ -13,6 +13,7 @@ import {
   initialConsent,
   readPaymentResult,
   splitConsent,
+  useCheckoutConsent,
 } from './checkout-preview'
 import { CHECKOUT_NOTICE } from '../content/legal/checkout-notice'
 
@@ -159,7 +160,7 @@ describe('05-B 동의 모델(F-22) — 화면이 그리는 것은 이것뿐', ()
     ])
   })
 
-  it('처음 값은 모두 해제(PG 심사 요건) · 부를 때마다 새 객체 · 브라우저 저장소 · 쿠키에 무엇이 있어도', () => {
+  it('처음 값은 모두 해제(PG 심사 요건) · 부를 때마다 새 객체 · 저장소 · 쿠키를 읽지 않는다(값이 있어도)', () => {
     expect(initialConsent()).toEqual({ terms: false, age: false, marketing: false })
     const stored = { getItem: () => 'true', key: () => 'terms', length: 3 }
     vi.stubGlobal('sessionStorage', stored)
@@ -173,6 +174,39 @@ describe('05-B 동의 모델(F-22) — 화면이 그리는 것은 이것뿐', ()
     const a = initialConsent()
     a.terms = true
     expect(initialConsent().terms).toBe(false)
+  })
+
+  it('useCheckoutConsent — 처음엔 결제 불가 · 필수 2개를 체크해야 켜지고 · 선택은 무관 · 하나라도 풀면 다시 꺼진다 · 부를 때마다 새 상태', () => {
+    const c = useCheckoutConsent()
+    expect(c.items).toBe(CONSENT_ITEMS)
+    expect({ ...c.agreed }).toEqual({ terms: false, age: false, marketing: false })
+    expect(c.canPay.value).toBe(false)
+    c.agreed.marketing = true
+    expect(c.canPay.value).toBe(false)
+    c.agreed.terms = true
+    expect(c.canPay.value).toBe(false)
+    c.agreed.age = true
+    expect(c.canPay.value).toBe(true)
+    c.agreed.marketing = false
+    expect(c.canPay.value).toBe(true)
+    c.agreed.terms = false
+    expect(c.canPay.value).toBe(false)
+    const fresh = useCheckoutConsent()
+    expect({ ...fresh.agreed }).toEqual({ terms: false, age: false, marketing: false })
+    expect(fresh.canPay.value).toBe(false)
+  })
+
+  it('항목은 얼어 있다 — 실행 중에 필수 여부 · 문구 · 링크를 바꿀 수 없다', () => {
+    expect(Object.isFrozen(CONSENT_ITEMS)).toBe(true)
+    for (const item of CONSENT_ITEMS) {
+      expect(Object.isFrozen(item)).toBe(true)
+      expect(Object.isFrozen(item.links)).toBe(true)
+      for (const link of item.links) expect(Object.isFrozen(link)).toBe(true)
+    }
+    expect(() => {
+      ;(CONSENT_ITEMS[0] as { required: boolean }).required = false
+    }).toThrow(TypeError)
+    expect(CONSENT_ITEMS[0]!.required).toBe(true)
   })
 
   it('결제 조건 = 필수 2개 모두 · 선택은 무관(8가지 전부)', () => {

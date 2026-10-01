@@ -9,9 +9,8 @@ import {
   createPaymentId,
   formatWon,
   buildReturnQuery,
-  canPayWith,
-  initialConsent,
   readPaymentResult,
+  useCheckoutConsent,
 } from '~/utils/checkout-preview'
 
 definePageMeta({ layout: 'flow' })
@@ -25,9 +24,8 @@ const channelKey = config.public.portone.testChannelKey
 const isConfigured = Boolean(storeId && channelKey)
 
 // 05-B(client-shell spec F-22) — 필수 2(이용약관 · 만 14세)가 체크돼야 결제 · 선택 1(마케팅)은 결제와 무관 · 서버 저장 0(F-19).
-// 처음 값 · 필수 판정은 utils(CONSENT_ITEMS — 정본 문구의 «(필수)» 머리)에서만 — 여기서 체크 값을 쓰지 않는다
-const agreed = reactive(initialConsent())
-const canPay = computed(() => canPayWith(agreed))
+// 항목 · 처음 값 · 필수 판정 · 결제 조건은 utils 의 useCheckoutConsent 하나 — 이 페이지는 체크 값을 읽거나 쓰지 않는다
+const { items: consentItems, agreed, canPay } = useCheckoutConsent()
 const isRequesting = ref(false)
 const openError = ref<string | null>(null)
 // 이 탭이 만든 결제 ID(sessionStorage) — 복귀 쿼리가 이것과 같을 때만 결과 줄을 그린다(링크로 만든 임의 문구 차단)
@@ -96,7 +94,7 @@ const onPay = async () => {
 }
 
 // 05-B 문구(생성물) — 스크립트 끝(위 줄 번호를 밀지 않게)
-import { BEFORE_NOTICE, CONSENT_ITEMS, PRIVACY_NOTICE } from '~/utils/checkout-preview'
+import { BEFORE_NOTICE, PRIVACY_NOTICE } from '~/utils/checkout-preview'
 import { renderNoticeList } from '~/utils/legal-render'
 </script>
 
@@ -145,7 +143,7 @@ import { renderNoticeList } from '~/utils/legal-render'
     <!-- 05-B 원문(client-shell spec F-22) — 필수 2 · 선택 1 · 개인정보 수집 · 이용 «안내»(체크 없음 — 계약 이행 근거) · 결제 전 안내.
          링크는 새 창(이 화면의 체크 상태를 잃지 않게) -->
     <section class="checkout__agree" aria-label="약관 동의 · 개인정보 안내">
-      <div v-for="item in CONSENT_ITEMS" :key="item.key" class="checkout__consent-item">
+      <div v-for="item in consentItems" :key="item.key" class="checkout__consent-item">
         <div class="checkout__consent">
           <NCheckbox v-model="agreed[item.key]" :label="item.label" />
           <a
