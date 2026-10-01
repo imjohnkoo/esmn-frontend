@@ -28,8 +28,9 @@ function merge(xs: Child[]): Child[] {
   return out
 }
 
-/** 어절이 «·» · 괄호 · 낫표에서 갈리지 않게 — 공백 없는 짧은 덩어리(18자 이하)는 한 줄에 둔다(«이름·휴대전화번호», «(esimmany.com)는») */
-const KEEP = /[·「」()]/
+/** 어절이 «·» · 괄호 · 낫표 · 줄표에서 갈리지 않게 — 공백 없는 짧은 덩어리(18자 이하)는 한 줄에 둔다
+ * («이름·휴대전화번호», «(esimmany.com)는», «704-24-01747», «09:00–18:00,») */
+const KEEP = /[·「」()\-–]/
 function renderText(text: string): Child[] {
   return text
     .split(/(\s+)/)

@@ -91,6 +91,9 @@ describe('renderBlocks — 그린 HTML', () => {
     expect(html).toContain('<span class="legal-md__nb">(esimmany.com)는</span>')
     expect(html).toContain('<span class="legal-md__nb">「소비자분쟁해결기준」에</span>')
     expect(html).not.toContain('<span class="legal-md__nb">보통어절</span>')
+    const nums = await render('번호: 704-24-01747 (평일 09:00–18:00, 휴무)')
+    expect(nums).toContain('<span class="legal-md__nb">704-24-01747</span>')
+    expect(nums).toContain('<span class="legal-md__nb">09:00–18:00,</span>')
     expect(html).not.toContain('<span class="legal-md__nb">아주긴덩어리')
   })
 

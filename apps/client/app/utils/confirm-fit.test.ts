@@ -7,44 +7,46 @@ import {
 } from './confirm-fit'
 
 /**
- * client-shell spec F-20 — 발급 확인 팝업 스크롤 높이. 높이(px)는 QA walk 실측에 맞춘 모델:
- * 제목 · 아이콘 · 버튼 = BASE 230 · 동의 체크 = 90(390 폭) ~ 140(좁고 글자 큼) · 요약 + 안내 = 360.
- * 화면이 하는 일(체크 밖으로 재고 → 모자라면 compact 로 다시 잰다)을 그대로 따라 «다이얼로그가 화면 안» 인지 본다.
+ * client-shell spec F-20 — 발급 확인 팝업 스크롤 높이. 고정 부분(다이얼로그 − 스크롤 영역) 높이는 3008 빌드를 크기별로 잰 값
+ * (QA 5회차 뒤 iframe 실측 — 체크 밖 = 보통 · 체크 안 = compact). 화면이 하는 일(체크 밖으로 재고 → 모자라면 compact 로 다시 잰다)을
+ * 그대로 따라 «다이얼로그가 화면 안» 인지 본다. 요약 + 안내(+ compact 면 체크) 내용 = 360(+110).
  */
-const BASE = 230
 const CONTENT = 360
-function open(viewport: number, agree: number) {
+const AGREE = 110
+function open(viewport: number, fixedNormal: number, fixedCompact: number) {
   let compact = false
-  let r = confirmScrollFit(viewport, BASE + agree + CONTENT, CONTENT, false)
+  let r = confirmScrollFit(viewport, fixedNormal + CONTENT, CONTENT, false)
   if (r.compact) {
     compact = true
-    r = confirmScrollFit(viewport, BASE + CONTENT + agree, CONTENT + agree, true)
+    r = confirmScrollFit(viewport, fixedCompact + CONTENT + AGREE, CONTENT + AGREE, true)
   }
-  const scroll = Math.min(compact ? CONTENT + agree : CONTENT, r.max)
-  return { compact, dialog: (compact ? BASE : BASE + agree) + scroll }
+  const scroll = Math.min(compact ? CONTENT + AGREE : CONTENT, r.max)
+  return { compact, dialog: (compact ? fixedCompact : fixedNormal) + scroll }
 }
 
 describe('confirmScrollFit — 다이얼로그가 화면 안(«발급하기» 가 잘리지 않는다)', () => {
   it.each([
-    ['390×844 세로', 844, 90],
-    ['360×640 세로', 640, 90],
-    ['375×548 SE 인앱', 548, 90],
-    ['326×481 작은 화면', 481, 110],
-  ])('%s — 동의 체크는 밖(늘 보임) · 스크롤만 줄인다', (_, vh, agree) => {
-    const r = open(vh, agree)
+    ['390×844 세로', 844, 302],
+    ['360×640 세로', 640, 304],
+    ['375×548 SE 인앱', 548, 308],
+    ['326×481 작은 화면', 481, 354],
+  ])('%s — 동의 체크는 밖(늘 보임) · 스크롤만 줄인다', (_, vh, fixed) => {
+    const r = open(vh, fixed, fixed - AGREE)
     expect(r.compact).toBe(false)
     expect(r.dialog).toBeLessThanOrEqual(vh - CONFIRM_MARGIN)
   })
 
   it.each([
-    ['Android 가로 844×300', 300, 90],
-    ['가로 568×320', 320, 90],
-    ['iPhone 175% 확대 223×377', 377, 140],
-    ['iPhone 190% 확대 207×449', 449, 160],
-  ])('%s — 공간이 모자라면 compact(체크도 스크롤 안) · 그래도 화면 안', (_, vh, agree) => {
-    const r = open(vh, agree)
+    ['Android 가로 844×300', 300, 237],
+    ['가로 568×320', 320, 237],
+    ['iPhone 175% 확대 223×377', 377, 258],
+    ['iPhone 150% 확대 250×365', 365, 235],
+    ['iPhone 190% 확대 207×449', 449, 254],
+  ])('%s — 공간이 모자라면 compact(체크도 스크롤 안) · 그래도 화면 안', (_, vh, fixedCompact) => {
+    const r = open(vh, fixedCompact + AGREE + 40, fixedCompact)
     expect(r.compact).toBe(true)
-    expect(r.dialog).toBeLessThanOrEqual(vh - CONFIRM_MARGIN)
+    // 아주 낮은 화면은 여백까지는 못 지킨다 — 다이얼로그(그리고 버튼)가 화면 안이면 된다
+    expect(r.dialog).toBeLessThanOrEqual(vh)
   })
 
   it('높이 = 화면 − (다이얼로그 − 스크롤) − 여백', () => {

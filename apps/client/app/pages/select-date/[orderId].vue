@@ -248,9 +248,10 @@ const fitConfirm = () => {
   const el = confirmScrollEl.value
   const dialog = el?.closest<HTMLElement>('[role="alertdialog"], [role="dialog"]')
   if (!el || !dialog) return
-  // 다이얼로그는 layout viewport 에 고정된다 — innerHeight(손가락 확대의 visualViewport 가 아니다) · offsetHeight 는 열림 애니메이션 scale 무관
+  // 다이얼로그는 layout viewport 에 고정된다 — documentElement.clientHeight(iOS 에서 innerHeight 는 손가락 확대로 줄어든다) ·
+  // offsetHeight 는 열림 애니메이션 scale 무관
   const fit = confirmScrollFit(
-    window.innerHeight,
+    document.documentElement.clientHeight,
     dialog.offsetHeight,
     el.offsetHeight,
     confirmCompact.value,
@@ -485,7 +486,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
           :style="confirmScrollStyle"
           @scroll="updateConfirmMore"
         >
-          <!-- 고지(05-A 14행 · 약관 12조③ 의 «미리 표시») 를 먼저 — 작은 화면에서도 스크롤 없이 보인다 -->
+          <!-- 고지(05-A 14행 · 약관 12조③ 의 «미리 표시») 를 먼저 — 스크롤 영역 맨 위(열자마자 보이는 자리) -->
           <div class="select-date-page__confirm-policy">
             <svg
               class="select-date-page__confirm-policy-icon"

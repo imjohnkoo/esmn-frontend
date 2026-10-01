@@ -78,7 +78,9 @@ describe('발급기 법정 링크(F-20)', () => {
     const summaryAt = kids.findIndex((c) => cls(c) === 'select-date-page__confirm')
     expect(policyAt).toBe(0)
     expect(summaryAt).toBeGreaterThan(policyAt)
-    expect(text(kids[policyAt]!)).toContain('{{ ISSUE_NOTICE.refund }}')
+    // D-32 «팝업 본문(굵게)» — 고지는 <b> 로
+    const bold = find(kids[policyAt]!, (n) => n.tag === 'b')!
+    expect(text(bold)).toBe('<b>{{ ISSUE_NOTICE.refund }}</b>')
     const terms = find(kids[policyAt]!, (n) => n.tag === 'a' && attr(n, 'href') === '/terms')!
     expect([attr(terms, 'target'), attr(terms, 'rel')]).toEqual(['_blank', 'noopener'])
     expect(text(terms)).toContain('이용약관 보기')
@@ -90,13 +92,29 @@ describe('발급기 법정 링크(F-20)', () => {
     const outside = boxes.find((b) => !b.ancestors.includes(scroll))!
     expect(inside.ancestors.some((a) => dir(a, 'v-if') === 'confirmCompact')).toBe(true)
     expect(outside.ancestors.some((a) => dir(a, 'v-if') === '!confirmCompact')).toBe(true)
+    // 체크가 막혀 있으면 발급이 영영 안 된다
+    for (const b of boxes) expect(b.node.props?.some((p) => /disabled/.test(p.rawName ?? p.name))).toBe(false)
+    // 밖 체크의 자리 — 스크롤 영역(고지 · 요약) 뒤 · 버튼(#actions) 앞: «이용약관과 위 내용을 확인했으며» 가 참이게
+    const top = (dialog!.children ?? []).filter((c) => c.type === ELEMENT)
+    const wrapAt = top.findIndex((c) => cls(c).includes('select-date-page__confirm-scroll-wrap'))
+    const agreeAt = top.findIndex((c) => c === outside.ancestors.find((a) => dir(a, 'v-if') === '!confirmCompact'))
+    const actionsAt = top.findIndex((c) => c.tag === 'template' && /#actions/.test(text(c).slice(0, 30)))
+    expect(wrapAt >= 0 && wrapAt < agreeAt && agreeAt < actionsAt).toBe(true)
+    // compact 안 체크는 스크롤 영역의 마지막(고지 · 요약 뒤)
+    expect(kids[kids.length - 1]).toBe(inside.ancestors[inside.ancestors.length - 1])
     // 체크 전에는 발급하기 비활성 · 눌러도 막힘 · 다시 열면 체크를 지운다(D-35 — 약관 동의 자리)
     const issue = find(dialog!, (n) => n.tag === 'NButton' && text(n).includes('발급하기'))!
     expect(dir(issue, ':disabled')).toBe('isSubmitting || !isPolicyAgreed')
     expect(src).toMatch(/if \(isSubmitting\.value \|\| !isPolicyAgreed\.value\) return/)
     expect(src).toMatch(/isPolicyAgreed\.value = false\n\s*isConfirmOrderVisible\.value = true/)
     // 높이 = utils/confirm-fit(숫자는 그 테스트가 본다) · layout viewport · 열릴 때 compact 초기화 · resize
-    expect(src).toMatch(/confirmScrollFit\(\s*window\.innerHeight,\s*dialog\.offsetHeight,\s*el\.offsetHeight,/)
+    expect(src).toMatch(
+      /confirmScrollFit\(\s*document\.documentElement\.clientHeight,\s*dialog\.offsetHeight,\s*el\.offsetHeight,\s*confirmCompact\.value,\s*\)/,
+    )
+    // compact 로 바뀌면 체크를 옮긴 뒤 다시 잰다(그 블록이 빠지면 낮은 화면에서 버튼이 잘린다)
+    expect(src).toMatch(
+      /if \(fit\.compact && !confirmCompact\.value\) \{\s*(?:\/\/[^\n]*\n\s*)?confirmCompact\.value = true\s*nextTick\(fitConfirm\)\s*return\s*\}/,
+    )
     expect(src).toMatch(/watch\(isConfirmOrderVisible,[\s\S]*?confirmCompact\.value = false[\s\S]*?requestAnimationFrame\(fitConfirm\)/)
     expect(src).toMatch(/window\.addEventListener\('resize', fitConfirm\)/)
   })

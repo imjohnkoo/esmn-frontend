@@ -257,6 +257,8 @@ const onSubmit = async () => {
 
 .verify-page__policy {
   display: flex;
+  /* 크게 확대해 두 링크가 한 줄에 안 들어가면 다음 줄로(넘쳐 «개인정보처리방침» 앞 글자가 가려지지 않게) */
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 6px;
