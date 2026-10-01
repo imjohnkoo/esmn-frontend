@@ -669,8 +669,8 @@ import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
 
 .select-date-page__confirm-scroll {
   width: 100%;
-  max-height: max(160px, calc(100vh - 260px));
-  max-height: max(160px, calc(100dvh - 260px));
+  max-height: max(160px, calc(100vh - 280px));
+  max-height: max(160px, calc(100dvh - 280px));
   overflow-y: auto;
   overscroll-behavior: contain;
 }

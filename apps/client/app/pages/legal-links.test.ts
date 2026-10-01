@@ -53,7 +53,7 @@ describe('발급기 법정 링크(F-20)', () => {
     const scroll = popup.indexOf('<div class="select-date-page__confirm-scroll">')
     expect(scroll >= 0 && scroll < refund && consent < popup.indexOf('<template #actions>')).toBe(true)
     expect(read('./select-date/[orderId].vue')).toMatch(
-      /\.select-date-page__confirm-scroll \{[^}]*max-height: max\(160px, calc\(100dvh - 260px\)\);[^}]*overflow-y: auto;/,
+      /\.select-date-page__confirm-scroll \{[^}]*max-height: max\(160px, calc\(100dvh - 280px\)\);[^}]*overflow-y: auto;/,
     )
     // 같은 팝업 — 환불 안내 → 링크 → 동의 체크 순서, 그 뒤에 발급하기
     expect(refund < link && link < consent && consent < popup.lastIndexOf('발급하기')).toBe(true)
