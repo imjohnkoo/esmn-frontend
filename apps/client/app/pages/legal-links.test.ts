@@ -142,133 +142,153 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src).toMatch(/window\.addEventListener\('resize', fitConfirm\)/)
   })
 
-  it('체크아웃(템플릿 AST · F-22) — 동의는 useCheckoutConsent 하나(항목 · 처음 값 · 결제 조건 — 행동은 utils 테스트) · 결제는 필수 뒤 · 링크는 새 창', () => {
+  it('체크아웃(F-22) — 동의 블록은 구조 스냅샷 · 상태는 useCheckoutConsent 하나 · 결제는 필수 2개 뒤(구문 트리) · 링크는 새 창', () => {
     const src = read('./checkout-preview.vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
-    const agree = find(tpl, (n) => cls(n) === 'checkout__agree')!
-    // 체크박스는 하나뿐 — 항목 목록을 돌며 그린다(문구 · 필수 여부 · 링크 · 알릴 사항은 utils 의 05-B 모델이 정한다)
-    const boxes = findAll(tpl, (n) => n.tag === 'NCheckbox')
-    expect(boxes).toHaveLength(1)
-    const item = boxes[0]!.ancestors.find((a) => dir(a, 'v-for') !== undefined)!
-    expect(dir(item, 'v-for')).toBe('item in consentItems')
-    expect(boxes[0]!.ancestors).toContain(agree)
-    expect(dir(boxes[0]!.node, 'v-model')).toBe('agreed[item.key]')
-    expect(dir(boxes[0]!.node, ':label')).toBe('item.label')
-    // 항목의 링크 · 알릴 사항(선택 동의의 항목 · 목적 · 보유)이 그 항목 안에서 그려진다
-    const itemLinks = find(item, (n) => n.tag === 'a')!
-    expect(dir(itemLinks, 'v-for')).toBe('link in item.links')
-    const info = find(item, (n) => dir(n, 'v-if') === 'item.info')!
-    expect(text(info)).toContain('{{ item.info }}')
-    // 동의 상태는 utils 의 useCheckoutConsent 하나에서 — 페이지는 받아서 그리기만 한다(미리 체크 · 필수 해제 · 결제 조건 바꾸기 금지).
-    // 검사는 전부 TypeScript 구문 트리 위에서 — 기준 줄 · 가드 · 이름 수가 같은 대상을 본다(글자 검색은 주석 · 문자열에 속는다)
+    type Any = TNode & { content?: string | { content?: string } }
+    // ① 동의 블록(05-B — 약관 · 14세 · 마케팅 · 개인정보 안내 · 결제 전 안내) = 구조 스냅샷. 태그 · 속성 · 지시자 · 보간 · 글자 하나라도
+    //    바뀌면 실패한다(손으로 적은 동의 문구 · 숨기는 속성 · 클래스 · 미리 체크 · 항목 바꿔치기 · 주석 속 문구 모두). 법정 블록이라 바꿀 때는
+    //    이 스냅샷을 같이 고친다 — 그 diff 가 리뷰 대상이다. 조상(페이지 뿌리)도 고정 — 감싸서 숨기지 못하게
+    const ser = (n: Any, d = 0): string[] => {
+      const pad = '  '.repeat(d)
+      if (n.type === 2) {
+        const s = String(n.content).trim()
+        return s ? [`${pad}"${s}"`] : []
+      }
+      if (n.type === 3) return [`${pad}<!--${String(n.content).trim()}-->`]
+      if (n.type === 5) return [`${pad}{{ ${String((n.content as { content?: string }).content).trim()} }}`]
+      if (n.type !== ELEMENT) return [`${pad}?${n.type}`]
+      const props = (n.props ?? []).map((p) =>
+        p.type === 6 ? `${p.name}${p.value ? `="${p.value.content}"` : ''}` : `${p.rawName}="${p.exp?.content ?? ''}"`,
+      )
+      return [`${pad}<${n.tag}${props.length ? ` ${props.join(' ')}` : ''}>`, ...(n.children ?? []).flatMap((c) => ser(c as Any, d + 1))]
+    }
+    const agrees = findAll(tpl, (n) => cls(n).split(/\s+/).includes('checkout__agree'))
+    expect(agrees).toHaveLength(1)
+    const { node: agree, ancestors } = agrees[0]!
+    expect(ser(agree as Any).join('\n')).toBe(
+    [
+      "<section class=\"checkout__agree\" aria-label=\"약관 동의 · 개인정보 안내\">",
+      "  <div v-for=\"item in consentItems\" :key=\"item.key\" class=\"checkout__consent-item\">",
+      "    <div class=\"checkout__consent\">",
+      "      <NCheckbox v-model=\"agreed[item.key]\" :label=\"item.label\">",
+      "      <a v-for=\"link in item.links\" :key=\"link.href\" :href=\"link.href\" target=\"_blank\" rel=\"noopener\" class=\"checkout__link\">",
+      "        {{ link.text }}",
+      "        <span class=\"sr-only\">",
+      "          \"(새 창)\"",
+      "    <p v-if=\"item.info\" class=\"checkout__consent-info\">",
+      "      {{ item.info }}",
+      "  <div class=\"checkout__notice\">",
+      "    <p class=\"checkout__notice-title\">",
+      "      {{ PRIVACY_NOTICE.label }}",
+      "      <a v-for=\"link in PRIVACY_NOTICE.links\" :key=\"link.href\" :href=\"link.href\" target=\"_blank\" rel=\"noopener\" class=\"checkout__link\">",
+      "        {{ link.text }}",
+      "        <span class=\"sr-only\">",
+      "          \"(새 창)\"",
+      "    <p class=\"checkout__consent-info\">",
+      "      {{ PRIVACY_NOTICE.info }}",
+      "  <div class=\"checkout__notice\">",
+      "    <p class=\"checkout__notice-title\">",
+      "      {{ BEFORE_NOTICE.title }}",
+      "    <component :is=\"renderNoticeList(BEFORE_NOTICE.lines)\">",
+    ].join('\n'),
+    )
+    expect(ancestors.map((a) => ser({ ...a, children: [] } as Any)[0])).toEqual(['<div class="checkout">'])
+    expect(findAll(tpl, (n) => n.tag === 'NCheckbox')).toHaveLength(1)
+    // ② 결제 — 결제 버튼 속성 고정 · onPay 를 부르는 요소는 모두 같은 :disabled · 템플릿에서 canPay 는 그 :disabled 에만
+    const pay = find(tpl, (n) => n.tag === 'NButton' && /결제하기/.test(text(n)))!
+    expect(pay.props!.map((p) => (p.type === 6 ? p.name : `${p.rawName}=${p.exp?.content}`))).toEqual([
+      'variant',
+      'size',
+      'full-width',
+      ':disabled=!isConfigured || !canPay',
+      ':loading=isRequesting',
+      '@click=onPay',
+    ])
+    const exprs: { node: TNode; raw: string; exp: string }[] = []
+    const walkTpl = (n: Any): void => {
+      for (const p of n.props ?? []) if (p.exp) exprs.push({ node: n, raw: p.rawName ?? p.name, exp: p.exp.content })
+      if (n.type === 5) exprs.push({ node: n, raw: '{{}}', exp: String((n.content as { content?: string }).content) })
+      for (const c of n.children ?? []) walkTpl(c as Any)
+    }
+    walkTpl(tpl as Any)
+    for (const e of exprs.filter((x) => /\bonPay\b/.test(x.exp)))
+      expect([e.raw, e.exp, dir(e.node, ':disabled')]).toEqual(['@click', 'onPay', '!isConfigured || !canPay'])
+    expect(exprs.filter((x) => /\bcanPay\b/.test(x.exp)).map((x) => `${x.raw}=${x.exp}`)).toEqual(
+      exprs.filter((x) => /\bonPay\b/.test(x.exp)).map(() => ':disabled=!isConfigured || !canPay'),
+    )
+    // 템플릿 어디서도 DOM 을 직접 만지거나 수명 주기 이벤트를 걸지 않는다(마운트 때 체크박스를 눌러 미리 체크하는 길)
+    for (const e of exprs) expect(e.exp, e.raw).not.toMatch(/\b(?:document|window|querySelector(?:All)?|getElement\w*|dispatchEvent|\$el)\b|\.click\s*\(/)
+    for (const e of exprs) expect(/^(?:@|v-on:)vue?:|^(?:@|v-on:)vnode/i.test(e.raw), e.raw).toBe(false)
+    // ③ 스크립트 — TypeScript 구문 트리. 상태는 useCheckoutConsent(~/utils/checkout-preview) 하나 · 세 이름은 그 구조 분해에서만 ·
+    //    canPay 는 결제 함수 첫 문장 가드에서만 읽는다 · 결제 호출은 onPay 안 한 곳 · DOM 직접 조작 0
     const script = src.slice(src.indexOf('<script setup lang="ts">') + '<script setup lang="ts">'.length, src.indexOf('</script>'))
     const sf = ts.createSourceFile('checkout-preview.ts', script, ts.ScriptTarget.Latest, true)
-    const idents: string[] = []
+    const idents: ts.Identifier[] = []
+    const declared: string[] = []
     const aliased: string[] = []
-    const declared: string[] = [] // 변수 · 함수 · 매개변수 · 구조 분해로 선언된 이름(구조 분해 안의 이름 포함)
     const visit = (n: ts.Node): void => {
-      if (ts.isIdentifier(n)) idents.push(n.text)
+      if (ts.isIdentifier(n)) idents.push(n)
       if (ts.isImportSpecifier(n) && n.propertyName) aliased.push(n.propertyName.getText(sf))
       if ((ts.isVariableDeclaration(n) || ts.isParameter(n) || ts.isBindingElement(n)) && ts.isIdentifier(n.name)) declared.push(n.name.text)
       if ((ts.isFunctionDeclaration(n) || ts.isClassDeclaration(n)) && n.name) declared.push(n.name.text)
       ts.forEachChild(n, visit)
     }
     visit(sf)
-    const count = (name: string) => idents.filter((i) => i === name).length
+    const named = (name: string) => idents.filter((i) => i.text === name)
+    expect(aliased).toEqual([])
+    const importOf = (name: string) =>
+      sf.statements
+        .filter(ts.isImportDeclaration)
+        .filter((d) => d.importClause?.namedBindings && ts.isNamedImports(d.importClause.namedBindings) && d.importClause.namedBindings.elements.some((e) => e.name.text === name))
+        .map((d) => (d.moduleSpecifier as ts.StringLiteral).text)
+    expect(importOf('useCheckoutConsent')).toEqual(['~/utils/checkout-preview'])
     const decls = sf.statements.filter(ts.isVariableStatement).flatMap((s) => [...s.declarationList.declarations])
-    const consentDecl = decls.filter(
-      (d) => d.initializer && ts.isCallExpression(d.initializer) && d.initializer.expression.getText(sf) === 'useCheckoutConsent',
-    )
+    const consentDecl = decls.filter((d) => d.initializer && ts.isCallExpression(d.initializer) && d.initializer.expression.getText(sf) === 'useCheckoutConsent')
     expect(consentDecl).toHaveLength(1)
     expect(consentDecl[0]!.name.getText(sf)).toBe('{ items: consentItems, agreed, canPay }')
     expect(consentDecl[0]!.initializer!.getText(sf)).toBe('useCheckoutConsent()')
-    // 세 이름은 그 구조 분해에서만 선언된다(같은 이름의 const · 함수 · 매개변수로 가리지 못한다)
     expect(['agreed', 'canPay', 'consentItems', 'useCheckoutConsent'].map((n) => declared.filter((d) => d === n).length)).toEqual([1, 1, 1, 0])
-    expect([count('useCheckoutConsent'), count('agreed'), count('consentItems'), count('canPay')]).toEqual([2, 1, 1, 2])
-    expect(['initialConsent', 'canPayWith', 'CONSENT_ITEMS', 'reactive', 'eval', 'Function'].map(count)).toEqual([0, 0, 0, 0, 0, 0])
-    expect(aliased).toEqual([])
-    // onPay 의 첫 문장이 결제 조건 가드(그 함수에서 canPay 를 읽는 유일한 곳)
+    expect([named('useCheckoutConsent').length, named('agreed').length, named('consentItems').length]).toEqual([2, 1, 1])
+    // canPay 참조 = 구조 분해 하나 + 함수 첫 문장의 «if (… !canPay.value …) return» 안
+    const firstGuard = (id: ts.Node) => {
+      let n: ts.Node = id
+      while (n.parent && !ts.isIfStatement(n)) n = n.parent
+      if (!ts.isIfStatement(n) || !ts.isReturnStatement(n.thenStatement)) return false
+      const block = n.parent
+      return ts.isBlock(block) && block.statements[0] === n && (ts.isArrowFunction(block.parent) || ts.isFunctionLike(block.parent)) && /!canPay\.value\b/.test(n.expression.getText(sf))
+    }
+    const canPayUses = named('canPay').filter((i) => !ts.isBindingElement(i.parent))
+    expect(canPayUses.length).toBeGreaterThanOrEqual(1)
+    for (const use of canPayUses) expect(firstGuard(use), use.parent.getText(sf).slice(0, 60)).toBe(true)
     const onPay = decls.find((d) => d.name.getText(sf) === 'onPay')!
-    expect(onPay.initializer && ts.isArrowFunction(onPay.initializer) && ts.isBlock(onPay.initializer.body)).toBe(true)
     const payBody = (onPay.initializer as ts.ArrowFunction).body as ts.Block
     expect(payBody.statements[0]!.getText(sf)).toBe('if (!isConfigured || !canPay.value || isRequesting.value) return')
-    // 템플릿 이름 수 — 템플릿 AST 의 식(지시자 · 보간)만 센다(HTML 주석 · 글자에 속지 않는다)
-    const exprs: string[] = []
-    const walkTpl = (n: TNode & { content?: { content?: string } }): void => {
-      for (const p of n.props ?? []) if (p.exp) exprs.push(p.exp.content)
-      if (n.type === 5 && n.content?.content) exprs.push(n.content.content)
-      for (const c of n.children ?? []) walkTpl(c)
-    }
-    walkTpl(tpl)
-    const tcount = (name: string) => exprs.join('\n').match(new RegExp(`\\b${name}\\b`, 'g'))?.length ?? 0
-    expect([tcount('agreed'), tcount('consentItems'), tcount('canPay')]).toEqual([1, 1, 1])
-    // 동의 영역을 숨기지 않는다(05-B 글자 · 체크가 화면에서 사라진다) — ① 템플릿: 동의 영역과 그 조상 · 자손 요소에 숨기는 속성
-    // (hidden · style · class 동적 · inert · popover · aria-hidden · innerHTML/textContent/innerText — 대소문자 · 수식어 · 동적 인자 · 객체 v-bind 무관) ·
-    // v-html/v-text · 수명 주기 이벤트(@vue:…) · 숨김 유틸 클래스(반응형 · ! 포함 · 임의 값 [..] 전부) · 숨기는 태그(details · dialog · canvas …,
-    // 지시자 없는 template) 금지. sr-only 는 링크 안 «(새 창)» 낭독 안내만
-    // ② 스코프 CSS: 동의 영역 · 페이지 뿌리(.checkout) · 구조 선택자(nth- · > · section …) 규칙에 숨기는 속성 금지 — 다른 checkout__* 규칙
-    // (결제 버튼 바 등)은 자유. 전역 CSS · 레이아웃 등 정적 검사 밖은 spec D-38(사람 판정)
-    const HIDE_ATTR = /^(?:hidden|style|class|inert|popover|aria-hidden|innerhtml|outerhtml|textcontent|innertext)$/
-    const HIDE_CLASS =
-      /^(?:hidden|invisible|collapse|sr-only|contents|absolute|fixed|opacity-|h-0|h-px|w-0|w-px|size-0|size-px|max-h-0|max-h-px|max-w-0|text-transparent|text-white|scale-|translate-|inset-|top-|left-|right-|bottom-|overflow-hidden|overflow-clip|indent-|truncate|line-clamp-|blur)/
-    const HIDE_TAG = /^(?:details|summary|dialog|noscript|iframe|object|slot|canvas|teleport|keep-alive|keepalive)$/
-    const agreeAt = findAll(tpl, (n) => n === agree)[0]!
-    for (const node of [...agreeAt.ancestors, ...findAll(agree, () => true).map((x) => x.node)]) {
-      const where = text(node).slice(0, 40)
-      const tag = (node.tag ?? '').toLowerCase()
-      expect(HIDE_TAG.test(tag), `태그 ${node.tag} · ${where}`).toBe(false)
-      if (tag === 'template')
-        expect(node.props?.some((p) => p.type === 7 && ['slot', 'for'].includes(p.name)), `지시자 없는 template · ${where}`).toBe(true)
-      for (const p of node.props ?? []) {
-        const name = p.name.toLowerCase()
-        if (p.type === 6) expect(name !== 'class' && HIDE_ATTR.test(name), `속성 ${p.name} · ${where}`).toBe(false)
-        if (p.type === 7 && p.name === 'bind')
-          expect(!p.arg || p.arg.isStatic === false || HIDE_ATTR.test(p.arg.content.toLowerCase()), `v-bind ${p.rawName} · ${where}`).toBe(false)
-        if (p.type === 7) expect(['html', 'text'].includes(p.name), `v-${p.name} · ${where}`).toBe(false)
-        if (p.type === 7 && p.name === 'on') expect(/^vue:/.test(p.arg?.content ?? ''), `수명 주기 이벤트 ${p.rawName} · ${where}`).toBe(false)
-      }
-      const classAttr = node.props?.find((p) => p.type === 6 && p.name.toLowerCase() === 'class')?.value?.content ?? ''
-      for (const token of classAttr.split(/\s+/).filter(Boolean)) {
-        expect(token.includes('['), `임의 값 클래스 ${token}`).toBe(false)
-        const base = token.split(':').pop()!.replace(/^!|!$/g, '').replace(/^-/, '')
-        if (token === 'sr-only') expect(text(node)).toBe('<span class="sr-only"> (새 창)</span>')
-        else expect(HIDE_CLASS.test(base), `숨김 클래스 ${token} · ${where}`).toBe(false)
-      }
-    }
+    const requests = named('requestPayment')
+    expect(requests).toHaveLength(1)
+    let owner: ts.Node = requests[0]!
+    // 그 호출을 감싼 «함수 값» 선언까지(const response = await … 같은 안쪽 선언은 지나친다)
+    while (owner.parent && !(ts.isVariableDeclaration(owner) && owner.initializer && (ts.isArrowFunction(owner.initializer) || ts.isFunctionExpression(owner.initializer))))
+      owner = owner.parent
+    expect(ts.isVariableDeclaration(owner) && owner.name.getText(sf)).toBe('onPay')
+    expect(
+      ['initialConsent', 'canPayWith', 'CONSENT_ITEMS', 'reactive', 'eval', 'Function', 'document', 'querySelector', 'querySelectorAll', 'dispatchEvent', 'getElementById', 'HTMLElement', 'innerHTML'].filter((n) => named(n).length),
+    ).toEqual([])
+    // ④ 스코프 CSS — 동의 블록 · 페이지 뿌리에 닿을 수 있는 규칙(동의 클래스 · .checkout 뿌리 · 형제 결합자 · :deep/:global/:has 등)에만
+    //    숨기는 속성 금지. 동의 밖 checkout__* 와 그 자손 규칙(결제 바 · 카드 등)은 자유. 전역 CSS 등 정적 검사 밖은 spec D-38(사람 판정)
     const style = src
       .slice(src.indexOf('>', src.indexOf('<style')) + 1, src.lastIndexOf('</style>'))
       .replace(/\/\*[\s\S]*?\*\//g, '')
     expect(style).toContain('.checkout {')
-    const CONSENT_SEL = /\.checkout__(?:agree|consent|notice|link)|\.checkout(?![\w-])/
-    const PLAIN_SEL = /^\s*\.checkout__[\w-]+(?:::?[\w-]+(?:\([^)]*\))?)*\s*$/ // 다른 checkout__* 한 개(의사 클래스 허용) — 동의 영역에 닿지 않는다
+    const CONSENT = /checkout__(?:agree|consent|notice|link)|\.checkout(?![\w-])/
+    const SAFE = (sel: string) => /^\s*\.checkout__[\w-]+/.test(sel) && !CONSENT.test(sel) && !/[~+]|:(?:deep|global|slotted|has|is|where)\b|::v-deep/.test(sel)
+    const HIDE =
+      /(?:^|[\s;{])(?:display\s*:\s*(?:none|var\()|visibility\s*:\s*(?:hidden|collapse|var\()|content-visibility\s*:|contain\s*:\s*(?:strict|size)|opacity\s*:\s*(?:0(?![.\d])|0?\.[0-4]|[0-4]?\d(?:\.\d+)?%)|filter\s*:[^;]*opacity\(\s*0|(?:-webkit-)?mask(?:-image)?\s*:|scale\s*:\s*(?:0(?![.\d])|0?\.[0-4])|zoom\s*:\s*(?:0(?![.\d])|0?\.[0-4]|[0-4]?\d%)|rotate\s*:[^;]*9\d\s*deg|translate\s*:[^;]*(?:-\d{3,}|-?\d+(?:\.\d+)?(?:vw|vh))|transform\s*:[^;]*(?:scale[XY]?\(\s*(?:0(?![.\d])|0?\.[0-4])|translate[XYZ]?\([^)]*(?:-\d{3,}|-?\d+(?:\.\d+)?(?:vw|vh))|rotate[XY]\(\s*9\d)|inset\s*:|position\s*:\s*(?:absolute|fixed)|overflow(?:-y)?\s*:\s*(?:hidden|clip)|clip(?:-path)?\s*:|text-indent\s*:|(?:-webkit-text-fill-)?color\s*:\s*(?:transparent|rgba?\([^)]*(?:,|\/)\s*0(?:\.0+)?%?\s*\)|hsla?\([^)]*(?:,|\/)\s*0(?:\.0+)?%?\s*\)|#[0-9a-f]{3}0\b|#[0-9a-f]{6}00\b)|font\s*:\s*0|font-size\s*:\s*(?:0(?![.\d])|(?:[0-7](?:\.\d+)?|\.\d+)px|0?\.[0-2]\d*r?em|[0-4]?\d(?:\.\d+)?%)|(?:max-)?(?:height|width)\s*:\s*(?:0|1px|0?\.\d+(?:px|r?em))(?![.\d])|line-height\s*:\s*0(?![.\d])|(?:left|right|top|bottom|margin(?:-[a-z]+)?)\s*:\s*[^;]*-(?:\d{3,}(?:\.\d+)?px|\d{2,}(?:\.\d+)?r?em|\d+(?:\.\d+)?(?:vw|vh|%))|v-bind\()/i
     for (const rule of style.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-      const sels = rule[1]!.split(',')
-      const risky = CONSENT_SEL.test(rule[1]!) || sels.some((s) => !PLAIN_SEL.test(s))
-      if (!risky || /^\s*@/.test(rule[1]!)) continue
-      expect(rule[2], rule[1]!.trim()).not.toMatch(
-        /(?:^|[\s;{])(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|content-visibility\s*:|opacity\s*:|filter\s*:|mask(?:-image)?\s*:|(?:scale|zoom|translate|inset|transform)\s*:|position\s*:\s*(?:absolute|fixed)|overflow(?:-[xy])?\s*:\s*(?:hidden|clip)|clip(?:-path)?\s*:|text-indent\s*:|color\s*:\s*(?:transparent|rgba?\([^)]*(?:,|\/)\s*0(?:\.0+)?\s*\)|#[0-9a-f]{3}0\b|#[0-9a-f]{6}00\b)|font-size\s*:\s*(?:0|[1-7](?:\.\d+)?px|0?\.\d+(?:r?em|px))|(?:max-)?(?:height|width)\s*:\s*(?:0|1px|0?\.\d+(?:px|r?em))(?![.\d])|line-height\s*:\s*0(?![.\d])|(?:left|right|top|bottom|margin(?:-[a-z]+)?)\s*:\s*[^;]*-(?:\d{3,}(?:\.\d+)?px|\d{2,}(?:\.\d+)?r?em|\d+(?:\.\d+)?(?:vw|vh|%))|v-bind\()/i,
-      )
+      if (/^\s*@/.test(rule[1]!) || rule[1]!.split(',').every(SAFE)) continue
+      expect(rule[2], rule[1]!.trim()).not.toMatch(HIDE)
     }
-    // 체크박스에는 v-model · :label 만 — :disabled · v-if · v-show 등이 붙으면 필수 체크를 못 하거나 숨는다
-    expect(boxes[0]!.node.props!.map((p) => p.rawName ?? p.name)).toEqual(['v-model', ':label'])
-    // 동의 영역 안의 조건부 표시는 «알릴 사항이 있는 항목만» 하나 — 05-B 글자를 숨기는 v-if · v-show · <template v-if> 금지
-    const conditional = (n: TNode) =>
-      n.props?.some((p) => p.type === 7 && ['if', 'else-if', 'else', 'show'].includes(p.name)) ?? false
-    expect(findAll(agree, conditional).map((c) => dir(c.node, 'v-if'))).toEqual(['item.info'])
-    for (const up of agreeAt.ancestors) expect(conditional(up), text(up).slice(0, 40)).toBe(false)
-    const pay = find(tpl, (n) => n.tag === 'NButton' && /결제하기/.test(text(n)))!
-    expect(dir(pay, ':disabled')).toBe('!isConfigured || !canPay')
-    // 개인정보 «안내» — 체크 없음(2026-10-01 John (b) — 계약 이행 근거) · 제목 · 링크 · 알릴 사항은 PRIVACY_NOTICE
-    const privacy = find(agree, (n) => cls(n) === 'checkout__notice')!
-    expect(findAll(privacy, (n) => n.tag === 'NCheckbox')).toHaveLength(0)
-    expect(text(privacy)).toContain('{{ PRIVACY_NOTICE.label }}')
-    expect(dir(find(privacy, (n) => n.tag === 'a')!, 'v-for')).toBe('link in PRIVACY_NOTICE.links')
-    expect(text(privacy)).toContain('{{ PRIVACY_NOTICE.info }}')
-    // 결제 전 안내 — 제목 + 줄 전부
-    const before = findAll(agree, (n) => cls(n) === 'checkout__notice')[1]!.node
-    expect(text(before)).toContain('{{ BEFORE_NOTICE.title }}')
-    expect(text(before)).toContain('<component :is="renderNoticeList(BEFORE_NOTICE.lines)" />')
-    // 이 페이지 템플릿의 링크는 모두 새 창 — 다녀와도 체크가 풀리지 않게(지원 기기 확인 포함 · 레이아웃 푸터는 이 파일 밖)
+    // ⑤ 이 페이지 템플릿의 링크는 모두 새 창 — 다녀와도 체크가 풀리지 않게(지원 기기 확인 포함 · 레이아웃 푸터는 이 파일 밖)
     const links = findAll(tpl, (n) => n.tag === 'a' || n.tag === 'NuxtLink')
     expect(links.length).toBeGreaterThanOrEqual(3)
     for (const a of links) {
