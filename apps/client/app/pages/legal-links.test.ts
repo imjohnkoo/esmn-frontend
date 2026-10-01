@@ -60,6 +60,9 @@ describe('발급기 법정 링크(F-20)', () => {
       /\.verify-page__policy-link--privacy \{[^}]*color: var\(--n-color-primary-600[^}]*font-weight: 700/,
     )
     expect(css).toMatch(/\.verify-page__policy-link \{[^}]*min-height: 24px/)
+    // 크게 확대해도 두 링크 줄이 넘치지 않게(넘치면 «개인정보처리방침» 앞 글자가 가려진다) · 링크 글자는 안 갈림
+    expect(css).toMatch(/\.verify-page__policy \{[^}]*flex-wrap: wrap;/)
+    expect(css).toMatch(/\.verify-page__policy-link \{[^}]*white-space: nowrap;/)
   })
 
   it('select-date 확인 팝업(템플릿 AST) — 고지 먼저 · 스크롤 영역 배선 · 동의 체크는 밖(compact 면 안) · 체크 전 발급 비활성', () => {

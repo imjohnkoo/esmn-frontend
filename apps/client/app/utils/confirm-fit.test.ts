@@ -56,7 +56,8 @@ describe('confirmScrollFit — 다이얼로그가 화면 안(«발급하기» �
     })
   })
 
-  it('최소 높이 — 보통 96 · compact 40(그보다 낮은 화면은 회전 안내 몫)', () => {
+  it('최소 높이 — 보통 96 · compact 40(그보다 낮은 화면은 다이얼로그 아래 여백 안에서 버튼이 일부 잘릴 수 있다 — 알고 넘어감)', () => {
+    expect(CONFIRM_SCROLL_MIN_COMPACT).toBe(40)
     expect(confirmScrollFit(500, 500, 100, false)).toEqual({
       max: CONFIRM_SCROLL_MIN_COMPACT,
       compact: true,

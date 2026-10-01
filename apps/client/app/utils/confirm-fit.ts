@@ -6,7 +6,7 @@
  * 고정 부분을 줄인다(체크 · 버튼보다 버튼을 지킨다).
  */
 export const CONFIRM_SCROLL_MIN = 96
-/** compact 일 때의 최소 — 낮은 가로 화면(약 300px)에서도 버튼이 들어가게 더 줄인다 */
+/** compact 일 때의 최소 — 낮은 가로 화면(약 300px)에서도 버튼이 들어가게 더 줄인다(그보다 낮으면 버튼이 일부 잘릴 수 있다) */
 export const CONFIRM_SCROLL_MIN_COMPACT = 40
 export const CONFIRM_MARGIN = 24
 
