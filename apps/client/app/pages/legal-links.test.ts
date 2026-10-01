@@ -236,7 +236,7 @@ describe('발급기 법정 링크(F-20)', () => {
       for (const c of n.children ?? []) markAgree(c)
     }
     markAgree(agree)
-    const LEGALISH = /동의|약관|개인정보|환불|청약|취소|철회/
+    const LEGALISH = /동의|약관|개인정보|환불|청약|철회/
     const outsideText: string[] = []
     const walkOut = (n: Any): void => {
       if (n.type === ELEMENT && inAgree.has(n)) return
@@ -247,6 +247,12 @@ describe('발급기 법정 링크(F-20)', () => {
     walkOut(tpl as Any)
     expect(outsideText.filter((s) => LEGALISH.test(s))).toEqual([])
     expect(exprs.filter((x) => !inAgree.has(x.node) && /\b[A-Z][A-Z_]*(?:NOTICE|CONSENT|LEGAL|TERMS|PRIVACY|REFUND)\b/.test(x.exp)).map((x) => x.exp)).toEqual([])
+    // 블록 밖 보간은 정해진 것만(상수 · 하위 컴포넌트로 동의 · 고지 문구를 들이는 길) · 문자열 바인딩에 법정 낱말 0 · 컴포넌트는 DS 두 개와 블록의 component 만
+    expect([...new Set(exprs.filter((x) => !inAgree.has(x.node) && x.raw === '{{}}').map((x) => x.exp.trim()))].sort()).toEqual(
+      ['PREVIEW_ITEM.productName', 'PREVIEW_ITEM.optionName', 'PREVIEW_ITEM.quantity', 'PREVIEW_ITEM.usage', 'formatWon(PREVIEW_ITEM.amount)', 'result.paymentId', 'result.message', 'openError'].sort(),
+    )
+    expect(exprs.filter((x) => /['"`]/.test(x.exp) && LEGALISH.test(x.exp)).map((x) => x.exp)).toEqual([])
+    expect([...new Set(allEls.map((n) => n.tag ?? '').filter((tag) => /[A-Z]|-/.test(tag)))].sort()).toEqual(['NButton', 'NCheckbox'])
     expect(allEls.filter((n) => /^input$/i.test(n.tag ?? '') || (n.props ?? []).some((p) => p.type === 6 && p.name === 'role' && /checkbox|switch/i.test(p.value?.content ?? '')))).toHaveLength(0)
     // ③ 스크립트 — TypeScript 구문 트리. 상태는 useCheckoutConsent(~/utils/checkout-preview) 하나 · 세 이름은 그 구조 분해에서만 ·
     //    canPay 는 결제 함수 첫 문장 가드에서만 읽는다 · 결제 호출은 onPay 안 한 곳 · DOM 직접 조작 0
@@ -328,19 +334,49 @@ describe('발급기 법정 링크(F-20)', () => {
         .map((d) => d.name.getText(sf)),
     )
     expect(guarded.has('onPay')).toBe(true)
+    // 가드한 핸들러를 부르는 다른 함수도 첫 문장 가드가 있어야 한다(가드 밖 함수가 결제 함수를 감싸 버튼을 동의 전에 켜는 길)
+    const fnDecls = decls.filter((d) => d.initializer && (ts.isArrowFunction(d.initializer) || ts.isFunctionExpression(d.initializer)))
+    for (const d of fnDecls) {
+      const body = d.initializer!.getText(sf)
+      const calls = [...guarded].filter((g) => g !== d.name.getText(sf) && new RegExp(`\\b${g}\\b`).test(body))
+      if (calls.length) expect(guarded.has(d.name.getText(sf)), `${d.name.getText(sf)} 가 ${calls} 를 부르는데 가드가 없다`).toBe(true)
+    }
+    // 결제를 일으키는 템플릿 식 = 가드한 핸들러 이름 하나(@click="onPay" 그대로 — 호출 · 수식어 · 다른 이벤트 · 화살표 · 자식 이벤트 금지) ·
+    // 그 요소의 :disabled 는 정확히 «!isConfigured || !canPay» · canPay 는 그 :disabled 에만
+    for (const e of exprs) {
+      const hit = [...guarded].filter((g) => new RegExp(`\\b${g}\\b`).test(e.exp))
+      if (hit.length) {
+        expect([e.raw, e.exp], `결제 핸들러를 부르는 식`).toEqual(['@click', hit[0]])
+        expect(dir(e.node, ':disabled'), `${hit[0]} 버튼`).toBe('!isConfigured || !canPay')
+      }
+    }
     for (const e of exprs.filter((x) => /\bcanPay\b/.test(x.exp))) {
-      expect(e.raw, e.exp).toBe(':disabled')
-      expect(e.exp).toMatch(/(?:^|\|\|\s*)!canPay(?:\s*\|\||$)/)
+      expect([e.raw, e.exp]).toEqual([':disabled', '!isConfigured || !canPay'])
       expect(guarded.has(dir(e.node, '@click') ?? ''), `${dir(e.node, '@click')} 는 첫 문장에 canPay 가드가 없다`).toBe(true)
     }
-    for (const e of exprs.filter((x) => x.raw === '@click' && guarded.has(x.exp))) expect(dir(e.node, ':disabled') ?? '', `${e.exp} 버튼`).toMatch(/!canPay\b/)
-    // 결제 SDK(@portone)는 리포 앱 코드 전체에서 이 페이지 한 곳만(도우미 · 컴포저블로 빼 가드 밖에서 부르는 길)
-    const sdkFiles = [...code(APP), ...code(SERVER), ...code(fileURLToPath(new URL('../../shared', import.meta.url)))].filter((f) =>
-      /@portone\//.test(readFileSync(f, 'utf8')),
-    )
-    expect(sdkFiles.map((f) => f.slice(f.indexOf('/app/') >= 0 ? f.indexOf('/app/') : 0))).toEqual(['/app/pages/checkout-preview.vue'])
+    // 결제 SDK(PortOne — npm · CDN · window.PortOne 어떤 꼴이든)는 client 앱 브라우저 코드 전체에서 이 페이지 한 곳만
+    // (도우미 · 컴포저블 · .js · lib/ 로 빼 가드 밖에서 부르는 길). server/ 는 결제 검증용 server-sdk 자리라 제외 · 테스트 · 설정 키(nuxt.config)는 제외
+    const CLIENT = fileURLToPath(new URL('../..', import.meta.url))
+    // 주석은 걷고 본다(설명 글의 «PortOne» 은 결제 경로가 아니다 — 주석 표식 뒤의 URL 글자 · 문자열 속 «//» 는 남는다)
+    const codeOnly = (s: string) =>
+      s
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/^\s*\/\/.*$/gm, '')
+        .replace(/(?<=[;,{}()\s])\/\/(?!\S*\.(?:io|com|net)).*$/gm, '')
+    const scan = (d: string): string[] =>
+      readdirSync(d).flatMap((n) => {
+        if (/^(?:node_modules|\.nuxt|\.output|\.git|server|dist|coverage)$/.test(n)) return []
+        const f = join(d, n)
+        return statSync(f).isDirectory() ? scan(f) : /\.(?:[cm]?[jt]sx?|vue)$/.test(n) && !/\.test\.[jt]s$/.test(n) ? [f] : []
+      })
+    const sdkFiles = scan(CLIENT)
+      .filter((f) => /portone/i.test(codeOnly(readFileSync(f, 'utf8'))))
+      .map((f) => f.slice(CLIENT.length).replace(/^\//, ''))
+    expect(sdkFiles.sort()).toEqual(['app/pages/checkout-preview.vue', 'nuxt.config.ts'])
+    expect(codeOnly(readFileSync(join(CLIENT, 'nuxt.config.ts'), 'utf8')).match(/portone/gi)).toEqual(['portone']) // runtimeConfig 키 하나
     // 페이지는 법정 생성물을 직접 가져오지 않는다(05-B 는 utils 의 모델로만) · useHead 로 script · style 을 넣지 않는다
-    expect(sf.statements.filter(ts.isImportDeclaration).map((d) => (d.moduleSpecifier as ts.StringLiteral).text).filter((m) => /content\//.test(m))).toEqual([])
+    expect(sf.statements.filter(ts.isImportDeclaration).map((d) => (d.moduleSpecifier as ts.StringLiteral).text).filter((m) => /content\/legal|\/components\//.test(m))).toEqual([])
     const headKeys: string[] = []
     const visit3 = (n: ts.Node): void => {
       if (ts.isCallExpression(n) && /^use(?:Head|SeoMeta|ServerHead)$/.test(n.expression.getText(sf)))
@@ -375,7 +411,8 @@ describe('발급기 법정 링크(F-20)', () => {
       [
         'initialConsent', 'canPayWith', 'CONSENT_ITEMS', 'CHECKOUT_NOTICE', 'reactive', 'eval', 'Function', 'Reflect', 'document', 'querySelector',
         'querySelectorAll', 'dispatchEvent', 'getElementById', 'getElementsByClassName', 'getElementsByTagName', 'parentElement', 'parentNode', 'children',
-        'childNodes', 'nextElementSibling', 'previousElementSibling', 'closest', 'click', 'innerHTML', 'outerHTML', 'insertAdjacentHTML',
+        'childNodes', 'nextElementSibling', 'previousElementSibling', 'nextSibling', 'previousSibling', 'firstChild', 'lastChild', 'firstElementChild',
+        'lastElementChild', 'closest', 'click', 'style', 'innerHTML', 'outerHTML', 'insertAdjacentHTML', 'getCurrentInstance', 'proxy',
       ].filter((n) => named(n).length),
     ).toEqual([])
     // ④ 스코프 CSS — 동의 블록 · 페이지 뿌리에 닿을 수 있는 규칙(동의 클래스 · .checkout 뿌리 · 형제 결합자 · :deep/:global/:has 등)에만
