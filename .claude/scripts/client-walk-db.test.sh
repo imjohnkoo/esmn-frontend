@@ -29,7 +29,7 @@ for a in "$@"; do
   p2="$p1"; p1="$a"
 done
 echo "$line" >>"$F/calls"
-PSQL="exec -i nomacom-walk-pg env -i PATH=/usr/local/bin:/usr/bin:/bin psql -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk"
+PSQL="exec -i nomacom-walk-pg env -i PATH=/usr/local/bin:/usr/bin:/bin psql -X -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk"
 case "$*" in
   "inspect -f {{.Config.Image}} nomacom-walk-pg") cat "$F/image"; exit 0 ;;
   "inspect -f {{json .HostConfig.PortBindings}} nomacom-walk-pg") cat "$F/bindings"; exit 0 ;;
@@ -89,7 +89,8 @@ $2
 --- 받은 것
 $(calls)"
 }
-P='docker exec -i nomacom-walk-pg env -i PATH=/usr/local/bin:/usr/bin:/bin psql -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk'
+P='docker exec -i nomacom-walk-pg env -i PATH=/usr/local/bin:/usr/bin:/bin psql -X -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk'
+READY='docker exec nomacom-walk-pg env -i PATH=/usr/local/bin:/usr/bin:/bin pg_isready -h /var/run/postgresql -U walk -d walk'
 TABLES="$P -At -c SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY 1"
 EXPORT='node export cwd=client DATABASE_URL= SPARK='
 
@@ -108,6 +109,9 @@ for cmd in up schema seed counts; do
   [[ "$(DOCKER_HOST=tcp://remote.example:2376 run "$cmd")" == 2 ]] && ok || ng "DOCKER_HOST 원격 · $cmd — exit 2"
   expect_calls "DOCKER_HOST 원격 · $cmd" ""
   reset_state
+  [[ "$(DOCKER_HOST=ssh://me@remote.example run "$cmd")" == 2 ]] && ok || ng "DOCKER_HOST ssh · $cmd — exit 2"
+  expect_calls "DOCKER_HOST ssh · $cmd" ""
+  reset_state
   echo "ssh://me@remote.example" >"$FAKE/endpoint"
   [[ "$(run "$cmd")" == 2 ]] && ok || ng "원격 컨텍스트 · $cmd — exit 2"
   expect_calls "원격 컨텍스트 · $cmd" ""
@@ -125,8 +129,8 @@ mv "$FAKE/exists" "$FAKE/exists.old.$RANDOM"
 expect_calls "up(새로)" "docker inspect nomacom-walk-pg
 docker run -d --name nomacom-walk-pg -p 127.0.0.1:55432:5432 -e POSTGRES_USER=walk -e POSTGRES_PASSWORD=walk -e POSTGRES_DB=walk postgres:15.12-alpine
 docker port nomacom-walk-pg 5432/tcp
-docker exec nomacom-walk-pg pg_isready -h 127.0.0.1 -U walk -d walk
-docker exec nomacom-walk-pg pg_isready -h 127.0.0.1 -U walk -d walk"
+$READY
+$READY"
 reset_state
 [[ "$(run up)" == 0 ]] && ok || ng "up(있음) — exit 0"
 expect_calls "up(있음)" "docker inspect nomacom-walk-pg
@@ -134,8 +138,8 @@ docker inspect -f {{.Config.Image}} nomacom-walk-pg
 docker inspect -f {{json .HostConfig.PortBindings}} nomacom-walk-pg
 docker start nomacom-walk-pg
 docker port nomacom-walk-pg 5432/tcp
-docker exec nomacom-walk-pg pg_isready -h 127.0.0.1 -U walk -d walk
-docker exec nomacom-walk-pg pg_isready -h 127.0.0.1 -U walk -d walk"
+$READY
+$READY"
 reset_state
 echo "postgres:16" >"$FAKE/image"
 [[ "$(run up)" == 2 ]] && ok || ng "up(다른 이미지) — exit 2"
@@ -177,7 +181,7 @@ order'; do
   [[ "$(run schema)" == 2 ]] && ok || ng "schema(표 집합 다름 «$have») — exit 2"
   grep -q -- '-q -c' <<<"$(calls)" && ng "schema(표 집합 다름) — 넣으면 안 됨" || ok
 done
-for bad in 'DROP TABLE "order";' '  DROP TABLE "order";' 'ALTER TABLE "esim" DROP COLUMN "a";' 'TRUNCATE "order";' 'UPDATE "order" SET "x" = 1;' $'-- note;CREATE TABLE "y" ("a" int)\nDROP TABLE "order";' $'\\! nc -z gateway.docker.internal 55432' $'  \\connect host=192.168.65.254'; do
+for bad in 'CREATE EXTENSION dblink;' 'CREATE SERVER s FOREIGN DATA WRAPPER postgres_fdw;' 'CREATE SUBSCRIPTION s CONNECTION '"'"'host=host.docker.internal port=55432'"'"' PUBLICATION p;' 'CREATE TABLE "x" AS SELECT 1;' 'CREATE FUNCTION f() RETURNS int AS $$ SELECT 1 $$ LANGUAGE sql;' 'DROP TABLE "order";' '  DROP TABLE "order";' 'ALTER TABLE "esim" DROP COLUMN "a";' 'TRUNCATE "order";' 'UPDATE "order" SET "x" = 1;' $'-- note;CREATE TABLE "y" ("a" int)\nDROP TABLE "order";' $'\\! nc -z gateway.docker.internal 55432' $'  \\connect host=192.168.65.254'; do
   reset_state
   printf '%s\n%s\n' "$GOOD_SQL" "$bad" >"$FAKE/export.sql"
   [[ "$(run schema)" == 2 ]] && ok || ng "schema(«$bad») — exit 2"
@@ -207,7 +211,9 @@ expect_calls "seed" "docker port nomacom-walk-pg 5432/tcp
 $P"
 grep -q "ON CONFLICT" "$FAKE/seed.sql" 2>/dev/null && ok || ng "seed — SQL 이 컨테이너 psql 의 표준 입력으로"
 grep -qE '^[[:space:]]*\\' "$FAKE/seed.sql" && ng "seed — psql 메타 명령 줄 금지" || ok
-grep -qE "010-0000-000[12]" "$FAKE/seed.sql" && ! grep -qE "010-[1-9]" "$FAKE/seed.sql" && ok || ng "seed — 전화는 010-0000-xxxx 대역만"
+# 전화번호 꼴(하이픈 · 공백 · +82 무관)은 전부 010-0000-xxxx 대역 — 숫자만 남겨 01X 로 시작하는 10~11자리를 모은다
+phones="$(grep -oE "(\+82[ -]?|0)1[016789][ -]?[0-9]{3,4}[ -]?[0-9]{4}" "$FAKE/seed.sql" | tr -d ' +-' | sed -E 's/^82/0/' | sort -u)"
+[[ -n "$phones" ]] && ! grep -qvE '^0100000[0-9]{4}$' <<<"$phones" && ok || ng "seed — 전화는 010-0000-xxxx 대역만: $phones"
 reset_state
 echo "0.0.0.0:55432" >"$FAKE/port"
 [[ "$(run seed)" == 2 ]] && ok || ng "seed(묶임 다름) — exit 2"

@@ -32,11 +32,12 @@ BIND=127.0.0.1:55432
 DB_URL="postgres://walk:walk@127.0.0.1:55432/walk"
 [[ "$DB_URL" =~ ^postgres(ql)?://[A-Za-z0-9_]+:[A-Za-z0-9_]+@127\.0\.0\.1:55432/[A-Za-z0-9_]+$ ]] || refuse "URL 형식"
 
-# 컨테이너 안 psql — 컨테이너 env(PGHOST · PGSERVICE 등)를 버리고(env -i) 컨테이너 자기 소켓으로만 붙는다
+# 컨테이너 안 psql — 컨테이너 env(PGHOST · PGHOSTADDR · PGSERVICE 등)를 버리고(env -i) 컨테이너 자기 소켓으로만 · psqlrc 안 읽음(-X)
 psql_in() {
   docker exec -i "$NAME" env -i PATH=/usr/local/bin:/usr/bin:/bin \
-    psql -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk "$@"
+    psql -X -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk "$@"
 }
+isready_in() { docker exec "$NAME" env -i PATH=/usr/local/bin:/usr/bin:/bin pg_isready -h /var/run/postgresql -U walk -d walk; }
 NODE="$(command -v node || true)"
 
 # docker 대상 = 이 기계의 데몬(unix 소켓)만 — 원격 데몬이면 컨테이너 · 가짜 행이 남의 기계에 생긴다
@@ -74,9 +75,11 @@ case "${1:-}" in
         -e POSTGRES_USER=walk -e POSTGRES_PASSWORD=walk -e POSTGRES_DB=walk "$IMAGE" >/dev/null
     fi
     check_bind
-    # 컨테이너 안 TCP(127.0.0.1)로 묻는다 — 첫 기동의 임시 init 서버(소켓만)를 «준비» 로 보지 않게
-    for _ in $(seq 1 30); do docker exec "$NAME" pg_isready -h 127.0.0.1 -U walk -d walk >/dev/null 2>&1 && break; sleep 1; done
-    docker exec "$NAME" pg_isready -h 127.0.0.1 -U walk -d walk >/dev/null || refuse "postgres 가 준비되지 않았다"
+    # 준비 판정 — 컨테이너 env 를 버리고 소켓으로. 첫 기동의 임시 init 서버(소켓만 · 곧 내려감)를 지나 본 서버가 TCP 를 열 때까지
+    # 기다리려고 한 번 더 확인한다(init 서버는 listen_addresses='' — 로그의 «ready to accept connections» 가 두 번 나온다)
+    for _ in $(seq 1 30); do isready_in >/dev/null 2>&1 && break; sleep 1; done
+    sleep 2
+    isready_in >/dev/null || refuse "postgres 가 준비되지 않았다"
     echo "✔ $NAME 준비 — $DB_URL"
     ;;
   schema)
@@ -93,7 +96,7 @@ case "${1:-}" in
     # 문장(; 로 나눔)마다 허용 머리로 시작해야 한다 — 들여쓴 DROP · 쪼개진 조각도 거부
     bad="$(awk 'BEGIN { RS = ";" } {
       gsub(/^[ \t\n]+|[ \t\n]+$/, "")
-      if ($0 != "" && $0 !~ /^(CREATE (TABLE|UNIQUE INDEX|INDEX|TYPE|SEQUENCE) |ALTER TABLE "[^"]+" ADD CONSTRAINT )/) print substr($0, 1, 60)
+      if ($0 != "" && $0 !~ /^(CREATE TABLE "[^"]+" \(|CREATE (UNIQUE )?INDEX "[^"]+" ON "[^"]+" |CREATE TYPE "[^"]+" AS ENUM\(|CREATE SEQUENCE "[^"]+"|ALTER TABLE "[^"]+" ADD CONSTRAINT "[^"]+" )/) print substr($0, 1, 60)
     }' <<<"$sql")"
     [[ -z "$bad" ]] || refuse "스키마 SQL 에 허용하지 않는 문장이 있다: $(head -1 <<<"$bad")"
     want="$(grep -oE '^CREATE TABLE "[^"]+"' <<<"$sql" | sed -E 's/^CREATE TABLE "([^"]+)"$/\1/' | sort)"
@@ -101,8 +104,9 @@ case "${1:-}" in
       refuse "표 목록을 읽지 못했다"
     have="$(sort <<<"$have")"
     if [[ -n "$have" ]]; then
-      # 이미 있으면 같은 표 집합일 때만 «있음» — 반쯤 만든 · 낡은 스키마는 거부(지우는 명령은 없다 — 사람이 정리)
-      [[ "$have" == "$want" ]] || refuse "컨테이너의 표 집합이 스키마와 다르다(반쯤 만들었거나 낡았다) — 사람이 확인"
+      # 이미 있으면 같은 표 이름 집합일 때만 «있음» — 반쯤 만든 스키마 · 표가 늘거나 준 스키마는 거부(지우는 명령은 없다 — 사람이 정리).
+      # ⚠️ 열 구성까지는 대조하지 않는다 — schema.ts 가 기존 표의 열을 바꾸면 컨테이너를 새로 만들어야 한다
+      [[ "$have" == "$want" ]] || refuse "컨테이너의 표 이름 집합이 스키마와 다르다(반쯤 만들었거나 표가 늘거나 줄었다) — 사람이 확인"
       echo "✔ 스키마가 이미 있다(표 $(wc -l <<<"$have" | tr -d ' ') 개 · 같은 집합) — 건너뜀"
       exit 0
     fi
