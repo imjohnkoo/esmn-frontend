@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   PAYMENT_ID_PATTERN,
   PREVIEW_ITEM,
@@ -159,8 +159,17 @@ describe('05-B 동의 모델(F-22) — 화면이 그리는 것은 이것뿐', ()
     ])
   })
 
-  it('처음 값은 모두 해제(PG 심사 요건) · 부를 때마다 새 객체', () => {
+  it('처음 값은 모두 해제(PG 심사 요건) · 부를 때마다 새 객체 · 브라우저 저장소 · 쿠키에 무엇이 있어도', () => {
     expect(initialConsent()).toEqual({ terms: false, age: false, marketing: false })
+    const stored = { getItem: () => 'true', key: () => 'terms', length: 3 }
+    vi.stubGlobal('sessionStorage', stored)
+    vi.stubGlobal('localStorage', stored)
+    vi.stubGlobal('document', { cookie: 'terms=true; age=true; marketing=true' })
+    try {
+      expect(initialConsent()).toEqual({ terms: false, age: false, marketing: false })
+    } finally {
+      vi.unstubAllGlobals()
+    }
     const a = initialConsent()
     a.terms = true
     expect(initialConsent().terms).toBe(false)
@@ -187,7 +196,9 @@ describe('05-B 동의 모델(F-22) — 화면이 그리는 것은 이것뿐', ()
     ])
   })
 
-  it('05-B 생성물의 줄은 하나도 빠짐없이 모델에 있다(정본에 줄이 늘면 여기서 막힌다)', () => {
+  // 정본 → 생성물: 가져오기가 05 B절 코드 블록 줄을 전부 고르거나(pick) 해시로 건너뛴다(skip) — 줄이 늘면 가져오기가 멈춘다.
+  // 생성물 → 모델: 이 테스트 — 생성물에 키가 늘면 여기서 막힌다
+  it('05-B 생성물의 줄은 하나도 빠짐없이 모델에 있다', () => {
     const shown = new Set<string>([
       ...CONSENT_ITEMS.flatMap((i) => [i.label, i.info ?? '']),
       PRIVACY_NOTICE.label,

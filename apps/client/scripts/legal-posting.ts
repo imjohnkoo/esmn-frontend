@@ -77,26 +77,48 @@ export const DOC_RULES: Record<DocKey, DocRules> = {
   },
 }
 
-/** 문서 규칙에 section 이 있으면 그 절만 떼어 «# 제목» 을 붙인 원문으로 — 없으면 원문 그대로.
- *  절 머리는 «## 2.» 가 정확히 그 번호일 때만(«## 2.5» · «## 20.» 은 다른 절) · 코드 블록 안의 «## » 줄은 절의 끝이 아니다 */
+/** 문서 규칙에 section 이 있으면 그 절만 떼어 «# 제목» 을 붙인 원문으로 — 없으면 원문 그대로(절 찾기는 sectionLines) */
 export function docSource(source: string, rules: Pick<DocRules, 'section' | 'title'>): string {
   if (!rules.section) return source
   if (!rules.title) throw new Error('절만 가져올 때는 제목(title)이 있어야 한다')
-  const lines = normalize(source).split('\n')
-  const isHead = (l: string) => l === rules.section || l.startsWith(`${rules.section} `)
-  const starts = lines.flatMap((l, i) => (isHead(l) ? [i] : []))
-  if (starts.length !== 1) throw new Error(`절 머리가 ${starts.length}개다(정확히 1개여야 한다): ${rules.section}`)
-  const start = starts[0]!
-  let fenced = false
-  let end = -1
-  for (let i = start + 1; i < lines.length; i++) {
-    if (/^\s*(?:```|~~~)/.test(lines[i]!)) fenced = !fenced
-    else if (!fenced && /^## /.test(lines[i]!)) {
-      end = i
-      break
+  return [`# ${rules.title}`, ...sectionLines(normalize(source).split('\n'), rules.section)].join('\n')
+}
+
+type FenceMark = 'open' | 'in' | 'close' | null
+
+/** 코드 펜스(CommonMark 부분집합) — 여는 줄 = 들여쓰기 3칸 이하 + ``` 또는 ~~~ 3개 이상(백틱 펜스면 뒤 정보 글자에 백틱 없음),
+ *  닫는 줄 = 같은 글자 · 같거나 긴 길이 · 뒤에 공백만. «```코드``` 설명» 은 펜스가 아니고, ~~~ 안의 ``` 는 닫지 않는다 */
+function fenceMarks(lines: readonly string[]): FenceMark[] {
+  let open: string | null = null
+  return lines.map((l) => {
+    const m = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(l)
+    if (open) {
+      if (m && m[1]![0] === open[0] && m[1]!.length >= open.length && !m[2]!.trim()) {
+        open = null
+        return 'close'
+      }
+      return 'in'
     }
-  }
-  return [`# ${rules.title}`, ...lines.slice(start + 1, end < 0 ? undefined : end)].join('\n')
+    if (m && !(m[1]![0] === '`' && m[2]!.includes('`'))) {
+      open = m[1]!
+      return 'open'
+    }
+    return null
+  })
+}
+
+/** 절 하나의 줄(머리 줄 제외) — 머리 «## 2.» 는 정확히 그 번호일 때만(«## 2.5» · «## 20.» 은 다른 절) · 코드 블록 밖에서 정확히 1개 ·
+ *  끝 = 코드 블록 밖의 다음 «## » */
+function sectionLines(lines: readonly string[], section: string): string[] {
+  const marks = fenceMarks(lines)
+  const outside = (i: number) => marks[i] === null
+  const starts = lines.flatMap((l, i) =>
+    outside(i) && (l === section || l.startsWith(`${section} `)) ? [i] : [],
+  )
+  if (starts.length !== 1) throw new Error(`절 머리가 ${starts.length}개다(정확히 1개여야 한다): ${section}`)
+  const start = starts[0]!
+  const end = lines.findIndex((l, i) => i > start && outside(i) && /^## /.test(l))
+  return lines.slice(start + 1, end < 0 ? undefined : end)
 }
 
 /** 정본 한 절의 코드 블록에서 줄을 골라 오는 규칙(문서 통째가 아니라 화면 한 조각에 쓰는 문구) */
@@ -109,6 +131,9 @@ export interface BlockRules extends TagRules {
   pick: readonly { key: string; startsWith: string; strip?: string }[]
   /** 대괄호 표시 → 링크 주소(공개 주소만) */
   links: Readonly<Record<string, string>>
+  /** 고르지 않는 코드 블록 줄 — 줄 글자(앞뒤 공백 제거)의 sha256 + 이유. 고르지도 건너뛰지도 않는 줄이 있거나,
+   *  건너뛸 줄이 정본에서 바뀌면 가져오기가 멈춘다(정본에 줄이 늘거나 바뀐 것을 조용히 버리지 않는다) */
+  skip?: readonly { sha256: string; why: string }[]
 }
 
 export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
@@ -125,6 +150,8 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
       { key: 'contact', startsWith: '전화:' },
       { key: 'privacyOfficer', startsWith: '개인정보보호책임자:' },
       { key: 'hosting', startsWith: '호스팅 서비스:' },
+      // 링크 줄 — 푸터는 shell-nav LEGAL_LINKS 로 그린다(라벨 · 차례 = 이 줄 — legal-content.test.ts 가 대조)
+      { key: 'legalLinks', startsWith: '이용약관 |' },
       { key: 'copyright', startsWith: '©' },
     ],
     links: { '[사업자정보확인]': 'https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7042401747' },
@@ -146,6 +173,14 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
       { key: 'trouble', startsWith: '• eSIM에 문제가 있으면', strip: '• ' },
     ],
     links: { '[지원 기기 확인]': '/supported-devices' },
+    // 마지막 줄 «[이용약관 보기] [취소·환불 정책 보기] [eSIM 발급하기]» — 링크 2 · 버튼 1. 팝업이 글자를 템플릿에 적는다
+    // (legal-links.test.ts 가 그 글자를 본다) — 이 줄이 정본에서 바뀌면 가져오기가 멈춰 템플릿을 같이 고치게 한다
+    skip: [
+      {
+        sha256: 'b671a0fc79931473225d62c3ef918bc000b16628fe793d4f0d8ac6b72527e69b',
+        why: '05-A 버튼 · 링크 줄(이용약관 보기 · 취소·환불 정책 보기 · eSIM 발급하기)',
+      },
+    ],
     notes: [],
     placeholders: [],
   },
@@ -180,9 +215,17 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
 export const PENDING_MARK = '\u0000PENDING\u0000'
 const slotMark = (i: number) => `\u0000SLOT${i}\u0000`
 
-/** eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 자정 · 0시/00시/24시 · 00:00/24:00 기준 서술 금지(«당일자정» 처럼
- *  붙여 써도). «사업자정보» · «판매자정보» 의 «자정» 글자만 제외 */
-export const MIDNIGHT = /(?<!사업|판매)자정|(?<!\d)(?:0|00|24)시\s*(?:기준|부터|까지)|(?<!\d)(?:00|24):00\s*(?:기준|부터|까지)/
+/** eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 날짜 경계 기준 서술 금지: 자정(«당일자정» 처럼 붙여 써도) ·
+ *  0시 · 00시 · 24시(를 · 에 · 부터 · 까지 · 기준 · 정각) · 00:00 · 24:00(괄호 시간대 허용) · 오전/밤/새벽 12시.
+ *  «사업자정보 · 판매자정보 · 이용자정보» 처럼 «…자 + 정보» 의 글자만 제외(«자정보다» 는 잡는다) */
+export const MIDNIGHT = new RegExp(
+  [
+    '자정(?!보(?!다))',
+    '(?<!\\d)(?:0|00|24)\\s*시\\s*(?:를|을|에|부터|까지|기준|정각)',
+    '(?<!\\d)(?:00|24):00(?:\\s*\\([^)]{0,12}\\))?\\s*(?:에|을|를|기준|부터|까지)',
+    '(?:오전|밤|새벽)\\s*12\\s*시',
+  ].join('|'),
+)
 
 /** 공개 화면에 남으면 안 되는 말(John — 해외 공급사 명칭 영문 · 한글 · 내부 용어 · 사람 · 결정/브리프/과제 번호 · 개발 경로) */
 export const FORBIDDEN: readonly RegExp[] = [
@@ -212,8 +255,8 @@ export interface Posting {
   pendingCount: number
 }
 
-/** «결정 기록» 절 제목 — 맨 앞(번호 · 괄호 · «부록 —» 머리 허용)에서만. «제5장 결정 기록의 보관» 같은 본문 장은 걷지 않는다 */
-const DECISION = /^(?:[\d.]+\s*|\([^)]*\)\s*|부록\s*[—–:·-]?\s*)?결정\s*기록/
+/** «결정 기록» 절 제목 — 맨 앞(번호 · 괄호 · «부록 (A) —» · «내부» 머리 허용)에서만. «제5장 결정 기록의 보관» 같은 본문 장은 걷지 않는다 */
+const DECISION = /^(?:[\d.]+\s*)?(?:\([^)]*\)\s*)?(?:부록\s*[A-Za-z\d]?\s*[—–:·-]?\s*)?(?:내부\s*)?결정\s*기록/
 
 /** 검토 메모 · 값 자리의 후보 — 백틱으로 감싼 대괄호 태그(해시는 백틱 포함) 또는 맨 대괄호 태그(뒤에 «(» 가 붙은 링크 글자는 제외) */
 const DOC_TAG = /`\[[^`\n]*\]`|\[[^\]\n]*\](?!\()/g
@@ -340,23 +383,22 @@ export interface BlockPosting {
 
 /** 정본 한 절의 코드 블록 → 고른 줄(값 자리는 PENDING_MARK · 링크 표시는 [글자](주소)) */
 export function toBlock(source: string, rules: BlockRules): BlockPosting {
-  const text = normalize(source)
-  const lines = text.split('\n')
-  const start = lines.findIndex((l) => l.startsWith(rules.section))
-  if (start < 0) throw new Error(`절을 찾지 못했다: ${rules.section}`)
-  const end = lines.findIndex((l, i) => i > start && /^## /.test(l))
-  const sectionLines = lines.slice(start + 1, end < 0 ? undefined : end)
-  const open = sectionLines.findIndex((l) => l.startsWith('```'))
-  const close = sectionLines.findIndex((l, i) => i > open && l.startsWith('```'))
+  const sec = sectionLines(normalize(source).split('\n'), rules.section)
+  const marks = fenceMarks(sec)
+  const open = marks.indexOf('open')
+  const close = open < 0 ? -1 : marks.indexOf('close', open)
   if (open < 0 || close < 0) throw new Error(`${rules.section} 절에 코드 블록이 없다`)
-  // 코드 블록 안 태그는 백틱이 없다 — 대괄호 태그 그대로
-  const code = applyTags(sectionLines.slice(open + 1, close).join('\n'), rules, /\[[^\]\n]*\]/g)
+  const raw = sec.slice(open + 1, close)
+  // 코드 블록 안 태그는 백틱이 없다 — 대괄호 태그 그대로(줄 수는 그대로 — 태그는 줄 안에서만 바뀐다)
+  const code = applyTags(raw.join('\n'), rules, /\[[^\]\n]*\]/g).split('\n')
+  const used = new Set<number>()
   const picked: Record<string, string> = {}
   for (const p of rules.pick) {
-    const hit = code.split('\n').filter((l) => l.startsWith(p.startsWith))
+    const hit = code.flatMap((l, i) => (l.startsWith(p.startsWith) ? [i] : []))
     if (hit.length !== 1)
       throw new Error(`«${p.startsWith}» 로 시작하는 줄이 ${hit.length}개다(1개여야 한다 — 정본이 바뀌었다)`)
-    let line = hit[0]!.trim()
+    used.add(hit[0]!)
+    let line = code[hit[0]!]!.trim()
     if (p.strip && line.startsWith(p.strip)) line = line.slice(p.strip.length)
     // 이미 [글자](주소) 로 쓰인 것은 그대로 — 주소가 두 번 붙지 않게
     for (const [label, href] of Object.entries(rules.links))
@@ -366,6 +408,20 @@ export function toBlock(source: string, rules: BlockRules): BlockPosting {
       )
     picked[p.key] = line
   }
+  // 고르지 않은 줄은 규칙에 해시로 적은 것만 — 정본에 줄이 늘거나(새 동의 · 새 안내) 건너뛰던 줄이 바뀌면 멈춘다
+  const skip = rules.skip ?? []
+  const skipped = new Set<string>()
+  raw.forEach((l, i) => {
+    if (used.has(i) || !l.trim()) return
+    const h = sha256(l.trim())
+    if (!skip.some((s) => s.sha256 === h))
+      throw new Error(
+        `${rules.section} 코드 블록 ${i + 1}째 줄을 고르지도 건너뛰지도 않았다(정본에 줄이 늘었거나 바뀌었다 — 규칙의 pick 또는 skip 에 넣는다): sha256 ${h.slice(0, 12)}…`,
+      )
+    skipped.add(h)
+  })
+  for (const s of skip)
+    if (!skipped.has(s.sha256)) throw new Error(`건너뛸 줄을 정본에서 찾지 못했다(정본이 바뀌었다): ${s.why}`)
   const { body, pendingCount } = finish(Object.values(picked).join('\n') + '\n', rules)
   const out = body.trimEnd().split('\n')
   return {

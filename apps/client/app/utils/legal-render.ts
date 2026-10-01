@@ -145,6 +145,12 @@ export function ftcCheckUrl(line: string): string | null {
   return link?.t === 'a' && /^https:\/\/www\.ftc\.go\.kr\//.test(link.href) ? link.href : null
 }
 
+/** 푸터 조각(F-7) — 04 1절 줄을 사업자정보 줄(차례 그대로) · 링크 줄(화면은 shell-nav LEGAL_LINKS 로 그린다) · © 줄로 나눈다 */
+export function footerParts<T extends { copyright: string; legalLinks: string }>(info: T) {
+  const { copyright, legalLinks, ...rest } = info
+  return { lines: Object.values(rest) as string[], legalLinks, copyright }
+}
+
 /** 사업자정보 줄(F-7 푸터 — 04 1절 줄 그대로 · «사업자정보확인» 은 공정위 조회 새 창) */
 export function renderBusinessLines(lines: readonly string[]): VNode {
   return h(

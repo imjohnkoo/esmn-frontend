@@ -27,6 +27,7 @@ const ftcUrl = ftcCheckUrl(BUSINESS_INFO.registration)
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  line-height: 1.6;
   gap: 4px 8px;
   margin: -32px 20px 48px;
   font-size: 14px;

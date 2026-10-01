@@ -81,6 +81,9 @@ describe('toPosting — 걷어 낼 것', () => {
     ['괄호 머리', '## (내부) 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
     ['부록 머리', '## 부록 — 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
     ['부록 콜론 · 붙여 씀', '## 부록: 결정기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['번호 + 부록', '## 7. 부록 — 결정 기록\n원가\n## 8. 다음\n본문', '## 8. 다음\n본문\n'],
+    ['부록 A', '## 부록 A — 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['내부', '## 내부 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
     ['본문 장 이름에 낱말이 있을 뿐이면 남긴다', '## 제5장 결정 기록의 보관\n본문', '## 제5장 결정 기록의 보관\n본문\n'],
   ])('«결정 기록» 절 — %s', (_, body, out) => {
     expect(toPosting(`# 문서\n${body}`, none).body).toBe(out)
@@ -277,6 +280,27 @@ describe('toBlock — 정본 한 절의 코드 블록에서 줄 고르기', () =
       }),
     ).toThrow(/코드 블록이 없다/)
   })
+  it('고르지 않은 줄은 skip(줄 글자 sha256)에 있어야 한다 — 정본에 줄이 늘거나 건너뛰던 줄이 바뀌면 멈춘다', () => {
+    const two = '## 1.\n```\n상호: 노마컴\n  새 줄  \n\n```'
+    const one = { ...block, pick: [{ key: 'name', startsWith: '상호:' }], placeholders: [] }
+    expect(() => toBlock(two, one)).toThrow(/고르지도 건너뛰지도 않았다/)
+    expect(toBlock(two, { ...one, skip: [{ sha256: sha256('새 줄'), why: '예시' }] }).lines).toEqual({ name: '상호: 노마컴' })
+    expect(() => toBlock(two.replace('새 줄', '바뀐 줄'), { ...one, skip: [{ sha256: sha256('새 줄'), why: '예시 줄' }] })).toThrow(
+      /고르지도 건너뛰지도/,
+    )
+    expect(() =>
+      toBlock('## 1.\n```\n상호: 노마컴\n```', { ...one, skip: [{ sha256: sha256('새 줄'), why: '예시 줄' }] }),
+    ).toThrow(/건너뛸 줄을 정본에서 찾지 못했다\(정본이 바뀌었다\): 예시 줄/)
+  })
+  it('절 머리는 정확히 그 번호 · 코드 블록 경계는 펜스 규칙대로(«```코드``` 설명» 은 펜스가 아니다 · ~~~ 안의 ``` 는 닫지 않는다)', () => {
+    const one = { ...block, pick: [{ key: 'name', startsWith: '상호:' }], placeholders: [] }
+    expect(toBlock('## 1.5 앞\n```\n상호: 다른 절\n```\n## 1. 첫\n```\n상호: 노마컴\n```', one).lines.name).toBe('상호: 노마컴')
+    expect(
+      toBlock('## 1. 첫\n```코드``` 설명\n```\n상호: 노마컴\n```\n## 2. 둘\n본문', one).lines.name,
+    ).toBe('상호: 노마컴')
+    expect(() => toBlock('## 1. 첫\n~~~\n상호: 노마컴\n```\n~~~\n', one)).toThrow(/고르지도 건너뛰지도/)
+    expect(() => toBlock('```\n## 1. 코드 안\n```\n## 1. 첫\n```\n상호: 노마컴\n```', one)).not.toThrow()
+  })
   it('정본에 이미 [글자](주소) 로 쓰인 링크 표시에는 주소를 다시 붙이지 않는다', () => {
     const out = toBlock('## 1.\n```\n번호: 1 [조회](https://www.ftc.go.kr/x)\n```', {
       ...block,
@@ -286,7 +310,7 @@ describe('toBlock — 정본 한 절의 코드 블록에서 줄 고르기', () =
     expect(out.lines.num).toBe('번호: 1 [조회](https://www.ftc.go.kr/x)')
   })
   it.each([
-    ['절이 없다', { section: '## 9.' }, /절을 찾지 못했다/],
+    ['절이 없다', { section: '## 9.' }, /절 머리가 0개/],
     ['고를 줄이 없다', { pick: [{ key: 'z', startsWith: '없는 줄:' }] }, /0개다/],
     ['값 자리 해시가 정본에 없다', { placeholders: [sha256('[다른 태그]')] }, /찾지 못했다/],
   ])('%s 면 throw', (_, patch, re) => {
@@ -359,6 +383,15 @@ describe('forbiddenIn — 공개 금지어(공급사 명칭 영문 · 한글 · 
     '00:00 기준',
     '24:00 기준',
     '00:00까지',
+    '0시를 기준으로',
+    '매일 0시에 차감',
+    '0 시 기준',
+    '24시 정각',
+    '00:00(한국시간) 기준',
+    '한국시간 00:00에',
+    '오전 12시 기준',
+    '밤 12시까지',
+    '자정보다 늦게',
     '[결제 테스트](/checkout-preview)',
     'esimmany.com/checkout-preview',
     '/api/v1/activate',
@@ -380,6 +413,10 @@ describe('forbiddenIn — 공개 금지어(공급사 명칭 영문 · 한글 · 
     '[약관](/terms) · [고객센터](/support)',
     '사업자정보확인',
     '판매자정보',
+    '이용자정보 · 제공자정보 · 수탁자정보 · 운영자정보',
+    '24 시간 이상',
+    '10시 기준',
+    '20:00 기준',
     '24시간 이상 연속 장애',
     '10:00 기준',
     'tools.google.com/dlpage/gaoptout',

@@ -3,13 +3,13 @@
 // 블록 = legal-pages 04 1절 줄 그대로(생성물 content/legal/business.ts — 공정위 «사업자정보확인» 링크 포함) + 링크 줄 + ©.
 // 링크 줄의 개인정보처리방침은 굵게 · 색으로 구분(처리방침 작성지침). compact = flow 레이아웃(4-step · 체크아웃) — 여백만 줄인다.
 import { BUSINESS_INFO } from '~/content/legal/business'
-import { renderBusinessLines } from '~/utils/legal-render'
+import { footerParts, renderBusinessLines } from '~/utils/legal-render'
 import { LEGAL_LINKS } from '~/utils/shell-nav'
 
 defineProps<{ compact?: boolean }>()
 
-const { copyright, ...info } = BUSINESS_INFO
-const lines = Object.values(info)
+// 링크 줄은 LEGAL_LINKS(라벨 · 차례 = 04 1절 링크 줄 — legal-content.test.ts 가 대조)로 그린다
+const { lines, copyright } = footerParts(BUSINESS_INFO)
 </script>
 
 <template>

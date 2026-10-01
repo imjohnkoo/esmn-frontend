@@ -8,7 +8,7 @@ import { REFUND_DOC } from '../content/legal/refund'
 import { TERMS_DOC } from '../content/legal/terms'
 import { P9_4_PENDING } from '../content/pending'
 import { parseLegalMarkdown } from './legal-markdown'
-import { ftcCheckUrl, renderBlocks, renderBusinessLines, renderDoc, renderNoticeList } from './legal-render'
+import { footerParts, ftcCheckUrl, renderBlocks, renderBusinessLines, renderDoc, renderNoticeList } from './legal-render'
 
 /** client-shell spec F-12 · F-20 · D-36 — 블록 · 실문서를 실제 HTML 로 그려 본다(서버 렌더 — 브라우저 없이) */
 const ssr = (node: () => VNode | VNode[]) =>
@@ -177,8 +177,10 @@ describe.each([TERMS_DOC, PRIVACY_DOC, REFUND_DOC, BUSINESS_DOC])('renderDoc($sl
 
 describe('renderBusinessLines — 푸터 사업자정보 줄(F-7)', () => {
   it('04 1절 7줄 차례 · 공정위 조회 새 탭(낭독기 «(새 창)») · 호스팅 «(확정 전)» · © 는 따로(푸터가 그린다)', async () => {
-    const { copyright, ...info } = BUSINESS_INFO
-    const html = await ssr(() => renderBusinessLines(Object.values(info)))
+    const { lines: info, copyright, legalLinks } = footerParts(BUSINESS_INFO)
+    expect(copyright).toBe('© 2026 노마컴. All rights reserved.')
+    expect(legalLinks).toBe('이용약관 | 개인정보처리방침 | 취소·환불 정책 | 사업자정보')
+    const html = await ssr(() => renderBusinessLines(info))
     const lines = [...html.matchAll(/<p class="site-footer__line">(.*?)<\/p>/g)].map((m) =>
       visible(m[1]!),
     )

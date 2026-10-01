@@ -6,6 +6,7 @@ import { forbiddenIn, unsupportedIn } from '../../../scripts/legal-posting'
 import { blocksText, parseLegalMarkdown } from '../../utils/legal-markdown'
 import { P9_4_PENDING } from '../pending'
 import { BUSINESS_INFO } from './business'
+import { LEGAL_LINKS } from '../../utils/shell-nav'
 import { CHECKOUT_NOTICE } from './checkout-notice'
 import { ISSUE_NOTICE } from './issue-notice'
 import { BUSINESS_DOC } from './business-page'
@@ -244,17 +245,21 @@ describe('푸터(04 1절) = /business 표(04 2절) — 같은 값이 두 생성�
     expect(m, String(re)).not.toBeNull()
     return m![1]!.trim()
   }
+  // 같음 = 칸 전체가 푸터 값 · 앞 = 칸이 푸터 값으로 시작(뒤에 « (신고기관 …)» · « · 연락처» 처럼 덧붙는 칸) · 포함 = 여러 값이 든 칸
   it.each([
-    ['상호', BUSINESS_INFO.brand, /상호: ([^|]+)\|/],
-    ['대표자', BUSINESS_INFO.brand, /대표: (.+)$/],
-    ['사업자등록번호', BUSINESS_INFO.registration, /사업자등록번호: (\S+)/],
-    ['통신판매업 신고번호', BUSINESS_INFO.mailOrder, /통신판매업신고: (.+)$/],
-    ['사업장 소재지', BUSINESS_INFO.address, /주소: (.+)$/],
-    ['개인정보보호책임자', BUSINESS_INFO.privacyOfficer, /개인정보보호책임자: (.+)$/],
-    ['고객센터', BUSINESS_INFO.contact, /전화: (\S+)/],
-    ['고객센터', BUSINESS_INFO.contact, /이메일: (\S+)/],
-  ])('%s', (label, line, re) => {
-    expect(row(label)).toContain(pick(line, re))
+    ['상호', BUSINESS_INFO.brand, /상호: ([^|]+)\|/, 'same'],
+    ['대표자', BUSINESS_INFO.brand, /대표: (.+)$/, 'same'],
+    ['사업자등록번호', BUSINESS_INFO.registration, /사업자등록번호: (\S+)/, 'same'],
+    ['통신판매업 신고번호', BUSINESS_INFO.mailOrder, /통신판매업신고: (.+)$/, 'head'],
+    ['사업장 소재지', BUSINESS_INFO.address, /주소: (.+)$/, 'same'],
+    ['개인정보보호책임자', BUSINESS_INFO.privacyOfficer, /개인정보보호책임자: (.+)$/, 'head'],
+    ['고객센터', BUSINESS_INFO.contact, /전화: (\S+)/, 'head'],
+    ['고객센터', BUSINESS_INFO.contact, /이메일: (\S+)/, 'has'],
+  ] as const)('%s', (label, line, re, mode) => {
+    const value = pick(line, re)
+    if (mode === 'same') expect(row(label)).toBe(value)
+    else if (mode === 'head') expect(row(label)).toMatch(new RegExp(`^${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?: [(·]|$)`))
+    else expect(row(label).split(' · ')).toContain(`이메일 ${value}`)
   })
   it('호스팅은 둘 다 값 자리(D-29①) — 값이 오면 함께 바뀐다', () => {
     expect(BUSINESS_INFO.hosting).toContain(P9_4_PENDING)
@@ -274,6 +279,9 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
       expect(JSON.stringify(lines)).not.toMatch(/legal-pages|\.md/)
     }
   })
+  it('푸터 링크 줄(F-7) — 화면의 LEGAL_LINKS 라벨 · 차례 = 04 1절 링크 줄', () => {
+    expect(LEGAL_LINKS.map((l) => l.label).join(' | ')).toBe(BUSINESS_INFO.legalLinks)
+  })
   it('사업자정보 7줄 — 순서 · 공정위 조회 링크 · 호스팅 칸만 확정 전', () => {
     expect(Object.keys(BUSINESS_INFO)).toEqual([
       'brand',
@@ -283,6 +291,7 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
       'contact',
       'privacyOfficer',
       'hosting',
+      'legalLinks',
       'copyright',
     ])
     expect(BUSINESS_INFO.registration).toBe(

@@ -152,9 +152,20 @@ describe('발급기 법정 링크(F-20)', () => {
     const info = find(item, (n) => dir(n, 'v-if') === 'item.info')!
     expect(text(info)).toContain('{{ item.info }}')
     // 처음 값 · 결제 조건은 utils 에서만 — 페이지가 체크 값을 쓰지 않는다(미리 체크 금지)
-    expect(src).toMatch(/const agreed = reactive\(initialConsent\(\)\)/)
-    expect(src).toMatch(/const canPay = computed\(\(\) => canPayWith\(agreed\)\)/)
-    expect(src).not.toMatch(/agreed(?:\.\w+|\[[^\]]*\])\s*=(?!=)|Object\.assign\(\s*agreed/)
+    // 체크 값(agreed)이 나오는 곳은 셋뿐 — 선언 · 결제 조건 · 체크박스 v-model. 그 밖의 읽기 · 쓰기(미리 체크 · 캐스트 우회 ·
+    // 저장소 복원 · ||= 등)는 이 수가 늘어 막힌다
+    const script = src.slice(src.indexOf('<script setup'), src.indexOf('</script>'))
+    expect(script.match(/\bagreed\b/g)).toHaveLength(2)
+    expect(script).toMatch(/\nconst agreed = reactive\(initialConsent\(\)\)\n/)
+    expect(script).toMatch(/\nconst canPay = computed\(\(\) => canPayWith\(agreed\)\)\n/)
+    expect(template(src).match(/\bagreed\b/g)).toHaveLength(1)
+    // 체크박스에는 v-model · :label 만 — :disabled · v-if · v-show 등이 붙으면 필수 체크를 못 하거나 숨는다
+    expect(boxes[0]!.node.props!.map((p) => p.rawName ?? p.name)).toEqual(['v-model', ':label'])
+    // 동의 영역 안의 조건부 표시는 «알릴 사항이 있는 항목만» 하나 — 05-B 글자를 숨기는 v-if · v-show · <template v-if> 금지
+    const conditional = (n: TNode) =>
+      n.props?.some((p) => p.type === 7 && ['if', 'else-if', 'else', 'show'].includes(p.name)) ?? false
+    expect(findAll(agree, conditional).map((c) => dir(c.node, 'v-if'))).toEqual(['item.info'])
+    for (const up of findAll(tpl, (n) => n === agree)[0]!.ancestors) expect(conditional(up), text(up).slice(0, 40)).toBe(false)
     const pay = find(tpl, (n) => n.tag === 'NButton' && /결제하기/.test(text(n)))!
     expect(dir(pay, ':disabled')).toBe('!isConfigured || !canPay')
     expect(src).toMatch(/if \(!isConfigured \|\| !canPay\.value \|\| isRequesting\.value\) return/)
@@ -168,7 +179,7 @@ describe('발급기 법정 링크(F-20)', () => {
     const before = findAll(agree, (n) => cls(n) === 'checkout__notice')[1]!.node
     expect(text(before)).toContain('{{ BEFORE_NOTICE.title }}')
     expect(text(before)).toContain('<component :is="renderNoticeList(BEFORE_NOTICE.lines)" />')
-    // 이 화면의 링크는 모두 새 창 — 다녀와도 체크가 풀리지 않게(지원 기기 확인 포함)
+    // 이 페이지 템플릿의 링크는 모두 새 창 — 다녀와도 체크가 풀리지 않게(지원 기기 확인 포함 · 레이아웃 푸터는 이 파일 밖)
     const links = findAll(tpl, (n) => n.tag === 'a' || n.tag === 'NuxtLink')
     expect(links.length).toBeGreaterThanOrEqual(3)
     for (const a of links) {
@@ -197,7 +208,7 @@ describe('발급기 법정 링크(F-20)', () => {
   it('푸터(F-7) — 04 1절 줄(생성물) · 링크 줄(방침 굵게 · 색) · © 줄(생성물) · 모든 레이아웃', () => {
     const footer = read('../components/shell/SiteFooter.vue')
     expect(footer).toContain("import { BUSINESS_INFO } from '~/content/legal/business'")
-    expect(footer).toMatch(/const \{ copyright, \.\.\.info \} = BUSINESS_INFO\nconst lines = Object\.values\(info\)\n/)
+    expect(footer).toMatch(/\nconst \{ lines, copyright \} = footerParts\(BUSINESS_INFO\)\n/)
     expect(template(footer)).toContain('<component :is="renderBusinessLines(lines)" />')
     expect(template(footer)).toContain('{{ copyright }}')
     expect(template(footer)).toContain("'site-footer__link--privacy': link.to === '/privacy'")
@@ -209,7 +220,15 @@ describe('발급기 법정 링크(F-20)', () => {
     const biz = read('./business.vue')
     expect(template(biz)).toContain('<LegalMarkdown :doc="BUSINESS_DOC" />')
     expect(biz).toContain('const ftcUrl = ftcCheckUrl(BUSINESS_INFO.registration)')
-    expect(template(biz)).toMatch(/:href="ftcUrl" target="_blank" rel="noopener"/)
+    // 공정위 조회 줄은 주소가 있을 때만 — 조건은 그것 하나(숨기는 조건 · v-show 금지)
+    const btpl = parse(biz).descriptor.template!.ast! as unknown as TNode
+    const ftc = find(btpl, (n) => cls(n) === 'business-page__ftc')!
+    expect(ftc.props!.map((p) => p.rawName ?? p.name)).toEqual(['v-if', 'class'])
+    expect(dir(ftc, 'v-if')).toBe('ftcUrl')
+    const link = find(ftc, (n) => n.tag === 'a')!
+    expect(link.props!.map((p) => p.rawName ?? p.name)).toEqual([':href', 'target', 'rel'])
+    expect(dir(link, ':href')).toBe('ftcUrl')
+    expect(text(link)).toContain('사업자정보확인')
   })
 
   it('D-36 임시 블록(`/` 하단)은 W1-2 홈에서 걷었다 — 사업자정보는 모든 화면 푸터(F-7)가 맡는다', () => {

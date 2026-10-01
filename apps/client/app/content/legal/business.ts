@@ -1,7 +1,7 @@
 // 생성물 — scripts/legal-import.mjs 가 legal-pages 정본에서 게시 규칙(08 D절)을 적용해 만든다.
 // 손으로 고치지 말 것 — 정본을 고친 뒤 `yarn workspace nomacom-client legal:import --from <정본 폴더>` 로 다시 만든다.
 // 정본: 04_사업자정보-고객센터.md ## 1. · legal-pages @f64203c
-// sha256(본문): 6c427078fdb8e0b5f5585a45f808f551b110f510e225df182bcd9330e3364241
+// sha256(본문): 1204b979c2c33a1e37ebd787b30cc4e551357517de8bc6d7e7726583617b4a91
 import { P9_4_PENDING } from '../pending'
 
 export const BUSINESS_INFO = {
@@ -12,5 +12,6 @@ export const BUSINESS_INFO = {
   contact: '전화: 070-8064-5232 (평일 09:00–18:00, 주말·공휴일 휴무) | 이메일: esimmany@naver.com',
   privacyOfficer: '개인정보보호책임자: 구장회',
   hosting: `호스팅 서비스: ${P9_4_PENDING}`,
+  legalLinks: '이용약관 | 개인정보처리방침 | 취소·환불 정책 | 사업자정보',
   copyright: '© 2026 노마컴. All rights reserved.',
 } as const
