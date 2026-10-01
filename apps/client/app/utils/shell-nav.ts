@@ -30,7 +30,7 @@ export const SHELL_TABS: readonly ShellTab[] = [
 export const LEGAL_LINKS: readonly ShellLink[] = [
   { label: '이용약관', to: '/terms' },
   { label: '개인정보처리방침', to: '/privacy' },
-  { label: '환불정책', to: '/refund' },
+  { label: '취소·환불 정책', to: '/refund' },
   { label: '사업자정보', to: '/business' },
 ]
 

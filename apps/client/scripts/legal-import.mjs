@@ -77,9 +77,10 @@ async function main() {
     const file = (doc ?? block).file
     try {
       const raw = readFileSync(join(from, file), 'utf8')
-      const label = `${file}${block ? ` ${block.section}` : ''} · legal-pages @${sourceRev(from, file)}`
+      const part = block?.section ?? doc?.section
+      const label = `${file}${part ? ` ${part}` : ''} · legal-pages @${sourceRev(from, file)}`
       if (doc) {
-        const posting = rules.toPosting(raw, doc)
+        const posting = rules.toPosting(rules.docSource(raw, doc), doc)
         const hits = rules.forbiddenIn(posting.title + '\n' + posting.body)
         if (hits.length) throw new Error(`공개하면 안 되는 말이 남았다\n  ${hits.join('\n  ')}`)
         results.push({ key, label, pendingCount: posting.pendingCount, size: `본문 ${posting.body.split('\n').length}줄`, source: rules.moduleSource(key, posting, label, PENDING_IDENT) })

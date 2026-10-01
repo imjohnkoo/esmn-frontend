@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { createSSRApp, h, type VNode } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import { BUSINESS_INFO } from '../content/legal/business'
+import { BUSINESS_DOC } from '../content/legal/business-page'
 import { PRIVACY_DOC } from '../content/legal/privacy'
+import { REFUND_DOC } from '../content/legal/refund'
 import { TERMS_DOC } from '../content/legal/terms'
 import { P9_4_PENDING } from '../content/pending'
 import { parseLegalMarkdown } from './legal-markdown'
-import { renderBlocks, renderBusinessInfo, renderDoc } from './legal-render'
+import { renderBlocks, renderBusinessLines, renderDoc } from './legal-render'
 
 /** client-shell spec F-12 · F-20 · D-36 — 블록 · 실문서를 실제 HTML 로 그려 본다(서버 렌더 — 브라우저 없이) */
 const ssr = (node: () => VNode | VNode[]) =>
@@ -16,7 +18,7 @@ const render = (md: string) => ssr(() => renderBlocks(parseLegalMarkdown(md)))
 /** HTML → 화면 글자(낭독기 전용 «(새 창)» 제외) */
 const visible = (html: string) =>
   html
-    .replace(/<span class="legal-md__sr">[^<]*<\/span>/g, '')
+    .replace(/<span class="legal-md__sr sr-only">[^<]*<\/span>/g, '')
     .replace(/<[^>]+>/g, '')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -79,7 +81,7 @@ describe('renderBlocks — 그린 HTML', () => {
     const html = await render('[약관](/terms) · [조회](https://www.ftc.go.kr/x)')
     expect(html).toContain('<a href="/terms" class="legal-md__link">약관</a>')
     expect(html).toContain(
-      '<a href="https://www.ftc.go.kr/x" class="legal-md__link" target="_blank" rel="noopener">조회<span class="legal-md__sr"> (새 창)</span></a>',
+      '<a href="https://www.ftc.go.kr/x" class="legal-md__link" target="_blank" rel="noopener">조회<span class="legal-md__sr sr-only"> (새 창)</span></a>',
     )
   })
 
@@ -94,6 +96,7 @@ describe('renderBlocks — 그린 HTML', () => {
     const nums = await render('번호: 704-24-01747 (평일 09:00–18:00, 휴무)')
     expect(nums).toContain('<span class="legal-md__nb">704-24-01747</span>')
     expect(nums).toContain('<span class="legal-md__nb">09:00–18:00,</span>')
+    expect(await render('카카오톡 채널 @이심마니 문의')).toContain('<span class="legal-md__nb">@이심마니</span>')
     expect(html).not.toContain('<span class="legal-md__nb">아주긴덩어리')
   })
 
@@ -110,7 +113,7 @@ describe('renderBlocks — 그린 HTML', () => {
   })
 })
 
-describe.each([TERMS_DOC, PRIVACY_DOC])('renderDoc($slug) — 실문서를 그대로 그린다', (doc) => {
+describe.each([TERMS_DOC, PRIVACY_DOC, REFUND_DOC, BUSINESS_DOC])('renderDoc($slug) — 실문서를 그대로 그린다', (doc) => {
   /** 게시용 마크다운 → 화면에 보여야 할 글자(꾸밈 기호 · 번호 · 구분행 · 표 칸 경계 제거, 자리표시자 → 표기) — 공백은 비교하지 않는다 */
   const expected = doc.markdown
     .split('\n')
@@ -167,10 +170,11 @@ describe.each([TERMS_DOC, PRIVACY_DOC])('renderDoc($slug) — 실문서를 그�
   })
 })
 
-describe('renderBusinessInfo — 발급기 사업자정보 블록(D-36)', () => {
-  it('04 1절 7줄 차례 · 공정위 조회 새 탭 · 호스팅 «(확정 전)» · 방침(굵게 · 색 클래스) · 약관 링크', async () => {
-    const html = await ssr(() => renderBusinessInfo(Object.values(BUSINESS_INFO)))
-    const lines = [...html.matchAll(/<p class="issuer-biz__line">(.*?)<\/p>/g)].map((m) =>
+describe('renderBusinessLines — 푸터 사업자정보 줄(F-7)', () => {
+  it('04 1절 7줄 차례 · 공정위 조회 새 탭(낭독기 «(새 창)») · 호스팅 «(확정 전)» · © 는 따로(푸터가 그린다)', async () => {
+    const { copyright, ...info } = BUSINESS_INFO
+    const html = await ssr(() => renderBusinessLines(Object.values(info)))
+    const lines = [...html.matchAll(/<p class="site-footer__line">(.*?)<\/p>/g)].map((m) =>
       visible(m[1]!),
     )
     expect(lines).toEqual([
@@ -183,13 +187,9 @@ describe('renderBusinessInfo — 발급기 사업자정보 블록(D-36)', () => 
       '호스팅 서비스: (확정 전)',
     ])
     expect(html).toContain(
-      '<a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7042401747" class="legal-md__link" target="_blank" rel="noopener">사업자정보확인',
+      '<a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7042401747" class="legal-md__link" target="_blank" rel="noopener">사업자정보확인<span class="legal-md__sr sr-only"> (새 창)</span></a>',
     )
-    expect(html).toMatch(
-      /<a href="\/privacy" class="issuer-biz__link issuer-biz__link--privacy">개인정보처리방침<\/a>/,
-    )
-    expect(html).toMatch(/<a href="\/terms" class="issuer-biz__link">이용약관<\/a>/)
-    expect(html).toContain('aria-label="사업자정보"')
+    expect(copyright).toBe('© 2026 노마컴. All rights reserved.')
     expect(html).not.toContain(P9_4_PENDING)
   })
 })

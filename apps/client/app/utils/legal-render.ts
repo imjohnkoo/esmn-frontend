@@ -29,8 +29,8 @@ function merge(xs: Child[]): Child[] {
 }
 
 /** 어절이 «·» · 괄호 · 낫표 · 줄표에서 갈리지 않게 — 공백 없는 짧은 덩어리(18자 이하)는 한 줄에 둔다
- * («이름·휴대전화번호», «(esimmany.com)는», «704-24-01747», «09:00–18:00,») */
-const KEEP = /[·「」()\-–]/
+ * («이름·휴대전화번호», «(esimmany.com)는», «704-24-01747», «09:00–18:00,», «@이심마니») */
+const KEEP = /[·「」()\-–@]/
 function renderText(text: string): Child[] {
   return text
     .split(/(\s+)/)
@@ -40,7 +40,8 @@ function renderText(text: string): Child[] {
     )
 }
 
-const newTabNote = () => h('span', { class: 'legal-md__sr' }, ' (새 창)')
+// legal-md__sr = 법정 문서 스타일 · sr-only = Tailwind(푸터처럼 LegalMarkdown 스타일이 실리지 않는 화면에서도 숨김)
+const newTabNote = () => h('span', { class: 'legal-md__sr sr-only' }, ' (새 창)')
 
 export function renderInlines(xs: Inline[]): Child[] {
   return merge(
@@ -136,18 +137,11 @@ export function renderDoc(doc: LegalMarkdownDoc): VNode {
   ])
 }
 
-/** 발급기 사업자정보 블록(D-36 — 04 1절 줄 그대로 + 방침 · 약관 링크). 방침은 굵게 · 색으로 구분(처리방침 작성지침) */
-export function renderBusinessInfo(lines: readonly string[]): VNode {
-  return h('section', { class: 'issuer-biz', 'aria-label': '사업자정보' }, [
-    ...lines.map((l) => h('p', { class: 'issuer-biz__line' }, renderInlines(parseInline(l)))),
-    h('p', { class: 'issuer-biz__links' }, [
-      h(
-        'a',
-        { href: '/privacy', class: 'issuer-biz__link issuer-biz__link--privacy' },
-        '개인정보처리방침',
-      ),
-      h('span', { 'aria-hidden': 'true' }, ' · '),
-      h('a', { href: '/terms', class: 'issuer-biz__link' }, '이용약관'),
-    ]),
-  ])
+/** 사업자정보 줄(F-7 푸터 — 04 1절 줄 그대로 · «사업자정보확인» 은 공정위 조회 새 창) */
+export function renderBusinessLines(lines: readonly string[]): VNode {
+  return h(
+    'div',
+    { class: 'site-footer__info' },
+    lines.map((l) => h('p', { class: 'site-footer__line' }, renderInlines(parseInline(l)))),
+  )
 }

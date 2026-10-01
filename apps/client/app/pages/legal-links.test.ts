@@ -123,7 +123,8 @@ describe('발급기 법정 링크(F-20)', () => {
   })
 
   it('«발급 후 취소 · 환불 불가» 문장이 앱 어디에도 없다 — 같은 자리는 05-A 14행(D-32)', () => {
-    for (const f of code(APP))
+    // 화면 코드만 — 법정 문서 생성물(content/legal)은 정본 문장(«설치 후 단순 변심 환불 불가» 등 — 설치 뒤 이야기)이라 제외
+    for (const f of code(APP).filter((f) => !f.includes('/content/legal/')))
       expect(readFileSync(f, 'utf8'), f).not.toMatch(
         /(?:취소|환불)[와과·/\s]*(?:환불)?\s*(?:이|가|은|을)?\s*(?:불가|X\b)|환불(?:이|은)?\s*안\s*(?:돼|됩)|(?:환불|취소)(?:을|를)?\s*(?:받을|할|해\s*드릴)\s*수\s*없|환불받을\s*수\s*없|환불되지\s*않아요|환불이\s*어려|취소할\s*수\s*없/,
       )
@@ -131,6 +132,24 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(read('../components/popup/ConfirmOrderModal.vue')).toContain(
       '*{{ ISSUE_NOTICE.refund }}',
     )
+  })
+
+  it('푸터(F-7) — 04 1절 줄(생성물) · 링크 줄(방침 굵게 · 색) · © 줄(생성물) · 모든 레이아웃', () => {
+    const footer = read('../components/shell/SiteFooter.vue')
+    expect(footer).toContain("import { BUSINESS_INFO } from '~/content/legal/business'")
+    expect(footer).toMatch(/const \{ copyright, \.\.\.info \} = BUSINESS_INFO/)
+    expect(template(footer)).toContain('<component :is="renderBusinessLines(lines)" />')
+    expect(template(footer)).toContain('{{ copyright }}')
+    expect(template(footer)).toContain("'site-footer__link--privacy': link.to === '/privacy'")
+    expect(footer).toMatch(/\.site-footer__link--privacy \{[^}]*color: var\(--n-color-primary-600[^}]*font-weight: 800/)
+  })
+
+  it('/refund · /business — 생성물을 그린다 · /business 는 공정위 조회를 푸터와 같은 주소로', () => {
+    expect(template(read('./refund.vue'))).toContain('<LegalMarkdown :doc="REFUND_DOC" />')
+    const biz = read('./business.vue')
+    expect(template(biz)).toContain('<LegalMarkdown :doc="BUSINESS_DOC" />')
+    expect(biz).toContain('.exec(BUSINESS_INFO.registration)')
+    expect(template(biz)).toMatch(/:href="ftcUrl" target="_blank" rel="noopener"/)
   })
 
   it('D-36 임시 블록(`/` 하단)은 W1-2 홈에서 걷었다 — 사업자정보는 모든 화면 푸터(F-7)가 맡는다', () => {

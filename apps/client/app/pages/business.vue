@@ -1,86 +1,49 @@
 <script setup lang="ts">
-// 사업자정보 — 푸터 9항목을 표로 (K5). 통신판매업 신고번호가 확정되면 공정위 사업자정보 확인 링크를 연다.
-import { businessRows, ftcBusinessCheckUrl } from '~/content/business'
+// 사업자정보(client-shell spec F-12 · S-4) — 정본 04 2절 표(legal-import 생성물) + 공정위 사업자정보 조회.
+// 조회 주소는 푸터와 같은 생성물(04 1절 «사업자정보확인» 링크)에서 읽는다 — 주소의 출처를 하나로.
+import LegalMarkdown from '~/components/legal/LegalMarkdown.vue'
+import { BUSINESS_INFO } from '~/content/legal/business'
+import { BUSINESS_DOC } from '~/content/legal/business-page'
 
-useHead({ title: '사업자정보' })
+useHead({ title: BUSINESS_DOC.title })
 
-const rows = businessRows()
-const ftcUrl = ftcBusinessCheckUrl()
+const ftcUrl = /\((https:\/\/www\.ftc\.go\.kr\/[^)\s]+)\)/.exec(BUSINESS_INFO.registration)?.[1]
 </script>
 
 <template>
-  <article class="business-page">
-    <h1 class="business-page__title">사업자정보</h1>
-    <table class="business-page__table">
-      <tbody>
-        <tr v-for="row in rows" :key="row.key">
-          <th scope="row">{{ row.label }}</th>
-          <td>{{ row.value }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <a
-      v-if="ftcUrl"
-      :href="ftcUrl"
-      class="business-page__ftc"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      공정거래위원회 사업자정보 확인
-    </a>
-  </article>
+  <div class="business-page">
+    <LegalMarkdown :doc="BUSINESS_DOC" />
+    <p v-if="ftcUrl" class="business-page__ftc">
+      <a :href="ftcUrl" target="_blank" rel="noopener"
+        >사업자정보확인<span class="sr-only"> (새 창)</span></a
+      >
+      <span class="business-page__ftc-note">공정거래위원회 통신판매사업자 정보 조회</span>
+    </p>
+  </div>
 </template>
 
 <style scoped>
-.business-page {
-  padding: 28px 20px 40px;
-  word-break: keep-all;
-  overflow-wrap: break-word;
-}
-
-.business-page__title {
-  margin: 0 0 20px;
-  font-size: 22px;
-  font-weight: 800;
-  line-height: 1.4;
-  color: var(--n-color-neutral-900, #171717);
-}
-
-.business-page__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.business-page__table th,
-.business-page__table td {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--n-color-neutral-100, #f5f5f5);
-  text-align: left;
-  vertical-align: top;
-}
-
-.business-page__table th {
-  width: 40%;
-  padding-right: 12px;
-  font-weight: 600;
-  color: var(--n-color-neutral-500, #737373);
-}
-
-.business-page__table td {
-  color: var(--n-color-neutral-900, #171717);
-  /* 긴 이메일 · 주소가 좁은 화면에서 표를 넘치지 않게 — break-word 는 자동 표 폭 계산에 안 들어간다 */
-  overflow-wrap: anywhere;
-}
-
 .business-page__ftc {
-  display: inline-block;
-  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: -32px 20px 48px;
   font-size: 14px;
-  font-weight: 600;
+}
+
+.business-page__ftc a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   color: var(--n-color-primary-600, #5025e8);
+  font-weight: 700;
   text-decoration: underline;
-  text-underline-offset: 3px;
+  text-underline-offset: 2px;
+}
+
+.business-page__ftc-note {
+  color: var(--n-color-neutral-500, #737373);
+  font-size: 13px;
 }
 </style>

@@ -7,7 +7,9 @@ import { blocksText, parseLegalMarkdown } from '../../utils/legal-markdown'
 import { P9_4_PENDING } from '../pending'
 import { BUSINESS_INFO } from './business'
 import { ISSUE_NOTICE } from './issue-notice'
+import { BUSINESS_DOC } from './business-page'
 import { PRIVACY_DOC } from './privacy'
+import { REFUND_DOC } from './refund'
 import { TERMS_DOC } from './terms'
 
 /**
@@ -15,8 +17,10 @@ import { TERMS_DOC } from './terms'
  * 정본과의 1:1 대조는 CI 밖(legal-pages 리포) — `legal:import` 로 다시 만들어 diff 0 을 본다(plan as-built 증거).
  */
 const DOCS = [
-  { doc: TERMS_DOC, file: './terms.ts' },
-  { doc: PRIVACY_DOC, file: './privacy.ts' },
+  { doc: TERMS_DOC, file: './terms.ts', origin: /^\/\/ 정본: 01_.+\.md · legal-pages @[0-9a-f]{7}$/m },
+  { doc: PRIVACY_DOC, file: './privacy.ts', origin: /^\/\/ 정본: 02_.+\.md · legal-pages @[0-9a-f]{7}$/m },
+  { doc: REFUND_DOC, file: './refund.ts', origin: /^\/\/ 정본: 03_.+\.md · legal-pages @[0-9a-f]{7}$/m },
+  { doc: BUSINESS_DOC, file: './business-page.ts', origin: /^\/\/ 정본: 04_.+\.md ## 2\. · legal-pages @[0-9a-f]{7}$/m },
 ]
 const read = (f: string) => readFileSync(fileURLToPath(new URL(f, import.meta.url)), 'utf8')
 const sha = (s: string) => createHash('sha256').update(s).digest('hex')
@@ -26,7 +30,7 @@ const unmark = (s: string) => s.split(P9_4_PENDING).join('\u0000PENDING\u0000')
 const D33 = '(예: 한국시간 자정 기준)'
 const header = (src: string) => /^\/\/ sha256\(본문\): ([0-9a-f]{64})$/m.exec(src)?.[1]
 
-describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file }) => {
+describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file, origin }) => {
   const text = blocksText(parseLegalMarkdown(doc.markdown))
   const src = read(file)
 
@@ -35,7 +39,7 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file }) => {
   })
 
   it('정본 출처(파일 · legal-pages 커밋)는 주석에만 — 공개 JS 에 실리는 값에는 없다', () => {
-    expect(src).toMatch(/^\/\/ 정본: 0[12]_.+\.md · legal-pages @[0-9a-f]{7}$/m)
+    expect(src).toMatch(origin)
     expect(JSON.stringify(doc)).not.toMatch(/legal-pages|\.md/)
   })
 
@@ -146,6 +150,52 @@ describe('개인정보처리방침 — 구조 · 확정 문장 · 자리표시�
   })
 })
 
+describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그대로)', () => {
+  const blocks = parseLegalMarkdown(REFUND_DOC.markdown)
+  const text = blocksText(blocks)
+  it('«한눈에 보기» 표 + 1~7절 · «결정 기록» 절 없음', () => {
+    expect(blocks.filter((b) => b.t === 'h2').map((b) => blocksText([b]))).toEqual([
+      '한눈에 보기',
+      '1. 발급 전에는 언제든 전액 환불됩니다',
+      '2. 발급 후에는 청약철회가 제한됩니다',
+      '3. eSIM에 문제가 있으면 재발급 또는 전액 환불합니다',
+      '4. 발급 기한(유효기간)과 이용 기간',
+      '5. 환불은 이렇게 처리됩니다',
+      '6. 미성년자 구매',
+      '7. 분쟁 해결',
+    ])
+    expect(text).not.toMatch(/결정 기록|채택안|원가/)
+  })
+  it('설치 전 폐기 비용 · 발급 전 전액 · 환불 기한(약관 12조와 같은 말)', () => {
+    expect(text).toContain('폐기 비용 **3,500원**을 부담하시면 환불됩니다'.replace(/\*\*/g, ''))
+    expect(text).toContain('발급을 요청하기 전이라면 사유를 묻지 않고 결제 금액 전액을 환불합니다.')
+    expect(text).toContain('환불 요청을 받은 날부터 3영업일 이내에 환불하며')
+  })
+  it('자리표시자 없음', () => {
+    expect(REFUND_DOC.markdown).not.toContain(P9_4_PENDING)
+  })
+})
+
+describe('사업자정보(04 2절) — 법정 표시 항목(전자상거래법 10조 · D-11)', () => {
+  const text = blocksText(parseLegalMarkdown(BUSINESS_DOC.markdown))
+  it.each([
+    ['상호', '노마컴'],
+    ['대표자', '구장회'],
+    ['사업자등록번호', '704-24-01747'],
+    ['통신판매업 신고번호', '제 2023-경기광주-1950 호'],
+    ['사업장 소재지', '제주특별자치도 제주시 신대로 145'],
+    ['고객센터', '070-8064-5232'],
+    ['개인정보보호책임자', '구장회'],
+  ])('%s', (label, value) => {
+    expect(text).toMatch(new RegExp(`${label} \\| [^\\n]*${value.replace(/[()]/g, '\\$&')}`))
+  })
+  it('이메일 · 호스팅(값 자리 1 — D-29①)', () => {
+    expect(text).toContain('esimmany@naver.com')
+    expect(text).toContain('호스팅 서비스 제공자 | (확정 전)')
+    expect(BUSINESS_DOC.markdown.split(P9_4_PENDING)).toHaveLength(2)
+  })
+})
+
 describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05-A · D-32 · D-35)', () => {
   it('손으로 고치지 않았다 — 머리줄 해시 = 지금 줄들 · 정본 출처(파일 · 절 · 커밋, dirty 아님)는 주석에만', () => {
     for (const [file, lines, origin] of [
@@ -166,6 +216,7 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
       'contact',
       'privacyOfficer',
       'hosting',
+      'copyright',
     ])
     expect(BUSINESS_INFO.registration).toBe(
       '사업자등록번호: 704-24-01747 [사업자정보확인](https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7042401747)',

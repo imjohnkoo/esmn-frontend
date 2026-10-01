@@ -1,0 +1,84 @@
+import { describe, expect, it } from 'vitest'
+import { BUSINESS_INFO } from './legal/business'
+import { BUSINESS_DOC } from './legal/business-page'
+import { P9_4_PENDING, PENDING_LABEL, displayValue, isPending } from './pending'
+import {
+  SMARTSTORE_URL,
+  SUPPORT_CHANNELS,
+  SUPPORT_EMAIL,
+  SUPPORT_HOURS,
+  SUPPORT_KAKAO,
+  SUPPORT_PHONE,
+  supportRows,
+  type SupportChannel,
+} from './support'
+
+/** client-shell spec S-3 · F-12 — 고객센터 채널. 값은 정본(legal-pages 04 1 · 2절) 생성물에 글자 그대로 있어야 한다 */
+describe('pending', () => {
+  it('자리표시자는 «(확정 전)» 으로 보이고 확정값은 그대로', () => {
+    expect(isPending(P9_4_PENDING)).toBe(true)
+    expect(displayValue(P9_4_PENDING)).toBe(PENDING_LABEL)
+    expect(displayValue('070-8064-5232')).toBe('070-8064-5232')
+  })
+})
+
+describe('고객센터 값 = 정본(04) — 손으로 적은 값이 정본 밖으로 나가지 않는다', () => {
+  const footer = Object.values(BUSINESS_INFO).join('\n')
+  it.each([
+    ['전화', SUPPORT_PHONE],
+    ['이메일', SUPPORT_EMAIL],
+    ['운영 시간', SUPPORT_HOURS],
+  ])('%s — 04 1절 푸터 줄에 그대로', (_, value) => {
+    expect(footer).toContain(value)
+  })
+  it('카카오톡 채널명 — 04 2절 고객센터 행에 그대로 · 채널 URL 은 확정 전(D-29③)', () => {
+    expect(BUSINESS_DOC.markdown).toContain(`카카오톡 채널 ${SUPPORT_KAKAO}`)
+    expect(SUPPORT_CHANNELS.find((c) => c.key === 'kakao')?.href).toBe(P9_4_PENDING)
+  })
+})
+
+describe('supportRows', () => {
+  it('카카오톡 채널명 · 네이버 톡톡은 스토어로 · 전화는 tel 링크 · 이메일은 mailto · 운영 시간은 글자만', () => {
+    const rows = Object.fromEntries(supportRows().map((row) => [row.key, row]))
+    expect(rows.kakao).toMatchObject({ text: '@이심마니', href: null })
+    expect(rows.naver?.href).toBe(SMARTSTORE_URL)
+    expect(rows.phone).toMatchObject({ text: '070-8064-5232', href: 'tel:070-8064-5232' })
+    expect(rows.email).toMatchObject({ text: 'esimmany@naver.com', href: 'mailto:esimmany@naver.com' })
+    expect(rows.hours).toMatchObject({ text: '평일 09:00–18:00, 주말·공휴일 휴무', href: null })
+  })
+
+  it('값 · 링크가 확정 전이면 글자만 (링크 없음)', () => {
+    const channels: SupportChannel[] = [
+      { key: 'kakao', label: '카카오톡 채널', value: '@이심마니', href: P9_4_PENDING },
+      { key: 'email', label: '이메일', value: P9_4_PENDING },
+      { key: 'hours', label: '운영 시간', value: P9_4_PENDING },
+    ]
+    const [kakao, email, hours] = supportRows(channels)
+    expect(kakao).toMatchObject({ text: '@이심마니', href: null })
+    expect(email).toMatchObject({ text: PENDING_LABEL, href: null })
+    expect(hours).toMatchObject({ text: PENDING_LABEL, href: null })
+  })
+
+  it('확정되면 링크 — 이메일은 mailto', () => {
+    const [kakao, email] = supportRows([
+      { key: 'kakao', label: '카카오톡 채널', value: '@이심마니', href: 'https://pf.kakao.com/_x' },
+      { key: 'email', label: '이메일', value: 'help@example.com' },
+    ])
+    expect(kakao?.href).toBe('https://pf.kakao.com/_x')
+    expect(email?.href).toBe('mailto:help@example.com')
+  })
+
+  it('채널 5종 · 순서', () => {
+    expect(SUPPORT_CHANNELS.map((channel) => channel.key)).toEqual([
+      'kakao',
+      'naver',
+      'phone',
+      'email',
+      'hours',
+    ])
+  })
+
+  it('고객센터 번호는 휴대폰이 아니다 (PG 심사 — 유선전화 요건)', () => {
+    expect(SUPPORT_PHONE).not.toMatch(/^01[016789]/)
+  })
+})
