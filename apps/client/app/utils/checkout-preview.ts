@@ -1,3 +1,5 @@
+import { CHECKOUT_NOTICE } from '../content/legal/checkout-notice'
+
 /**
  * 테스트 체크아웃 `/checkout-preview` (K9 · spec F-19) — PG 심사 캡처 전용. 주문 저장 · 발급 · 서버 호출 없음.
  *
@@ -94,3 +96,49 @@ export function splitConsent(line: string): { label: string; links: { text: stri
   const links = [...line.matchAll(/\[([^\]]+)\]\(([^)\s]+)\)/g)].map((m) => ({ text: m[1]!, href: m[2]! }))
   return { label: line.replace(/\s*\[[^\]]+\]\([^)\s]+\)/g, '').trim(), links }
 }
+
+export type ConsentKey = 'terms' | 'age' | 'marketing'
+
+export interface ConsentItem {
+  key: ConsentKey
+  /** 정본 문구의 «(필수)» 머리 — 필수 항목이 모두 체크돼야 결제 버튼이 켜진다 */
+  required: boolean
+  label: string
+  links: { text: string; href: string }[]
+  /** 체크 아래 알릴 사항(선택 동의의 항목 · 목적 · 보유) — 없으면 null */
+  info: string | null
+}
+
+const consentItem = (key: ConsentKey, line: string, info: string | null = null): ConsentItem => {
+  const { label, links } = splitConsent(line)
+  return { key, required: label.startsWith('(필수)'), label, links, info }
+}
+
+/** 05-B 동의 항목(spec F-22) — 화면은 이 목록만 그린다. 문구 · 링크는 생성물(CHECKOUT_NOTICE)에서만 */
+export const CONSENT_ITEMS: readonly ConsentItem[] = [
+  consentItem('terms', CHECKOUT_NOTICE.terms),
+  consentItem('age', CHECKOUT_NOTICE.age),
+  consentItem('marketing', CHECKOUT_NOTICE.marketing, CHECKOUT_NOTICE.marketingInfo),
+]
+
+/** 처음 값 — 모두 해제(PG 심사 요건 · spec 불변식 «동의 기본 해제») */
+export function initialConsent(): Record<ConsentKey, boolean> {
+  return Object.fromEntries(CONSENT_ITEMS.map((item) => [item.key, false])) as Record<ConsentKey, boolean>
+}
+
+/** 필수 항목이 모두 체크됐는가 — 선택 항목은 결제와 무관 */
+export function canPayWith(
+  agreed: Readonly<Record<ConsentKey, boolean>>,
+  items: readonly ConsentItem[] = CONSENT_ITEMS,
+): boolean {
+  return items.every((item) => !item.required || agreed[item.key] === true)
+}
+
+/** 개인정보 수집 · 이용 «안내» — 체크 없음(계약 이행 근거 · 2026-10-01 John (b)) */
+export const PRIVACY_NOTICE = { ...splitConsent(CHECKOUT_NOTICE.privacyTitle), info: CHECKOUT_NOTICE.privacyInfo }
+
+/** 결제 전 안내 — 제목 + 3줄(환불 기준 · 공제 문장 그대로 — D-28) */
+export const BEFORE_NOTICE = {
+  title: CHECKOUT_NOTICE.beforeTitle,
+  lines: [CHECKOUT_NOTICE.beforeRefund, CHECKOUT_NOTICE.beforeMinor, CHECKOUT_NOTICE.beforeNotify],
+} as const

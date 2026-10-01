@@ -3,12 +3,18 @@ import {
   PAYMENT_ID_PATTERN,
   PREVIEW_ITEM,
   PREVIEW_ORDER_NAME,
+  BEFORE_NOTICE,
+  CONSENT_ITEMS,
+  PRIVACY_NOTICE,
   buildReturnQuery,
+  canPayWith,
   createPaymentId,
   formatWon,
+  initialConsent,
   readPaymentResult,
   splitConsent,
 } from './checkout-preview'
+import { CHECKOUT_NOTICE } from '../content/legal/checkout-notice'
 
 describe('createPaymentId', () => {
   it('pv-{ms}-{hex24} · 토스 규칙(6~64자 · [A-Za-z0-9_-]) 안', () => {
@@ -137,3 +143,60 @@ describe('splitConsent — 05-B 동의 · 안내 문구에서 링크 떼기(F-22
     expect(splitConsent('(필수) 만 14세 이상입니다')).toEqual({ label: '(필수) 만 14세 이상입니다', links: [] })
   })
 })
+
+describe('05-B 동의 모델(F-22) — 화면이 그리는 것은 이것뿐', () => {
+  it('항목 3 — 순서 · 문구(정본 05 B절 그대로) · 필수 2 + 선택 1 · 링크 · 알릴 사항', () => {
+    expect(CONSENT_ITEMS.map((i) => [i.key, i.required, i.label])).toEqual([
+      ['terms', true, '(필수) 이용약관에 동의합니다'],
+      ['age', true, '(필수) 만 14세 이상입니다'],
+      ['marketing', false, '(선택) 혜택·이벤트 알림 수신 (카카오톡·이메일)'],
+    ])
+    expect(CONSENT_ITEMS.map((i) => i.links)).toEqual([[{ text: '보기', href: '/terms' }], [], []])
+    expect(CONSENT_ITEMS.map((i) => i.info)).toEqual([
+      null,
+      null,
+      '수집 항목: 이메일 주소, 휴대전화번호 · 목적: 신상품·혜택 안내 · 보유: 동의 철회 시까지 · 동의하지 않아도 구매할 수 있습니다',
+    ])
+  })
+
+  it('처음 값은 모두 해제(PG 심사 요건) · 부를 때마다 새 객체', () => {
+    expect(initialConsent()).toEqual({ terms: false, age: false, marketing: false })
+    const a = initialConsent()
+    a.terms = true
+    expect(initialConsent().terms).toBe(false)
+  })
+
+  it('결제 조건 = 필수 2개 모두 · 선택은 무관(8가지 전부)', () => {
+    for (const terms of [false, true])
+      for (const age of [false, true])
+        for (const marketing of [false, true])
+          expect(canPayWith({ terms, age, marketing }), JSON.stringify({ terms, age, marketing })).toBe(terms && age)
+  })
+
+  it('개인정보 «안내»(체크 없음) · 결제 전 안내 3줄', () => {
+    expect(PRIVACY_NOTICE).toEqual({
+      label: '개인정보 수집·이용 안내',
+      links: [{ text: '개인정보처리방침 보기', href: '/privacy' }],
+      info: CHECKOUT_NOTICE.privacyInfo,
+    })
+    expect(BEFORE_NOTICE.title).toBe('결제 전 안내')
+    expect(BEFORE_NOTICE.lines).toEqual([
+      CHECKOUT_NOTICE.beforeRefund,
+      CHECKOUT_NOTICE.beforeMinor,
+      CHECKOUT_NOTICE.beforeNotify,
+    ])
+  })
+
+  it('05-B 생성물의 줄은 하나도 빠짐없이 모델에 있다(정본에 줄이 늘면 여기서 막힌다)', () => {
+    const shown = new Set<string>([
+      ...CONSENT_ITEMS.flatMap((i) => [i.label, i.info ?? '']),
+      PRIVACY_NOTICE.label,
+      PRIVACY_NOTICE.info,
+      BEFORE_NOTICE.title,
+      ...BEFORE_NOTICE.lines,
+    ])
+    for (const [key, line] of Object.entries(CHECKOUT_NOTICE))
+      expect(shown.has(line) || shown.has(splitConsent(line).label), key).toBe(true)
+  })
+})
+

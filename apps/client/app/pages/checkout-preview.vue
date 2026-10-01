@@ -9,6 +9,8 @@ import {
   createPaymentId,
   formatWon,
   buildReturnQuery,
+  canPayWith,
+  initialConsent,
   readPaymentResult,
 } from '~/utils/checkout-preview'
 
@@ -22,11 +24,10 @@ const storeId = config.public.portone.storeId
 const channelKey = config.public.portone.testChannelKey
 const isConfigured = Boolean(storeId && channelKey)
 
-// 05-B(client-shell spec F-22) — 필수 2(이용약관 · 만 14세)가 체크돼야 결제 · 선택 1(마케팅)은 결제와 무관 · 서버 저장 0(F-19)
-const agreedTerms = ref(false)
-const agreedAge = ref(false)
-const agreedMarketing = ref(false)
-const canPay = computed(() => agreedTerms.value && agreedAge.value)
+// 05-B(client-shell spec F-22) — 필수 2(이용약관 · 만 14세)가 체크돼야 결제 · 선택 1(마케팅)은 결제와 무관 · 서버 저장 0(F-19).
+// 처음 값 · 필수 판정은 utils(CONSENT_ITEMS — 정본 문구의 «(필수)» 머리)에서만 — 여기서 체크 값을 쓰지 않는다
+const agreed = reactive(initialConsent())
+const canPay = computed(() => canPayWith(agreed))
 const isRequesting = ref(false)
 const openError = ref<string | null>(null)
 // 이 탭이 만든 결제 ID(sessionStorage) — 복귀 쿼리가 이것과 같을 때만 결과 줄을 그린다(링크로 만든 임의 문구 차단)
@@ -95,13 +96,8 @@ const onPay = async () => {
 }
 
 // 05-B 문구(생성물) — 스크립트 끝(위 줄 번호를 밀지 않게)
-import { CHECKOUT_NOTICE } from '~/content/legal/checkout-notice'
-import { splitConsent } from '~/utils/checkout-preview'
+import { BEFORE_NOTICE, CONSENT_ITEMS, PRIVACY_NOTICE } from '~/utils/checkout-preview'
 import { renderNoticeList } from '~/utils/legal-render'
-
-const TERMS = splitConsent(CHECKOUT_NOTICE.terms)
-const PRIVACY = splitConsent(CHECKOUT_NOTICE.privacyTitle)
-const BEFORE_LINES = [CHECKOUT_NOTICE.beforeRefund, CHECKOUT_NOTICE.beforeMinor, CHECKOUT_NOTICE.beforeNotify]
 </script>
 
 <template>
@@ -132,7 +128,9 @@ const BEFORE_LINES = [CHECKOUT_NOTICE.beforeRefund, CHECKOUT_NOTICE.beforeMinor,
       <h2 id="checkout-check-title" class="checkout__label">구매 전 확인</h2>
       <p class="checkout__text">
         eSIM 지원 기기인지 먼저 확인해 주세요.
-        <NuxtLink to="/supported-devices" class="checkout__link">지원 기기 확인</NuxtLink>
+        <a href="/supported-devices" target="_blank" rel="noopener" class="checkout__link"
+          >지원 기기 확인<span class="sr-only"> (새 창)</span></a
+        >
       </p>
     </section>
 
@@ -147,31 +145,27 @@ const BEFORE_LINES = [CHECKOUT_NOTICE.beforeRefund, CHECKOUT_NOTICE.beforeMinor,
     <!-- 05-B 원문(client-shell spec F-22) — 필수 2 · 선택 1 · 개인정보 수집 · 이용 «안내»(체크 없음 — 계약 이행 근거) · 결제 전 안내.
          링크는 새 창(이 화면의 체크 상태를 잃지 않게) -->
     <section class="checkout__agree" aria-label="약관 동의 · 개인정보 안내">
-      <div class="checkout__consent">
-        <NCheckbox v-model="agreedTerms" :label="TERMS.label" />
-        <a
-          v-for="link in TERMS.links"
-          :key="link.href"
-          :href="link.href"
-          target="_blank"
-          rel="noopener"
-          class="checkout__link"
-          >{{ link.text }}<span class="sr-only"> (새 창)</span></a
-        >
+      <div v-for="item in CONSENT_ITEMS" :key="item.key" class="checkout__consent-item">
+        <div class="checkout__consent">
+          <NCheckbox v-model="agreed[item.key]" :label="item.label" />
+          <a
+            v-for="link in item.links"
+            :key="link.href"
+            :href="link.href"
+            target="_blank"
+            rel="noopener"
+            class="checkout__link"
+            >{{ link.text }}<span class="sr-only"> (새 창)</span></a
+          >
+        </div>
+        <p v-if="item.info" class="checkout__consent-info">{{ item.info }}</p>
       </div>
-      <div class="checkout__consent">
-        <NCheckbox v-model="agreedAge" :label="CHECKOUT_NOTICE.age" />
-      </div>
-      <div class="checkout__consent">
-        <NCheckbox v-model="agreedMarketing" :label="CHECKOUT_NOTICE.marketing" />
-      </div>
-      <p class="checkout__consent-info">{{ CHECKOUT_NOTICE.marketingInfo }}</p>
 
       <div class="checkout__notice">
         <p class="checkout__notice-title">
-          {{ PRIVACY.label }}
+          {{ PRIVACY_NOTICE.label }}
           <a
-            v-for="link in PRIVACY.links"
+            v-for="link in PRIVACY_NOTICE.links"
             :key="link.href"
             :href="link.href"
             target="_blank"
@@ -180,12 +174,12 @@ const BEFORE_LINES = [CHECKOUT_NOTICE.beforeRefund, CHECKOUT_NOTICE.beforeMinor,
             >{{ link.text }}<span class="sr-only"> (새 창)</span></a
           >
         </p>
-        <p class="checkout__consent-info">{{ CHECKOUT_NOTICE.privacyInfo }}</p>
+        <p class="checkout__consent-info">{{ PRIVACY_NOTICE.info }}</p>
       </div>
 
       <div class="checkout__notice">
-        <p class="checkout__notice-title">{{ CHECKOUT_NOTICE.beforeTitle }}</p>
-        <component :is="renderNoticeList(BEFORE_LINES)" />
+        <p class="checkout__notice-title">{{ BEFORE_NOTICE.title }}</p>
+        <component :is="renderNoticeList(BEFORE_NOTICE.lines)" />
       </div>
     </section>
 
@@ -334,6 +328,13 @@ const BEFORE_LINES = [CHECKOUT_NOTICE.beforeRefund, CHECKOUT_NOTICE.beforeMinor,
   font-size: 14px;
   word-break: keep-all;
   overflow-wrap: break-word;
+}
+
+/* 항목 하나 = 체크 줄 + 알릴 사항 — 바깥 목록과 같은 간격(알릴 사항은 아래 음수 여백으로 체크 줄에 붙는다) */
+.checkout__consent-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .checkout__consent {
