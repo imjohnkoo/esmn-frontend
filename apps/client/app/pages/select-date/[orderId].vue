@@ -230,11 +230,12 @@ onMounted(() => {
 
 // 발급 화면 고지 문구(client-shell spec D-32 · D-35 — 05-A) — 스크립트 끝에 둔다(typecheck 기준선 줄 번호 불변)
 import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
+import { confirmScrollFit } from '~/utils/confirm-fit'
 
-// 발급 확인 팝업 — 요약 · 안내만 스크롤하고 동의 체크 · 버튼은 늘 보인다. 스크롤 높이는 열릴 때 실제 크기로
-// (다이얼로그 높이 − 스크롤 영역 = 제목 · 아이콘 · 동의 · 버튼) — 글자 확대 · 작은 화면에서도 버튼이 밀려나지 않게
+// 발급 확인 팝업 — 안내 · 요약만 스크롤하고 동의 체크 · 버튼은 화면 안. 높이는 열릴 때 실제 크기로(utils/confirm-fit)
 const confirmScrollEl = ref<HTMLElement | null>(null)
 const confirmScrollMax = ref<number | null>(null)
+const confirmCompact = ref(false)
 const confirmHasMore = ref(false)
 const confirmScrollStyle = computed(() =>
   confirmScrollMax.value === null ? undefined : { maxHeight: `${confirmScrollMax.value}px` },
@@ -247,26 +248,31 @@ const fitConfirm = () => {
   const el = confirmScrollEl.value
   const dialog = el?.closest<HTMLElement>('[role="alertdialog"], [role="dialog"]')
   if (!el || !dialog) return
-  // offsetHeight 는 열림 애니메이션의 scale 에 영향받지 않는다
-  const fixed = dialog.offsetHeight - el.offsetHeight
-  const vh = window.visualViewport?.height ?? window.innerHeight
-  confirmScrollMax.value = Math.max(96, Math.floor(vh - fixed - 24))
+  // 다이얼로그는 layout viewport 에 고정된다 — innerHeight(손가락 확대의 visualViewport 가 아니다) · offsetHeight 는 열림 애니메이션 scale 무관
+  const fit = confirmScrollFit(
+    window.innerHeight,
+    dialog.offsetHeight,
+    el.offsetHeight,
+    confirmCompact.value,
+  )
+  if (fit.compact && !confirmCompact.value) {
+    // 체크를 스크롤 안으로 옮긴 뒤(고정 부분이 줄어든 채) 다시 잰다
+    confirmCompact.value = true
+    nextTick(fitConfirm)
+    return
+  }
+  confirmScrollMax.value = fit.max
   nextTick(updateConfirmMore)
 }
 watch(isConfirmOrderVisible, async (open) => {
   if (!open) return
   confirmScrollMax.value = null
+  confirmCompact.value = false
   await nextTick()
   requestAnimationFrame(fitConfirm)
 })
-onMounted(() => {
-  window.addEventListener('resize', fitConfirm)
-  window.visualViewport?.addEventListener('resize', fitConfirm)
-})
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', fitConfirm)
-  window.visualViewport?.removeEventListener('resize', fitConfirm)
-})
+onMounted(() => window.addEventListener('resize', fitConfirm))
+onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
 </script>
 
 <template>
@@ -479,23 +485,7 @@ onBeforeUnmount(() => {
           :style="confirmScrollStyle"
           @scroll="updateConfirmMore"
         >
-          <div v-if="order" class="select-date-page__confirm">
-            <div class="select-date-page__confirm-row">
-              <span>상품</span><b>{{ order.planNameKr }}</b>
-            </div>
-            <div class="select-date-page__confirm-row">
-              <span>시작 국가</span><b>{{ selectedCountry }}</b>
-            </div>
-            <div class="select-date-page__confirm-row">
-              <span>시작 날짜</span><b>{{ startDateLabel }}</b>
-            </div>
-            <div class="select-date-page__confirm-row">
-              <span>사용 기간</span><b>{{ order.planDataDuration }}일</b>
-            </div>
-            <div class="select-date-page__confirm-row">
-              <span>수량</span><b>{{ order.quantity }}개</b>
-            </div>
-          </div>
+          <!-- 고지(05-A 14행 · 약관 12조③ 의 «미리 표시») 를 먼저 — 작은 화면에서도 스크롤 없이 보인다 -->
           <div class="select-date-page__confirm-policy">
             <svg
               class="select-date-page__confirm-policy-icon"
@@ -536,10 +526,40 @@ onBeforeUnmount(() => {
               >
             </p>
           </div>
+          <div v-if="order" class="select-date-page__confirm">
+            <div class="select-date-page__confirm-row">
+              <span>상품</span><b>{{ order.planNameKr }}</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>시작 국가</span><b>{{ selectedCountry }}</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>시작 날짜</span><b>{{ startDateLabel }}</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>사용 기간</span><b>{{ order.planDataDuration }}일</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>수량</span><b>{{ order.quantity }}개</b>
+            </div>
+          </div>
+          <!-- 공간이 모자라는 화면(가로 · 글자 크게)에서만 동의 체크를 스크롤 안 끝으로 — 버튼을 지킨다 -->
+          <div
+            v-if="confirmCompact"
+            class="select-date-page__confirm-agree"
+          >
+            <NCheckbox
+              v-model="isPolicyAgreed"
+              :label="ISSUE_NOTICE.consent"
+            />
+          </div>
         </div>
       </div>
       <!-- /confirm-scroll -->
-      <div class="select-date-page__confirm-agree">
+      <div
+        v-if="!confirmCompact"
+        class="select-date-page__confirm-agree"
+      >
         <!-- 05-A 19행(D-35) — 약관 6조④ 의 발급 화면 약관 동의 · 체크 구조 · 서버 기록은 W1-2 K3 · W1-6 -->
         <NCheckbox v-model="isPolicyAgreed" :label="ISSUE_NOTICE.consent" />
       </div>
@@ -696,6 +716,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 10px;
   width: 100%;
+  margin-top: 10px;
   background: #f9fafb;
   border-radius: 14px;
   padding: 14px;
@@ -749,7 +770,6 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   gap: 8px;
   width: 100%;
-  margin-top: 10px;
   padding: 12px 14px;
   background: #fef2f2;
   border-radius: 12px;

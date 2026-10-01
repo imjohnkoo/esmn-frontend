@@ -266,6 +266,8 @@ const onSubmit = async () => {
 }
 
 .verify-page__policy-link {
+  /* 글자 확대에서도 «이용약/관» 처럼 갈리지 않게 */
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   min-height: 24px;
