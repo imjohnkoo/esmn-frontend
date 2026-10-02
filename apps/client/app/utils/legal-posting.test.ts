@@ -5,6 +5,7 @@ import {
   BLOCK_RULES,
   DOC_RULES,
   PENDING_MARK,
+  applyEdits,
   blockModuleSource,
   docSource,
   forbiddenIn,
@@ -208,6 +209,42 @@ describe('toPosting — 걷어 낼 것', () => {
     expect(
       toPosting('# 문서\n[사업자정보확인](https://www.ftc.go.kr/x) · [약관](/terms)', none).body,
     ).toBe('[사업자정보확인](https://www.ftc.go.kr/x) · [약관](/terms)\n')
+  })
+})
+
+describe('applyEdits — 게시 수정(D-41): 정해 둔 줄 하나의 정해 둔 글자만', () => {
+  const line = '첫 줄 전화 010-0000-0000 끝'
+  const body = `# x\n${line}\n둘째 줄\n`
+  const edit = { line: sha256(line), from: ' 전화 010-0000-0000', to: '' }
+  it('그 줄의 그 글자만 바뀐다 · 나머지 그대로 · 수정이 없으면 본문 그대로', () => {
+    expect(applyEdits(body, [edit])).toBe('# x\n첫 줄 끝\n둘째 줄\n')
+    expect(applyEdits(body)).toBe(body)
+  })
+  it('고칠 줄이 없거나(정본이 바뀜) 둘이면 멈춘다', () => {
+    expect(() => applyEdits('# x\n다른 줄\n', [edit])).toThrow(/고칠 줄이 0개/)
+    expect(() => applyEdits(`${line}\n${line}\n`, [edit])).toThrow(/고칠 줄이 2개/)
+  })
+  it('바꿀 글자가 없거나 · 두 번이거나 · 빈 글자면 멈춘다', () => {
+    const twice = '전화 1 전화 1'
+    expect(() => applyEdits(`${line}\n`, [{ ...edit, from: '없는 글자' }])).toThrow(/정확히 한 번/)
+    expect(() => applyEdits(`${twice}\n`, [{ line: sha256(twice), from: '전화 1', to: '' }])).toThrow(/정확히 한 번/)
+    expect(() => applyEdits(`${line}\n`, [{ ...edit, from: '' }])).toThrow(/정확히 한 번/)
+  })
+  it('바꿀 글자의 $ 패턴을 해석하지 않는다', () => {
+    expect(applyEdits(`${line}\n`, [{ ...edit, to: " $& $' " }])).toBe("첫 줄 $& $'  끝\n")
+  })
+  it('toPosting 이 본문을 다 만든 뒤(백틱 정리 뒤 줄) 적용 — 고친 글자도 태그 · 문법 검사를 받는다', () => {
+    const src = '# 문서\n고객센터(채널 · 010-0000-0000)에 연락\n'
+    const l = sha256('고객센터(채널 · 010-0000-0000)에 연락')
+    expect(toPosting(src, { ...none, edits: [{ line: l, from: ' · 010-0000-0000', to: '' }] }).body).toBe(
+      '고객센터(채널)에 연락\n',
+    )
+    expect(() => toPosting(src, { ...none, edits: [{ line: l, from: '채널', to: '[메모]' }] })).toThrow(/처음 보는 태그/)
+    const tick = '# 문서\n`코드` 줄\n'
+    expect(() => toPosting(tick, { ...none, edits: [{ line: sha256('`코드` 줄'), from: '줄', to: '행' }] })).toThrow(
+      /고칠 줄이 0개/,
+    )
+    expect(toPosting(tick, { ...none, edits: [{ line: sha256('코드 줄'), from: '줄', to: '행' }] }).body).toBe('코드 행\n')
   })
 })
 
@@ -563,6 +600,14 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
     for (const r of all)
       for (const h of [...r.notes, ...r.placeholders]) expect(h).toMatch(/^[0-9a-f]{64}$/)
   })
+  it('게시 수정 줄은 sha256 · 수정은 결정된 문서에만(refund 1건 — D-41)', () => {
+    for (const r of Object.values(DOC_RULES)) for (const e of r.edits ?? []) expect(e.line).toMatch(/^[0-9a-f]{64}$/)
+    expect(Object.fromEntries(Object.entries(DOC_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
+      terms: 0,
+      privacy: 0,
+      refund: 1,
+    })
+  })
   it.each(['../../scripts/legal-posting.ts', '../../scripts/legal-import.mjs'])(
     '%s 원문에 검토 태그 글자가 없다(콜론 유무 무관)',
     (file) => {
@@ -595,6 +640,11 @@ describe('moduleSource · blockModuleSource — 생성 모듈', () => {
     expect(src).toMatch(/^\/\/ sha256\(본문\): [0-9a-f]{64}$/m)
     expect(src).toContain('// 정본: 02_x.md · legal-pages @abc1234')
     expect(src).not.toMatch(/source:/)
+  })
+  it('게시 수정이 있는 문서는 머리줄에 건수를 드러낸다(D-41) · 없으면 그 줄이 없다', () => {
+    const posting = { title: 't', body: 'a\n', pendingCount: 0 }
+    expect(moduleSource('refund', posting, '03_x.md · legal-pages @abc1234', 'P')).toMatch(/^\/\/ 게시 수정 1건 — /m)
+    expect(moduleSource('terms', posting, '01_x.md · legal-pages @abc1234', 'P')).not.toMatch(/게시 수정/)
   })
   it('본문의 백슬래시는 템플릿 문자열에서 그대로 살아남는다', () => {
     const src = moduleSource(

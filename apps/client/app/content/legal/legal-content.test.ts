@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { forbiddenIn, unsupportedIn } from '../../../scripts/legal-posting'
+import { DOC_RULES, forbiddenIn, unsupportedIn } from '../../../scripts/legal-posting'
 import { blocksText, parseLegalMarkdown } from '../../utils/legal-markdown'
 import { P9_4_PENDING } from '../pending'
 import { BUSINESS_INFO } from './business'
@@ -34,6 +34,10 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file, origin }) => {
   const text = blocksText(parseLegalMarkdown(doc.markdown))
   const src = read(file)
 
+  it('게시 수정(정본과 다른 글자)은 머리줄에 드러난다 — 규칙의 수정 건수와 같다(D-41)', () => {
+    const n = DOC_RULES[doc.slug].edits?.length ?? 0
+    expect(/^\/\/ 게시 수정 (\d+)건 — /m.exec(src)?.[1] ?? '0').toBe(String(n))
+  })
   it('생성물을 손으로 고치지 않았다 — 머리줄의 본문 해시 = 지금 본문', () => {
     expect(header(src)).toBe(sha(unmark(doc.markdown)))
   })
@@ -209,6 +213,10 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
   })
   it('자리표시자 없음', () => {
     expect(REFUND_DOC.markdown).not.toContain(P9_4_PENDING)
+  })
+  it('전화번호 없음(D-41) — 3항 고객센터 안내는 카카오톡 채널만', () => {
+    expect(REFUND_DOC.markdown).not.toMatch(/0\d{1,2}[-. ]?\d{3,4}[-. ]?\d{4}|전화/)
+    expect(REFUND_DOC.markdown.split('고객센터(카카오톡 채널 @이심마니)에 연락해 주세요.')).toHaveLength(2)
   })
 })
 

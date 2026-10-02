@@ -35,7 +35,7 @@ describe('고객센터 값 = 정본(04) — 손으로 적은 값이 정본 밖�
   })
   it('카카오톡 채널명 — 03 환불 정책의 고객센터 안내에 그대로 · 네이버 톡톡 — 02 방침의 상담 경로에 그대로 · 채널 URL 은 확정 전(D-29③)', () => {
     expect(SUPPORT_KAKAO).toMatch(/^@\S{2,}$/)
-    expect(REFUND_DOC.markdown).toMatch(new RegExp(`고객센터\\(카카오톡 채널 ${SUPPORT_KAKAO} · ${SUPPORT_PHONE}\\)`))
+    expect(REFUND_DOC.markdown).toContain(`고객센터(카카오톡 채널 ${SUPPORT_KAKAO})`) // 3항 — 전화번호는 뺐다(D-41)
     expect(PRIVACY_DOC.markdown).toContain('고객센터(전화·카카오톡 채널·네이버 톡톡·전자우편)')
     expect(SUPPORT_CHANNELS.find((c) => c.key === 'naver')?.label).toBe('네이버 톡톡')
     expect(SMARTSTORE_URL).toBe('https://smartstore.naver.com/esimmany')
