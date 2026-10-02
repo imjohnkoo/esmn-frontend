@@ -492,7 +492,24 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
           :style="confirmScrollStyle"
           @scroll="updateConfirmMore"
         >
-          <!-- 고지(05-A 14행 · 약관 12조③ 의 «미리 표시») 를 먼저 — 스크롤 영역 맨 위(열자마자 보이는 자리) -->
+          <div v-if="order" class="select-date-page__confirm">
+            <div class="select-date-page__confirm-row">
+              <span>상품</span><b>{{ order.planNameKr }}</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>시작 국가</span><b>{{ selectedCountry }}</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>시작 날짜</span><b>{{ startDateLabel }}</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>사용 기간</span><b>{{ order.planDataDuration }}일</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>수량</span><b>{{ order.quantity }}개</b>
+            </div>
+          </div>
+          <!-- 고지(05-A 원문 · 약관 12조③ 의 «미리 표시») — 주문 요약 바로 아래(client-shell spec D-42 · John 2026-10-02) -->
           <div class="select-date-page__confirm-policy">
             <svg
               class="select-date-page__confirm-policy-icon"
@@ -515,23 +532,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
             <div class="select-date-page__confirm-notice">
               <p class="select-date-page__confirm-notice-title">{{ ISSUE_NOTICE.heading }}</p>
               <component :is="renderNoticeList(NOTICE_LINES, [1])" />
-            </div>
-          </div>
-          <div v-if="order" class="select-date-page__confirm">
-            <div class="select-date-page__confirm-row">
-              <span>상품</span><b>{{ order.planNameKr }}</b>
-            </div>
-            <div class="select-date-page__confirm-row">
-              <span>시작 국가</span><b>{{ selectedCountry }}</b>
-            </div>
-            <div class="select-date-page__confirm-row">
-              <span>시작 날짜</span><b>{{ startDateLabel }}</b>
-            </div>
-            <div class="select-date-page__confirm-row">
-              <span>사용 기간</span><b>{{ order.planDataDuration }}일</b>
-            </div>
-            <div class="select-date-page__confirm-row">
-              <span>수량</span><b>{{ order.quantity }}개</b>
             </div>
           </div>
           <!-- 공간이 모자라는 화면(가로 · 글자 크게)에서만 동의 체크를 스크롤 안 끝으로 — 버튼을 지킨다 -->
@@ -724,7 +724,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
   flex-direction: column;
   gap: 10px;
   width: 100%;
-  margin-top: 10px;
   background: #f9fafb;
   border-radius: 14px;
   padding: 14px;
@@ -772,6 +771,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
 }
 
 .select-date-page__confirm-policy {
+  margin-top: 10px;
   word-break: keep-all;
   overflow-wrap: break-word;
   display: flex;

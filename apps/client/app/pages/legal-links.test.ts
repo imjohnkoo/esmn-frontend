@@ -75,7 +75,7 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(css).toMatch(/\.verify-page__policy-link \{[^}]*white-space: nowrap;/)
   })
 
-  it('select-date 확인 팝업(템플릿 AST) — 고지 먼저 · 스크롤 영역 배선 · 동의 체크는 밖(compact 면 안) · 체크 전 발급 비활성', () => {
+  it('select-date 확인 팝업(템플릿 AST) — 요약 → 고지(D-42) · 스크롤 영역 배선 · 동의 체크는 밖(compact 면 안) · 체크 전 발급 비활성', () => {
     const src = read('./select-date/[orderId].vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
     const dialog = find(tpl, (n) => n.tag === 'NAlertDialog' && dir(n, 'v-model') === 'isConfirmOrderVisible')
@@ -85,12 +85,12 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(attr(scroll, 'ref')).toBe('confirmScrollEl')
     expect(dir(scroll, ':style')).toBe('confirmScrollStyle')
     expect(dir(scroll, '@scroll')).toBe('updateConfirmMore')
-    // 스크롤 안 — 고지(05-A 원문 · 약관 12조③ «미리 표시») 가 요약보다 먼저
+    // 스크롤 안 — 주문 요약 → 고지(05-A 원문 · 약관 12조③ «미리 표시» — 같은 팝업 안) 순서(D-42)
     const kids = (scroll.children ?? []).filter((c) => c.type === ELEMENT)
     const policyAt = kids.findIndex((c) => cls(c) === 'select-date-page__confirm-policy')
     const summaryAt = kids.findIndex((c) => cls(c) === 'select-date-page__confirm')
-    expect(policyAt).toBe(0)
-    expect(summaryAt).toBeGreaterThan(policyAt)
+    expect(summaryAt).toBe(0) // D-42 — 주문 요약 → 고지(John 2026-10-02)
+    expect(policyAt).toBe(1)
     // F-21 — 05-A 제목 + 안내 5줄(정본 순서) · 설치 전 3,500원 줄(둘째)은 굵게(D-32 «팝업 본문(굵게)»)
     expect(text(kids[policyAt]!)).toContain('{{ ISSUE_NOTICE.heading }}')
     expect(text(kids[policyAt]!)).toContain('<component :is="renderNoticeList(NOTICE_LINES, [1])" />')
