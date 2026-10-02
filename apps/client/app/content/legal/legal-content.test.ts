@@ -214,9 +214,21 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
   it('자리표시자 없음', () => {
     expect(REFUND_DOC.markdown).not.toContain(P9_4_PENDING)
   })
-  it('전화번호 없음(D-41) — 3항 고객센터 안내는 카카오톡 채널만', () => {
-    expect(REFUND_DOC.markdown).not.toMatch(/0\d{1,2}[-. ]?\d{3,4}[-. ]?\d{4}|전화/)
-    expect(REFUND_DOC.markdown.split('고객센터(카카오톡 채널 @이심마니)에 연락해 주세요.')).toHaveLength(2)
+  it('전화번호 없음(D-41) — 3항 고객센터 안내는 카카오톡 채널만 · 그 줄은 정본 줄에서 « · 070-8064-5232» 만 뺀 글자', () => {
+    // 지역 · 휴대 · 인터넷 전화 · 대표번호(15xx~19xx) · 국가번호 · 괄호 지역번호 꼴 + «전화» 낱말
+    expect(REFUND_DOC.markdown).not.toMatch(
+      /(?:\+\s?82[-.\s]?0?\d{1,2}|\(?0\d{1,2}\)?)[-.\s)]?\d{3,4}[-.\s]?\d{4}|(?<!\d)1[5-9]\d{2}[-.\s]?\d{4}(?!\d)|전화/,
+    )
+    expect(REFUND_DOC.markdown.split('\n').filter((l) => l.includes('고객센터(카카오톡 채널'))).toEqual([
+      '- 문제가 생기면 eSIM을 **삭제하지 말고** 그 상태 그대로 고객센터(카카오톡 채널 @이심마니)에 연락해 주세요. 대부분은 설정 안내로 바로 해결됩니다. 운영 시간(평일 09:00–18:00) 외에는 카카오톡 채널에 남겨 주시면 남기신 시각을 접수 시각으로 봅니다.',
+    ])
+  })
+  it('게시 수정 = 결정된 것 그대로(D-41 — 전화번호 글자만 지운다 · 다른 수정 0)', () => {
+    expect(DOC_RULES.refund.edits).toEqual([
+      { line: '5ccceaa412d5bbe591a837489e87a66b1905fb249d602496ca6adb7080ace3b7', from: ' · 070-8064-5232', to: '' },
+    ])
+    expect(DOC_RULES.terms.edits ?? []).toEqual([])
+    expect(DOC_RULES.privacy.edits ?? []).toEqual([])
   })
 })
 
