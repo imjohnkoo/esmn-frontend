@@ -23,7 +23,7 @@ export interface TagRules {
   placeholders: readonly string[]
 }
 
-/** 게시 수정(spec D-41) — 정본에 있지만 게시하지 않기로 결정한 글자. 정본 rev 가 오면 규칙에서 지운다 */
+/** 게시 수정(spec D-33 · D-41) — 정본에 있지만 게시하지 않기로 결정한 글자. 정본 rev 가 오면 그 문서의 규칙만 지운다 */
 export interface PostingEdit {
   /** 고칠 줄 — 게시 본문(꾸밈 · 백틱 정리 뒤) 한 줄의 sha256. ⚠️ 값 자리가 있는 줄은 내부 표식 상태로 해시된다 — 지금은 값 자리 없는 줄만 고친다 */
   line: string

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { DOC_RULES, forbiddenIn, unsupportedIn } from '../../../scripts/legal-posting'
+import { DOC_RULES, MIDNIGHT, forbiddenIn, unsupportedIn } from '../../../scripts/legal-posting'
 import { blocksText, parseLegalMarkdown } from '../../utils/legal-markdown'
 import { P9_4_PENDING } from '../pending'
 import { BUSINESS_INFO } from './business'
@@ -67,7 +67,7 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file, origin }) => {
 // spec D-33 resolved(John 2026-10-02 «괄호를 지우고 게시») — 약관 8조② 의 자정 예시 괄호는 게시 수정으로 뺀다(eSIM 불변식 — 첫 연결부터 24시간 단위)
 describe('D-33 — 약관 8조② 자정 예시 없음 · 게시 수정 = 결정 그대로', () => {
   it('8조② 줄 = 정본 줄에서 «(예: 한국시간 자정 기준)» 만 뺀 글자 · 자정 표현 0', () => {
-    expect(TERMS_DOC.markdown).not.toMatch(/자정/)
+    expect(TERMS_DOC.markdown).not.toMatch(MIDNIGHT) // 날짜 경계 낱말(«사업자정보» 같은 «…자 + 정보» 는 제외)
     expect(TERMS_DOC.markdown.split('\n').filter((l) => l.includes('상품 상세에 별도 기준'))).toEqual([
       '2. 이용 기간은 **설치가 아닌 개통(이용 가능 지역에서의 최초 망 접속) 시점부터** 24시간 단위로 계산됩니다. 상품 상세에 별도 기준이 표시된 경우 그에 따릅니다.',
     ])
