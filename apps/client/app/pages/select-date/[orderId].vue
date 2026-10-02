@@ -227,6 +227,53 @@ onMounted(() => {
     router.push(`/details/${orderId.value}`)
   }
 })
+
+// 발급 화면 고지 문구(client-shell spec D-32 · D-35 — 05-A) — 스크립트 끝에 둔다(typecheck 기준선 줄 번호 불변)
+import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
+import { confirmScrollFit } from '~/utils/confirm-fit'
+
+// 발급 확인 팝업 — 안내 · 요약만 스크롤하고 동의 체크 · 버튼은 화면 안. 높이는 열릴 때 실제 크기로(utils/confirm-fit)
+const confirmScrollEl = ref<HTMLElement | null>(null)
+const confirmScrollMax = ref<number | null>(null)
+const confirmCompact = ref(false)
+const confirmHasMore = ref(false)
+const confirmScrollStyle = computed(() =>
+  confirmScrollMax.value === null ? undefined : { maxHeight: `${confirmScrollMax.value}px` },
+)
+const updateConfirmMore = () => {
+  const el = confirmScrollEl.value
+  confirmHasMore.value = !!el && el.scrollTop + el.clientHeight < el.scrollHeight - 4
+}
+const fitConfirm = () => {
+  const el = confirmScrollEl.value
+  const dialog = el?.closest<HTMLElement>('[role="alertdialog"], [role="dialog"]')
+  if (!el || !dialog) return
+  // 다이얼로그는 layout viewport 에 고정된다 — documentElement.clientHeight(iOS 에서 innerHeight 는 손가락 확대로 줄어든다) ·
+  // offsetHeight 는 열림 애니메이션 scale 무관
+  const fit = confirmScrollFit(
+    document.documentElement.clientHeight,
+    dialog.offsetHeight,
+    el.offsetHeight,
+    confirmCompact.value,
+  )
+  if (fit.compact && !confirmCompact.value) {
+    // 체크를 스크롤 안으로 옮긴 뒤(고정 부분이 줄어든 채) 다시 잰다
+    confirmCompact.value = true
+    nextTick(fitConfirm)
+    return
+  }
+  confirmScrollMax.value = fit.max
+  nextTick(updateConfirmMore)
+}
+watch(isConfirmOrderVisible, async (open) => {
+  if (!open) return
+  confirmScrollMax.value = null
+  confirmCompact.value = false
+  await nextTick()
+  requestAnimationFrame(fitConfirm)
+})
+onMounted(() => window.addEventListener('resize', fitConfirm))
+onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
 </script>
 
 <template>
@@ -427,56 +474,95 @@ onMounted(() => {
       :closable="false"
       :width="340"
     >
-      <div v-if="order" class="select-date-page__confirm">
-        <div class="select-date-page__confirm-row">
-          <span>상품</span><b>{{ order.planNameKr }}</b>
-        </div>
-        <div class="select-date-page__confirm-row">
-          <span>시작 국가</span><b>{{ selectedCountry }}</b>
-        </div>
-        <div class="select-date-page__confirm-row">
-          <span>시작 날짜</span><b>{{ startDateLabel }}</b>
-        </div>
-        <div class="select-date-page__confirm-row">
-          <span>사용 기간</span><b>{{ order.planDataDuration }}일</b>
-        </div>
-        <div class="select-date-page__confirm-row">
-          <span>수량</span><b>{{ order.quantity }}개</b>
-        </div>
-      </div>
-      <div class="select-date-page__confirm-policy">
-        <svg
-          class="select-date-page__confirm-policy-icon"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+      <!-- 요약 · 안내만 스크롤 — 필수 동의 체크 · «뒤로 · 발급하기» 는 늘 화면 안(팝업은 페이지 스크롤을 잠근다).
+           높이는 열릴 때 실제 크기로 맞춘다(글자 확대 · 작은 화면) · 아래에 더 있으면 흐림 표시 -->
+      <div
+        class="select-date-page__confirm-scroll-wrap"
+        :class="{ 'is-more': confirmHasMore }"
+      >
+        <div
+          ref="confirmScrollEl"
+          class="select-date-page__confirm-scroll"
+          :style="confirmScrollStyle"
+          @scroll="updateConfirmMore"
         >
-          <path
-            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-          />
-          <line x1="12" y1="9" x2="12" y2="13" />
-          <line x1="12" y1="17" x2="12.01" y2="17" />
-        </svg>
-        <p>
-          <b>발급 후에는 취소와 환불이 불가해요.</b>
-          사용하실 기기가 eSIM 지원 기기인지 발급 전에 꼭 확인해 주세요.
-          <a
-            class="select-date-page__confirm-policy-link"
-            href="/supported-devices"
-            target="_blank"
-            rel="noopener"
+          <!-- 고지(05-A 14행 · 약관 12조③ 의 «미리 표시») 를 먼저 — 스크롤 영역 맨 위(열자마자 보이는 자리) -->
+          <div class="select-date-page__confirm-policy">
+            <svg
+              class="select-date-page__confirm-policy-icon"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+              />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <p>
+              <!-- 05-A 14행(client-shell spec D-32) — 약관 12조③ 의 «발급 요청 화면에 미리 표시» -->
+              <b>{{ ISSUE_NOTICE.refund }}</b>
+              사용하실 기기가 eSIM 지원 기기인지 발급 전에 꼭 확인해 주세요.
+              <a
+                class="select-date-page__confirm-policy-link"
+                href="/supported-devices"
+                target="_blank"
+                rel="noopener"
+                >지원 기기 목록 보기<span class="sr-only"> (새 창)</span></a
+              >
+              <!-- 법정 링크(client-shell spec F-20) — 05-A 원문 전체(5줄 · 링크 3)는 W1-2 K3(F-21) -->
+              <span aria-hidden="true"> · </span>
+              <a
+                class="select-date-page__confirm-policy-link"
+                href="/terms"
+                target="_blank"
+                rel="noopener"
+                >이용약관 보기<span class="sr-only"> (새 창)</span></a
+              >
+            </p>
+          </div>
+          <div v-if="order" class="select-date-page__confirm">
+            <div class="select-date-page__confirm-row">
+              <span>상품</span><b>{{ order.planNameKr }}</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>시작 국가</span><b>{{ selectedCountry }}</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>시작 날짜</span><b>{{ startDateLabel }}</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>사용 기간</span><b>{{ order.planDataDuration }}일</b>
+            </div>
+            <div class="select-date-page__confirm-row">
+              <span>수량</span><b>{{ order.quantity }}개</b>
+            </div>
+          </div>
+          <!-- 공간이 모자라는 화면(가로 · 글자 크게)에서만 동의 체크를 스크롤 안 끝으로 — 버튼을 지킨다 -->
+          <div
+            v-if="confirmCompact"
+            class="select-date-page__confirm-agree"
           >
-            지원 기기 목록 보기
-          </a>
-        </p>
+            <NCheckbox
+              v-model="isPolicyAgreed"
+              :label="ISSUE_NOTICE.consent"
+            />
+          </div>
+        </div>
       </div>
-      <div class="select-date-page__confirm-agree">
-        <NCheckbox v-model="isPolicyAgreed" label="위 내용을 확인했고 동의해요" />
+      <!-- /confirm-scroll -->
+      <div
+        v-if="!confirmCompact"
+        class="select-date-page__confirm-agree"
+      >
+        <!-- 05-A 19행(D-35) — 약관 6조④ 의 발급 화면 약관 동의 · 체크 구조 · 서버 기록은 W1-2 K3 · W1-6 -->
+        <NCheckbox v-model="isPolicyAgreed" :label="ISSUE_NOTICE.consent" />
       </div>
       <template #actions>
         <div class="select-date-page__confirm-actions">
@@ -631,6 +717,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 10px;
   width: 100%;
+  margin-top: 10px;
   background: #f9fafb;
   border-radius: 14px;
   padding: 14px;
@@ -651,18 +738,46 @@ onMounted(() => {
   color: #111827;
 }
 
+.select-date-page__confirm-scroll-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* 아래에 더 있으면 흐림 — 스크롤바를 숨기는 모바일에서 «끝» 처럼 보이지 않게 */
+.select-date-page__confirm-scroll-wrap.is-more::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 28px;
+  background: linear-gradient(rgba(255, 255, 255, 0), #fff);
+  pointer-events: none;
+}
+
+/* max-height 는 열릴 때 스크립트가 실제 크기로 덮는다 — 아래는 그 전 · 스크립트가 없을 때의 기본값 */
+.select-date-page__confirm-scroll {
+  width: 100%;
+  max-height: max(120px, calc(100vh - 360px));
+  max-height: max(120px, calc(100dvh - 360px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .select-date-page__confirm-policy {
+  word-break: keep-all;
+  overflow-wrap: break-word;
   display: flex;
   align-items: flex-start;
   gap: 8px;
   width: 100%;
-  margin-top: 10px;
   padding: 12px 14px;
   background: #fef2f2;
   border-radius: 12px;
   font-size: 12px;
   line-height: 1.55;
-  color: #6b7280;
+  /* 분홍 바탕(#fef2f2) 위 12px — 대비 4.5:1 이상 */
+  color: #4b5563;
   text-align: left;
 }
 
@@ -683,10 +798,13 @@ onMounted(() => {
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
-  color: #dc2626;
+  /* 분홍 바탕(#fef2f2) 위 12px — 대비 4.5:1 이상(약관 12조③ 의 표시 문장) */
+  color: #b91c1c;
 }
 
 .select-date-page__confirm-agree {
+  word-break: keep-all;
+  overflow-wrap: break-word;
   width: 100%;
   margin-top: 10px;
   display: flex;

@@ -7,6 +7,7 @@ import {
 import { WalletIcon } from '@heroicons/vue/24/outline';
 import type { Order } from '~/types/order';
 import { formatDateStringToKorean } from '~/utils/date';
+import { ISSUE_NOTICE } from '~/content/legal/issue-notice';
 
 interface Props {
   visible: boolean;
@@ -116,7 +117,8 @@ const formattedStartTime = computed(() => {
       </div>
 
       <p class="text-md pt-4 font-semibold text-gray-800">QR코드를 발급하시겠습니까?</p>
-      <p class="pt-1 text-xs text-red-600">*발급 후에는 취소와 환불이 불가합니다.</p>
+      <!-- 05-A 14행(client-shell spec D-32) -->
+      <p class="pt-1 text-xs text-red-600">*{{ ISSUE_NOTICE.refund }}</p>
 
       <!-- Buttons -->
       <div class="flex w-full flex-row items-center justify-center gap-x-2 pt-6">

@@ -15,6 +15,7 @@
     "postinstall": "nuxt prepare",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "legal:import": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/legal-import.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "bash ../../.github/scripts/typecheck-gate.sh client",
