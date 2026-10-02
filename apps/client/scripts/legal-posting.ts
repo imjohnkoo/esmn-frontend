@@ -40,7 +40,7 @@ export interface DocRules extends TagRules {
   /** 문서 통째가 아니라 이 글자로 시작하는 `##` 절 하나만 — 그 절 본문 + 제목(title) */
   section?: string
   title?: string
-  /** 게시 수정 — 결정된 것만(spec D-41). 줄 · 글자를 못 찾으면 가져오기가 멈춘다 */
+  /** 게시 수정 — 결정된 것만(spec D-33 · D-41). 줄 · 글자를 못 찾으면 가져오기가 멈춘다 */
   edits?: readonly PostingEdit[]
 }
 
@@ -55,6 +55,8 @@ export const DOC_RULES: Record<DocKey, DocRules> = {
       'e3cf9880b01e2521bac263bfb9672bc94b3bc4b2a8a468fb9d1882523733a6cd',
     ],
     placeholders: [],
+    // 게시 수정(spec D-33 — John 2026-10-02 «괄호를 지우고 게시»): 8조② 의 자정 예시 괄호를 뺀다(정본 rev 가 오면 지운다)
+    edits: [{ line: 'fbf7c3835a588a2040eb24b5d6b6249ba9df6a3002e3feefc5e13fd76eb54549', from: '(예: 한국시간 자정 기준)', to: '' }],
   },
   privacy: {
     file: '02_개인정보처리방침.md',

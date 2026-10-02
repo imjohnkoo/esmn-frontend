@@ -7,8 +7,7 @@
  *   (기본: 규칙의 전부 — 문서 terms · privacy · refund + 조각 business · issue-notice · checkout-notice.
  *    04 2절(`/business` 표)은 게시하지 않는다 — spec D-39.
  *    `--docs terms,business` 로 고른다)
- *   ⚠️ 약관 8조② 의 «자정» 예시가 정본에 있는 동안(spec D-33)은 terms 가 공개 금지어로 실패한다 — 나머지만
- *   `--docs privacy,refund,business,issue-notice,checkout-notice`
+ *   약관 8조② 의 «자정» 예시 괄호는 게시 수정으로 뺀다(spec D-33 — 규칙 DOC_RULES.terms.edits). 정본이 바뀌어 그 줄을 못 찾으면 멈춘다
  *
  * 모두 먼저 변환 · 검사하고, 전부 통과했을 때만 쓴다(일부만 새 판이 되지 않게). 모르는 태그 · 공개 금지어 · 지원하지 않는 문법 ·
  * 정본이 바뀌어 메모/값 자리를 못 찾으면 멈춘다(exit 1) — legal-posting.ts 의 규칙을 사람이 고친 뒤 다시 돌린다.

@@ -602,10 +602,10 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
     for (const r of all)
       for (const h of [...r.notes, ...r.placeholders]) expect(h).toMatch(/^[0-9a-f]{64}$/)
   })
-  it('게시 수정 줄은 sha256 · 수정은 결정된 문서에만(refund 1건 — D-41)', () => {
+  it('게시 수정 줄은 sha256 · 수정은 결정된 문서에만(terms 1건 D-33 · refund 1건 D-41)', () => {
     for (const r of Object.values(DOC_RULES)) for (const e of r.edits ?? []) expect(e.line).toMatch(/^[0-9a-f]{64}$/)
     expect(Object.fromEntries(Object.entries(DOC_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
-      terms: 0,
+      terms: 1,
       privacy: 0,
       refund: 1,
     })
@@ -646,7 +646,7 @@ describe('moduleSource · blockModuleSource — 생성 모듈', () => {
   it('게시 수정이 있는 문서는 머리줄에 건수를 드러낸다(D-41) · 없으면 그 줄이 없다', () => {
     const posting = { title: 't', body: 'a\n', pendingCount: 0 }
     expect(moduleSource('refund', posting, '03_x.md · legal-pages @abc1234', 'P')).toMatch(/^\/\/ 게시 수정 1건 — /m)
-    expect(moduleSource('terms', posting, '01_x.md · legal-pages @abc1234', 'P')).not.toMatch(/게시 수정/)
+    expect(moduleSource('privacy', posting, '02_x.md · legal-pages @abc1234', 'P')).not.toMatch(/게시 수정/)
   })
   it('본문의 백슬래시는 템플릿 문자열에서 그대로 살아남는다', () => {
     const src = moduleSource(

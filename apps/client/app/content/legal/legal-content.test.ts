@@ -26,8 +26,6 @@ const read = (f: string) => readFileSync(fileURLToPath(new URL(f, import.meta.ur
 const sha = (s: string) => createHash('sha256').update(s).digest('hex')
 /** 생성 때 해시는 값 자리 표시(NUL 감싼 PENDING) 기준 — 런타임 문자열을 되돌려 잰다 */
 const unmark = (s: string) => s.split(P9_4_PENDING).join('\u0000PENDING\u0000')
-/** spec D-33 의 알려진 예외 문장(약관 8조②) — 이 글자 그대로만 */
-const D33 = '(예: 한국시간 자정 기준)'
 const header = (src: string) => /^\/\/ sha256\(본문\): ([0-9a-f]{64})$/m.exec(src)?.[1]
 
 describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file, origin }) => {
@@ -53,9 +51,8 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file, origin }) => {
     expect(doc.markdown.replace(/\[[^\]\n]+\]\((?:https:\/\/|\/)[^)\s]*\)/g, '')).not.toMatch(
       /[[\]]/,
     )
-    // 알고 있는 예외는 그 한 문장뿐 — D-33(약관 8조② 자정 예시, 리뷰 blocker · ready PR 보류). 아래 it.fails 가 따로 잡는다
-    const md = unmark(doc.markdown)
-    expect(forbiddenIn(doc.title + '\n' + (doc.slug === 'terms' ? md.replace(D33, '') : md))).toEqual([])
+    // 예외 없음 — D-33 의 자정 예시 괄호는 게시 수정으로 뺐다(John 2026-10-02)
+    expect(forbiddenIn(doc.title + '\n' + unmark(doc.markdown))).toEqual([])
     expect(unsupportedIn(doc.markdown)).toEqual([])
   })
 
@@ -67,10 +64,14 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file, origin }) => {
   })
 })
 
-// ⛔ spec D-33 open — 약관 8조② «(예: 한국시간 자정 기준)» 이 eSIM 불변식(첫 연결부터 24시간 단위)과 부딪힌다.
-// it.fails 는 «지금 실패하는 것이 정상» 이다. legal-pages rev(괄호 삭제)를 가져오면 이 테스트가 빨간불이 된다 → it 으로 바꾸고 위 known 예외를 지운다.
-it.fails('D-33 — 약관 8조② 의 자정 예시가 없다(풀리면 it 으로 · D33 예외도 지운다)', () => {
-  expect(TERMS_DOC.markdown).not.toContain(D33)
+// spec D-33 resolved(John 2026-10-02 «괄호를 지우고 게시») — 약관 8조② 의 자정 예시 괄호는 게시 수정으로 뺀다(eSIM 불변식 — 첫 연결부터 24시간 단위)
+describe('D-33 — 약관 8조② 자정 예시 없음 · 게시 수정 = 결정 그대로', () => {
+  it('8조② 줄 = 정본 줄에서 «(예: 한국시간 자정 기준)» 만 뺀 글자 · 자정 표현 0', () => {
+    expect(TERMS_DOC.markdown).not.toMatch(/자정/)
+    expect(TERMS_DOC.markdown.split('\n').filter((l) => l.includes('상품 상세에 별도 기준'))).toEqual([
+      '2. 이용 기간은 **설치가 아닌 개통(이용 가능 지역에서의 최초 망 접속) 시점부터** 24시간 단위로 계산됩니다. 상품 상세에 별도 기준이 표시된 경우 그에 따릅니다.',
+    ])
+  })
 })
 
 describe('이용약관 — 구조 · 확정 문장', () => {
@@ -223,11 +224,11 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
       '- 문제가 생기면 eSIM을 **삭제하지 말고** 그 상태 그대로 고객센터(카카오톡 채널 @이심마니)에 연락해 주세요. 대부분은 설정 안내로 바로 해결됩니다. 운영 시간(평일 09:00–18:00) 외에는 카카오톡 채널에 남겨 주시면 남기신 시각을 접수 시각으로 봅니다.',
     ])
   })
-  it('게시 수정 = 결정된 것 그대로(D-41 — 전화번호 글자만 지운다 · 다른 수정 0)', () => {
+  it('게시 수정 = 결정된 것 그대로(D-41 전화번호 · D-33 자정 예시 괄호 — 다른 수정 0)', () => {
     expect(DOC_RULES.refund.edits).toEqual([
       { line: '5ccceaa412d5bbe591a837489e87a66b1905fb249d602496ca6adb7080ace3b7', from: ' · 070-8064-5232', to: '' },
     ])
-    expect(DOC_RULES.terms.edits ?? []).toEqual([])
+    expect(DOC_RULES.terms.edits).toEqual([{ line: 'fbf7c3835a588a2040eb24b5d6b6249ba9df6a3002e3feefc5e13fd76eb54549', from: '(예: 한국시간 자정 기준)', to: '' }])
     expect(DOC_RULES.privacy.edits ?? []).toEqual([])
   })
 })
