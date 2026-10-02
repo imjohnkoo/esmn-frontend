@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { forbiddenIn, unsupportedIn } from '../../../scripts/legal-posting'
+import { DOC_RULES, forbiddenIn, unsupportedIn } from '../../../scripts/legal-posting'
 import { blocksText, parseLegalMarkdown } from '../../utils/legal-markdown'
 import { P9_4_PENDING } from '../pending'
 import { BUSINESS_INFO } from './business'
@@ -15,20 +15,23 @@ import { TERMS_DOC } from './terms'
  * 정본과의 1:1 대조는 CI 밖(legal-pages 리포) — `legal:import` 로 다시 만들어 diff 0 을 본다(plan as-built 증거).
  */
 const DOCS = [
-  { doc: TERMS_DOC, file: './terms.ts' },
-  { doc: PRIVACY_DOC, file: './privacy.ts' },
-]
+  { doc: TERMS_DOC, file: './terms.ts', key: 'terms' },
+  { doc: PRIVACY_DOC, file: './privacy.ts', key: 'privacy' },
+] as const
 const read = (f: string) => readFileSync(fileURLToPath(new URL(f, import.meta.url)), 'utf8')
 const sha = (s: string) => createHash('sha256').update(s).digest('hex')
 /** 생성 때 해시는 값 자리 표시(NUL 감싼 PENDING) 기준 — 런타임 문자열을 되돌려 잰다 */
 const unmark = (s: string) => s.split(P9_4_PENDING).join('\u0000PENDING\u0000')
-/** spec D-33 의 알려진 예외 문장(약관 8조②) — 이 글자 그대로만 */
-const D33 = '(예: 한국시간 자정 기준)'
 const header = (src: string) => /^\/\/ sha256\(본문\): ([0-9a-f]{64})$/m.exec(src)?.[1]
 
-describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file }) => {
+describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file, key }) => {
   const text = blocksText(parseLegalMarkdown(doc.markdown))
   const src = read(file)
+
+  it('게시 수정(정본과 다른 글자)은 머리줄에 드러난다 — 규칙의 수정 건수와 같다(D-33)', () => {
+    const n = DOC_RULES[key].edits?.length ?? 0
+    expect(/^\/\/ 게시 수정 (\d+)건 — /m.exec(src)?.[1] ?? '0').toBe(String(n))
+  })
 
   it('생성물을 손으로 고치지 않았다 — 머리줄의 본문 해시 = 지금 본문', () => {
     expect(header(src)).toBe(sha(unmark(doc.markdown)))
@@ -45,9 +48,8 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file }) => {
     expect(doc.markdown.replace(/\[[^\]\n]+\]\((?:https:\/\/|\/)[^)\s]*\)/g, '')).not.toMatch(
       /[[\]]/,
     )
-    // 알고 있는 예외는 그 한 문장뿐 — D-33(약관 8조② 자정 예시, 리뷰 blocker · ready PR 보류). 아래 it.fails 가 따로 잡는다
-    const md = unmark(doc.markdown)
-    expect(forbiddenIn(doc.title + '\n' + (doc.slug === 'terms' ? md.replace(D33, '') : md))).toEqual([])
+    // 예외 없음 — D-33 의 자정 예시 괄호는 게시 수정으로 뺐다(John 2026-10-02)
+    expect(forbiddenIn(doc.title + '\n' + unmark(doc.markdown))).toEqual([])
     expect(unsupportedIn(doc.markdown)).toEqual([])
   })
 
@@ -59,10 +61,20 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file }) => {
   })
 })
 
-// ⛔ spec D-33 open — 약관 8조② «(예: 한국시간 자정 기준)» 이 eSIM 불변식(첫 연결부터 24시간 단위)과 부딪힌다.
-// it.fails 는 «지금 실패하는 것이 정상» 이다. legal-pages rev(괄호 삭제)를 가져오면 이 테스트가 빨간불이 된다 → it 으로 바꾸고 위 known 예외를 지운다.
-it.fails('D-33 — 약관 8조② 의 자정 예시가 없다(풀리면 it 으로 · D33 예외도 지운다)', () => {
-  expect(TERMS_DOC.markdown).not.toContain(D33)
+// spec D-33 resolved(John 2026-10-02 «괄호를 지우고 게시») — 약관 8조② 의 자정 예시 괄호는 게시 수정으로 뺀다(eSIM 불변식 — 첫 연결부터 24시간 단위)
+describe('D-33 — 약관 8조② 자정 예시 없음 · 게시 수정 = 결정 그대로', () => {
+  it('8조② 줄 = 정본 줄에서 «(예: 한국시간 자정 기준)» 만 뺀 글자 · 자정 표현 0', () => {
+    expect(TERMS_DOC.markdown).not.toMatch(/자정/)
+    expect(TERMS_DOC.markdown.split('\n').filter((l) => l.includes('상품 상세에 별도 기준'))).toEqual([
+      '2. 이용 기간은 **설치가 아닌 개통(이용 가능 지역에서의 최초 망 접속) 시점부터** 24시간 단위로 계산됩니다. 상품 상세에 별도 기준이 표시된 경우 그에 따릅니다.',
+    ])
+  })
+  it('규칙 — terms 1건(이 괄호만) · privacy 0건', () => {
+    expect(DOC_RULES.terms.edits).toEqual([
+      { line: 'fbf7c3835a588a2040eb24b5d6b6249ba9df6a3002e3feefc5e13fd76eb54549', from: '(예: 한국시간 자정 기준)', to: '' },
+    ])
+    expect(DOC_RULES.privacy.edits ?? []).toEqual([])
+  })
 })
 
 describe('이용약관 — 구조 · 확정 문장', () => {

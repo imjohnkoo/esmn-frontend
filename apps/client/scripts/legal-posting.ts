@@ -23,9 +23,20 @@ export interface TagRules {
   placeholders: readonly string[]
 }
 
+/** 게시 수정(spec D-33 · D-41) — 정본에 있지만 게시하지 않기로 결정한 글자. 정본 rev 가 오면 규칙에서 지운다 */
+export interface PostingEdit {
+  /** 고칠 줄 — 게시 본문(꾸밈 · 백틱 정리 뒤) 한 줄의 sha256. ⚠️ 값 자리가 있는 줄은 내부 표식 상태로 해시된다 — 지금은 값 자리 없는 줄만 고친다 */
+  line: string
+  /** 그 줄에서 바꿀 글자 — 정확히 한 번 나와야 한다 */
+  from: string
+  to: string
+}
+
 export interface DocRules extends TagRules {
   file: string
   exportName: string
+  /** 게시 수정 — 결정된 것만(spec D-33). 줄 · 글자를 못 찾으면 가져오기가 멈춘다 */
+  edits?: readonly PostingEdit[]
 }
 
 export const DOC_RULES: Record<DocKey, DocRules> = {
@@ -39,6 +50,8 @@ export const DOC_RULES: Record<DocKey, DocRules> = {
       'e3cf9880b01e2521bac263bfb9672bc94b3bc4b2a8a468fb9d1882523733a6cd',
     ],
     placeholders: [],
+    // 게시 수정(spec D-33 — John 2026-10-02 «괄호를 지우고 게시»): 8조② 의 자정 예시 괄호를 뺀다(정본 rev 가 오면 지운다)
+    edits: [{ line: 'fbf7c3835a588a2040eb24b5d6b6249ba9df6a3002e3feefc5e13fd76eb54549', from: '(예: 한국시간 자정 기준)', to: '' }],
   },
   privacy: {
     file: '02_개인정보처리방침.md',
@@ -199,7 +212,7 @@ function finish(body: string, rules: TagRules): { body: string; pendingCount: nu
 }
 
 /** 정본 md → 게시용 md(값 자리는 PENDING_MARK). 모르는 태그 · 남은 대괄호 · 지원하지 않는 문법 · 제목 없음은 throw */
-export function toPosting(source: string, rules: TagRules): Posting {
+export function toPosting(source: string, rules: TagRules & { edits?: readonly PostingEdit[] }): Posting {
   let text = normalize(source)
   // frontmatter(첫 줄 --- … ---)
   if (text.startsWith('---\n')) {
@@ -254,7 +267,22 @@ export function toPosting(source: string, rules: TagRules): Posting {
   body = body.replace(/[ \t]+\n/g, '\n').replace(/(?<=\S)[ \t]{2,}(?=\S)/g, ' ')
   body = body.replace(/`([^`\n]*)`/g, '$1')
   body = body.replace(/\n{3,}/g, '\n\n').trim() + '\n'
-  return { title, ...finish(body, rules) }
+  return { title, ...finish(applyEdits(body, rules.edits), rules) }
+}
+
+/** 게시 수정 적용 — 해시가 같은 줄이 정확히 1개 · 그 줄에 바꿀 글자가 정확히 한 번일 때만. 아니면 정본이 바뀐 것이니 멈춘다(사람이 다시 정한다) */
+export function applyEdits(body: string, edits: readonly PostingEdit[] = []): string {
+  const lines = body.split('\n')
+  edits.forEach((edit, i) => {
+    const at = lines.flatMap((l, n) => (sha256(l) === edit.line ? [n] : []))
+    if (at.length !== 1)
+      throw new Error(`게시 수정 ${i + 1}: 고칠 줄이 ${at.length}개다(정확히 1개여야 한다 — 정본이 바뀌었다): sha256 ${edit.line.slice(0, 12)}…`)
+    const line = lines[at[0]!]!
+    if (!edit.from || line.split(edit.from).length !== 2)
+      throw new Error(`게시 수정 ${i + 1}: 바꿀 글자가 그 줄에 정확히 한 번 있어야 한다(정본이 바뀌었다)`)
+    lines[at[0]!] = line.replace(edit.from, () => edit.to)
+  })
+  return lines.join('\n')
 }
 
 export interface BlockPosting {
@@ -407,7 +435,10 @@ export function moduleSource(
 ): string {
   const rules = DOC_RULES[key]
   const imports = posting.pendingCount ? `import { ${pendingIdent} } from '../pending'\n` : ''
-  return `${HEADER(sourceLabel, bodyHash(posting.body))}${imports}import type { LegalMarkdownDoc } from '../../utils/legal-markdown'
+  const edits = rules.edits?.length
+    ? `// 게시 수정 ${rules.edits.length}건 — 정본과 다른 글자(규칙 scripts/legal-posting.ts 의 edits · spec 결정)\n`
+    : ''
+  return `${HEADER(sourceLabel, bodyHash(posting.body))}${edits}${imports}import type { LegalMarkdownDoc } from '../../utils/legal-markdown'
 
 export const ${rules.exportName}: LegalMarkdownDoc = {
   slug: '${key}',

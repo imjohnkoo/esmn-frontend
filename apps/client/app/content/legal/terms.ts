@@ -1,7 +1,8 @@
 // 생성물 — scripts/legal-import.mjs 가 legal-pages 정본에서 게시 규칙(08 D절)을 적용해 만든다.
 // 손으로 고치지 말 것 — 정본을 고친 뒤 `yarn workspace nomacom-client legal:import --from <정본 폴더>` 로 다시 만든다.
 // 정본: 01_이용약관.md · legal-pages @f64203c
-// sha256(본문): 1ea3f964104bd43c5ff129780c1c5e3b35e8aef90a88ae4472e7d123301133cf
+// sha256(본문): bd37012243d6237a57bbd90ace02956a1f60392ba441ba0787d1a536f816d373
+// 게시 수정 1건 — 정본과 다른 글자(규칙 scripts/legal-posting.ts 의 edits · spec 결정)
 import type { LegalMarkdownDoc } from '../../utils/legal-markdown'
 
 export const TERMS_DOC: LegalMarkdownDoc = {
@@ -61,7 +62,7 @@ export const TERMS_DOC: LegalMarkdownDoc = {
 
 **제8조 (설치·개통 및 이용 기간)**
 1. 이용자는 발급받은 프로파일을 상품에 안내된 방법으로 단말기에 설치해야 하며, **설치된 eSIM은 다른 단말기로 이전하거나 삭제 후 재설치할 수 없습니다.** 삭제로 인한 이용 불가는 이용자의 책임입니다.
-2. 이용 기간은 **설치가 아닌 개통(이용 가능 지역에서의 최초 망 접속) 시점부터** 24시간 단위로 계산됩니다. 상품 상세에 별도 기준(예: 한국시간 자정 기준)이 표시된 경우 그에 따릅니다.
+2. 이용 기간은 **설치가 아닌 개통(이용 가능 지역에서의 최초 망 접속) 시점부터** 24시간 단위로 계산됩니다. 상품 상세에 별도 기준이 표시된 경우 그에 따릅니다.
 3. 이용 가능 지역 밖(대한민국 포함)에서는 데이터가 연결되지 않으며 이용 기간도 시작되지 않습니다. 단, 이용자가 이용 가능 지역에서 개통한 후 지역 밖으로 이동한 경우에도 이용 기간은 계속 진행됩니다.
 4. 이용 기간 만료 후 남은 데이터는 소멸하며 환불·이월되지 않습니다.
 
