@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // 상단 헤더 (D4) — 로고 · 국가 검색 진입(/search — 검색 자체는 W1-3) · 전체 메뉴.
 // DS NHeader 가 sticky · z --n-z-index-sticky(1020). 프레임 조상에 overflow 가 없어야 sticky 가 붙는다(app.vue).
+// 하단 경계선 없음(spec F-4 — John 2026-10-02) — DS 기본값(bordered: true)을 여기서만 끈다.
 import { NHeader, NLogo } from '@imjohnkoo/design-vue'
 import { Bars3Icon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import ShellMenu from '~/components/shell/ShellMenu.vue'
@@ -18,7 +19,7 @@ watch(
 </script>
 
 <template>
-  <NHeader class="shell-header">
+  <NHeader class="shell-header" :bordered="false">
     <NuxtLink to="/" class="shell-header__logo">
       <NLogo variant="kor" :height="28" aria-label="이심마니 홈" />
     </NuxtLink>
