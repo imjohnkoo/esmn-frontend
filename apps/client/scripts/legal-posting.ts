@@ -11,7 +11,7 @@
  */
 import { createHash } from 'node:crypto'
 
-export type DocKey = 'terms' | 'privacy' | 'refund' | 'business-page'
+export type DocKey = 'terms' | 'privacy' | 'refund'
 export type BlockKey = 'business' | 'issue-notice' | 'checkout-notice'
 
 export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex')
@@ -27,7 +27,7 @@ export interface DocRules extends TagRules {
   file: string
   exportName: string
   /** 화면 slug(LegalMarkdownDoc.slug) — 생략하면 키 그대로 */
-  slug?: 'terms' | 'privacy' | 'refund' | 'business'
+  slug?: 'terms' | 'privacy' | 'refund'
   /** 문서 통째가 아니라 이 글자로 시작하는 `##` 절 하나만 — 그 절 본문 + 제목(title) */
   section?: string
   title?: string
@@ -65,19 +65,10 @@ export const DOC_RULES: Record<DocKey, DocRules> = {
     notes: ['666b6620e4013a6e5c912d16318de0ee143313475bdaef2dd0e02b9f84e2f509'],
     placeholders: [],
   },
-  // 04 2절 — /business 표(F-12 · S-4). 호스팅 칸 = 값 자리(D-29①)
-  'business-page': {
-    file: '04_사업자정보-고객센터.md',
-    exportName: 'BUSINESS_DOC',
-    slug: 'business',
-    section: '## 2.',
-    title: '사업자정보',
-    notes: [],
-    placeholders: ['7527394483457916ccd197bb60ff446e56d308dce44070cb09ad408fad0b259c'],
-  },
 }
 
-/** 문서 규칙에 section 이 있으면 그 절만 떼어 «# 제목» 을 붙인 원문으로 — 없으면 원문 그대로(절 찾기는 sectionLines) */
+/** 문서 규칙에 section 이 있으면 그 절만 떼어 «# 제목» 을 붙인 원문으로 — 없으면 원문 그대로(절 찾기는 sectionLines).
+ *  지금 문서 규칙에는 section 이 없다 — 04 2절(`/business`)은 spec D-39 로 게시하지 않는다 */
 export function docSource(source: string, rules: Pick<DocRules, 'section' | 'title'>): string {
   if (!rules.section) return source
   if (!rules.title) throw new Error('절만 가져올 때는 제목(title)이 있어야 한다')

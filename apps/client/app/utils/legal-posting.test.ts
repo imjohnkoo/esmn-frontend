@@ -211,7 +211,7 @@ describe('toPosting — 걷어 낼 것', () => {
   })
 })
 
-describe('docSource — 절 하나만 떼어 «# 제목» 을 붙인다(04 2절 → /business)', () => {
+describe('docSource — 절 하나만 떼어 «# 제목» 을 붙인다(지금 쓰는 문서 규칙은 없다 — D-39)', () => {
   const src = '# 문서\r\n## 1. 첫\n하나\n## 2. 둘\n본문\n```\n## 코드 안\n```\n끝\n## 2.5 다음\n남\n## 3. 셋\n'
   it('그 절의 줄만 · 제목은 규칙의 것 · 코드 블록 안 «## » 는 끝이 아니다 · «## 2.5» 는 다른 절(거기서 끝난다)', () => {
     expect(docSource(src, { section: '## 2.', title: '둘째' })).toBe('# 둘째\n본문\n```\n## 코드 안\n```\n끝')
@@ -575,7 +575,6 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
       TERMS_DOC: '01_이용약관.md',
       PRIVACY_DOC: '02_개인정보처리방침.md',
       REFUND_DOC: '03_취소환불정책.md',
-      BUSINESS_DOC: '04_사업자정보-고객센터.md',
       CHECKOUT_NOTICE: '05_고지문구-동의체크-FAQ.md',
       BUSINESS_INFO: '04_사업자정보-고객센터.md',
       ISSUE_NOTICE: '05_고지문구-동의체크-FAQ.md',

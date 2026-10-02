@@ -9,7 +9,6 @@ import { BUSINESS_INFO } from './business'
 import { LEGAL_LINKS } from '../../utils/shell-nav'
 import { CHECKOUT_NOTICE } from './checkout-notice'
 import { ISSUE_NOTICE } from './issue-notice'
-import { BUSINESS_DOC } from './business-page'
 import { PRIVACY_DOC } from './privacy'
 import { REFUND_DOC } from './refund'
 import { TERMS_DOC } from './terms'
@@ -22,7 +21,6 @@ const DOCS = [
   { doc: TERMS_DOC, file: './terms.ts', origin: /^\/\/ 정본: 01_.+\.md · legal-pages @[0-9a-f]{7}$/m },
   { doc: PRIVACY_DOC, file: './privacy.ts', origin: /^\/\/ 정본: 02_.+\.md · legal-pages @[0-9a-f]{7}$/m },
   { doc: REFUND_DOC, file: './refund.ts', origin: /^\/\/ 정본: 03_.+\.md · legal-pages @[0-9a-f]{7}$/m },
-  { doc: BUSINESS_DOC, file: './business-page.ts', origin: /^\/\/ 정본: 04_.+\.md ## 2\. · legal-pages @[0-9a-f]{7}$/m },
 ]
 const read = (f: string) => readFileSync(fileURLToPath(new URL(f, import.meta.url)), 'utf8')
 const sha = (s: string) => createHash('sha256').update(s).digest('hex')
@@ -214,64 +212,20 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
   })
 })
 
-describe('사업자정보(04 2절) — 법정 표시 항목(전자상거래법 10조 · D-11)', () => {
-  const text = blocksText(parseLegalMarkdown(BUSINESS_DOC.markdown))
+describe('푸터 사업자정보(04 1절) — 법정 표시 항목(전자상거래법 10조 · 13조 · D-11) · `/business` 가 없으니(D-39) 푸터가 유일한 표시', () => {
+  const lines = Object.values(BUSINESS_INFO)
   it.each([
-    ['상호', '노마컴'],
-    ['대표자', '구장회'],
-    ['사업자등록번호', '704-24-01747'],
-    ['통신판매업 신고번호', '제 2023-경기광주-1950 호'],
-    ['사업장 소재지', '제주특별자치도 제주시 신대로 145'],
-    ['고객센터', '070-8064-5232'],
-    ['개인정보보호책임자', '구장회'],
-  ])('%s', (label, value) => {
-    expect(text).toMatch(new RegExp(`${label} \\| [^\\n]*${value.replace(/[()]/g, '\\$&')}`))
-  })
-  it('이메일 · 호스팅(값 자리 1 — D-29①)', () => {
-    expect(text).toContain('esimmany@naver.com')
-    expect(text).toContain('호스팅 서비스 제공자 | (확정 전)')
-    expect(BUSINESS_DOC.markdown.split(P9_4_PENDING)).toHaveLength(2)
-  })
-})
-
-describe('푸터(04 1절) = /business 표(04 2절) — 같은 값이 두 생성물에 있다(한쪽만 다시 가져와도 막힌다)', () => {
-  const row = (label: string) => {
-    const line = BUSINESS_DOC.markdown.split('\n').find((l) => l.startsWith(`| ${label} |`))
-    expect(line, label).toBeDefined()
-    return line!.split('|')[2]!.trim()
-  }
-  const pick = (line: string, re: RegExp) => {
-    const m = re.exec(line)
-    expect(m, String(re)).not.toBeNull()
-    return m![1]!.trim()
-  }
-  // 같음 = 칸 전체가 푸터 값 · 앞 = 칸이 푸터 값으로 시작(뒤에 « (신고기관 …)» · « · 연락처» 처럼 덧붙는 칸) · 포함 = 여러 값이 든 칸
-  it.each([
-    ['상호', BUSINESS_INFO.brand, /상호: ([^|]+)\|/, 'same'],
-    ['대표자', BUSINESS_INFO.brand, /대표: (.+)$/, 'same'],
-    ['사업자등록번호', BUSINESS_INFO.registration, /사업자등록번호: (\S+)/, 'same'],
-    ['통신판매업 신고번호', BUSINESS_INFO.mailOrder, /통신판매업신고: (.+)$/, 'head'],
-    ['사업장 소재지', BUSINESS_INFO.address, /주소: (.+)$/, 'same'],
-    ['개인정보보호책임자', BUSINESS_INFO.privacyOfficer, /개인정보보호책임자: (.+)$/, 'head'],
-    ['고객센터', BUSINESS_INFO.contact, /전화: (\S+)/, 'head'],
-    ['고객센터', BUSINESS_INFO.contact, /이메일: (\S+)/, 'has'],
-  ] as const)('%s', (label, line, re, mode) => {
-    const value = pick(line, re)
-    if (mode === 'same') expect(row(label)).toBe(value)
-    else if (mode === 'head') expect(row(label)).toMatch(new RegExp(`^${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?: [(·]|$)`))
-    else expect(row(label).split(' · ')).toContain(`이메일 ${value}`)
-  })
-  it('운영 시간 · 서비스명 — 푸터 연락처 줄의 괄호 ↔ 표 «운영 시간» 첫머리 · 푸터 첫 토막 ↔ 표 «서비스명» 첫머리', () => {
-    const hours = /\((평일 [^,()]+), ([^()]+휴무)\)/.exec(BUSINESS_INFO.contact)
-    expect(hours).not.toBeNull()
-    expect(row('운영 시간').startsWith(`${hours![1]} (${hours![2]})`)).toBe(true)
-    const brand = BUSINESS_INFO.brand.split(' | ')[0]!
-    expect(brand).toBe('이심마니')
-    expect(row('서비스명').startsWith(`${brand} — `)).toBe(true)
-  })
-  it('호스팅은 둘 다 값 자리(D-29①) — 값이 오면 함께 바뀐다', () => {
-    expect(BUSINESS_INFO.hosting).toContain(P9_4_PENDING)
-    expect(row('호스팅 서비스 제공자')).toBe(P9_4_PENDING)
+    ['상호', '상호: 노마컴'],
+    ['대표자', '대표: 구장회'],
+    ['사업자등록번호', '사업자등록번호: 704-24-01747'],
+    ['통신판매업 신고번호', '통신판매업신고: 제 2023-경기광주-1950 호'],
+    ['사업장 소재지', '주소: 제주특별자치도 제주시 신대로 145'],
+    ['전화', '전화: 070-8064-5232'],
+    ['이메일', '이메일: esimmany@naver.com'],
+    ['개인정보보호책임자', '개인정보보호책임자: 구장회'],
+    ['호스팅 서비스 제공자', '호스팅 서비스: '],
+  ])('%s', (_, item) => {
+    expect(lines.filter((l) => l.includes(item))).toHaveLength(1)
   })
 })
 
@@ -287,8 +241,11 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
       expect(JSON.stringify(lines)).not.toMatch(/legal-pages|\.md/)
     }
   })
-  it('푸터 링크 줄(F-7) — 화면의 LEGAL_LINKS 라벨 · 차례 = 04 1절 링크 줄', () => {
-    expect(LEGAL_LINKS.map((l) => l.label).join(' | ')).toBe(BUSINESS_INFO.legalLinks)
+  it('푸터 링크 줄(F-7) — 화면의 LEGAL_LINKS 라벨 · 차례 = 04 1절 링크 줄에서 «사업자정보» 만 뺀 것(D-39)', () => {
+    const canon = BUSINESS_INFO.legalLinks.split(' | ')
+    expect(canon).toContain('사업자정보')
+    expect(LEGAL_LINKS.map((l) => l.label)).toEqual(canon.filter((label) => label !== '사업자정보'))
+    expect(LEGAL_LINKS.map((l) => l.to)).toEqual(['/terms', '/privacy', '/refund'])
   })
   it('사업자정보 7줄 — 순서 · 공정위 조회 링크 · 호스팅 칸만 확정 전', () => {
     expect(Object.keys(BUSINESS_INFO)).toEqual([

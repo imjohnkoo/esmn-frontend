@@ -30,7 +30,6 @@ describe('isNoindexPath', () => {
     '/terms',
     '/privacy',
     '/refund',
-    '/business',
     '/guide',
     '/search',
     '/supported-devices',

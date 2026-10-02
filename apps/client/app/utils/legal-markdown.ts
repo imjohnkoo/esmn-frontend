@@ -9,7 +9,7 @@
 import { displayValue, isPending } from '../content/pending'
 
 export interface LegalMarkdownDoc {
-  slug: 'terms' | 'privacy' | 'refund' | 'business'
+  slug: 'terms' | 'privacy' | 'refund'
   title: string
   markdown: string
 }

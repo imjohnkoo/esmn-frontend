@@ -13,7 +13,6 @@ const CODE = [
   './legal-render.ts',
   '../components/legal/LegalMarkdown.vue',
   '../components/shell/SiteFooter.vue',
-  '../pages/business.vue',
   '../pages/refund.vue',
   '../pages/checkout-preview.vue',
   './checkout-preview.ts',

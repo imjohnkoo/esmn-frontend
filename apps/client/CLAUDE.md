@@ -11,7 +11,7 @@ spec `nomacom-wiki wiki/frontend/specs/client/2026-09-23-client-shell.md` · pla
 - **레이아웃** — `default`(헤더 + 본문 + 푸터 + 하단 탭) · `flow`(헤더·탭 없음 + compact 푸터). 4-step 4페이지와 `/checkout-preview` 가 `flow`. 새 판매 페이지는 기본값(`default`).
 - **쌓임 순서** — 헤더 `--n-z-index-sticky`(1020) < 탭바 `--n-z-index-fixed`(1030) < DS 오버레이(body 포털 1040/1050). 탭바를 1040 이상으로 올리지 말 것.
 - **내비 정의 한 곳** — `app/utils/shell-nav.ts`(탭 4 · 전체 메뉴 · 약관 링크 · 활성 판정). 탭 활성 규칙을 바꾸면 `shell-nav.test.ts` 를 같이 고친다.
-- **법정 문안 · 사업자정보 = 생성물** — `app/content/legal/*.ts`(약관 · 방침 · 환불 · `/business` 표 · 푸터 04 1절 줄 · 발급 팝업 05-A · 체크아웃 05-B). ⛔ **손으로 고치지 말 것** — legal-pages 정본을 고친 뒤 `yarn workspace nomacom-client legal:import --from <정본 폴더>`(규칙 `scripts/legal-posting.ts` — 처음 보는 태그 · 공개 금지어(공급사 명칭 · 자정 기준 등) · 조각 코드 블록에서 고르지도 건너뛰지도 않은 줄이 있으면 가져오기가 실패하고 아무것도 쓰지 않는다). ⚠️ 약관 8조② 의 «자정» 예시(spec D-33)가 정본에 있는 동안은 terms 를 빼고 `--docs privacy,refund,business-page,business,issue-notice,checkout-notice`. **공제 문장(3,500원 폐기 비용 · 청약철회 제한)은 정본 그대로**(spec D-28 — 옛 A5 «발급 후 공제 금지» 는 해제됐다). `legal-content.test.ts` 가 핵심 줄을 고정한다. 고객센터 값만 손으로 적은 `app/content/support.ts` — `support.test.ts` 가 생성물 글자와 대조한다. 미확정 값은 `P9_4_PENDING`(화면 «(확정 전)»). ⛔ **main 머지 게이트**: `bash .github/scripts/content-pending-gate.sh` 가 0 — 머지할 **커밋** 기준(미커밋 수정은 통과가 아니다). 부르는 곳: finish-branch Step 0 첫 항목 · prod-push-check · CI `content-gate`(알림 — required check 없음). 법정 문서 화면 = `components/legal/LegalMarkdown.vue`(부분집합 렌더러 `utils/legal-render.ts` · v-html 없음).
+- **법정 문안 · 사업자정보 = 생성물** — `app/content/legal/*.ts`(약관 · 방침 · 환불 · 푸터 04 1절 줄 · 발급 팝업 05-A · 체크아웃 05-B — `/business` 페이지 · 04 2절 표는 없다, spec D-39). ⛔ **손으로 고치지 말 것** — legal-pages 정본을 고친 뒤 `yarn workspace nomacom-client legal:import --from <정본 폴더>`(규칙 `scripts/legal-posting.ts` — 처음 보는 태그 · 공개 금지어(공급사 명칭 · 자정 기준 등) · 조각 코드 블록에서 고르지도 건너뛰지도 않은 줄이 있으면 가져오기가 실패하고 아무것도 쓰지 않는다). ⚠️ 약관 8조② 의 «자정» 예시(spec D-33)가 정본에 있는 동안은 terms 를 빼고 `--docs privacy,refund,business,issue-notice,checkout-notice`. **공제 문장(3,500원 폐기 비용 · 청약철회 제한)은 정본 그대로**(spec D-28 — 옛 A5 «발급 후 공제 금지» 는 해제됐다). `legal-content.test.ts` 가 핵심 줄을 고정한다. 고객센터 값만 손으로 적은 `app/content/support.ts` — `support.test.ts` 가 생성물 글자와 대조한다. 미확정 값은 `P9_4_PENDING`(화면 «(확정 전)»). ⛔ **main 머지 게이트**: `bash .github/scripts/content-pending-gate.sh` 가 0 — 머지할 **커밋** 기준(미커밋 수정은 통과가 아니다). 부르는 곳: finish-branch Step 0 첫 항목 · prod-push-check · CI `content-gate`(알림 — required check 없음). 법정 문서 화면 = `components/legal/LegalMarkdown.vue`(부분집합 렌더러 `utils/legal-render.ts` · v-html 없음).
 - **noindex 목록 한 곳** — `shared/utils/robots.ts` 가 meta(`app.vue`) · `X-Robots-Tag`(`nuxt.config` routeRules) · `/robots.txt`(`server/routes/robots.txt.ts`) 세 출력을 만든다. 4-step 은 `Cache-Control: no-store` 도. `public/robots.txt` 를 다시 만들지 말 것(라우트보다 먼저 잡힌다).
 - **CORS** — `server/utils/cors-origins.ts`. `esimmany.com` · `app.esimmany.com` 둘 다 있어야 각 호스트의 same-origin POST 가 403 을 피한다. `www` 는 없다.
 - **테스트 체크아웃** `/checkout-preview` — PG 심사 캡처 전용. 사이트 어디에서도 링크하지 않는다 · 서버 호출 · 저장 0 · 테스트 채널키만.
@@ -76,7 +76,7 @@ apps/client/
 │   ├── pages/
 │   │   ├── index.vue                  # 홈 (판매 사이트 shell — 국가 그리드는 W1-3)
 │   │   ├── my-esim.vue · my.vue       # 내 eSIM(주문번호 → 발급 호스트) · 마이(고객센터 · 약관)
-│   │   ├── terms · privacy · refund · business .vue   # 법정 4종
+│   │   ├── terms · privacy · refund .vue              # 법정 3종 (/business 없음 — D-39)
 │   │   ├── search.vue · guide/index.vue               # 자리 (W1-3 · W1-4)
 │   │   ├── checkout-preview.vue       # PG 심사용 테스트 체크아웃 (링크 0 · noindex)
 │   │   ├── verify/[orderId].vue       # step 1 — 이름 + 전화번호 입력

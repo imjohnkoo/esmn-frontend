@@ -148,7 +148,7 @@ yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 BASE=http://127.0.0.1:<port>
 want_build="$(sed -n 's/.*"id":"\([^"]*\)".*/\1/p' apps/client/.output/public/_nuxt/builds/latest.json)"
 [ -n "$want_build" ] || { echo "⛔ 빌드 id 없음 — Phase 3 빌드부터"; exit 1; }
-for p in / /my /my-esim /terms /privacy /refund /business /guide /search /checkout-preview /supported-devices; do
+for p in / /my /my-esim /terms /privacy /refund /guide /search /checkout-preview /supported-devices; do   # /business 는 없다(W1-2 D-39 — 404)
   html="$(curl -fsS "$BASE$p")" || { echo "⛔ $p 응답 실패 — 중단"; exit 1; }       # 서버가 없거나 4xx · 5xx 면 0건으로 통과하지 않게
   printf '%s' "$html" | grep -q "buildId:\"$want_build\"" || { echo "⛔ $p 가 이 빌드($want_build)의 응답이 아니다 — 중단"; exit 1; }
   printf '%s' "$html" | grep -q '704-24-01747' || { echo "⛔ $p 에 푸터 사업자등록번호가 없다(양성 대조 실패) — 중단"; exit 1; }

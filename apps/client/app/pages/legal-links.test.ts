@@ -473,20 +473,13 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(footer).toMatch(/\.site-footer__link--privacy \{[^}]*color: var\(--n-color-primary-600[^}]*font-weight: 800/)
   })
 
-  it('/refund · /business — 생성물을 그린다 · /business 는 공정위 조회를 푸터와 같은 주소로', () => {
+  it('/refund — 생성물을 그린다 · /business 는 없다(D-39) — 페이지 · 생성물 · 앱 코드의 경로 글자 0', () => {
     expect(template(read('./refund.vue'))).toContain('<LegalMarkdown :doc="REFUND_DOC" />')
-    const biz = read('./business.vue')
-    expect(template(biz)).toContain('<LegalMarkdown :doc="BUSINESS_DOC" />')
-    expect(biz).toContain('const ftcUrl = ftcCheckUrl(BUSINESS_INFO.registration)')
-    // 공정위 조회 줄은 주소가 있을 때만 — 조건은 그것 하나(숨기는 조건 · v-show 금지)
-    const btpl = parse(biz).descriptor.template!.ast! as unknown as TNode
-    const ftc = find(btpl, (n) => cls(n) === 'business-page__ftc')!
-    expect(ftc.props!.map((p) => p.rawName ?? p.name)).toEqual(['v-if', 'class'])
-    expect(dir(ftc, 'v-if')).toBe('ftcUrl')
-    const link = find(ftc, (n) => n.tag === 'a')!
-    expect(link.props!.map((p) => p.rawName ?? p.name)).toEqual([':href', 'target', 'rel'])
-    expect(dir(link, ':href')).toBe('ftcUrl')
-    expect(text(link)).toContain('사업자정보확인')
+    const files = walk(APP)
+    expect(files.filter((f) => /[/\\]pages[/\\]business(?:\.vue|[/\\])/.test(f))).toEqual([])
+    expect(files.filter((f) => /[/\\]content[/\\]legal[/\\]business-page\.ts$/.test(f))).toEqual([])
+    for (const f of [...code(APP), ...code(SERVER)])
+      expect(readFileSync(f, 'utf8'), f).not.toMatch(/['"`(]\/business\b/)
   })
 
   it('/my 고객센터 — 새 창으로 여는 링크(http)에는 낭독기 «(새 창)» 이 같은 조건으로 붙는다', () => {
