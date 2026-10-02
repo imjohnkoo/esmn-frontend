@@ -229,6 +229,8 @@ describe('applyEdits — 게시 수정(D-41): 정해 둔 줄 하나의 정해 �
     expect(() => applyEdits(`${line}\n`, [{ ...edit, from: '없는 글자' }])).toThrow(/정확히 한 번/)
     expect(() => applyEdits(`${twice}\n`, [{ line: sha256(twice), from: '전화 1', to: '' }])).toThrow(/정확히 한 번/)
     expect(() => applyEdits(`${line}\n`, [{ ...edit, from: '' }])).toThrow(/정확히 한 번/)
+    // 빈 글자 가드 — 정확히 2자 줄은 ''.split 이 두 조각이라 «한 번» 판정만으로는 못 막는다
+    expect(() => applyEdits('가나\n', [{ line: sha256('가나'), from: '', to: 'X' }])).toThrow(/정확히 한 번/)
   })
   it('바꿀 글자의 $ 패턴을 해석하지 않는다', () => {
     expect(applyEdits(`${line}\n`, [{ ...edit, to: " $& $' " }])).toBe("첫 줄 $& $'  끝\n")
