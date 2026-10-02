@@ -45,6 +45,8 @@ const template = (src: string) =>
   src.slice(src.indexOf('<template>'), src.lastIndexOf('</template>'))
 const APP = fileURLToPath(new URL('..', import.meta.url))
 const SERVER = fileURLToPath(new URL('../../server', import.meta.url))
+const SHARED = fileURLToPath(new URL('../../shared', import.meta.url))
+const NUXT_CONFIG = fileURLToPath(new URL('../../nuxt.config.ts', import.meta.url))
 const walk = (dir: string): string[] =>
   readdirSync(dir).flatMap((n) => {
     const p = join(dir, n)
@@ -473,13 +475,13 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(footer).toMatch(/\.site-footer__link--privacy \{[^}]*color: var\(--n-color-primary-600[^}]*font-weight: 800/)
   })
 
-  it('/refund — 생성물을 그린다 · /business 는 없다(D-39) — 페이지 · 생성물 · 앱 코드의 경로 글자 0', () => {
+  it('/refund — 생성물을 그린다 · /business 는 없다(D-39) — 페이지 · 생성물 · 앱 코드(app · server · shared · nuxt.config — 프리렌더 · sitemap · routeRules 포함)의 경로 글자 0', () => {
     expect(template(read('./refund.vue'))).toContain('<LegalMarkdown :doc="REFUND_DOC" />')
     const files = walk(APP)
     expect(files.filter((f) => /[/\\]pages[/\\]business(?:\.vue|[/\\])/.test(f))).toEqual([])
     expect(files.filter((f) => /[/\\]content[/\\]legal[/\\]business-page\.ts$/.test(f))).toEqual([])
-    for (const f of [...code(APP), ...code(SERVER)])
-      expect(readFileSync(f, 'utf8'), f).not.toMatch(/['"`(]\/business\b/)
+    for (const f of [...code(APP), ...code(SERVER), ...code(SHARED), NUXT_CONFIG])
+      expect(readFileSync(f, 'utf8'), f).not.toMatch(/(?:['"`(]|esimmany\.com)\/business\b/)
   })
 
   it('/my 고객센터 — 새 창으로 여는 링크(http)에는 낭독기 «(새 창)» 이 같은 조건으로 붙는다', () => {

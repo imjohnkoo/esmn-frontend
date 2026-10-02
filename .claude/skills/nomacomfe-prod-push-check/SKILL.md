@@ -156,6 +156,8 @@ for p in / /my /my-esim /terms /privacy /refund /guide /search /checkout-preview
   n=$(printf '%s' "$norm" | grep -o -e '(확정 전)' -e '（확정 전）' -e '문안을 확정하고 있어요' | wc -l | tr -d ' ')
   [ "$n" -eq 0 ] || { echo "⛔ $p 에 확정 전 문안 ${n}건 — 중단"; exit 1; }
 done
+code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE/business")"   # W1-2 D-39 — 페이지가 없어야 한다(되살아나거나 3xx 로 돌리면 중단)
+[ "$code" = 404 ] || { echo "⛔ /business 응답 $code — 404 여야 한다(D-39) — 중단"; exit 1; }
 ```
 
 게이트 스크립트 · 봉투가 없는 SHA(도입 전 main — 예: P6 #2)는 봉투가 없으니 이 단계를 «해당 없음(자리표시자 도입 전)» 으로 적는다 — 그 SHA 의 소스에는 자리표시자 자체가 없다(Phase 3 폴백 grep 이 0).
