@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import ts from 'typescript'
 import { parse } from 'vue/compiler-sfc'
+import { ISSUE_NOTICE } from '../content/legal/issue-notice'
 
 /**
  * client-shell spec F-20 · D-32 · D-35 · D-36 — 발급기 화면의 법정 링크 · 고지 문구(개인정보 보호법 30조 · 약관 3조① · 6조④ · 12조③).
@@ -91,12 +92,14 @@ describe('발급기 법정 링크(F-20)', () => {
     const summaryAt = kids.findIndex((c) => cls(c) === 'select-date-page__confirm')
     expect(summaryAt).toBe(0) // D-42 — 주문 요약 → 고지(John 2026-10-02)
     expect(policyAt).toBe(1)
-    // F-21 — 05-A 제목 + 안내 5줄(정본 순서) · 설치 전 3,500원 줄(둘째)은 굵게(D-32 «팝업 본문(굵게)»)
+    // F-21 · D-43 — 05-A 제목 + 안내 2줄만(지원 기기 · 문제 시 고객센터 — John 2026-10-02) · 굵은 줄 없음
     expect(text(kids[policyAt]!)).toContain('{{ ISSUE_NOTICE.heading }}')
-    expect(text(kids[policyAt]!)).toContain('<component :is="renderNoticeList(NOTICE_LINES, [1])" />')
-    expect(src).toMatch(
-      /const NOTICE_LINES = \[\s*ISSUE_NOTICE\.start,\s*ISSUE_NOTICE\.refund,\s*ISSUE_NOTICE\.period,\s*ISSUE_NOTICE\.device,\s*ISSUE_NOTICE\.trouble,\s*\]/,
-    )
+    expect(text(kids[policyAt]!)).toContain('<component :is="renderNoticeList(NOTICE_LINES, [])" />')
+    expect(src).toMatch(/const NOTICE_LINES = \[ISSUE_NOTICE\.device, ISSUE_NOTICE\.trouble\]/)
+    expect(src.match(/ISSUE_NOTICE\.(?:start|refund|period)\b/g) ?? []).toEqual([])
+    // 지운 줄의 핵심(설치 전 폐기 비용 3,500원 · 청약철회 제한)은 필수 동의 체크 문구가 맡는다(약관 12조③ «발급 요청 화면에 미리 표시»)
+    expect(ISSUE_NOTICE.consent).toMatch(/청약철회가 제한/)
+    expect(ISSUE_NOTICE.consent).toMatch(/폐기 비용 3,500원/)
     // 동의 체크(05-A 19행) — 둘: 보통은 스크롤 밖(늘 보임), 공간이 모자라면 스크롤 안 끝(compact). 동시에 그려지지 않는다
     const boxes = findAll(dialog!, (n) => n.tag === 'NCheckbox' && dir(n, 'v-model') === 'isPolicyAgreed')
     expect(boxes).toHaveLength(2)

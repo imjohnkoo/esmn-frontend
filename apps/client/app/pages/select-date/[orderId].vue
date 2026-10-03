@@ -229,14 +229,8 @@ import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
 import { confirmScrollFit } from '~/utils/confirm-fit'
 import { renderNoticeList } from '~/utils/legal-render'
 
-// 05-A 안내 5줄 — 정본 순서(제공 개시 · 설치 전 환불 · 이용 기간 · 지원 기기 · 문제 시 연락)
-const NOTICE_LINES = [
-  ISSUE_NOTICE.start,
-  ISSUE_NOTICE.refund,
-  ISSUE_NOTICE.period,
-  ISSUE_NOTICE.device,
-  ISSUE_NOTICE.trouble,
-]
+// 05-A 안내 중 2줄만(spec D-43 · John 2026-10-02) — 지원 기기 · 문제 시 연락. 설치 전 3,500원 · 청약철회 제한은 아래 필수 동의 체크 문구가 맡는다
+const NOTICE_LINES = [ISSUE_NOTICE.device, ISSUE_NOTICE.trouble]
 
 // 발급 확인 팝업 — 안내 · 요약만 스크롤하고 동의 체크 · 버튼은 화면 안. 높이는 열릴 때 실제 크기로(utils/confirm-fit)
 const confirmScrollEl = ref<HTMLElement | null>(null)
@@ -531,7 +525,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
             <!-- 05-A 원문(client-shell spec F-21) — 제목 · 안내 5줄(설치 전 3,500원 줄은 굵게 — 약관 12조③ «미리 표시» · D-32) · 링크는 새 창 -->
             <div class="select-date-page__confirm-notice">
               <p class="select-date-page__confirm-notice-title">{{ ISSUE_NOTICE.heading }}</p>
-              <component :is="renderNoticeList(NOTICE_LINES, [1])" />
+              <component :is="renderNoticeList(NOTICE_LINES, [])" />
             </div>
           </div>
           <!-- 공간이 모자라는 화면(가로 · 글자 크게)에서만 동의 체크를 스크롤 안 끝으로 — 버튼을 지킨다 -->
