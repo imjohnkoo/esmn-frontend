@@ -204,11 +204,18 @@ function parseList(lines: string[], depth: number): Extract<LegalBlock, { t: 'li
   }
 }
 
-/** 인라인 → 화면 글자 — 값이 아직 없는 자리는 pending.ts 의 표기로 */
-export function inlineText(xs: Inline[]): string {
+/** 인라인 → 화면 글자 — 값이 아직 없는 자리는 pending.ts 의 표기로.
+ *  blankPending = 값 자리를 글자 없이(법정 문서 본문 · 표 영역 이름 — spec D-47 «낭독기 글자 0») */
+export function inlineText(xs: Inline[], opts: { blankPending?: boolean } = {}): string {
   return xs
     .map((x) =>
-      x.t === 'text' ? x.text : x.t === 'pending' ? displayValue(x.token) : inlineText(x.children),
+      x.t === 'text'
+        ? x.text
+        : x.t === 'pending'
+          ? opts.blankPending
+            ? ''
+            : displayValue(x.token)
+          : inlineText(x.children, opts),
     )
     .join('')
 }
@@ -220,8 +227,8 @@ export function blocksText(blocks: LegalBlock[]): string {
       return b.items.flatMap((it) => [inlineText(it.text), ...it.children.flatMap(walk)])
     if (b.t === 'table')
       return [
-        b.head.map(inlineText).join(' | '),
-        ...b.rows.map((r) => r.map(inlineText).join(' | ')),
+        b.head.map((c) => inlineText(c)).join(' | '),
+        ...b.rows.map((r) => r.map((c) => inlineText(c)).join(' | ')),
       ]
     return [inlineText(b.text)]
   }

@@ -279,8 +279,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
 import { renderNoticeList } from '~/utils/legal-render'
 import IssueConsentLabel from '~/components/legal/IssueConsentLabel.vue'
 import type { DocSheetKey } from '~/components/legal/DocSheet.vue'
-// 시트(법정 문서 3종 + 지원 기기 본문)는 첫 화면 묶음에서 뺀다
-const DocSheet = defineAsyncComponent(() => import('~/components/legal/DocSheet.vue'))
+// 시트는 페이지와 함께 싣는다 — 따로 불러오면 배포 뒤 묶음 이름이 바뀐 화면에서 불러오기가 실패해 링크가 먹통이 된다(링크는 일반 클릭을 막는다 · QA ⑥ m2)
+import DocSheet from '~/components/legal/DocSheet.vue'
 
 // 05-A 안내 중 «지원 기기 확인» 1줄만(D-43 · D-49)
 const NOTICE_LINES = [ISSUE_NOTICE.device]

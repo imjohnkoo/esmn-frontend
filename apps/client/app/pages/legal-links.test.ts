@@ -101,6 +101,9 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src).toMatch(/const noticeSheet = \(href: string\) => \(href === '\/supported-devices' \? \(\) => openLegalSheet\('devices'\) : undefined\)/)
     const labels = findAll(dialog, (n) => n.tag === 'IssueConsentLabel').map((l) => dir(l.node, '@open'))
     expect(labels).toEqual(['openLegalSheet', 'openLegalSheet'])
+    // 받은 키를 그대로 시트에(«취소·환불 정책» 을 눌렀는데 약관이 뜨지 않게) — 키마다 그 문서는 DocSheet.dom.test.ts
+    expect(src).toMatch(/const openLegalSheet = \((\w+): DocSheetKey\) => \{\s*legalSheet\.value = \1\s*\}/)
+    expect(src.match(/legalSheet\.value = /g)).toHaveLength(2) // 여는 곳 하나 · 팝업이 닫힐 때 null 하나
     expect(src).toMatch(/watch\(isConfirmOrderVisible, \(open\) => \{\s*if \(!open\) legalSheet\.value = null/)
   })
 

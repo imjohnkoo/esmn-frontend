@@ -150,7 +150,8 @@ export function renderBlocks(blocks: LegalBlock[], fallback = ''): VNode[] {
   let all = 0
   return blocks.map((b) => {
     if (b.t === 'h2' || b.t === 'h3') {
-      heading = inlineText(b.text)
+      // 표 영역 이름도 본문처럼 값 자리는 글자 없이(D-47) — 빈 자리 앞뒤 공백은 하나로
+      heading = inlineText(b.text, DOC_INLINE).replace(/\s+/g, ' ').trim()
       nth = 0
     }
     if (b.t !== 'table') return renderBlock(b)
