@@ -40,7 +40,7 @@ describe('고객센터 값 = 정본(04) — 손으로 적은 값이 정본 밖�
     expect(PRIVACY_DOC.markdown).toContain('고객센터(전화·카카오톡 채널·네이버 톡톡·전자우편)')
     expect(SUPPORT_CHANNELS.find((c) => c.key === 'naver')?.label).toBe('네이버 톡톡')
     expect(SMARTSTORE_URL).toBe('https://smartstore.naver.com/esimmany')
-    expect(SUPPORT_KAKAO_URL).toBe('http://pf.kakao.com/_TjTCG') // 정본 밖 값 — John 결정(D-54 · 정본 rev 요청)
+    expect(SUPPORT_KAKAO_URL).toBe('https://pf.kakao.com/_TjTCG') // 정본 밖 값 — John 결정(D-54 · 정본 rev 요청)
     expect(SUPPORT_CHANNELS.find((c) => c.key === 'kakao')?.href).toBe(SUPPORT_KAKAO_URL)
   })
 })
@@ -48,7 +48,7 @@ describe('고객센터 값 = 정본(04) — 손으로 적은 값이 정본 밖�
 describe('supportRows', () => {
   it('카카오톡 채널은 채널 URL 로 · 네이버 톡톡은 스토어로 · 전화는 tel 링크 · 이메일은 mailto · 운영 시간은 글자만', () => {
     const rows = Object.fromEntries(supportRows().map((row) => [row.key, row]))
-    expect(rows.kakao).toMatchObject({ text: '@이심마니', href: 'http://pf.kakao.com/_TjTCG' })
+    expect(rows.kakao).toMatchObject({ text: '@이심마니', href: 'https://pf.kakao.com/_TjTCG' })
     expect(rows.naver?.href).toBe(SMARTSTORE_URL)
     expect(rows.phone).toMatchObject({ text: '070-8064-5232', href: 'tel:070-8064-5232' })
     expect(rows.email).toMatchObject({ text: 'esimmany@naver.com', href: 'mailto:esimmany@naver.com' })

@@ -11,8 +11,8 @@ export const SUPPORT_PHONE = '070-8064-5232'
 export const SUPPORT_EMAIL = 'esimmany@naver.com'
 export const SUPPORT_HOURS = '평일 09:00–18:00, 주말·공휴일 휴무'
 export const SUPPORT_KAKAO = '@이심마니'
-/** 카카오톡 채널 URL(spec D-54 — John 2026-10-03 «채널 url은 http://pf.kakao.com/_TjTCG 로 업데이트해» · 받은 글자 그대로) */
-export const SUPPORT_KAKAO_URL = 'http://pf.kakao.com/_TjTCG'
+/** 카카오톡 채널 URL(spec D-54 — John 2026-10-03 채널 URL 지정 · 2026-10-04 «https로 변경해» — 공용 Wi-Fi 첫 요청 평문 방지) */
+export const SUPPORT_KAKAO_URL = 'https://pf.kakao.com/_TjTCG'
 
 export interface SupportChannel {
   key: 'kakao' | 'naver' | 'phone' | 'email' | 'hours'
