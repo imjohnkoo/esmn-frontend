@@ -118,6 +118,8 @@ describe('발급기 법정 링크(F-20)', () => {
       expect(src.match(/^import DocSheet from '~\/components\/legal\/DocSheet\.vue'$/gm), page).toHaveLength(1)
       expect(src, page).not.toMatch(/defineAsyncComponent|import\(\s*['"]~\/components\/legal\/DocSheet/)
     }
+    // 동의 문구도 같다 — Nuxt 자동 등록 이름은 LegalIssueConsentLabel 이라 import 가 없으면 체크박스에 문구 · 링크가 통째로 사라진다
+    expect(read('./select-date/[orderId].vue').match(/^import IssueConsentLabel from '~\/components\/legal\/IssueConsentLabel\.vue'$/gm)).toHaveLength(1)
   })
 
   it('공용 DocSheet(D-45 · D-46 · D-48) — 법정 3종 = 생성물 · 지원 기기 = 페이지와 같은 컴포넌트 · X(closable) · 제목 · 본문만 스크롤 · 본문 h1 숨김', () => {
