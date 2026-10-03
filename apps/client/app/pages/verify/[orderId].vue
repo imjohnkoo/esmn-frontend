@@ -85,8 +85,8 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 
 // 개인정보처리방침 · 이용약관 하단 시트(spec D-46 · John 2026-10-03) — 새 탭 대신(입력한 이름 · 전화를 잃지 않는다)
 import type { DocSheetKey } from '~/components/legal/DocSheet.vue'
-// 시트(법정 문서 3종 + 지원 기기 본문)는 첫 화면 묶음에서 뺀다 — 화면이 빨리 준비돼 링크가 시트로 열린다
-const DocSheet = defineAsyncComponent(() => import('~/components/legal/DocSheet.vue'))
+// 시트는 페이지와 함께 싣는다 — 따로 불러오면 배포 뒤 묶음 이름이 바뀐 화면에서 불러오기가 실패해 링크가 먹통이 된다(링크는 일반 클릭을 막는다 · QA ⑥ m2)
+import DocSheet from '~/components/legal/DocSheet.vue'
 
 const legalSheet = ref<DocSheetKey | null>(null)
 </script>

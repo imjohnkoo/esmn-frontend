@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vitest/config'
 
 // 순수 유닛 테스트만 대상으로 한다.
@@ -6,6 +7,8 @@ import { defineConfig } from 'vitest/config'
 // 러너가 환경에 따라 흔들리면 회귀 자산이 아니라 소음이 된다.
 // (그런 테스트가 필요하면 별도 config 로 분리하고 plan 에 "로컬 전용" 으로 표기)
 export default defineConfig({
+  // .vue 컴포넌트 마운트 테스트(`*.dom.test.ts` — 파일 머리 `@vitest-environment happy-dom`)용. 나머지 테스트는 node 환경 그대로
+  plugins: [vue()],
   // app/ 코드의 `~/…` import (Nuxt srcDir alias) — 미들웨어 테스트가 쓴다
   resolve: { alias: { '~': fileURLToPath(new URL('./app', import.meta.url)) } },
   test: {

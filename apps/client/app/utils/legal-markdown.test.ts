@@ -119,8 +119,8 @@ describe('parseLegalMarkdown — 약관 · 방침의 모양', () => {
 
   it('표 구분행은 둘째 줄 하나(`-` 1개 이상 · `:` 허용) — 다른 줄의 `---` 칸은 본문으로 남는다', () => {
     const [a] = parseLegalMarkdown('| a | b |\n|:-:|-|\n| --- | x |\n| 1 | 2 |') as Table[]
-    expect(a!.head.map(inlineText)).toEqual(['a', 'b'])
-    expect(a!.rows.map((r) => r.map(inlineText))).toEqual([
+    expect(a!.head.map((c) => inlineText(c))).toEqual(['a', 'b'])
+    expect(a!.rows.map((r) => r.map((c) => inlineText(c)))).toEqual([
       ['---', 'x'],
       ['1', '2'],
     ])

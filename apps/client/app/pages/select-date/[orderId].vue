@@ -278,8 +278,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
 
 // 약관 · 환불 정책 하단 시트(spec D-45 · John 2026-10-03) — 새 탭 대신. 열린 문서 하나 · 시트를 닫아도 확인 팝업 · 체크는 그대로
 import type { DocSheetKey } from '~/components/legal/DocSheet.vue'
-// 시트(법정 문서 3종 + 지원 기기 본문)는 첫 화면 묶음에서 뺀다
-const DocSheet = defineAsyncComponent(() => import('~/components/legal/DocSheet.vue'))
+// 시트는 페이지와 함께 싣는다 — 따로 불러오면 배포 뒤 묶음 이름이 바뀐 화면에서 불러오기가 실패해 링크가 먹통이 된다(링크는 일반 클릭을 막는다 · QA ⑥ m2)
+import DocSheet from '~/components/legal/DocSheet.vue'
 
 const legalSheet = ref<DocSheetKey | null>(null)
 const openLegalSheet = (doc: DocSheetKey) => {
@@ -560,7 +560,7 @@ const noticeSheet = (href: string) => (href === '/supported-devices' ? () => ope
         v-if="!confirmCompact"
         class="select-date-page__confirm-agree"
       >
-        <!-- 필수 동의(D-44 · John 2026-10-03) — 문구 안 «이용약관» · «취소·환불 정책» 링크(새 탭) · 따로 있던 링크 줄은 없앴다 · 서버 기록은 W1-6 -->
+        <!-- 필수 동의(D-44 · John 2026-10-03) — 문구 안 «이용약관» · «취소·환불 정책» 링크(하단 시트 — D-45) · 따로 있던 링크 줄은 없앴다 · 서버 기록은 W1-6 -->
         <NCheckbox v-model="isPolicyAgreed"><IssueConsentLabel @open="openLegalSheet" /></NCheckbox>
       </div>
       <!-- 약관 · 환불 정책 본문(D-45) — 하단 시트 · 팝업 안에 둔다(중첩 레이어 — 바깥 누름 · X · Esc 는 시트만 닫는다) -->

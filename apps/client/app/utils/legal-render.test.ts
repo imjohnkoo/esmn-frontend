@@ -56,6 +56,36 @@ describe('renderBlocks — 그린 HTML', () => {
     expect(html).not.toContain(P9_4_PENDING)
   })
 
+  it('값 자리는 어느 블록에서든 글자 없이 표식만(D-47) — 장 · 조 제목 · 문단 · 목록 · 표 머리 · 표 칸 · 굵게 안 · 표 영역 이름', async () => {
+    const P = P9_4_PENDING
+    const html = await render(
+      [
+        `## 제3장 수탁자 ${P}`,
+        `**제9조 ${P} (위탁)**`,
+        `문단 ${P} 끝`,
+        `- 목록 ${P} 끝`,
+        `- **굵게 ${P}** 끝`,
+        '',
+        `| 머리 ${P} | 업무 |`,
+        '| --- | --- |',
+        `| 칸 ${P} | 알림톡 |`,
+      ].join('\n'),
+    )
+    const mark = '<span class="legal-md__pending" data-pending></span>'
+    // 7자리(h2 · h3 · p · li · li 안 strong · th · td) 모두 빈 표식
+    expect(html.split(mark).length - 1).toBe(7)
+    expect(html).toContain(`<h2 class="legal-md__h2">제3장 수탁자 ${mark}</h2>`)
+    expect(html).toContain(`<p class="legal-md__p">문단 ${mark} 끝</p>`)
+    expect(html).toContain(`<li>목록 ${mark} 끝</li>`)
+    expect(html).toContain(`<strong>굵게 ${mark}</strong>`)
+    expect(html).toContain(`<th scope="col">머리 ${mark}</th>`)
+    expect(html).toContain(`<td>칸 ${mark}</td>`)
+    // 표 영역 이름(낭독기) — 바로 앞 제목에서 값 자리를 뺀 글자
+    expect(html).toContain('aria-label="제9조 (위탁) 표"')
+    expect(html).not.toContain('(확정 전)')
+    expect(html).not.toContain(P)
+  })
+
   it('표 영역 이름 = 바로 앞 제목(같은 제목 아래 둘째 표부터 번호) — 낭독기에서 표끼리 구분된다', async () => {
     const t = '| a | b |\n| - | - |\n| 1 | 2 |'
     const html = await render(
