@@ -65,7 +65,12 @@ describe('DocSheet — 키마다 그 문서', () => {
   it('지원 기기 시트 = 페이지와 같은 본문 — 기준일 · 사용할 수 있어요 · 사용할 수 없어요 · 카드는 접힌 채 시작해 누르면 모델 목록이 열린다', async () => {
     await host('devices')
     expect(body()).toContain('기준일')
-    expect(body()).toContain('2026.08.19')
+    expect(body()).toContain('2026.10.04')
+    // D-55(2026-10-04 웹 검증) — 아이폰 16 시리즈 · 18 Pro · Duo · Air · 갤럭시 트라이폴드 · FE · 홍콩 판정
+    for (const t of ['11 ~ 16 전 모델', '18 Pro · 18 Pro Max', 'Duo (접는 모델)', 'Air', 'Z 트라이폴드', 'S23 FE · S24 FE · S25 FE · S26 FE'])
+      expect(body()).toContain(t)
+    expect(body()).not.toContain('17 Air')
+    expect(body()).toContain('XR · XS Max · 11 ~ 16 시리즈')
     expect(body()).toContain('사용할 수 있어요')
     expect(body()).toContain('사용할 수 없어요')
     // 제품명은 «아이폰»(D-52 — 카피 규칙 9/13) · 모델명 · iPad 는 그대로
@@ -77,7 +82,7 @@ describe('DocSheet — 키마다 그 문서', () => {
       b.textContent?.includes('갤럭시 (국내판)'),
     )!
     const models = card.parentElement!.querySelector<HTMLElement>('.devices-page__card-body')!
-    expect(models.textContent).toContain('S23 · S24 · S25 전 모델')
+    expect(models.textContent).toContain('S23 · S24 · S25 · S26 전 모델')
     expect(models.style.display).toBe('none')
     card.click()
     await settle()

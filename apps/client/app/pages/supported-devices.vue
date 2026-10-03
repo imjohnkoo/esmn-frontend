@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// eSIM 지원 기기 목록 — 근거: docs/data/2026-08-19-esim-supported-devices-kr.md (웹검색 검증본)
+// eSIM 지원 기기 목록 — 근거: nomacom-wiki wiki/frontend/reference/2026-10-04-esim-supported-devices-kr.md(웹 검증 · spec D-55)
 import { NPageHeading } from '@imjohnkoo/design-vue'
 // 환불 안내는 05-A 14행(client-shell spec D-32 — 약관 12조③ 과 같은 말)
 import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
