@@ -82,6 +82,11 @@ const onSubmit = async () => {
 }
 // 게스트 발급 4-step 은 헤더 · 하단 탭 없는 flow 레이아웃 (spec D-2) · 가드는 order-flow 미들웨어 (K8)
 definePageMeta({ layout: 'flow', middleware: 'order-flow' })
+
+// 개인정보처리방침 · 이용약관 하단 시트(spec D-46 · John 2026-10-03) — 새 탭 대신(입력한 이름 · 전화를 잃지 않는다)
+import LegalSheet, { type LegalSheetKey } from '~/components/legal/LegalSheet.vue'
+
+const legalSheet = ref<LegalSheetKey | null>(null)
 </script>
 
 <template>
@@ -146,20 +151,25 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
         </NTrustNote>
       </div>
 
-      <!-- 법정 링크(client-shell spec F-20 · 개인정보 보호법 30조) — 방침은 굵게 · 색으로 구분. 입력을 잃지 않게 새 탭 -->
+      <!-- 법정 링크(client-shell spec F-20 · 개인정보 보호법 30조) — 방침은 굵게 · 색으로 구분. 입력을 잃지 않게 하단 시트로(D-46 — 새 탭 대신) -->
       <p class="verify-page__policy">
         <a
           class="verify-page__policy-link verify-page__policy-link--privacy"
           href="/privacy"
-          target="_blank"
-          rel="noopener"
-          >개인정보처리방침<span class="sr-only"> (새 창)</span></a
+          aria-haspopup="dialog"
+          @click.prevent="legalSheet = 'privacy'"
+          >개인정보처리방침</a
         >
         <span class="verify-page__policy-sep" aria-hidden="true">·</span>
-        <a class="verify-page__policy-link" href="/terms" target="_blank" rel="noopener"
-          >이용약관<span class="sr-only"> (새 창)</span></a
+        <a
+          class="verify-page__policy-link"
+          href="/terms"
+          aria-haspopup="dialog"
+          @click.prevent="legalSheet = 'terms'"
+          >이용약관</a
         >
       </p>
+      <LegalSheet v-model="legalSheet" />
 
       <div class="verify-page__cta">
         <NButton type="submit" variant="primary" size="xl" full-width :disabled="isSubmitting">
