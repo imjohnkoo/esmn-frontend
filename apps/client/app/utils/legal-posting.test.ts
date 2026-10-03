@@ -250,6 +250,51 @@ describe('applyEdits — 게시 수정(D-41): 정해 둔 줄 하나의 정해 �
   })
 })
 
+describe('값 채움(fills · D-54) — 값 자리 태그를 결정 글자로', () => {
+  const SLOT2 = '`[확인: 둘째 명칭]`'
+  const two = { notes: [], placeholders: [sha256(SLOT), sha256(SLOT2)] }
+  const src = `# 문서\n\n| 수탁자 | 업무 |\n| --- | --- |\n| ${SLOT} (서울 리전) | 보관 |\n| (주)회사 ${SLOT2} | 발송 |\n`
+  it('채운 자리는 글자로 · 채우지 않은 자리는 확정 전 표시 그대로', () => {
+    const out = toPosting(src, { ...two, fills: { 0: 'AWS' } })
+    expect(out.body).toContain('| AWS (서울 리전) | 보관 |')
+    expect(out.body).toContain(`| (주)회사 ${PENDING_MARK} | 발송 |`)
+    expect(out.pendingCount).toBe(1)
+  })
+  it('빈 글자 = 그 자리를 지운다(남는 공백은 하나로) · 둘 다 채우면 확정 전 0', () => {
+    const out = toPosting(src, { ...two, fills: { 0: 'AWS', 1: '' } })
+    expect(out.body).toContain('| (주)회사 | 발송 |')
+    expect(out.body).not.toContain(PENDING_MARK)
+    expect(out.pendingCount).toBe(0)
+  })
+  it('채운 줄은 보통 줄처럼 게시 수정을 받는다(줄 해시 = 채운 뒤 글자)', () => {
+    const line = '| (주)회사 | 발송 |'
+    const out = toPosting(src, { ...two, fills: { 0: 'AWS', 1: '' }, edits: [{ line: sha256(line), from: '(주)회사', to: '회사(주)' }] })
+    expect(out.body).toContain('| 회사(주) | 발송 |')
+  })
+  it('없는 순번을 채우면 멈춘다 · 정본에서 값 자리 태그가 사라지면(값이 들어오면) 멈춘다', () => {
+    expect(() => toPosting(src, { ...two, fills: { 2: 'X' } })).toThrow(/값 채움 순번 2/)
+    expect(() => toPosting(src.replace(SLOT, 'AWS'), { ...two, fills: { 0: 'AWS' } })).toThrow(/찾지 못했다/)
+  })
+  it('채운 자리가 걷어 내는 줄(인용 블록) 안에만 있으면 멈춘다 — 채움 글자가 조용히 사라지지 않게(QA ⑥ m1)', () => {
+    const quoted = `# 문서\n\n> 메모 ${SLOT}\n\n| 수탁자 | 업무 |\n| --- | --- |\n| 다른 글자 (서울 리전) | 보관 |\n| (주)회사 ${SLOT2} | 발송 |\n`
+    expect(() => toPosting(quoted, { ...two, fills: { 0: 'AWS', 1: '' } })).toThrow(/값 채움 1 의 자리가 게시 본문에 없다/)
+  })
+  it('조각(toBlock)도 같다 — 채운 줄은 글자 · 확정 전 0', () => {
+    const blockSrc = ['# 문서', '## 1. 첫 절', '```', `호스팅: ${SLOT.slice(1, -1)}`, '```'].join('\n')
+    const rules = {
+      file: 'x.md',
+      exportName: 'X',
+      section: '## 1.',
+      pick: [{ key: 'host', startsWith: '호스팅:' }],
+      links: {},
+      notes: [],
+      placeholders: [sha256(SLOT.slice(1, -1))],
+      fills: { 0: 'AWS' },
+    }
+    expect(toBlock(blockSrc, rules)).toEqual({ lines: { host: '호스팅: AWS' }, pendingCount: 0 })
+  })
+})
+
 describe('docSource — 절 하나만 떼어 «# 제목» 을 붙인다(지금 쓰는 문서 규칙은 없다 — D-39)', () => {
   const src = '# 문서\r\n## 1. 첫\n하나\n## 2. 둘\n본문\n```\n## 코드 안\n```\n끝\n## 2.5 다음\n남\n## 3. 셋\n'
   it('그 절의 줄만 · 제목은 규칙의 것 · 코드 블록 안 «## » 는 끝이 아니다 · «## 2.5» 는 다른 절(거기서 끝난다)', () => {
@@ -602,12 +647,24 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
     for (const r of all)
       for (const h of [...r.notes, ...r.placeholders]) expect(h).toMatch(/^[0-9a-f]{64}$/)
   })
-  it('게시 수정 줄은 sha256 · 수정은 결정된 문서에만(terms 1건 D-33 · refund 1건 D-41)', () => {
+  it('게시 수정 줄은 sha256 · 수정은 결정된 문서에만(terms 1건 D-33 · privacy 1건 D-54 솔라피 · refund 1건 D-41)', () => {
     for (const r of Object.values(DOC_RULES)) for (const e of r.edits ?? []) expect(e.line).toMatch(/^[0-9a-f]{64}$/)
     expect(Object.fromEntries(Object.entries(DOC_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
       terms: 1,
-      privacy: 0,
+      privacy: 1,
       refund: 1,
+    })
+  })
+  it('값 채움은 결정된 자리에만(D-54 — privacy AWS · 솔라피 칸 · business 호스팅 AWS) · 다른 문서 · 조각 0', () => {
+    const fills = (r: { fills?: Readonly<Record<number, string>> }) => r.fills ?? {}
+    expect(Object.fromEntries(Object.entries(DOC_RULES).map(([k, r]) => [k, fills(r)]))).toEqual({
+      terms: {},
+      privacy: { 0: 'AWS', 1: '' },
+      refund: {},
+    })
+    expect(Object.fromEntries(Object.entries(BLOCK_RULES).map(([k, r]) => [k, fills(r)]))).toEqual({
+      business: { 0: 'AWS' },
+      'issue-notice': {},
     })
   })
   it.each(['../../scripts/legal-posting.ts', '../../scripts/legal-import.mjs'])(
@@ -642,10 +699,17 @@ describe('moduleSource · blockModuleSource — 생성 모듈', () => {
     expect(src).toContain('// 정본: 02_x.md · legal-pages @abc1234')
     expect(src).not.toMatch(/source:/)
   })
-  it('게시 수정이 있는 문서는 머리줄에 건수를 드러낸다(D-41) · 없으면 그 줄이 없다', () => {
+  it('게시 수정 · 값 채움이 있는 문서는 머리줄에 건수를 드러낸다(D-41 · D-54) · 없으면 그 줄이 없다', () => {
     const posting = { title: 't', body: 'a\n', pendingCount: 0 }
-    expect(moduleSource('refund', posting, '03_x.md · legal-pages @abc1234', 'P')).toMatch(/^\/\/ 게시 수정 1건 — /m)
-    expect(moduleSource('privacy', posting, '02_x.md · legal-pages @abc1234', 'P')).not.toMatch(/게시 수정/)
+    const refund = moduleSource('refund', posting, '03_x.md · legal-pages @abc1234', 'P')
+    expect(refund).toMatch(/^\/\/ 게시 수정 1건 — /m)
+    expect(refund).not.toMatch(/값 채움/)
+    const privacy = moduleSource('privacy', posting, '02_x.md · legal-pages @abc1234', 'P')
+    expect(privacy).toMatch(/^\/\/ 값 채움 2건 — /m)
+    expect(privacy).toMatch(/^\/\/ 게시 수정 1건 — /m)
+    const block = { lines: { a: 'x' }, pendingCount: 0 }
+    expect(blockModuleSource('business', block, '04_x.md ## 1. · legal-pages @abc1234', 'P')).toMatch(/^\/\/ 값 채움 1건 — /m)
+    expect(blockModuleSource('issue-notice', block, '05_x.md ## A. · legal-pages @abc1234', 'P')).not.toMatch(/값 채움/)
   })
   it('본문의 백슬래시는 템플릿 문자열에서 그대로 살아남는다', () => {
     const src = moduleSource(

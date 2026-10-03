@@ -21,6 +21,9 @@ export interface TagRules {
   notes: readonly string[]
   /** 값이 아직 없는 자리 — 정본 태그 글자의 sha256. 그 태그만 확정 전 표시로(앞뒤 문장 · 이름은 남는다) */
   placeholders: readonly string[]
+  /** 값 채움(spec D-54) — 값 자리 순번(placeholders 의 0부터) → 게시할 글자(빈 글자 = 그 자리를 지움). 정본에 값이 아직 없을 때 결정된 글자만.
+   *  정본 rev 로 값이 들어오면 태그가 사라져 «태그를 찾지 못했다» 로 멈춘다 — 그때 그 해시와 이 규칙을 같이 지운다 */
+  fills?: Readonly<Record<number, string>>
 }
 
 /** 게시 수정(spec D-33 · D-41) — 정본에 있지만 게시하지 않기로 결정한 글자. 정본 rev 가 오면 그 문서의 규칙만 지운다 */
@@ -70,6 +73,10 @@ export const DOC_RULES: Record<DocKey, DocRules> = {
       'ea699f1ac6590ff3f191078b4d4e99330958f5b967f16332876c37edad615718',
       '5f7f843b806d94c2a9013548c68efb81f1d309dce803d605109489163201df5c',
     ],
+    // 값 채움 · 게시 수정(spec D-54 — John 2026-10-03 «AWS는 AWS로 표기, 알림톡 솔라피는 솔라피(주)로 변경»):
+    // AWS 행 = «AWS (Amazon Web Services 서울 리전)» · 알림톡 행 수탁자 칸 전체 = «솔라피(주)»(정본 rev 가 오면 지운다)
+    fills: { 0: 'AWS', 1: '' },
+    edits: [{ line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' }],
   },
   // 03 — «결정 기록» 절은 걷는다(DECISION) · 4항의 확인 메모(발급 후 설치 기한 — 값은 상품 상세 몫, D-29)
   refund: {
@@ -171,6 +178,8 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
     ],
     notes: [],
     placeholders: ['fbb49b2998f2c4650e47969848dd7c006c102bd6a8ca18e6b429bd40e7a92b69'],
+    // 값 채움(spec D-54 — John 2026-10-03 «AWS는 AWS로 표기»): 호스팅 서비스 = AWS(정본 rev 가 오면 지운다)
+    fills: { 0: 'AWS' },
   },
   // 05-A — 발급 화면 고지(제목 · 안내 5줄 — F-21) · 환불 안내(14행 · D-32) · 동의 체크 문구(19행 · D-35)
   'issue-notice': {
@@ -203,6 +212,22 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
 /** 값 자리 표시 — 모듈 생성 때 자리표시자 상수로 바뀐다 */
 export const PENDING_MARK = '\u0000PENDING\u0000'
 const slotMark = (i: number) => `\u0000SLOT${i}\u0000`
+/** 값 채움 자리 표식 — 채운 글자 앞에 붙였다가, 걷어 내기가 끝난 뒤 «그 자리가 게시 본문에 남았는가» 를 보고 지운다(QA ⑥ D-54 m1) */
+const fillMark = (i: number) => `\u0000FILL${i}\u0000`
+
+/** 채운 자리마다 게시 본문에 남았는지(걷어 내는 줄 · 인용 블록 · 결정 기록 안에만 있었으면 멈춘다) 본 뒤 표식을 지운다 */
+function takeFills(body: string, rules: TagRules): string {
+  for (const k of Object.keys(rules.fills ?? {}))
+    if (!(Number(k) >= 0 && Number(k) < rules.placeholders.length))
+      throw new Error(`값 채움 순번 ${k} 에 해당하는 값 자리가 없다(값 자리 ${rules.placeholders.length}개)`)
+  for (const k of Object.keys(rules.fills ?? {})) {
+    const i = Number(k)
+    if (!body.includes(fillMark(i)))
+      throw new Error(`값 채움 ${i + 1} 의 자리가 게시 본문에 없다(걷어 내는 줄 안에만 있었다 — 정본이 바뀌었다)`)
+    body = body.split(fillMark(i)).join('')
+  }
+  return body
+}
 
 /** eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 날짜 경계 낱말 자체를 금지: 자정(«당일자정» 처럼 붙여 써도) ·
  *  0시 · 00시 · 24시(«24시간» 은 제외) · 0:00 · 00:00 · 24:00 · 23:59(공백 허용) · 오전/밤/새벽 12시 · 영시 · 열두 시 · 12 AM · midnight. 법정 문서에 정상으로 쓰일 일이 없어 시끄럽게 멈추는 쪽.
@@ -285,7 +310,8 @@ function applyTags(text: string, rules: TagRules, tagRe: RegExp): string {
     const slot = rules.placeholders.indexOf(h)
     if (slot >= 0) {
       seen.add(h)
-      return slotMark(slot)
+      const fill = rules.fills?.[slot]
+      return fill === undefined ? slotMark(slot) : fillMark(slot) + fill
     }
     if (rules.notes.includes(h)) {
       seen.add(h)
@@ -300,7 +326,11 @@ function applyTags(text: string, rules: TagRules, tagRe: RegExp): string {
 
 /** 값 자리마다 본문에 남았는지(인용 블록 안에만 있으면 빈칸이 된다) · 옆 글자 · 지원 문법 · 남은 대괄호를 본 뒤 표시를 하나로 */
 function finish(body: string, rules: TagRules): { body: string; pendingCount: number } {
+  for (const k of Object.keys(rules.fills ?? {}))
+    if (!(Number(k) >= 0 && Number(k) < rules.placeholders.length))
+      throw new Error(`값 채움 순번 ${k} 에 해당하는 값 자리가 없다(값 자리 ${rules.placeholders.length}개)`)
   rules.placeholders.forEach((_, i) => {
+    if (rules.fills?.[i] !== undefined) return // 값 채움(D-54) — 표식 없이 글자로 들어갔다
     if (!body.includes(slotMark(i)))
       throw new Error(`값 자리 ${i + 1} 이 게시 본문에 없다(걷어 내는 줄 안에만 있었다)`)
   })
@@ -381,7 +411,7 @@ export function toPosting(source: string, rules: TagRules & { edits?: readonly P
   }
   if (!title) throw new Error('문서 제목(# …)이 없다')
   if (/[[\]`]/.test(title)) throw new Error(`제목에 태그 · 백틱이 남았다: ${title}`)
-  let body = out.join('\n')
+  let body = takeFills(out.join('\n'), rules)
   // 메모를 지운 자리의 앞 공백 정리(문장 끝 «. ` [..]`» → «.»)
   body = body.replace(/[ \t]+\n/g, '\n').replace(/(?<=\S)[ \t]{2,}(?=\S)/g, ' ')
   body = body.replace(/`([^`\n]*)`/g, '$1')
@@ -454,7 +484,7 @@ export function toBlock(source: string, rules: BlockRules): BlockPosting {
   })
   for (const s of skip)
     if (!skipped.has(s.sha256)) throw new Error(`건너뛸 줄을 정본에서 찾지 못했다(정본이 바뀌었다): ${s.why}`)
-  const { body, pendingCount } = finish(Object.values(picked).join('\n') + '\n', rules)
+  const { body, pendingCount } = finish(takeFills(Object.values(picked).join('\n') + '\n', rules), rules)
   const out = body.trimEnd().split('\n')
   return {
     lines: Object.fromEntries(rules.pick.map((p, i) => [p.key, out[i]!])),
@@ -562,6 +592,12 @@ const HEADER = (sourceLabel: string, hash: string) => `// 생성물 — scripts/
 // sha256(본문): ${hash}
 `
 
+/** 값 채움이 있으면 생성 모듈 머리에 한 줄 — 정본과 다른 글자임을 남긴다(spec D-54) */
+const fillsNote = (rules: TagRules) => {
+  const n = Object.keys(rules.fills ?? {}).length
+  return n ? `// 값 채움 ${n}건 — 정본의 값 자리를 결정 글자로(규칙 scripts/legal-posting.ts 의 fills · spec D-54)\n` : ''
+}
+
 /** 생성 모듈 원문. pendingIdent = 자리표시자 상수 이름(부르는 쪽이 넘긴다 — 이 파일에 이름을 쓰지 않으려고) */
 export function moduleSource(
   key: DocKey,
@@ -574,7 +610,7 @@ export function moduleSource(
   const edits = rules.edits?.length
     ? `// 게시 수정 ${rules.edits.length}건 — 정본과 다른 글자(규칙 scripts/legal-posting.ts 의 edits · spec 결정)\n`
     : ''
-  return `${HEADER(sourceLabel, bodyHash(posting.body))}${edits}${imports}import type { LegalMarkdownDoc } from '../../utils/legal-markdown'
+  return `${HEADER(sourceLabel, bodyHash(posting.body))}${fillsNote(rules)}${edits}${imports}import type { LegalMarkdownDoc } from '../../utils/legal-markdown'
 
 export const ${rules.exportName}: LegalMarkdownDoc = {
   slug: '${rules.slug ?? key}',
@@ -596,10 +632,11 @@ export function blockModuleSource(
 ): string {
   const rules = BLOCK_RULES[key]
   const imports = posting.pendingCount ? `import { ${pendingIdent} } from '../pending'\n\n` : ''
+  const note = fillsNote(rules)
   const entries = Object.entries(posting.lines)
     .map(([k, v]) => `  ${k}: ${v.includes(PENDING_MARK) ? tpl(v, pendingIdent) : q(v)},`)
     .join('\n')
-  return `${HEADER(sourceLabel, blockHash(posting.lines))}${imports}export const ${rules.exportName} = {
+  return `${HEADER(sourceLabel, blockHash(posting.lines))}${note}${imports}export const ${rules.exportName} = {
 ${entries}
 } as const
 `
