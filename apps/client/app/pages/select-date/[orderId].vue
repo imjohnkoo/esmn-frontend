@@ -778,6 +778,13 @@ watch(isConfirmOrderVisible, (open) => {
 .select-date-page__confirm-policy :deep(.issue-notice__list li) {
   margin: 0 0 4px;
 }
+.select-date-page__confirm-policy :deep(.legal-md__link) {
+  /* 안내 줄의 «지원 기기 확인» — 렌더러가 그린 링크라 scoped 밖(W1-2 와 같은 모양) */
+  font-weight: 600;
+  color: #6239ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .select-date-page__confirm-policy {
   margin-top: 10px;
   word-break: keep-all;

@@ -142,6 +142,8 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src.match(/ISSUE_NOTICE\.(?:start|refund|period|trouble)\b/g) ?? []).toEqual([])
     // 안내 줄은 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03)
     expect(src).toMatch(/\.select-date-page__confirm-policy :deep\(\.issue-notice__list\) \{[^}]*padding: 0;[^}]*list-style: none;[^}]*\}/)
+    // 안내 줄 링크(«지원 기기 확인»)는 링크로 보인다 — 렌더러가 그린 a 라 :deep 규칙(색 · 밑줄)
+    expect(src).toMatch(/\.select-date-page__confirm-policy :deep\(\.legal-md__link\) \{[^}]*color: #6239ff;[^}]*text-decoration: underline;/)
     // 동의 체크 — 둘: 보통은 스크롤 밖(늘 보임), 공간이 모자라면 스크롤 안 끝(compact). 동시에 그려지지 않는다
     const boxes = findAll(dialog!, (n) => n.tag === 'NCheckbox' && dir(n, 'v-model') === 'isPolicyAgreed')
     expect(boxes).toHaveLength(2)
