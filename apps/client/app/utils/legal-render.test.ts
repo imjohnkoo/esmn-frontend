@@ -52,7 +52,7 @@ describe('renderBlocks — 그린 HTML', () => {
     expect(html).toContain('tabindex="0"')
     // 법정 문서 본문 — «(확정 전)» 글자 없이 빈 표식(승격 전 렌더 확인이 센다 · spec D-47)
     expect(html).toContain('<span class="legal-md__pending" data-pending></span>')
-    expect(html).not.toContain('(확정 전)')
+    expect(`${html}\n${visible(html)}`).not.toContain('(확정 전)') // 글자로도 — 괄호 낱말은 span 으로 나뉜다
     expect(html).not.toContain(P9_4_PENDING)
   })
 
@@ -85,14 +85,20 @@ describe('renderBlocks — 그린 HTML', () => {
     expect(html).toContain(`<td>칸 ${mark}</td>`)
     // 표 영역 이름(낭독기) — 바로 앞 제목에서 값 자리를 뺀 글자
     expect(html).toContain('aria-label="제9조 (위탁) 표"')
-    expect(html).not.toContain('(확정 전)')
+    expect(`${html}\n${visible(html)}`).not.toContain('(확정 전)') // 글자로도 — 괄호 낱말은 span 으로 나뉜다
     expect(html).not.toContain(P)
   })
 
   it('표 영역 이름 — 제목의 굵게 · 링크 안 값 자리도 글자 없이(D-47 «낭독기 글자 0»)', async () => {
     const html = await render([`## 제3장 **수탁자 ${P9_4_PENDING}** [목록 ${P9_4_PENDING}](/x)`, '', '| a | b |', '| - | - |', '| 1 | 2 |'].join('\n'))
     expect(html).toContain('aria-label="제3장 수탁자 목록 표"')
+    expect(`${html}\n${visible(html)}`).not.toContain('(확정 전)') // 글자로도 — 괄호 낱말은 span 으로 나뉜다
+  })
+
+  it('원문에 «(확정 전)» 글자를 직접 쓰면 HTML 에서는 괄호 낱말이 span 으로 나뉘어 안 보이고 글자로는 보인다 — 그래서 글자로도 센다(원문 금지는 legal-content.test.ts)', async () => {
+    const html = await render('수탁자 (확정 전) 업무')
     expect(html).not.toContain('(확정 전)')
+    expect(visible(html)).toContain('(확정 전)')
   })
 
   it('표 영역 이름 = 바로 앞 제목(같은 제목 아래 둘째 표부터 번호) — 낭독기에서 표끼리 구분된다', async () => {
@@ -178,7 +184,7 @@ describe.each([TERMS_DOC, PRIVACY_DOC, REFUND_DOC])('renderDoc($slug) — 실문
   it('값 자리 수 = 빈 표식 수(D-47 — 글자는 없고 표식은 남는다)', async () => {
     const html = await ssr(() => renderDoc(doc))
     expect(html.split('<span class="legal-md__pending" data-pending></span>').length - 1).toBe(doc.markdown.split(P9_4_PENDING).length - 1)
-    expect(html).not.toContain('(확정 전)')
+    expect(`${html}\n${visible(html)}`).not.toContain('(확정 전)') // 글자로도 — 괄호 낱말은 span 으로 나뉜다
   })
 
   it('화면 글자 = 원문 글자(한 글자도 빠지거나 더해지지 않는다) · 제목 · 자리표시자 이름 0', async () => {

@@ -12,6 +12,7 @@ import { ISSUE_NOTICE } from './issue-notice'
 import { PRIVACY_DOC } from './privacy'
 import { REFUND_DOC } from './refund'
 import { TERMS_DOC } from './terms'
+import * as SUPPORT from '../support'
 
 /**
  * 게시 형태(client-shell spec F-12 · D-25 · D-29 · D-32 · D-35 · D-36 — legal-pages 08 D절) — 생성물이 정본의 게시 형태이고 손으로 고치지 않았는가.
@@ -319,6 +320,28 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
     ]) {
       expect(forbiddenIn(unmark(l))).toEqual([])
       expect(l.replace(/\[[^\]\n]+\]\((?:https:\/\/|\/)[^)\s]*\)/g, '')).not.toMatch(/[[\]]/)
+    }
+  })
+})
+
+describe('값 자리는 토큰으로만(D-29 · D-30 · D-47)', () => {
+  it('생성 문서 · 고객센터 원문에 «(확정 전)» 글자를 직접 쓰지 않는다 — 렌더러가 괄호 낱말을 나눠 감싸 HTML 검사로는 안 보인다 · 값 자리는 P9_4_PENDING 토큰만', () => {
+    const norm = (s: string) => s.replace(/[\u00a0\u2007\u202f]/g, ' ').replace(/\uff08/g, '(').replace(/\uff09/g, ')')
+    const strings = (v: unknown): string[] =>
+      typeof v === 'string' ? [v] : v && typeof v === 'object' ? Object.values(v).flatMap(strings) : []
+    const sources: [string, unknown][] = [
+      ['terms', TERMS_DOC],
+      ['privacy', PRIVACY_DOC],
+      ['refund', REFUND_DOC],
+      ['business', BUSINESS_INFO],
+      ['issue-notice', ISSUE_NOTICE],
+      ['checkout-notice', CHECKOUT_NOTICE],
+      ['support', SUPPORT],
+    ]
+    for (const [name, v] of sources) {
+      const all = strings(v)
+      expect(all.length, name).toBeGreaterThan(0)
+      for (const t of all) expect(norm(t), name).not.toMatch(/확정\s*전/)
     }
   })
 })
