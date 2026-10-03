@@ -83,7 +83,8 @@ function handleUpdate(value: boolean | 'indeterminate') {
         </svg>
       </CheckboxIndicator>
     </CheckboxRoot>
-    <span v-if="label" class="n-checkbox__label">{{ label }}</span>
+    <!-- 문구 — 기본 slot(링크 등 꾸민 문구) · 없으면 label 글자. slot 안 링크를 눌러도 체크는 바뀌지 않는다(label 안 대화형 요소) -->
+    <span v-if="$slots.default || label" class="n-checkbox__label"><slot>{{ label }}</slot></span>
   </label>
 </template>
 
