@@ -75,23 +75,39 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(css).toMatch(/\.verify-page__policy-link \{[^}]*white-space: nowrap;/)
   })
 
-  it('발급 필수 동의 문구(D-44 · John 2026-10-03) — 글자 그대로 · «이용약관» · «취소·환불 정책» 링크는 새 탭 · 낭독기 «(새 창)»', () => {
+  it('발급 필수 동의 문구(D-44) — 글자 그대로 · «이용약관» · «취소·환불 정책» 링크는 하단 시트를 연다(D-45 — 새 탭 아님 · href 는 남김)', () => {
     const src = read('../components/legal/IssueConsentLabel.vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
     const links = findAll(tpl, (n) => n.tag === 'a').map((l) => l.node)
-    expect(links.map((l) => [attr(l, 'href'), attr(l, 'target'), attr(l, 'rel')])).toEqual([
-      ['/terms', '_blank', 'noopener'],
-      ['/refund', '_blank', 'noopener'],
+    expect(links.map((l) => [attr(l, 'href'), attr(l, 'target'), attr(l, 'aria-haspopup'), dir(l, '@click.prevent')])).toEqual([
+      ['/terms', undefined, 'dialog', "emit('open', 'terms')"],
+      ['/refund', undefined, 'dialog', "emit('open', 'refund')"],
     ])
-    for (const l of links) expect(text(l)).toContain('<span class="sr-only"> (새 창)</span>')
-    // 화면 글자(낭독기 전용 «(새 창)» 빼고 · 줄바꿈 정리) = 결정 글자
-    const shown = template(src)
-      .replace(/<span class="sr-only">[^<]*<\/span>/g, '')
-      .replace(/<[^>]+>/g, '')
-      .replace(/\s+/g, ' ')
-      .replace(/ (과|을) /g, '$1 ')
-      .trim()
+    expect(src).toMatch(/defineEmits<\{ open: \[doc: 'terms' \| 'refund'\] \}>\(\)/)
+    // 화면 글자(줄바꿈 정리) = 결정 글자
+    const shown = template(src).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
     expect(shown).toBe('(필수) 이용약관과 취소·환불 정책을 확인했으며 설치 전 환불 시 환불 비용이 발생하는 것에 동의합니다.')
+  })
+
+  it('약관 · 환불 정책 하단 시트(D-45) — 확인 팝업 안 · X(closable) · 본문 = 생성물(LegalMarkdown) · 본문만 스크롤 · 팝업을 닫으면 시트도', () => {
+    const src = read('./select-date/[orderId].vue')
+    const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
+    const dialog = find(tpl, (n) => n.tag === 'NAlertDialog' && dir(n, 'v-model') === 'isConfirmOrderVisible')!
+    const sheets = findAll(dialog, (n) => n.tag === 'NBottomSheet')
+    expect(sheets).toHaveLength(1)
+    const sheet = sheets[0]!.node
+    expect(dir(sheet, 'v-model')).toBe('isLegalSheetOpen')
+    expect(dir(sheet, ':title')).toBe('legalSheetDoc?.title')
+    expect(sheet.props!.some((p) => p.type === 6 && p.name === 'closable')).toBe(true)
+    const md = find(sheet, (n) => n.tag === 'LegalMarkdown')!
+    expect(dir(md, ':doc')).toBe('legalSheetDoc')
+    expect(cls(find(sheet, (n) => n.tag === 'div')!)).toBe('select-date-page__legal-sheet')
+    expect(src).toMatch(/\.select-date-page__legal-sheet \{[^}]*overflow-y: auto;[^}]*\}/)
+    // 두 동의 자리(compact · 보통) 모두 시트를 연다
+    const labels = findAll(dialog, (n) => n.tag === 'IssueConsentLabel').map((l) => dir(l.node, '@open'))
+    expect(labels).toEqual(['openLegalSheet', 'openLegalSheet'])
+    expect(src).toMatch(/legalSheet\.value === 'terms' \? TERMS_DOC : legalSheet\.value === 'refund' \? REFUND_DOC : null/)
+    expect(src).toMatch(/watch\(isConfirmOrderVisible, \(open\) => \{\s*if \(!open\) legalSheet\.value = null/)
   })
 
   it('select-date 확인 팝업(템플릿 AST) — 요약 → 고지(D-42) · 스크롤 영역 배선 · 동의 체크는 밖(compact 면 안) · 체크 전 발급 비활성', () => {

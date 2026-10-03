@@ -275,6 +275,29 @@ watch(isConfirmOrderVisible, async (open) => {
 })
 onMounted(() => window.addEventListener('resize', fitConfirm))
 onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
+
+// 약관 · 환불 정책 하단 시트(spec D-45 · John 2026-10-03) — 새 탭 대신. 열린 문서 하나 · 시트를 닫아도 확인 팝업 · 체크는 그대로
+import LegalMarkdown from '~/components/legal/LegalMarkdown.vue'
+import { REFUND_DOC } from '~/content/legal/refund'
+import { TERMS_DOC } from '~/content/legal/terms'
+
+const legalSheet = ref<'terms' | 'refund' | null>(null)
+const legalSheetDoc = computed(() =>
+  legalSheet.value === 'terms' ? TERMS_DOC : legalSheet.value === 'refund' ? REFUND_DOC : null,
+)
+const isLegalSheetOpen = computed({
+  get: () => legalSheet.value !== null,
+  set: (open: boolean) => {
+    if (!open) legalSheet.value = null
+  },
+})
+const openLegalSheet = (doc: 'terms' | 'refund') => {
+  legalSheet.value = doc
+}
+// 확인 팝업을 닫으면(뒤로 · 발급) 시트도 닫는다 — 다음에 팝업을 열 때 시트가 먼저 떠 있지 않게
+watch(isConfirmOrderVisible, (open) => {
+  if (!open) legalSheet.value = null
+})
 </script>
 
 <template>
@@ -534,7 +557,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
             v-if="confirmCompact"
             class="select-date-page__confirm-agree"
           >
-            <NCheckbox v-model="isPolicyAgreed"><IssueConsentLabel /></NCheckbox>
+            <NCheckbox v-model="isPolicyAgreed"><IssueConsentLabel @open="openLegalSheet" /></NCheckbox>
           </div>
         </div>
       </div>
@@ -544,8 +567,14 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
         class="select-date-page__confirm-agree"
       >
         <!-- 필수 동의(D-44 · John 2026-10-03) — 문구 안 «이용약관» · «취소·환불 정책» 링크(새 탭) · 따로 있던 링크 줄은 없앴다 · 서버 기록은 W1-6 -->
-        <NCheckbox v-model="isPolicyAgreed"><IssueConsentLabel /></NCheckbox>
+        <NCheckbox v-model="isPolicyAgreed"><IssueConsentLabel @open="openLegalSheet" /></NCheckbox>
       </div>
+      <!-- 약관 · 환불 정책 본문(D-45) — 하단 시트 · 팝업 안에 둔다(중첩 레이어 — 바깥 누름 · X · Esc 는 시트만 닫는다) -->
+      <NBottomSheet v-model="isLegalSheetOpen" :title="legalSheetDoc?.title" closable>
+        <div class="select-date-page__legal-sheet">
+          <LegalMarkdown v-if="legalSheetDoc" :doc="legalSheetDoc" />
+        </div>
+      </NBottomSheet>
       <template #actions>
         <div class="select-date-page__confirm-actions">
           <NButton variant="secondary" @click="isConfirmOrderVisible = false">뒤로</NButton>
@@ -591,6 +620,27 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
 </template>
 
 <style scoped>
+.select-date-page__legal-sheet {
+  /* 본문만 스크롤 — 제목 · X 는 시트 위에 남는다 */
+  max-height: 68vh;
+  max-height: 68dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  text-align: left;
+}
+.select-date-page__legal-sheet :deep(.legal-md__title) {
+  /* 시트 제목과 같은 글자 — 두 번 보이지 않게 */
+  display: none;
+}
+.select-date-page__legal-sheet :deep(.legal-md) {
+  padding-top: 0;
+}
+.select-date-page__legal-sheet :deep(.legal-md__title + *) {
+  /* 숨긴 제목 바로 뒤 첫 장 — 위 여백 · 구분선 없이 시트 제목 아래에서 바로 */
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
 .select-date-page {
   display: flex;
   flex-direction: column;
