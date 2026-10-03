@@ -327,7 +327,7 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
 describe('값 자리는 토큰으로만(D-29 · D-30 · D-47)', () => {
   it('생성 문서 · 고객센터 원문에 «(확정 전)» 글자를 직접 쓰지 않는다 — 렌더러가 괄호 낱말을 나눠 감싸 HTML 검사로는 안 보인다 · 값 자리는 P9_4_PENDING 토큰만', () => {
     const norm = (s: string) =>
-      s.replace(/[\u200b-\u200d\u2060\ufeff]/g, '').replace(/[\u00a0\u2007\u202f\u3000]/g, ' ').replace(/\uff08/g, '(').replace(/\uff09/g, ')')
+      s.replace(/[\u00ad\u200b-\u200d\u2060-\u2064\ufeff]/g, '').replace(/[\u00a0\u2007\u202f\u3000]/g, ' ').replace(/\uff08/g, '(').replace(/\uff09/g, ')')
     const strings = (v: unknown): string[] =>
       typeof v === 'string' ? [v] : v && typeof v === 'object' ? Object.values(v).flatMap(strings) : []
     const sources: [string, unknown][] = [
@@ -342,7 +342,7 @@ describe('값 자리는 토큰으로만(D-29 · D-30 · D-47)', () => {
     for (const [name, v] of sources) {
       const all = strings(v)
       expect(all.length, name).toBeGreaterThan(0)
-      for (const t of all) expect(norm(t), name).not.toMatch(/\(\s*확정\s*전\s*\)/) // «구매확정 전» 같은 문장은 막지 않는다
+      for (const t of all) expect(norm(t), name).not.toMatch(/\(\s*확정\s*전|확정\s*전\s*\)/) // 괄호 앞 · 뒤 어느 쪽이든(«(확정 전 — …)» · «(… 확정 전)») — «구매확정 전» 같은 문장은 막지 않는다
     }
   })
 })
