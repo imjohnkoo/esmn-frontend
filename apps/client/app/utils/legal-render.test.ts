@@ -26,7 +26,7 @@ const visible = (html: string) =>
     .replace(/&amp;/g, '&')
 
 describe('renderBlocks — 그린 HTML', () => {
-  it('장 · 조 제목 · 번호 항(시작 번호) · 하위 글머리 · 굵게 · 표(제목 칸 scope) · 확정 전 표기', async () => {
+  it('장 · 조 제목 · 번호 항(시작 번호) · 하위 글머리 · 굵게 · 표(제목 칸 scope) · 값 자리는 글자 없이 표식만(D-47)', async () => {
     const html = await render(
       [
         '## 제4장 청약철회',
@@ -50,7 +50,9 @@ describe('renderBlocks — 그린 HTML', () => {
     expect(html).toContain('<th scope="col">수탁자</th>')
     expect(html).toContain('role="region"')
     expect(html).toContain('tabindex="0"')
-    expect(html).toContain('<span class="legal-md__pending">(확정 전)</span>')
+    // 법정 문서 본문 — «(확정 전)» 글자 없이 빈 표식(승격 전 렌더 확인이 센다 · spec D-47)
+    expect(html).toContain('<span class="legal-md__pending" data-pending></span>')
+    expect(html).not.toContain('(확정 전)')
     expect(html).not.toContain(P9_4_PENDING)
   })
 
@@ -119,7 +121,7 @@ describe('renderBlocks — 그린 HTML', () => {
 })
 
 describe.each([TERMS_DOC, PRIVACY_DOC, REFUND_DOC])('renderDoc($slug) — 실문서를 그대로 그린다', (doc) => {
-  /** 게시용 마크다운 → 화면에 보여야 할 글자(꾸밈 기호 · 번호 · 구분행 · 표 칸 경계 제거, 자리표시자 → 표기) — 공백은 비교하지 않는다 */
+  /** 게시용 마크다운 → 화면에 보여야 할 글자(꾸밈 기호 · 번호 · 구분행 · 표 칸 경계 제거, 자리표시자 → 글자 없음 · D-47) — 공백은 비교하지 않는다 */
   const expected = doc.markdown
     .split('\n')
     .filter((l) => !/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(l))
@@ -131,8 +133,14 @@ describe.each([TERMS_DOC, PRIVACY_DOC, REFUND_DOC])('renderDoc($slug) — 실문
     )
     .join('')
     .split(P9_4_PENDING)
-    .join('(확정 전)')
+    .join('')
     .replace(/\s+/g, '')
+
+  it('값 자리 수 = 빈 표식 수(D-47 — 글자는 없고 표식은 남는다)', async () => {
+    const html = await ssr(() => renderDoc(doc))
+    expect(html.split('<span class="legal-md__pending" data-pending></span>').length - 1).toBe(doc.markdown.split(P9_4_PENDING).length - 1)
+    expect(html).not.toContain('(확정 전)')
+  })
 
   it('화면 글자 = 원문 글자(한 글자도 빠지거나 더해지지 않는다) · 제목 · 자리표시자 이름 0', async () => {
     const html = await ssr(() => renderDoc(doc))

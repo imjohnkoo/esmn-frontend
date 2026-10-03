@@ -43,14 +43,17 @@ function renderText(text: string): Child[] {
 // legal-md__sr = 법정 문서 스타일 · sr-only = Tailwind(푸터처럼 LegalMarkdown 스타일이 실리지 않는 화면에서도 숨김)
 const newTabNote = () => h('span', { class: 'legal-md__sr sr-only' }, ' (새 창)')
 
-/** newTab = 사이트 안 경로도 새 창(발급 팝업처럼 입력 · 상태를 잃으면 안 되는 자리) */
-export function renderInlines(xs: Inline[], opts: { newTab?: boolean } = {}): Child[] {
+/** newTab = 사이트 안 경로도 새 창(발급 팝업처럼 입력 · 상태를 잃으면 안 되는 자리)
+ *  blankPending = 값 자리를 글자 없이(법정 문서 본문 — spec D-47). 표식(legal-md__pending · data-pending)은 남는다 — 승격 전 렌더 확인이 센다 */
+export function renderInlines(xs: Inline[], opts: { newTab?: boolean; blankPending?: boolean } = {}): Child[] {
   return merge(
     xs.flatMap((x): Child[] => {
       if (x.t === 'text') return renderText(x.text)
       if (x.t === 'b') return [h('strong', renderInlines(x.children, opts))]
       if (x.t === 'pending')
-        return [h('span', { class: 'legal-md__pending' }, displayValue(x.token))]
+        return [
+          h('span', { class: 'legal-md__pending', 'data-pending': '' }, opts.blankPending ? '' : displayValue(x.token)),
+        ]
       // 사이트 안 경로는 같은 탭, 바깥(https)은 새 탭 — 화면 낭독기에는 «(새 창)»
       return x.href.startsWith('/') && !opts.newTab
         ? [h('a', { href: x.href, class: 'legal-md__link' }, renderInlines(x.children, opts))]
@@ -64,11 +67,14 @@ export function renderInlines(xs: Inline[], opts: { newTab?: boolean } = {}): Ch
   )
 }
 
+/** 법정 문서 본문의 인라인 — 값 자리는 글자 없이(spec D-47 · John 2026-10-03 «확정전이라는 단어는 삭제») */
+const DOC_INLINE = { blankPending: true } as const
+
 /** 한 블록. tableLabel = 표 영역 이름(renderBlocks 가 바로 앞 제목에서 만든다) */
 export function renderBlock(b: LegalBlock, tableLabel = '표'): VNode {
-  if (b.t === 'h2') return h('h2', { class: 'legal-md__h2' }, renderInlines(b.text))
-  if (b.t === 'h3') return h('h3', { class: 'legal-md__h3' }, renderInlines(b.text))
-  if (b.t === 'p') return h('p', { class: 'legal-md__p' }, renderInlines(b.text))
+  if (b.t === 'h2') return h('h2', { class: 'legal-md__h2' }, renderInlines(b.text, DOC_INLINE))
+  if (b.t === 'h3') return h('h3', { class: 'legal-md__h3' }, renderInlines(b.text, DOC_INLINE))
+  if (b.t === 'p') return h('p', { class: 'legal-md__p' }, renderInlines(b.text, DOC_INLINE))
   if (b.t === 'list')
     return h(
       b.ordered ? 'ol' : 'ul',
@@ -77,7 +83,7 @@ export function renderBlock(b: LegalBlock, tableLabel = '표'): VNode {
         start: b.ordered && b.start !== 1 ? b.start : undefined,
       },
       b.items.map((it) =>
-        h('li', [...renderInlines(it.text), ...it.children.map((c) => renderBlock(c, tableLabel))]),
+        h('li', [...renderInlines(it.text, DOC_INLINE), ...it.children.map((c) => renderBlock(c, tableLabel))]),
       ),
     )
   // 표 — 열이 많은 표(방침 1장 6열)는 열마다 최소 120px, 좁은 화면에서는 표만 가로로 넘긴다(키보드로도 — tabindex)
@@ -95,7 +101,7 @@ export function renderBlock(b: LegalBlock, tableLabel = '표'): VNode {
           h('thead', [
             h(
               'tr',
-              b.head.map((c) => h('th', { scope: 'col' }, renderInlines(c))),
+              b.head.map((c) => h('th', { scope: 'col' }, renderInlines(c, DOC_INLINE))),
             ),
           ]),
           h(
@@ -103,7 +109,7 @@ export function renderBlock(b: LegalBlock, tableLabel = '표'): VNode {
             b.rows.map((r) =>
               h(
                 'tr',
-                r.map((c) => h('td', renderInlines(c))),
+                r.map((c) => h('td', renderInlines(c, DOC_INLINE))),
               ),
             ),
           ),

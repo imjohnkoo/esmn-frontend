@@ -153,7 +153,7 @@ for p in / /my /my-esim /terms /privacy /refund /guide /search /checkout-preview
   printf '%s' "$html" | grep -q "buildId:\"$want_build\"" || { echo "⛔ $p 가 이 빌드($want_build)의 응답이 아니다 — 중단"; exit 1; }
   printf '%s' "$html" | grep -q '704-24-01747' || { echo "⛔ $p 에 푸터 사업자등록번호가 없다(양성 대조 실패) — 중단"; exit 1; }
   norm="$(printf '%s' "$html" | sed -e 's/&nbsp;/ /g' -e 's/&#160;/ /g' -e 's/&#xa0;/ /g' -e $'s/\xc2\xa0/ /g' | tr -s '[:space:]' ' ')"
-  n=$(printf '%s' "$norm" | grep -o -e '(확정 전)' -e '（확정 전）' -e '문안을 확정하고 있어요' | wc -l | tr -d ' ')
+  n=$(printf '%s' "$norm" | grep -o -e '(확정 전)' -e '（확정 전）' -e '문안을 확정하고 있어요' -e 'legal-md__pending' | wc -l | tr -d ' ')   # 법정 문서 본문의 값 자리는 글자 없이 표식만(W1-2 D-47)
   [ "$n" -eq 0 ] || { echo "⛔ $p 에 확정 전 문안 ${n}건 — 중단"; exit 1; }
 done
 code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE/business")"   # W1-2 D-39 — 페이지가 없어야 한다(되살아나거나 3xx 로 돌리면 중단)
