@@ -16,6 +16,8 @@ interface DeviceGroup {
   brand: string
   models: string[]
   note?: string
+  /** 카드를 펼치지 않아도 보이는 경고 — 제목 바로 아래(spec D-55) */
+  warning?: string
 }
 
 const supportedGroups: DeviceGroup[] = [
@@ -45,6 +47,7 @@ const supportedGroups: DeviceGroup[] = [
       '기본 7세대 이후',
       '이후 출시 모델',
     ],
+    warning: 'Wi-Fi 모델은 사용이 불가합니다.',
   },
   {
     brand: '갤럭시 (국내판)',
@@ -158,6 +161,24 @@ const unsupportedItems: UnsupportedItem[] = [
               <path d="M6 9l6 6 6-6" />
             </svg>
           </button>
+          <p v-if="group.warning" class="devices-page__warning" role="note">
+            <svg
+              class="devices-page__warning-icon"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 3 2 20h20L12 3z" />
+              <path d="M12 10v4M12 17h.01" />
+            </svg>
+            {{ group.warning }}
+          </p>
           <div v-show="isOpen(group.brand)" class="devices-page__card-body">
             <ul class="devices-page__models">
               <li v-for="model in group.models" :key="model" class="devices-page__model">
@@ -326,6 +347,25 @@ const unsupportedItems: UnsupportedItem[] = [
   font-weight: 500;
   color: #374151;
   line-height: 1.4;
+}
+
+.devices-page__warning {
+  /* 카드 제목 바로 아래 — 접혀 있어도 보인다(spec D-55) */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -6px 16px 14px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--n-color-warning-50, #fffbeb);
+  color: var(--n-color-warning-700, #b45309);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.devices-page__warning-icon {
+  flex-shrink: 0;
 }
 
 .devices-page__note {
