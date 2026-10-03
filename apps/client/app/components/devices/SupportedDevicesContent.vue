@@ -20,7 +20,7 @@ interface DeviceGroup {
 
 const supportedGroups: DeviceGroup[] = [
   {
-    brand: 'iPhone',
+    brand: '아이폰',
     models: [
       'XS · XR',
       '11 ~ 15 전 모델 (Plus · Pro · mini)',
@@ -30,7 +30,7 @@ const supportedGroups: DeviceGroup[] = [
       'SE 2 · 3세대',
       '이후 출시 모델',
     ],
-    note: 'iPhone 17 Air 는 물리심 없이 eSIM 만 쓰는 eSIM 전용 모델이에요.',
+    note: '아이폰 17 Air 는 물리심 없이 eSIM 만 쓰는 eSIM 전용 모델이에요.',
   },
   {
     brand: 'iPad (셀룰러 모델)',
@@ -82,12 +82,12 @@ const unsupportedItems: UnsupportedItem[] = [
       'S22 · S21 · S20 시리즈, Note 20, Z 플립3 이전, Z 폴드3 이전 모델은 eSIM 하드웨어가 없어요.',
   },
   {
-    title: '중국 본토에서 구매한 iPhone',
+    title: '중국 본토에서 구매한 아이폰',
     description:
       '17 Air (eSIM 전용) 와 17e 만 eSIM 을 쓸 수 있어요. 그 외 전 모델 (17 · 17 Pro 포함) 은 물리심 전용이에요.',
   },
   {
-    title: '홍콩 · 마카오에서 구매한 iPhone',
+    title: '홍콩 · 마카오에서 구매한 아이폰',
     description: '17 Air · 17e · 16e · 13 mini · 12 mini · SE 2 · 3세대 · XS 만 사용할 수 있어요.',
   },
   {

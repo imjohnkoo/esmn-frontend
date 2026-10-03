@@ -68,6 +68,10 @@ describe('DocSheet — 키마다 그 문서', () => {
     expect(body()).toContain('2026.08.19')
     expect(body()).toContain('사용할 수 있어요')
     expect(body()).toContain('사용할 수 없어요')
+    // 제품명은 «아이폰»(D-52 — 카피 규칙 9/13) · 모델명 · iPad 는 그대로
+    expect(body()).toContain('아이폰')
+    expect(body()).not.toContain('iPhone')
+    expect(body()).toContain('iPad (셀룰러 모델)')
     // 접이식은 v-show — 글자는 DOM 에 있고 카드 본문이 display:none 으로 접혀 있다
     const card = [...document.body.querySelectorAll<HTMLButtonElement>('.legal-sheet .devices-page__card-head')].find((b) =>
       b.textContent?.includes('갤럭시 (국내판)'),
