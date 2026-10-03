@@ -538,7 +538,7 @@ const noticeSheet = (href: string) => (href === '/supported-devices' ? () => ope
               <line x1="12" y1="9" x2="12" y2="13" />
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
-            <!-- 05-A 원문(client-shell spec F-21) — 제목 · 안내 5줄(설치 전 3,500원 줄은 굵게 — 약관 12조③ «미리 표시» · D-32) · 링크는 새 창 -->
+            <!-- 05-A(client-shell spec F-21 · D-43 · D-49) — 제목 + «지원 기기 확인» 1줄 · 링크는 하단 시트(D-48) -->
             <div class="select-date-page__confirm-notice">
               <p class="select-date-page__confirm-notice-title">{{ ISSUE_NOTICE.heading }}</p>
               <component :is="renderNoticeList(NOTICE_LINES, [], { sheet: noticeSheet })" />
