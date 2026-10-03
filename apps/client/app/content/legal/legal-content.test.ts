@@ -326,7 +326,8 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
 
 describe('값 자리는 토큰으로만(D-29 · D-30 · D-47)', () => {
   it('생성 문서 · 고객센터 원문에 «(확정 전)» 글자를 직접 쓰지 않는다 — 렌더러가 괄호 낱말을 나눠 감싸 HTML 검사로는 안 보인다 · 값 자리는 P9_4_PENDING 토큰만', () => {
-    const norm = (s: string) => s.replace(/[\u00a0\u2007\u202f]/g, ' ').replace(/\uff08/g, '(').replace(/\uff09/g, ')')
+    const norm = (s: string) =>
+      s.replace(/[\u200b-\u200d\u2060\ufeff]/g, '').replace(/[\u00a0\u2007\u202f\u3000]/g, ' ').replace(/\uff08/g, '(').replace(/\uff09/g, ')')
     const strings = (v: unknown): string[] =>
       typeof v === 'string' ? [v] : v && typeof v === 'object' ? Object.values(v).flatMap(strings) : []
     const sources: [string, unknown][] = [

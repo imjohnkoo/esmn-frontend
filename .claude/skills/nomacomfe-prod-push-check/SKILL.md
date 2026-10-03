@@ -152,7 +152,7 @@ for p in / /my /my-esim /terms /privacy /refund /guide /search /checkout-preview
   html="$(curl -fsS "$BASE$p")" || { echo "⛔ $p 응답 실패 — 중단"; exit 1; }       # 서버가 없거나 4xx · 5xx 면 0건으로 통과하지 않게
   printf '%s' "$html" | grep -q "buildId:\"$want_build\"" || { echo "⛔ $p 가 이 빌드($want_build)의 응답이 아니다 — 중단"; exit 1; }
   printf '%s' "$html" | grep -q '704-24-01747' || { echo "⛔ $p 에 푸터 사업자등록번호가 없다(양성 대조 실패) — 중단"; exit 1; }
-  norm="$(printf '%s' "$html" | sed -e 's/&nbsp;/ /g' -e 's/&#160;/ /g' -e 's/&#xa0;/ /g' -e $'s/\xc2\xa0/ /g' | tr -s '[:space:]' ' ')"
+  norm="$(printf '%s' "$html" | sed -e 's/&nbsp;/ /g' -e 's/&#160;/ /g' -e 's/&#xa0;/ /g' -e $'s/\xc2\xa0/ /g' -e $'s/\xe2\x80\x8b//g; s/\xe2\x80\x8c//g; s/\xe2\x80\x8d//g; s/\xe2\x81\xa0//g; s/\xef\xbb\xbf//g' | tr -s '[:space:]' ' ')"   # zero-width(U+200B~D · 2060 · FEFF)는 지운다
   n=$(printf '%s' "$norm" | grep -o -e '(확정 전)' -e '（확정 전）' -e '문안을 확정하고 있어요' -e 'data-pending' -e 'P9_4_PENDING' | wc -l | tr -d ' ')   # 법정 문서 본문의 값 자리는 글자 없이 data-pending 표식만(W1-2 D-47) — 클래스 이름은 인라인 CSS 에도 있어 세지 않는다
   # 글자로도 센다 — 렌더러가 괄호 낱말을 줄바꿈 방지 span 으로 나눠 감싸(«(확정» · «전)») 위 HTML 검사로는 원문에 직접 쓴 «(확정 전)» 이 안 보인다
   text="$(printf '%s' "$norm" | sed -e 's/<head>.*<\/head>//' -e 's/<[^>]*>//g' | tr -s ' ' ' ')"
