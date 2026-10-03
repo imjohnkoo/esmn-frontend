@@ -105,7 +105,7 @@ Phase 2에서 판정된 앱만 테스트:
 
 ```bash
 yarn workspace @imjohnkoo/design-vue run test --run   # DS 변경 시 (137 tests — 2026-10-03)
-yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A 줄 고정 · 동의 문구 · 하단 시트 마운트 포함(전부 통과해야 한다 — 2026-10-03 기준 476 tests)
+yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A 줄 고정 · 동의 문구 · 하단 시트 마운트 포함(전부 통과해야 한다 — 2026-10-03 기준 488 tests)
 yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 ```
 

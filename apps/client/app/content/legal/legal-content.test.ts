@@ -34,6 +34,10 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file, key }) => {
     const n = DOC_RULES[key].edits?.length ?? 0
     expect(/^\/\/ 게시 수정 (\d+)건 — /m.exec(src)?.[1] ?? '0').toBe(String(n))
   })
+  it('값 채움(정본의 값 자리를 결정 글자로)도 머리줄에 드러난다 — 규칙의 채움 건수와 같다(D-54)', () => {
+    const n = Object.keys(DOC_RULES[key].fills ?? {}).length
+    expect(/^\/\/ 값 채움 (\d+)건 — /m.exec(src)?.[1] ?? '0').toBe(String(n))
+  })
 
   it('생성물을 손으로 고치지 않았다 — 머리줄의 본문 해시 = 지금 본문', () => {
     expect(header(src)).toBe(sha(unmark(doc.markdown)))
@@ -250,6 +254,9 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
       expect(read(file)).toMatch(origin)
       expect(JSON.stringify(lines)).not.toMatch(/legal-pages|\.md/)
     }
+  })
+  it('사업자정보 생성물 머리 — 값 채움 1건(D-54 호스팅 AWS)', () => {
+    expect(/^\/\/ 값 채움 (\d+)건 — /m.exec(read('./business.ts'))?.[1]).toBe('1')
   })
   it('사업자정보 7줄 — 순서 · 공정위 조회 링크 · 호스팅 = AWS(D-54 값 채움 · 값 자리 0)', () => {
     expect(Object.keys(BUSINESS_INFO)).toEqual([

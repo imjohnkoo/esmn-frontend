@@ -275,6 +275,10 @@ describe('값 채움(fills · D-54) — 값 자리 태그를 결정 글자로', 
     expect(() => toPosting(src, { ...two, fills: { 2: 'X' } })).toThrow(/값 채움 순번 2/)
     expect(() => toPosting(src.replace(SLOT, 'AWS'), { ...two, fills: { 0: 'AWS' } })).toThrow(/찾지 못했다/)
   })
+  it('채운 자리가 걷어 내는 줄(인용 블록) 안에만 있으면 멈춘다 — 채움 글자가 조용히 사라지지 않게(QA ⑥ m1)', () => {
+    const quoted = `# 문서\n\n> 메모 ${SLOT}\n\n| 수탁자 | 업무 |\n| --- | --- |\n| 다른 글자 (서울 리전) | 보관 |\n| (주)회사 ${SLOT2} | 발송 |\n`
+    expect(() => toPosting(quoted, { ...two, fills: { 0: 'AWS', 1: '' } })).toThrow(/값 채움 1 의 자리가 게시 본문에 없다/)
+  })
   it('조각(toBlock)도 같다 — 채운 줄은 글자 · 확정 전 0', () => {
     const blockSrc = ['# 문서', '## 1. 첫 절', '```', `호스팅: ${SLOT.slice(1, -1)}`, '```'].join('\n')
     const rules = {
