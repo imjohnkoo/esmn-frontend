@@ -40,21 +40,49 @@ function renderText(text: string): Child[] {
     )
 }
 
-const newTabNote = () => h('span', { class: 'legal-md__sr' }, ' (새 창)')
+// legal-md__sr = 법정 문서 스타일 · sr-only = Tailwind(LegalMarkdown 스타일이 실리지 않는 화면에서도 숨김)
+const newTabNote = () => h('span', { class: 'legal-md__sr sr-only' }, ' (새 창)')
 
-export function renderInlines(xs: Inline[]): Child[] {
+/** newTab = 사이트 안 경로도 새 창(발급 팝업처럼 입력 · 상태를 잃으면 안 되는 자리)
+ *  blankPending = 값 자리를 글자 없이(법정 문서 본문 — spec D-47). 표식(legal-md__pending · data-pending)은 남는다 — 승격 전 렌더 확인이 센다 */
+export function renderInlines(
+  xs: Inline[],
+  opts: { newTab?: boolean; blankPending?: boolean; sheet?: (href: string) => (() => void) | undefined } = {},
+): Child[] {
   return merge(
     xs.flatMap((x): Child[] => {
       if (x.t === 'text') return renderText(x.text)
-      if (x.t === 'b') return [h('strong', renderInlines(x.children))]
+      if (x.t === 'b') return [h('strong', renderInlines(x.children, opts))]
       if (x.t === 'pending')
-        return [h('span', { class: 'legal-md__pending' }, displayValue(x.token))]
+        return [
+          h('span', { class: 'legal-md__pending', 'data-pending': '' }, opts.blankPending ? '' : displayValue(x.token)),
+        ]
+      // sheet = 이 주소를 하단 시트로 여는 함수(spec D-48) — 있으면 새 탭 대신 시트(href 는 남김 · 새 창 표기 없음)
+      const openSheet = opts.sheet?.(x.href)
+      if (openSheet)
+        return [
+          h(
+            'a',
+            {
+              href: x.href,
+              class: 'legal-md__link',
+              'aria-haspopup': 'dialog',
+              onClick: (e: MouseEvent) => {
+                // cmd · ctrl · shift · alt 클릭(데스크톱 «새 탭에서 열기»)은 브라우저 기본 동작 그대로(href)
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+                e.preventDefault()
+                openSheet()
+              },
+            },
+            renderInlines(x.children, opts),
+          ),
+        ]
       // 사이트 안 경로는 같은 탭, 바깥(https)은 새 탭 — 화면 낭독기에는 «(새 창)»
-      return x.href.startsWith('/')
-        ? [h('a', { href: x.href, class: 'legal-md__link' }, renderInlines(x.children))]
+      return x.href.startsWith('/') && !opts.newTab
+        ? [h('a', { href: x.href, class: 'legal-md__link' }, renderInlines(x.children, opts))]
         : [
             h('a', { href: x.href, class: 'legal-md__link', target: '_blank', rel: 'noopener' }, [
-              ...renderInlines(x.children),
+              ...renderInlines(x.children, opts),
               newTabNote(),
             ]),
           ]
@@ -62,11 +90,14 @@ export function renderInlines(xs: Inline[]): Child[] {
   )
 }
 
+/** 법정 문서 본문의 인라인 — 값 자리는 글자 없이(spec D-47 · John 2026-10-03 «확정전이라는 단어는 삭제») */
+const DOC_INLINE = { blankPending: true } as const
+
 /** 한 블록. tableLabel = 표 영역 이름(renderBlocks 가 바로 앞 제목에서 만든다) */
 export function renderBlock(b: LegalBlock, tableLabel = '표'): VNode {
-  if (b.t === 'h2') return h('h2', { class: 'legal-md__h2' }, renderInlines(b.text))
-  if (b.t === 'h3') return h('h3', { class: 'legal-md__h3' }, renderInlines(b.text))
-  if (b.t === 'p') return h('p', { class: 'legal-md__p' }, renderInlines(b.text))
+  if (b.t === 'h2') return h('h2', { class: 'legal-md__h2' }, renderInlines(b.text, DOC_INLINE))
+  if (b.t === 'h3') return h('h3', { class: 'legal-md__h3' }, renderInlines(b.text, DOC_INLINE))
+  if (b.t === 'p') return h('p', { class: 'legal-md__p' }, renderInlines(b.text, DOC_INLINE))
   if (b.t === 'list')
     return h(
       b.ordered ? 'ol' : 'ul',
@@ -75,7 +106,7 @@ export function renderBlock(b: LegalBlock, tableLabel = '표'): VNode {
         start: b.ordered && b.start !== 1 ? b.start : undefined,
       },
       b.items.map((it) =>
-        h('li', [...renderInlines(it.text), ...it.children.map((c) => renderBlock(c, tableLabel))]),
+        h('li', [...renderInlines(it.text, DOC_INLINE), ...it.children.map((c) => renderBlock(c, tableLabel))]),
       ),
     )
   // 표 — 열이 많은 표(방침 1장 6열)는 열마다 최소 120px, 좁은 화면에서는 표만 가로로 넘긴다(키보드로도 — tabindex)
@@ -93,7 +124,7 @@ export function renderBlock(b: LegalBlock, tableLabel = '표'): VNode {
           h('thead', [
             h(
               'tr',
-              b.head.map((c) => h('th', { scope: 'col' }, renderInlines(c))),
+              b.head.map((c) => h('th', { scope: 'col' }, renderInlines(c, DOC_INLINE))),
             ),
           ]),
           h(
@@ -101,7 +132,7 @@ export function renderBlock(b: LegalBlock, tableLabel = '표'): VNode {
             b.rows.map((r) =>
               h(
                 'tr',
-                r.map((c) => h('td', renderInlines(c))),
+                r.map((c) => h('td', renderInlines(c, DOC_INLINE))),
               ),
             ),
           ),
@@ -111,14 +142,16 @@ export function renderBlock(b: LegalBlock, tableLabel = '표'): VNode {
   )
 }
 
-/** 블록 목록 — 표 영역 이름은 바로 앞 장 · 조 제목(같은 제목 아래 둘째 표부터 번호)이라 낭독기에서 서로 구분된다 */
-export function renderBlocks(blocks: LegalBlock[]): VNode[] {
-  let heading = ''
+/** 블록 목록 — 표 영역 이름은 바로 앞 장 · 조 제목(같은 제목 아래 둘째 표부터 번호)이라 낭독기에서 서로 구분된다.
+ *  앞에 제목이 없는 표는 fallback(문서 제목 — 장 · 조 제목 앞에 놓인 표가 «표 1» 로 읽히지 않게) */
+export function renderBlocks(blocks: LegalBlock[], fallback = ''): VNode[] {
+  let heading = fallback
   let nth = 0
   let all = 0
   return blocks.map((b) => {
     if (b.t === 'h2' || b.t === 'h3') {
-      heading = inlineText(b.text)
+      // 표 영역 이름도 본문처럼 값 자리는 글자 없이(D-47) — 빈 자리 앞뒤 공백은 하나로
+      heading = inlineText(b.text, DOC_INLINE).replace(/\s+/g, ' ').trim()
       nth = 0
     }
     if (b.t !== 'table') return renderBlock(b)
@@ -132,7 +165,7 @@ export function renderBlocks(blocks: LegalBlock[]): VNode[] {
 export function renderDoc(doc: LegalMarkdownDoc): VNode {
   return h('article', { class: 'legal-md' }, [
     h('h1', { class: 'legal-md__title' }, doc.title),
-    ...renderBlocks(parseLegalMarkdown(doc.markdown)),
+    ...renderBlocks(parseLegalMarkdown(doc.markdown), doc.title),
   ])
 }
 
@@ -150,4 +183,20 @@ export function renderBusinessInfo(lines: readonly string[]): VNode {
       h('a', { href: '/terms', class: 'issuer-biz__link' }, '이용약관'),
     ]),
   ])
+}
+
+/** 발급 화면 고지 목록(05-A — F-21) — 줄마다 한 항목 · 링크는 모두 새 창 · strongAt = 굵게 둘 줄(설치 전 3,500원 환불 — 약관 12조③ «미리 표시») */
+export function renderNoticeList(
+  lines: readonly string[],
+  strongAt: readonly number[] = [],
+  opts: { sheet?: (href: string) => (() => void) | undefined } = {},
+): VNode {
+  return h(
+    'ul',
+    { class: 'issue-notice__list' },
+    lines.map((l, i) => {
+      const inner = renderInlines(parseInline(l), { newTab: true, sheet: opts.sheet })
+      return h('li', strongAt.includes(i) ? [h('strong', inner)] : inner)
+    }),
+  )
 }

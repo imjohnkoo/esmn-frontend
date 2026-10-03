@@ -2,6 +2,13 @@
 
 `@imjohnkoo/design-vue` 변경 사항. Semantic-ish. 날짜는 한국 시각 기준.
 
+## 0.7.1 — 2026-10-03
+
+### Added
+
+- `NCheckbox` — 문구 기본 slot. 링크 같은 꾸민 문구를 넣을 수 있다(slot 이 없으면 지금처럼 `label` 글자). 문구 칸은 `<label>` 안이라 글자를 누르면 체크되고, 문구 안 링크를 누르면 링크만 열린다(브라우저 규칙 — label 안 대화형 요소).
+- `NBottomSheet` — `closable`(제목 줄 오른쪽 X 닫기 버튼 · reka `DialogClose`) · `closeLabel`(접근 이름, 기본 «닫기»). 기본값 false — 지금 쓰는 곳은 그대로.
+
 ## 0.4.0 — 2026-05-19
 
 eSIMmany B2C 4-step flow 를 위한 **토스풍 모바일 컴포넌트 세트** 도입. design-tokens 의 `primary` 팔레트, `radius`, `shadow` 와 동시 갱신.

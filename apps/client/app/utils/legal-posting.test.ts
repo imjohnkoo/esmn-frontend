@@ -7,6 +7,7 @@ import {
   PENDING_MARK,
   applyEdits,
   blockModuleSource,
+  docSource,
   forbiddenIn,
   moduleSource,
   sha256,
@@ -79,9 +80,75 @@ describe('toPosting — 걷어 낼 것', () => {
       '## 제2장\n본문\n',
     ],
     ['괄호 머리', '## (내부) 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
-    ['본문 장 이름에 낱말이 있을 뿐이면 남긴다', '## 제5장 결정 기록의 보관\n본문', '## 제5장 결정 기록의 보관\n본문\n'],
+    ['부록 머리', '## 부록 — 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['부록 콜론 · 붙여 씀', '## 부록: 결정기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['번호 + 부록', '## 7. 부록 — 결정 기록\n원가\n## 8. 다음\n본문', '## 8. 다음\n본문\n'],
+    ['부록 A', '## 부록 A — 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['내부', '## 내부 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['부록 A.', '## 부록 A. 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['부록 1)', '## 부록 1) 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['의사결정 기록', '## 의사결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['결정 로그', '## 결정 로그\n원가\n## 다음\n본문', '## 다음\n본문\n'],
+    ['참고 —', '## 참고 — 결정 기록\n원가\n## 다음\n본문', '## 다음\n본문\n'],
   ])('«결정 기록» 절 — %s', (_, body, out) => {
     expect(toPosting(`# 문서\n${body}`, none).body).toBe(out)
+  })
+
+  it.each([
+    '## 제5장 결정 기록의 보관\n본문',
+    '## 5. 결정 기록의 보관\n본문',
+    '## 결정 기록과 근거\n원가',
+    '## 결정기록표\n원가',
+    '## 결정 기록들\n원가',
+    '## 7. 결정 기록과 검토 메모\n원가',
+    '**결정 기록과 근거**\n원가',
+    '## 의사 결정 기록\n원가',
+    '## 내부 의사결정 기록\n원가',
+    '## 부록 A-1 — 결정 기록\n원가',
+    '• 결정 기록: 원가',
+    '※ 결정 기록 — 원가',
+    '(결정 기록) 원가',
+    '«결정 기록» 원가',
+    '· 결정 기록',
+    '① 결정 기록',
+    '■ 결정 기록',
+    '▶ 결정 기록',
+    '○ 결정 기록',
+    '「결정 기록」',
+    '"결정 기록"',
+    '— 결정 기록',
+    '【결정 기록】',
+    '가. 결정 기록',
+    'A. 결정 기록',
+    '부록 — 결정 기록',
+    '내부 결정 기록:',
+    '제3절 결정 기록',
+    'III. 결정 기록',
+    'VII) 결정 기록',
+    '가-1. 결정 기록',
+    '부록 A-1 — 결정 기록',
+    '**결정 기록** (내부)\n원가',
+    '**결정 기록** — 게시 제외\n원가',
+    '- **결정 기록**\n원가',
+    '1. 결정 기록\n원가',
+    '결정 기록:\n원가',
+    '| 결정 기록 | 값 |\n| - | - |\n| a | b |',
+    '## **결정** 기록\n원가',
+    '## 결정·기록\n원가',
+    '## 결정-기록\n원가',
+  ])('«결정 기록» 이 든 제목인데 걷는 절로 판정되지 않으면 멈춘다(사람이 정한다) — %s', (body) => {
+    expect(() => toPosting(`# 문서\n${body}`, none)).toThrow(/걷을지 남길지/)
+  })
+
+  it.each(['본 결정 기록은 내부 메모 — 게시하지 않습니다', '위 결정 기록 참고(내부)', '※ 위 결정 기록 참고', '거. 결정 기록', '본 결정 로그를 참고합니다'])(
+    '«결정 기록» 이 든 본문 줄도 멈춘다(시끄럽게 — 내부 메모가 조용히 게시되지 않게) — %s',
+    (line) => {
+      expect(() => toPosting(`# 문서\n${line}`, none)).toThrow(/걷을지 남길지/)
+    },
+  )
+
+  it('인용 블록 안의 «결정 기록» 줄은 인용째 걷힌다 — 멈추지 않는다', () => {
+    expect(toPosting('# 문서\n> 결정 기록: 내부\n> **결정 기록** 메모\n\n본문', none).body).toBe('본문\n')
   })
 
   it('맨 대괄호로 쓴 메모 · 값 자리도 해시로(백틱 없는 글자의 sha256)', () => {
@@ -145,7 +212,7 @@ describe('toPosting — 걷어 낼 것', () => {
   })
 })
 
-describe('applyEdits — 게시 수정(D-33): 정해 둔 줄 하나의 정해 둔 글자만', () => {
+describe('applyEdits — 게시 수정(D-41): 정해 둔 줄 하나의 정해 둔 글자만', () => {
   const line = '첫 줄 전화 010-0000-0000 끝'
   const body = `# x\n${line}\n둘째 줄\n`
   const edit = { line: sha256(line), from: ' 전화 010-0000-0000', to: '' }
@@ -180,6 +247,23 @@ describe('applyEdits — 게시 수정(D-33): 정해 둔 줄 하나의 정해 �
       /고칠 줄이 0개/,
     )
     expect(toPosting(tick, { ...none, edits: [{ line: sha256('코드 줄'), from: '줄', to: '행' }] }).body).toBe('코드 행\n')
+  })
+})
+
+describe('docSource — 절 하나만 떼어 «# 제목» 을 붙인다(지금 쓰는 문서 규칙은 없다 — D-39)', () => {
+  const src = '# 문서\r\n## 1. 첫\n하나\n## 2. 둘\n본문\n```\n## 코드 안\n```\n끝\n## 2.5 다음\n남\n## 3. 셋\n'
+  it('그 절의 줄만 · 제목은 규칙의 것 · 코드 블록 안 «## » 는 끝이 아니다 · «## 2.5» 는 다른 절(거기서 끝난다)', () => {
+    expect(docSource(src, { section: '## 2.', title: '둘째' })).toBe('# 둘째\n본문\n```\n## 코드 안\n```\n끝')
+    expect(docSource(src, { section: '## 2.5', title: '다음' })).toBe('# 다음\n남')
+    expect(docSource(src, { section: '## 3.', title: '셋째' })).toBe('# 셋째\n')
+  })
+  it('section 이 없으면 원문 그대로', () => {
+    expect(docSource(src, {})).toBe(src)
+  })
+  it('절이 없거나 머리가 둘이거나 제목이 없으면 멈춘다', () => {
+    expect(() => docSource(src, { section: '## 9.', title: 'x' })).toThrow(/절 머리가 0개/)
+    expect(() => docSource('## 2. 가\n## 2. 나\n', { section: '## 2.', title: 'x' })).toThrow(/절 머리가 2개/)
+    expect(() => docSource(src, { section: '## 2.' })).toThrow(/제목/)
   })
 })
 
@@ -296,6 +380,38 @@ describe('toBlock — 정본 한 절의 코드 블록에서 줄 고르기', () =
       }),
     ).toThrow(/코드 블록이 없다/)
   })
+  it('고르지 않은 줄은 skip(줄 글자 sha256)에 있어야 한다 — 정본에 줄이 늘거나 건너뛰던 줄이 바뀌면 멈춘다', () => {
+    const two = '## 1.\n```\n상호: 노마컴\n  새 줄  \n\n```'
+    const one = { ...block, pick: [{ key: 'name', startsWith: '상호:' }], placeholders: [] }
+    expect(() => toBlock(two, one)).toThrow(/고르지도 건너뛰지도 않았다/)
+    expect(toBlock(two, { ...one, skip: [{ sha256: sha256('새 줄'), why: '예시' }] }).lines).toEqual({ name: '상호: 노마컴' })
+    expect(() => toBlock(two.replace('새 줄', '바뀐 줄'), { ...one, skip: [{ sha256: sha256('새 줄'), why: '예시 줄' }] })).toThrow(
+      /고르지도 건너뛰지도/,
+    )
+    expect(() =>
+      toBlock('## 1.\n```\n상호: 노마컴\n```', { ...one, skip: [{ sha256: sha256('새 줄'), why: '예시 줄' }] }),
+    ).toThrow(/건너뛸 줄을 정본에서 찾지 못했다\(정본이 바뀌었다\): 예시 줄/)
+  })
+  it('절의 코드 블록은 정확히 1개 — 둘째 블록(새 동의 · 새 고지)을 조용히 버리지 않는다 · 닫히지 않은 블록도 멈춘다', () => {
+    const one = { ...block, pick: [{ key: 'name', startsWith: '상호:' }], placeholders: [] }
+    // 목록 아래 4칸 들여쓴 펜스 · 인용 안 펜스도 블록으로 센다
+    expect(() => toBlock('## 1. 첫\n```\n상호: 노마컴\n```\n- 항목\n    ```\n    ☐ (필수) 새 동의\n    ```\n', one)).toThrow(/코드 블록이 2개다/)
+    expect(() => toBlock('## 1. 첫\n```\n상호: 노마컴\n```\n> ```\n> ☐ (필수) 새 동의\n> ```\n', one)).toThrow(/코드 블록이 2개다/)
+    // 닫히지 않은 펜스(인용 · 목록 안)는 절 경계를 무너뜨린다 — 멈춘다
+    expect(() => toBlock('## 1. 첫\n```\n상호: 노마컴\n```\n> ```로 감싼 메모\n## 2. 둘\n본문\n', one)).toThrow(/닫히지 않은 코드 블록/)
+    expect(() => docSource('## 2. 둘\n> ```로 감싼 메모\n표\n## 3. 셋\n다른 절\n', { section: '## 2.', title: 't' })).toThrow(/닫히지 않은 코드 블록/)
+    expect(() => toBlock('## 1. 첫\n```\n상호: 노마컴\n```\n설명\n```\n☐ (필수) 새 동의\n```\n', one)).toThrow(/코드 블록이 2개다/)
+    expect(() => toBlock('## 1. 첫\n```\n상호: 노마컴\n', one)).toThrow(/닫히지 않/)
+  })
+  it('절 머리는 정확히 그 번호 · 코드 블록 경계는 펜스 규칙대로(«```코드``` 설명» 은 펜스가 아니다 · ~~~ 안의 ``` 는 닫지 않는다)', () => {
+    const one = { ...block, pick: [{ key: 'name', startsWith: '상호:' }], placeholders: [] }
+    expect(toBlock('## 1.5 앞\n```\n상호: 다른 절\n```\n## 1. 첫\n```\n상호: 노마컴\n```', one).lines.name).toBe('상호: 노마컴')
+    expect(
+      toBlock('## 1. 첫\n```코드``` 설명\n```\n상호: 노마컴\n```\n## 2. 둘\n본문', one).lines.name,
+    ).toBe('상호: 노마컴')
+    expect(() => toBlock('## 1. 첫\n~~~\n상호: 노마컴\n```\n~~~\n', one)).toThrow(/고르지도 건너뛰지도/)
+    expect(() => toBlock('```\n## 1. 코드 안\n```\n## 1. 첫\n```\n상호: 노마컴\n```', one)).not.toThrow()
+  })
   it('정본에 이미 [글자](주소) 로 쓰인 링크 표시에는 주소를 다시 붙이지 않는다', () => {
     const out = toBlock('## 1.\n```\n번호: 1 [조회](https://www.ftc.go.kr/x)\n```', {
       ...block,
@@ -305,7 +421,7 @@ describe('toBlock — 정본 한 절의 코드 블록에서 줄 고르기', () =
     expect(out.lines.num).toBe('번호: 1 [조회](https://www.ftc.go.kr/x)')
   })
   it.each([
-    ['절이 없다', { section: '## 9.' }, /절을 찾지 못했다/],
+    ['절이 없다', { section: '## 9.' }, /절 머리가 0개/],
     ['고를 줄이 없다', { pick: [{ key: 'z', startsWith: '없는 줄:' }] }, /0개다/],
     ['값 자리 해시가 정본에 없다', { placeholders: [sha256('[다른 태그]')] }, /찾지 못했다/],
   ])('%s 면 throw', (_, patch, re) => {
@@ -486,11 +602,12 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
     for (const r of all)
       for (const h of [...r.notes, ...r.placeholders]) expect(h).toMatch(/^[0-9a-f]{64}$/)
   })
-  it('게시 수정 줄은 sha256 · 수정은 결정된 문서에만(terms 1건 — D-33)', () => {
+  it('게시 수정 줄은 sha256 · 수정은 결정된 문서에만(terms 1건 D-33 · refund 1건 D-41)', () => {
     for (const r of Object.values(DOC_RULES)) for (const e of r.edits ?? []) expect(e.line).toMatch(/^[0-9a-f]{64}$/)
     expect(Object.fromEntries(Object.entries(DOC_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
       terms: 1,
       privacy: 0,
+      refund: 1,
     })
   })
   it.each(['../../scripts/legal-posting.ts', '../../scripts/legal-import.mjs'])(
@@ -504,6 +621,7 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
     expect(Object.fromEntries(all.map((r) => [r.exportName, r.file]))).toEqual({
       TERMS_DOC: '01_이용약관.md',
       PRIVACY_DOC: '02_개인정보처리방침.md',
+      REFUND_DOC: '03_취소환불정책.md',
       BUSINESS_INFO: '04_사업자정보-고객센터.md',
       ISSUE_NOTICE: '05_고지문구-동의체크-FAQ.md',
     })
@@ -524,9 +642,9 @@ describe('moduleSource · blockModuleSource — 생성 모듈', () => {
     expect(src).toContain('// 정본: 02_x.md · legal-pages @abc1234')
     expect(src).not.toMatch(/source:/)
   })
-  it('게시 수정이 있는 문서는 머리줄에 건수를 드러낸다(D-33) · 없으면 그 줄이 없다', () => {
+  it('게시 수정이 있는 문서는 머리줄에 건수를 드러낸다(D-41) · 없으면 그 줄이 없다', () => {
     const posting = { title: 't', body: 'a\n', pendingCount: 0 }
-    expect(moduleSource('terms', posting, '01_x.md · legal-pages @abc1234', 'P')).toMatch(/^\/\/ 게시 수정 1건 — /m)
+    expect(moduleSource('refund', posting, '03_x.md · legal-pages @abc1234', 'P')).toMatch(/^\/\/ 게시 수정 1건 — /m)
     expect(moduleSource('privacy', posting, '02_x.md · legal-pages @abc1234', 'P')).not.toMatch(/게시 수정/)
   })
   it('본문의 백슬래시는 템플릿 문자열에서 그대로 살아남는다', () => {

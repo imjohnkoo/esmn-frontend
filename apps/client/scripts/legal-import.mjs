@@ -4,7 +4,9 @@
  * `app/content/legal/<이름>.ts` 를 만든다. 정본은 읽기만 한다. 변환 규칙은 scripts/legal-posting.ts(테스트가 같이 쓴다).
  *
  *   yarn workspace nomacom-client legal:import --from <legal-pages 의 사업운영/2026-09-23_client-법정페이지-초안>
- *   (기본: 문서 terms · privacy + 조각 business · issue-notice — `--docs terms,business` 로 고른다)
+ *   (기본: 규칙의 전부 — 문서 terms · privacy · refund + 조각 business · issue-notice.
+ *    04 2절(`/business` 표)은 게시하지 않는다 — spec D-39.
+ *    `--docs terms,business` 로 고른다)
  *   약관 8조② 의 «자정» 예시 괄호는 게시 수정으로 뺀다(spec D-33 — 규칙 DOC_RULES.terms.edits). 정본이 바뀌어 그 줄을 못 찾으면 멈춘다
  *
  * 모두 먼저 변환 · 검사하고, 전부 통과했을 때만 쓴다(일부만 새 판이 되지 않게). 모르는 태그 · 공개 금지어 · 지원하지 않는 문법 ·
@@ -37,12 +39,12 @@ function args(rules) {
     const i = a.indexOf(k)
     return i >= 0 ? a[i + 1] : undefined
   }
+  const all = [...Object.keys(rules.DOC_RULES), ...Object.keys(rules.BLOCK_RULES)]
   const from = get('--from')
   if (!from) {
-    console.error('사용: legal-import.mjs --from <legal-pages 초안 폴더> [--docs terms,privacy,business,issue-notice]')
+    console.error(`사용: legal-import.mjs --from <legal-pages 초안 폴더> [--docs ${all.join(',')}]`)
     process.exit(2)
   }
-  const all = [...Object.keys(rules.DOC_RULES), ...Object.keys(rules.BLOCK_RULES)]
   const docs = (get('--docs') ?? all.join(',')).split(',').map((s) => s.trim())
   for (const d of docs) if (!all.includes(d)) throw new Error(`모르는 문서: ${d}`)
   // yarn workspace 는 cwd 를 apps/client 로 바꾼다 — 상대 경로는 명령을 친 곳(INIT_CWD) 기준
@@ -77,9 +79,10 @@ async function main() {
     const file = (doc ?? block).file
     try {
       const raw = readFileSync(join(from, file), 'utf8')
-      const label = `${file}${block ? ` ${block.section}` : ''} · legal-pages @${sourceRev(from, file)}`
+      const part = block?.section ?? doc?.section
+      const label = `${file}${part ? ` ${part}` : ''} · legal-pages @${sourceRev(from, file)}`
       if (doc) {
-        const posting = rules.toPosting(raw, doc)
+        const posting = rules.toPosting(rules.docSource(raw, doc), doc)
         const hits = rules.forbiddenIn(posting.title + '\n' + posting.body)
         if (hits.length) throw new Error(`공개하면 안 되는 말이 남았다\n  ${hits.join('\n  ')}`)
         results.push({ key, label, pendingCount: posting.pendingCount, size: `본문 ${posting.body.split('\n').length}줄`, source: rules.moduleSource(key, posting, label, PENDING_IDENT) })

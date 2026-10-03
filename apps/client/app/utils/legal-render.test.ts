@@ -3,10 +3,11 @@ import { createSSRApp, h, type VNode } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import { BUSINESS_INFO } from '../content/legal/business'
 import { PRIVACY_DOC } from '../content/legal/privacy'
+import { REFUND_DOC } from '../content/legal/refund'
 import { TERMS_DOC } from '../content/legal/terms'
 import { P9_4_PENDING } from '../content/pending'
 import { parseLegalMarkdown } from './legal-markdown'
-import { renderBlocks, renderBusinessInfo, renderDoc } from './legal-render'
+import { renderBlocks, renderNoticeList, renderBusinessInfo, renderDoc } from './legal-render'
 
 /** client-shell spec F-12 · F-20 · D-36 — 블록 · 실문서를 실제 HTML 로 그려 본다(서버 렌더 — 브라우저 없이) */
 const ssr = (node: () => VNode | VNode[]) =>
@@ -16,7 +17,7 @@ const render = (md: string) => ssr(() => renderBlocks(parseLegalMarkdown(md)))
 /** HTML → 화면 글자(낭독기 전용 «(새 창)» 제외) */
 const visible = (html: string) =>
   html
-    .replace(/<span class="legal-md__sr">[^<]*<\/span>/g, '')
+    .replace(/<span class="legal-md__sr sr-only">[^<]*<\/span>/g, '')
     .replace(/<[^>]+>/g, '')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -25,7 +26,7 @@ const visible = (html: string) =>
     .replace(/&amp;/g, '&')
 
 describe('renderBlocks — 그린 HTML', () => {
-  it('장 · 조 제목 · 번호 항(시작 번호) · 하위 글머리 · 굵게 · 표(제목 칸 scope) · 확정 전 표기', async () => {
+  it('장 · 조 제목 · 번호 항(시작 번호) · 하위 글머리 · 굵게 · 표(제목 칸 scope) · 값 자리는 글자 없이 표식만(D-47)', async () => {
     const html = await render(
       [
         '## 제4장 청약철회',
@@ -49,8 +50,55 @@ describe('renderBlocks — 그린 HTML', () => {
     expect(html).toContain('<th scope="col">수탁자</th>')
     expect(html).toContain('role="region"')
     expect(html).toContain('tabindex="0"')
-    expect(html).toContain('<span class="legal-md__pending">(확정 전)</span>')
+    // 법정 문서 본문 — «(확정 전)» 글자 없이 빈 표식(승격 전 렌더 확인이 센다 · spec D-47)
+    expect(html).toContain('<span class="legal-md__pending" data-pending></span>')
+    expect(`${html}\n${visible(html)}`).not.toContain('(확정 전)') // 글자로도 — 괄호 낱말은 span 으로 나뉜다
     expect(html).not.toContain(P9_4_PENDING)
+  })
+
+  it('값 자리는 어느 블록에서든 글자 없이 표식만(D-47) — 장 · 조 제목 · 문단 · 목록 · 표 머리 · 표 칸 · 굵게 안 · 표 영역 이름', async () => {
+    const P = P9_4_PENDING
+    const html = await render(
+      [
+        `## 제3장 수탁자 ${P}`,
+        `**제9조 ${P} (위탁)**`,
+        `문단 ${P} 끝`,
+        `- 목록 ${P} 끝`,
+        `- **굵게 ${P}** 끝`,
+        `[안 링크 ${P}](/terms) · [바깥 링크 ${P}](https://example.invalid/x)`,
+        '',
+        `| 머리 ${P} | 업무 |`,
+        '| --- | --- |',
+        `| 칸 ${P} | 알림톡 |`,
+      ].join('\n'),
+    )
+    const mark = '<span class="legal-md__pending" data-pending></span>'
+    // 9자리(h2 · h3 · p · li · li 안 strong · 사이트 안 링크 · 바깥 링크 · th · td) 모두 빈 표식
+    expect(html.split(mark).length - 1).toBe(9)
+    expect(html).toContain(`<a href="/terms" class="legal-md__link">안 링크 ${mark}</a>`)
+    expect(html).toMatch(new RegExp(`<a href="https://example.invalid/x"[^>]*>바깥 링크 ${mark}`))
+    expect(html).toContain(`<h2 class="legal-md__h2">제3장 수탁자 ${mark}</h2>`)
+    expect(html).toContain(`<p class="legal-md__p">문단 ${mark} 끝</p>`)
+    expect(html).toContain(`<li>목록 ${mark} 끝</li>`)
+    expect(html).toContain(`<strong>굵게 ${mark}</strong>`)
+    expect(html).toContain(`<th scope="col">머리 ${mark}</th>`)
+    expect(html).toContain(`<td>칸 ${mark}</td>`)
+    // 표 영역 이름(낭독기) — 바로 앞 제목에서 값 자리를 뺀 글자
+    expect(html).toContain('aria-label="제9조 (위탁) 표"')
+    expect(`${html}\n${visible(html)}`).not.toContain('(확정 전)') // 글자로도 — 괄호 낱말은 span 으로 나뉜다
+    expect(html).not.toContain(P)
+  })
+
+  it('표 영역 이름 — 제목의 굵게 · 링크 안 값 자리도 글자 없이(D-47 «낭독기 글자 0»)', async () => {
+    const html = await render([`## 제3장 **수탁자 ${P9_4_PENDING}** [목록 ${P9_4_PENDING}](/x)`, '', '| a | b |', '| - | - |', '| 1 | 2 |'].join('\n'))
+    expect(html).toContain('aria-label="제3장 수탁자 목록 표"')
+    expect(`${html}\n${visible(html)}`).not.toContain('(확정 전)') // 글자로도 — 괄호 낱말은 span 으로 나뉜다
+  })
+
+  it('원문에 «(확정 전)» 글자를 직접 쓰면 HTML 에서는 괄호 낱말이 span 으로 나뉘어 안 보이고 글자로는 보인다 — 그래서 글자로도 센다(원문 금지는 legal-content.test.ts)', async () => {
+    const html = await render('수탁자 (확정 전) 업무')
+    expect(html).not.toContain('(확정 전)')
+    expect(visible(html)).toContain('(확정 전)')
   })
 
   it('표 영역 이름 = 바로 앞 제목(같은 제목 아래 둘째 표부터 번호) — 낭독기에서 표끼리 구분된다', async () => {
@@ -66,6 +114,12 @@ describe('renderBlocks — 그린 HTML', () => {
     ])
   })
 
+  it('앞에 제목이 없는 표는 문서 제목으로 — «표 1» 로 읽히지 않는다', async () => {
+    const doc = { slug: 'refund', title: '취소·환불 정책', markdown: '| 구분 | 기준 |\n| - | - |\n| 발급 전 | 전액 |\n' } as const
+    const html = await ssr(() => renderDoc(doc))
+    expect([...html.matchAll(/aria-label="([^"]+)"/g)].map((m) => m[1])).toEqual(['취소·환불 정책 표'])
+  })
+
   it('표 최소 폭 = 열마다 120px(최소 320)', async () => {
     const six = await render(
       '| a | b | c | d | e | f |\n| - | - | - | - | - | - |\n| 1 | 2 | 3 | 4 | 5 | 6 |',
@@ -79,7 +133,7 @@ describe('renderBlocks — 그린 HTML', () => {
     const html = await render('[약관](/terms) · [조회](https://www.ftc.go.kr/x)')
     expect(html).toContain('<a href="/terms" class="legal-md__link">약관</a>')
     expect(html).toContain(
-      '<a href="https://www.ftc.go.kr/x" class="legal-md__link" target="_blank" rel="noopener">조회<span class="legal-md__sr"> (새 창)</span></a>',
+      '<a href="https://www.ftc.go.kr/x" class="legal-md__link" target="_blank" rel="noopener">조회<span class="legal-md__sr sr-only"> (새 창)</span></a>',
     )
   })
 
@@ -110,7 +164,7 @@ describe('renderBlocks — 그린 HTML', () => {
   })
 })
 
-describe.each([TERMS_DOC, PRIVACY_DOC])('renderDoc($slug) — 실문서를 그대로 그린다', (doc) => {
+describe.each([TERMS_DOC, PRIVACY_DOC, REFUND_DOC])('renderDoc($slug) — 실문서를 그대로 그린다', (doc) => {
   /** 게시용 마크다운 → 화면에 보여야 할 글자(꾸밈 기호 · 번호 · 구분행 · 표 칸 경계 제거, 자리표시자 → 표기) — 공백은 비교하지 않는다 */
   const expected = doc.markdown
     .split('\n')
@@ -123,8 +177,14 @@ describe.each([TERMS_DOC, PRIVACY_DOC])('renderDoc($slug) — 실문서를 그�
     )
     .join('')
     .split(P9_4_PENDING)
-    .join('(확정 전)')
+    .join('')
     .replace(/\s+/g, '')
+
+  it('값 자리 수 = 빈 표식 수(D-47 — 글자는 없고 표식은 남는다)', async () => {
+    const html = await ssr(() => renderDoc(doc))
+    expect(html.split('<span class="legal-md__pending" data-pending></span>').length - 1).toBe(doc.markdown.split(P9_4_PENDING).length - 1)
+    expect(`${html}\n${visible(html)}`).not.toContain('(확정 전)') // 글자로도 — 괄호 낱말은 span 으로 나뉜다
+  })
 
   it('화면 글자 = 원문 글자(한 글자도 빠지거나 더해지지 않는다) · 제목 · 자리표시자 이름 0', async () => {
     const html = await ssr(() => renderDoc(doc))
@@ -191,5 +251,40 @@ describe('renderBusinessInfo — 발급기 사업자정보 블록(D-36)', () => 
     expect(html).toMatch(/<a href="\/terms" class="issuer-biz__link">이용약관<\/a>/)
     expect(html).toContain('aria-label="사업자정보"')
     expect(html).not.toContain(P9_4_PENDING)
+  })
+})
+
+describe('renderNoticeList — 발급 화면 고지 목록(05-A · F-21)', () => {
+  it('줄마다 한 항목 · 지정한 줄만 굵게 · 사이트 안 링크도 새 창(팝업 상태를 잃지 않게) · 낭독기 «(새 창)»', async () => {
+    const html = await ssr(() =>
+      renderNoticeList(['첫 줄', '둘째 3,500원', '기기 확인 [지원 기기 확인](/supported-devices)'], [1]),
+    )
+    expect(html).toMatch(/^<div><ul class="issue-notice__list"><li>첫 줄<\/li><li><strong>둘째 3,500원<\/strong><\/li>/)
+    expect(html).toContain(
+      '<a href="/supported-devices" class="legal-md__link" target="_blank" rel="noopener">지원 기기 확인<span class="legal-md__sr sr-only"> (새 창)</span></a>',
+    )
+  })
+  it('sheet 옵션 — 고른 주소만 하단 시트(href 유지 · 새 창 표기 없음 · aria-haspopup) · 누르면 이동 대신 함수 · 다른 주소는 새 창 그대로(D-48)', async () => {
+    let opened = 0
+    const sheet = (href: string) => (href === '/supported-devices' ? () => opened++ : undefined)
+    const html = await ssr(() =>
+      renderNoticeList(['기기 [지원 기기 확인](/supported-devices)', '약관 [보기](/terms)'], [], { sheet }),
+    )
+    expect(html).toContain('<a href="/supported-devices" class="legal-md__link" aria-haspopup="dialog">지원 기기 확인</a>')
+    expect(html).toContain('<a href="/terms" class="legal-md__link" target="_blank" rel="noopener">보기<span class="legal-md__sr sr-only"> (새 창)</span></a>')
+    const [ul] = [renderNoticeList(['기기 [지원 기기 확인](/supported-devices)'], [], { sheet })]
+    const a = (ul!.children as VNode[])[0]!.children as VNode[]
+    const link = a.find((n) => typeof n === 'object' && n.type === 'a')!
+    type Click = { preventDefault: () => void; metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean; button: number }
+    const click = link.props!.onClick as (e: Click) => void
+    let prevented = false
+    click({ preventDefault: () => (prevented = true), button: 0 })
+    expect([prevented, opened]).toEqual([true, 1])
+    // 보조키 · 다른 버튼 클릭은 브라우저 기본 동작(새 탭 등) — 막지도 시트를 열지도 않는다
+    for (const k of [{ metaKey: true }, { ctrlKey: true }, { shiftKey: true }, { altKey: true }, { button: 1 }]) {
+      prevented = false
+      click({ preventDefault: () => (prevented = true), button: 0, ...k })
+      expect([prevented, opened]).toEqual([false, 1])
+    }
   })
 })
