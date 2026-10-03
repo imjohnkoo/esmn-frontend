@@ -273,6 +273,13 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
       '(필수) 이용약관과 위 내용을 확인했으며, 발급 후 청약철회가 제한되고 설치 전 환불 시 폐기 비용 3,500원을 부담하는 것에 동의합니다.',
     )
   })
+  it('05-A 원문 — 제목 · 안내 5줄(이용 기간은 첫 연결부터 — eSIM 불변) · 지원 기기 링크는 사이트 안 경로', () => {
+    expect(ISSUE_NOTICE.heading).toBe('발급 전에 확인해 주세요')
+    expect(ISSUE_NOTICE.period).toBe('이용 기간은 현지에서 처음 연결된 시점부터 계산됩니다.')
+    expect(ISSUE_NOTICE.start).toMatch(/^eSIM 발급은 상품 제공을 시작하는 절차입니다\./)
+    expect(ISSUE_NOTICE.device).toMatch(/\[지원 기기 확인\]\(\/supported-devices\)$/)
+    expect(ISSUE_NOTICE.trouble).toMatch(/^eSIM에 문제가 있으면 삭제하지 말고 고객센터로/)
+  })
   it('공개 금지어 · 대괄호 태그 없음', () => {
     for (const l of [...Object.values(BUSINESS_INFO), ...Object.values(ISSUE_NOTICE)]) {
       expect(forbiddenIn(unmark(l))).toEqual([])
