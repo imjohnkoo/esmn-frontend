@@ -228,7 +228,7 @@ describe.each([TERMS_DOC, PRIVACY_DOC, REFUND_DOC])('renderDoc($slug) — 실문
 })
 
 describe('renderBusinessInfo — 발급기 사업자정보 블록(D-36)', () => {
-  it('04 1절 7줄 차례 · 공정위 조회 새 탭 · 호스팅 «(확정 전)» · 방침(굵게 · 색 클래스) · 약관 링크', async () => {
+  it('04 1절 7줄 차례 · 공정위 조회 새 탭 · 호스팅 AWS(D-54) · 방침(굵게 · 색 클래스) · 약관 링크', async () => {
     const html = await ssr(() => renderBusinessInfo(Object.values(BUSINESS_INFO)))
     const lines = [...html.matchAll(/<p class="issuer-biz__line">(.*?)<\/p>/g)].map((m) =>
       visible(m[1]!),
@@ -240,7 +240,7 @@ describe('renderBusinessInfo — 발급기 사업자정보 블록(D-36)', () => 
       '주소: 제주특별자치도 제주시 신대로 145, 멘써빌딩 2층 (1-27호)(연동)',
       '전화: 070-8064-5232 (평일 09:00–18:00, 주말·공휴일 휴무) | 이메일: esimmany@naver.com',
       '개인정보보호책임자: 구장회',
-      '호스팅 서비스: (확정 전)',
+      '호스팅 서비스: AWS',
     ])
     expect(html).toContain(
       '<a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7042401747" class="legal-md__link" target="_blank" rel="noopener">사업자정보확인',
@@ -250,6 +250,12 @@ describe('renderBusinessInfo — 발급기 사업자정보 블록(D-36)', () => 
     )
     expect(html).toMatch(/<a href="\/terms" class="issuer-biz__link">이용약관<\/a>/)
     expect(html).toContain('aria-label="사업자정보"')
+    expect(html).not.toContain(P9_4_PENDING)
+  })
+  it('값 자리가 있는 줄은 «(확정 전)» 표식으로 그린다(값이 다시 비는 경우 — 자리표시자 이름은 새지 않는다)', async () => {
+    const html = await ssr(() => renderBusinessInfo(['상호: 노마컴', `호스팅 서비스: ${P9_4_PENDING}`]))
+    expect(visible(html)).toContain('호스팅 서비스: (확정 전)')
+    expect(html).toContain('data-pending')
     expect(html).not.toContain(P9_4_PENDING)
   })
 })
