@@ -152,7 +152,7 @@ get() {
   printf '%s' "$html" | grep -qF "buildId:\"$want\"" || { echo "⛔ $1 이 이 빌드($want)의 응답이 아니다"; return 1; }
   raw="$(printf '%s' "$html" | tr '\n' ' ' | sed -e 's/<[^>]*data-pending[^>]*>/⟦P⟧/g' \
     -e 's/&nbsp;/ /g; s/&#160;/ /g; s/&#xa0;/ /g' -e $'s/\xc2\xa0/ /g' -e 's/（/(/g; s/）/)/g' \
-    -e $'s/\xe2\x80\x8b//g; s/\xe2\x80\x8c//g; s/\xe2\x80\x8d//g; s/\xe2\x81\xa0//g; s/\xef\xbb\xbf//g' | tr -s '[:space:]' ' ')"   # zero-width(U+200B~D · 2060 · FEFF)는 지운다 — «(확정\u200b 전)» 도 «(확정 전)»
+    -e $'s/\xc2\xad//g; s/\xe2\x80\x8b//g; s/\xe2\x80\x8c//g; s/\xe2\x80\x8d//g; s/\xe2\x81\xa0//g; s/\xe2\x81\xa1//g; s/\xe2\x81\xa2//g; s/\xe2\x81\xa3//g; s/\xe2\x81\xa4//g; s/\xef\xbb\xbf//g' -e $'s/\xe2\x80\x87/ /g; s/\xe2\x80\xaf/ /g; s/\xe3\x80\x80/ /g' | tr -s '[:space:]' ' ')"   # 보이지 않는 글자(U+00AD · 200B~D · 2060~2064 · FEFF)는 지우고 U+2007 · 202F · 3000 은 공백으로(로케일 무관) — «(확정\u200b 전)» 도 «(확정 전)»
   body="$(printf '%s' "$raw" | sed -e 's/<head>.*<\/head>//' -e 's/<[^>]*>//g' | tr -s ' ' ' ')"
 }
 n() { printf '%s' "$1" | grep -oF -e "$2" | wc -l | tr -d ' '; }
@@ -185,8 +185,8 @@ chk /verify/$O '주문하신 분이 맞는지 확인할게요'
 chk /details/$O '발행할 이심을 선택해 주세요'
 chk /select-date/$O '사용 시작 날짜를 선택해 주세요'
 chk /view/$O 'eSIM 발급이 완료됐어요'
-# 검사하지 않은 페이지가 없는가 — app/pages 의 페이지 파일(.vue · .js · .ts · .jsx · .tsx · .mjs · .mts · .cjs · .cts — 테스트 제외)과 위 목록이 같아야 한다(새 페이지는 chk 줄을 먼저 넣는다)
-pages="$(cd app/pages && find . -type f \( -name '*.vue' -o -name '*.[jt]s' -o -name '*.[jt]sx' -o -name '*.m[jt]s' -o -name '*.c[jt]s' \) ! -name '*.test.*' ! -name '*.spec.*' ! -name '*.d.ts' | sed -E -e 's#^\./##' -e 's#\.(vue|[cm]?[jt]sx?)$##' -e 's#^index$##' -e 's#/index$##' -e 's#\[[^]]*\]#:id#g' -e 's#^#/#' | sort)"
+# 검사하지 않은 페이지가 없는가 — app/pages 의 페이지 파일(Nuxt 규칙: .vue · .js · .jsx · .mjs · .ts · .tsx · 링크 따라감 · 제외는 *.{spec,test}.{js,cts,mts,ts,jsx,tsx} 만)과 위 목록이 같아야 한다(새 페이지는 chk 줄을 먼저 넣는다)
+pages="$(cd app/pages && find -L . -type f \( -name '*.vue' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.ts' -o -name '*.tsx' \) ! \( \( -name '*.test.*' -o -name '*.spec.*' \) \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' -o -name '*.mts' -o -name '*.cts' \) \) | sed -E -e 's#^\./##' -e 's#\.(vue|m?jsx?|tsx?)$##' -e 's#^index$##' -e 's#/index$##' -e 's#\[[^]]*\]#:id#g' -e 's#^#/#' | sort)"
 [ "$pages" = "$(printf '%s' "$seen" | sort)" ] || { echo "⛔ 검사 목록과 app/pages 가 다르다 — 빠진 페이지에 chk 줄을 넣는다:"; diff <(printf '%s\n' "$pages") <(printf '%s' "$seen" | sort); exit 1; }
 echo "✓ 렌더 확인 통과 — 커밋 $head(= $RC_REF) · 남은 D-30 예외 자리 ${left}/3 (0 이 되면 spec D-30 을 닫는다)"
 SH
