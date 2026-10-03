@@ -81,7 +81,7 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(css).toMatch(/\.verify-page__policy-link \{[^}]*white-space: nowrap;/)
   })
 
-  it('발급 필수 동의 문구(D-44) — 글자 그대로 · «이용약관» · «취소·환불 정책» 링크는 하단 시트를 연다(D-45 — 새 탭 아님 · href 는 남김)', () => {
+  it('발급 필수 동의 문구(D-44 · D-51) — 글자 그대로 · «이용약관» · «취소·환불 정책» 링크는 하단 시트를 연다(D-45 — 새 탭 아님 · href 는 남김)', () => {
     const src = read('../components/legal/IssueConsentLabel.vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
     const links = findAll(tpl, (n) => n.tag === 'a').map((l) => l.node)
@@ -92,7 +92,7 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src).toMatch(/defineEmits<\{ open: \[doc: 'terms' \| 'refund'\] \}>\(\)/)
     // 화면 글자(줄바꿈 정리) = 결정 글자
     const shown = template(src).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
-    expect(shown).toBe('(필수) 이용약관과 취소·환불 정책을 확인했으며 설치 전 환불 시 환불 비용이 발생하는 것에 동의합니다.')
+    expect(shown).toBe('(필수) 이용약관과 취소·환불 정책을 확인했으며 QR 발급 후 환불 시 환불 비용이 발생하는 것에 동의합니다.')
   })
 
   it('약관 · 환불 정책 · 지원 기기 하단 시트(D-45 · D-48) — 확인 팝업 안 공용 DocSheet · 두 동의 자리 모두 시트를 연다 · 안내 줄 «지원 기기 확인» 도 · 팝업을 닫으면 시트도', () => {
