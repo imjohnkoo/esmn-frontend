@@ -16,7 +16,7 @@ const render = (md: string) => ssr(() => renderBlocks(parseLegalMarkdown(md)))
 /** HTML → 화면 글자(낭독기 전용 «(새 창)» 제외) */
 const visible = (html: string) =>
   html
-    .replace(/<span class="legal-md__sr">[^<]*<\/span>/g, '')
+    .replace(/<span class="legal-md__sr sr-only">[^<]*<\/span>/g, '')
     .replace(/<[^>]+>/g, '')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -25,7 +25,7 @@ const visible = (html: string) =>
     .replace(/&amp;/g, '&')
 
 describe('renderBlocks — 그린 HTML', () => {
-  it('장 · 조 제목 · 번호 항(시작 번호) · 하위 글머리 · 굵게 · 표(제목 칸 scope) · 확정 전 표기', async () => {
+  it('장 · 조 제목 · 번호 항(시작 번호) · 하위 글머리 · 굵게 · 표(제목 칸 scope) · 값 자리는 글자 없이 표식만(D-47)', async () => {
     const html = await render(
       [
         '## 제4장 청약철회',
@@ -49,7 +49,9 @@ describe('renderBlocks — 그린 HTML', () => {
     expect(html).toContain('<th scope="col">수탁자</th>')
     expect(html).toContain('role="region"')
     expect(html).toContain('tabindex="0"')
-    expect(html).toContain('<span class="legal-md__pending">(확정 전)</span>')
+    // 법정 문서 본문 — «(확정 전)» 글자 없이 빈 표식(승격 전 렌더 확인이 센다 · spec D-47)
+    expect(html).toContain('<span class="legal-md__pending" data-pending></span>')
+    expect(html).not.toContain('(확정 전)')
     expect(html).not.toContain(P9_4_PENDING)
   })
 
@@ -79,7 +81,7 @@ describe('renderBlocks — 그린 HTML', () => {
     const html = await render('[약관](/terms) · [조회](https://www.ftc.go.kr/x)')
     expect(html).toContain('<a href="/terms" class="legal-md__link">약관</a>')
     expect(html).toContain(
-      '<a href="https://www.ftc.go.kr/x" class="legal-md__link" target="_blank" rel="noopener">조회<span class="legal-md__sr"> (새 창)</span></a>',
+      '<a href="https://www.ftc.go.kr/x" class="legal-md__link" target="_blank" rel="noopener">조회<span class="legal-md__sr sr-only"> (새 창)</span></a>',
     )
   })
 
@@ -123,7 +125,7 @@ describe.each([TERMS_DOC, PRIVACY_DOC])('renderDoc($slug) — 실문서를 그�
     )
     .join('')
     .split(P9_4_PENDING)
-    .join('(확정 전)')
+    .join('')
     .replace(/\s+/g, '')
 
   it('화면 글자 = 원문 글자(한 글자도 빠지거나 더해지지 않는다) · 제목 · 자리표시자 이름 0', async () => {
