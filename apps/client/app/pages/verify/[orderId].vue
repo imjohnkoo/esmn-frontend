@@ -84,9 +84,9 @@ const onSubmit = async () => {
 definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 
 // 개인정보처리방침 · 이용약관 하단 시트(spec D-46 · John 2026-10-03) — 새 탭 대신(입력한 이름 · 전화를 잃지 않는다)
-import LegalSheet, { type LegalSheetKey } from '~/components/legal/LegalSheet.vue'
+import DocSheet, { type DocSheetKey } from '~/components/legal/DocSheet.vue'
 
-const legalSheet = ref<LegalSheetKey | null>(null)
+const legalSheet = ref<DocSheetKey | null>(null)
 </script>
 
 <template>
@@ -169,7 +169,7 @@ const legalSheet = ref<LegalSheetKey | null>(null)
           >이용약관</a
         >
       </p>
-      <LegalSheet v-model="legalSheet" />
+      <DocSheet v-model="legalSheet" />
 
       <div class="verify-page__cta">
         <NButton type="submit" variant="primary" size="xl" full-width :disabled="isSubmitting">

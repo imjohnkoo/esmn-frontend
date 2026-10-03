@@ -67,9 +67,9 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(text(links[0]!)).toContain('>개인정보처리방침</a')
     expect(text(links[1]!)).toContain('>이용약관</a')
     // 시트 하나 · v-model = 링크가 고르는 키 · ref 는 공용 키 타입
-    const sheets = findAll(tpl, (n) => n.tag === 'LegalSheet')
+    const sheets = findAll(tpl, (n) => n.tag === 'DocSheet')
     expect(sheets.map((x) => dir(x.node, 'v-model'))).toEqual(['legalSheet'])
-    expect(src).toMatch(/const legalSheet = ref<LegalSheetKey \| null>\(null\)/)
+    expect(src).toMatch(/const legalSheet = ref<DocSheetKey \| null>\(null\)/)
     // 방침은 굵게 · 색으로 다른 링크와 구분(처리방침 작성지침) · 터치 영역 24px 이상
     const css = read('./verify/[orderId].vue')
     expect(css).toMatch(
@@ -95,25 +95,32 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(shown).toBe('(필수) 이용약관과 취소·환불 정책을 확인했으며 설치 전 환불 시 환불 비용이 발생하는 것에 동의합니다.')
   })
 
-  it('약관 · 환불 정책 하단 시트(D-45) — 확인 팝업 안 공용 LegalSheet · 두 동의 자리 모두 시트를 연다 · 팝업을 닫으면 시트도', () => {
+  it('약관 · 환불 정책 · 지원 기기 하단 시트(D-45 · D-48) — 확인 팝업 안 공용 DocSheet · 두 동의 자리 모두 시트를 연다 · 안내 줄 «지원 기기 확인» 도 · 팝업을 닫으면 시트도', () => {
     const src = read('./select-date/[orderId].vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
     const dialog = find(tpl, (n) => n.tag === 'NAlertDialog' && dir(n, 'v-model') === 'isConfirmOrderVisible')!
-    expect(findAll(dialog, (n) => n.tag === 'LegalSheet').map((x) => dir(x.node, 'v-model'))).toEqual(['legalSheet'])
-    expect(findAll(tpl, (n) => n.tag === 'LegalSheet')).toHaveLength(1) // 팝업 밖에는 없다(중첩 레이어)
+    expect(findAll(dialog, (n) => n.tag === 'DocSheet').map((x) => dir(x.node, 'v-model'))).toEqual(['legalSheet'])
+    expect(findAll(tpl, (n) => n.tag === 'DocSheet')).toHaveLength(1) // 팝업 밖에는 없다(중첩 레이어)
+    // 안내 줄의 «지원 기기 확인» 만 시트로(D-48) — 그 밖 주소는 렌더러 기본
+    expect(src).toMatch(/const noticeSheet = \(href: string\) => \(href === '\/supported-devices' \? \(\) => openLegalSheet\('devices'\) : undefined\)/)
     const labels = findAll(dialog, (n) => n.tag === 'IssueConsentLabel').map((l) => dir(l.node, '@open'))
     expect(labels).toEqual(['openLegalSheet', 'openLegalSheet'])
     expect(src).toMatch(/watch\(isConfirmOrderVisible, \(open\) => \{\s*if \(!open\) legalSheet\.value = null/)
   })
 
-  it('공용 LegalSheet(D-45 · D-46) — 문서 3종 = 생성물 · 하단 시트 X(closable) · 제목 = 문서 제목 · 본문만 스크롤 · 본문 h1 숨김', () => {
-    const src = read('../components/legal/LegalSheet.vue')
+  it('공용 DocSheet(D-45 · D-46 · D-48) — 법정 3종 = 생성물 · 지원 기기 = 페이지와 같은 컴포넌트 · X(closable) · 제목 · 본문만 스크롤 · 본문 h1 숨김', () => {
+    const src = read('../components/legal/DocSheet.vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
     const sheet = find(tpl, (n) => n.tag === 'NBottomSheet')!
     expect(dir(sheet, 'v-model')).toBe('isOpen')
-    expect(dir(sheet, ':title')).toBe('doc.title')
+    expect(dir(sheet, ':title')).toBe('title')
+    expect(src).toMatch(/const title = computed\(\(\) => doc\.value\?\.title \?\? DEVICES_TITLE\)/)
+    expect(src).toMatch(/const DEVICES_TITLE = 'eSIM 지원 기기'/)
+    const devices = find(sheet, (n) => n.tag === 'SupportedDevicesContent')!
+    expect(devices.props!.some((p) => p.type === 7 && p.rawName === 'v-else')).toBe(true)
     expect(sheet.props!.some((p) => p.type === 6 && p.name === 'closable')).toBe(true)
-    expect(dir(find(sheet, (n) => n.tag === 'LegalMarkdown')!, ':doc')).toBe('doc')
+    const md = find(sheet, (n) => n.tag === 'LegalMarkdown')!
+    expect([dir(md, ':doc'), dir(md, 'v-if')]).toEqual(['doc', 'doc'])
     expect(src).toMatch(/const DOCS = \{ terms: TERMS_DOC, privacy: PRIVACY_DOC, refund: REFUND_DOC \} as const/)
     expect(src).toMatch(/import \{ TERMS_DOC \} from '~\/content\/legal\/terms'/)
     expect(src).toMatch(/import \{ PRIVACY_DOC \} from '~\/content\/legal\/privacy'/)
@@ -140,7 +147,7 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(policyAt).toBe(1)
     // F-21 · D-43 — 05-A 제목 + 안내 2줄만(지원 기기 · 문제 시 고객센터 — John 2026-10-02) · 굵은 줄 없음
     expect(text(kids[policyAt]!)).toContain('{{ ISSUE_NOTICE.heading }}')
-    expect(text(kids[policyAt]!)).toContain('<component :is="renderNoticeList(NOTICE_LINES, [])" />')
+    expect(text(kids[policyAt]!)).toContain('<component :is="renderNoticeList(NOTICE_LINES, [], { sheet: noticeSheet })" />')
     expect(src).toMatch(/const NOTICE_LINES = \[ISSUE_NOTICE\.device, ISSUE_NOTICE\.trouble\]/)
     expect(src.match(/ISSUE_NOTICE\.(?:start|refund|period)\b/g) ?? []).toEqual([])
     // 안내 줄은 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03)
@@ -503,6 +510,9 @@ describe('발급기 법정 링크(F-20)', () => {
         /(?:취소|환불)[와과·/\s]*(?:환불)?\s*(?:이|가|은|을)?\s*(?:불가|X\b)|환불(?:이|은)?\s*안\s*(?:돼|됩)|(?:환불|취소)(?:을|를)?\s*(?:받을|할|해\s*드릴)\s*수\s*없|환불받을\s*수\s*없|환불되지\s*않아요|환불이\s*어려|취소할\s*수\s*없/,
       )
     expect(read('./supported-devices.vue')).toContain('${ISSUE_NOTICE.refund}')
+    // 지원 기기 본문은 페이지 · 시트 공용 컴포넌트 하나(D-48 — 목록이 두 곳에서 갈리지 않게)
+    expect(template(read('./supported-devices.vue'))).toContain('<SupportedDevicesContent />')
+    expect(read('./supported-devices.vue')).not.toMatch(/supportedGroups|unsupportedItems/)
     expect(read('../components/popup/ConfirmOrderModal.vue')).toContain(
       '*{{ ISSUE_NOTICE.refund }}',
     )

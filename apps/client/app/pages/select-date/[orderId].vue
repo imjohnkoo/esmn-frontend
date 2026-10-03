@@ -277,16 +277,19 @@ onMounted(() => window.addEventListener('resize', fitConfirm))
 onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
 
 // 약관 · 환불 정책 하단 시트(spec D-45 · John 2026-10-03) — 새 탭 대신. 열린 문서 하나 · 시트를 닫아도 확인 팝업 · 체크는 그대로
-import LegalSheet, { type LegalSheetKey } from '~/components/legal/LegalSheet.vue'
+import DocSheet, { type DocSheetKey } from '~/components/legal/DocSheet.vue'
 
-const legalSheet = ref<LegalSheetKey | null>(null)
-const openLegalSheet = (doc: 'terms' | 'refund') => {
+const legalSheet = ref<DocSheetKey | null>(null)
+const openLegalSheet = (doc: DocSheetKey) => {
   legalSheet.value = doc
 }
 // 확인 팝업을 닫으면(뒤로 · 발급) 시트도 닫는다 — 다음에 팝업을 열 때 시트가 먼저 떠 있지 않게
 watch(isConfirmOrderVisible, (open) => {
   if (!open) legalSheet.value = null
 })
+
+// 안내 줄의 «지원 기기 확인» 도 새 탭 대신 하단 시트(spec D-48 · John 2026-10-03) — 다른 주소는 렌더러 기본(새 탭)
+const noticeSheet = (href: string) => (href === '/supported-devices' ? () => openLegalSheet('devices') : undefined)
 </script>
 
 <template>
@@ -538,7 +541,7 @@ watch(isConfirmOrderVisible, (open) => {
             <!-- 05-A 원문(client-shell spec F-21) — 제목 · 안내 5줄(설치 전 3,500원 줄은 굵게 — 약관 12조③ «미리 표시» · D-32) · 링크는 새 창 -->
             <div class="select-date-page__confirm-notice">
               <p class="select-date-page__confirm-notice-title">{{ ISSUE_NOTICE.heading }}</p>
-              <component :is="renderNoticeList(NOTICE_LINES, [])" />
+              <component :is="renderNoticeList(NOTICE_LINES, [], { sheet: noticeSheet })" />
             </div>
           </div>
           <!-- 공간이 모자라는 화면(가로 · 글자 크게)에서만 동의 체크를 스크롤 안 끝으로 — 버튼을 지킨다 -->
@@ -559,7 +562,7 @@ watch(isConfirmOrderVisible, (open) => {
         <NCheckbox v-model="isPolicyAgreed"><IssueConsentLabel @open="openLegalSheet" /></NCheckbox>
       </div>
       <!-- 약관 · 환불 정책 본문(D-45) — 하단 시트 · 팝업 안에 둔다(중첩 레이어 — 바깥 누름 · X · Esc 는 시트만 닫는다) -->
-      <LegalSheet v-model="legalSheet" />
+      <DocSheet v-model="legalSheet" />
       <template #actions>
         <div class="select-date-page__confirm-actions">
           <NButton variant="secondary" @click="isConfirmOrderVisible = false">뒤로</NButton>

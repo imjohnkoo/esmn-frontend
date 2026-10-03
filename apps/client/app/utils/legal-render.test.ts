@@ -219,5 +219,20 @@ describe('renderNoticeList — 발급 화면 고지 목록(05-A · F-21)', () =>
       '<a href="/supported-devices" class="legal-md__link" target="_blank" rel="noopener">지원 기기 확인<span class="legal-md__sr sr-only"> (새 창)</span></a>',
     )
   })
+  it('sheet 옵션 — 고른 주소만 하단 시트(href 유지 · 새 창 표기 없음 · aria-haspopup) · 누르면 이동 대신 함수 · 다른 주소는 새 창 그대로(D-48)', async () => {
+    let opened = 0
+    const sheet = (href: string) => (href === '/supported-devices' ? () => opened++ : undefined)
+    const html = await ssr(() =>
+      renderNoticeList(['기기 [지원 기기 확인](/supported-devices)', '약관 [보기](/terms)'], [], { sheet }),
+    )
+    expect(html).toContain('<a href="/supported-devices" class="legal-md__link" aria-haspopup="dialog">지원 기기 확인</a>')
+    expect(html).toContain('<a href="/terms" class="legal-md__link" target="_blank" rel="noopener">보기<span class="legal-md__sr sr-only"> (새 창)</span></a>')
+    const [ul] = [renderNoticeList(['기기 [지원 기기 확인](/supported-devices)'], [], { sheet })]
+    const a = (ul!.children as VNode[])[0]!.children as VNode[]
+    const link = a.find((n) => typeof n === 'object' && n.type === 'a')!
+    let prevented = false
+    ;(link.props!.onClick as (e: { preventDefault: () => void }) => void)({ preventDefault: () => (prevented = true) })
+    expect([prevented, opened]).toEqual([true, 1])
+  })
 })
 
