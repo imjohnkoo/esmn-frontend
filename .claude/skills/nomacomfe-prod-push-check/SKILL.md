@@ -117,20 +117,57 @@ yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 - 영향 앱 dev 서버 띄워서 (`yarn workspace nomacom-admin run dev`) golden path 수동 검증
 - 자동 테스트는 feature correctness 가 아닌 code correctness 만 검증함
 
-**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남고(D-47), main 은 D-30 예외로 정해진 3칸만 미확정인 채 나간다. 그 3칸만 있는지 센다 — 하나라도 다르면 중단하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터):
+**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남고(D-47), main 은 D-30 예외로 정해진 3자리(방침 4장 AWS · Solapi 행 · 푸터 호스팅)에만 값 자리를 둔 채 나간다. **그 3자리 밖에 값 자리나 «(확정 전)» 이 하나라도 있거나, 응답이 이 빌드의 것이 아니거나, 페이지가 비었으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 아래를 저장소 루트에서 그대로 돌린다:
 
 ```bash
-# Phase 3 빌드의 .output 을 루프백에 · DB · 벤더 env 없이(env -i) — 화면 HTML 만 본다
-PORT=<빈 포트>; (cd apps/client && env -i PATH="$PATH" HOME="$HOME" HOST=127.0.0.1 PORT=$PORT node .output/server/index.mjs) & SRV=$!
-sleep 3; BASE=http://127.0.0.1:$PORT
-cnt() { curl -fsS "$BASE$1" | grep -o -e "$2" | wc -l | tr -d ' '; }   # 실패(4xx · 5xx)면 빈 값 → 아래 비교에서 걸린다
-[ "$(cnt /privacy 'data-pending')" = 2 ] || echo "⛔ /privacy 값 자리 수가 D-30 예외(방침 4장 2칸)와 다르다"
-for p in /terms /refund /supported-devices; do [ "$(cnt $p 'data-pending')" = 0 ] || echo "⛔ $p 에 값 자리"; done
-[ "$(cnt / '(확정 전)')" = 1 ] || echo "⛔ / 의 «(확정 전)» 수가 D-30 · D-36 예외(호스팅 1칸)와 다르다"
-for p in /privacy /terms /refund; do [ "$(cnt $p '(확정 전)')" = 0 ] || echo "⛔ $p 본문에 «(확정 전)» 글자(D-47 위반)"; done
-kill $SRV
+# Phase 3 빌드의 .output 을 루프백에 · DB · 벤더 env 없이(env -i — DATABASE_URL 이 없으면 서버는 DB 에 붙지 않는다) — 화면 HTML 만 본다
+bash <<'SH'
+set -u
+cd apps/client || exit 1
+PORT=3099   # 이미 누가 쓰고 있으면 중단 — 남의 서버 · 지난 빌드를 보고 통과하지 않게
+if lsof -nP -iTCP:$PORT -sTCP:LISTEN >/dev/null 2>&1; then echo "⛔ $PORT 에 이미 서버가 있다 — 다른 빈 포트로"; exit 1; fi
+want="$(sed -n 's/.*"id":"\([^"]*\)".*/\1/p' .output/public/_nuxt/builds/latest.json)"
+[ -n "$want" ] || { echo "⛔ 빌드 id 없음 — Phase 3 빌드부터"; exit 1; }
+env -i PATH="$PATH" HOME="$HOME" HOST=127.0.0.1 PORT=$PORT node .output/server/index.mjs >/dev/null 2>&1 & SRV=$!
+trap 'kill $SRV 2>/dev/null' EXIT
+B=http://127.0.0.1:$PORT
+for _ in $(seq 40); do curl -fsS -o /dev/null "$B/" 2>/dev/null && break; kill -0 $SRV 2>/dev/null || { echo "⛔ 서버가 뜨지 않았다"; exit 1; }; sleep 0.5; done
+# 본문 글자 — 응답 실패(4xx · 5xx · 연결 실패) · 다른 빌드면 실패. 값 자리(data-pending 표식)는 ⟦P⟧ 로 남기고 태그를 벗긴 뒤 nbsp · 전각 괄호 · 공백을 정규화
+txt() {
+  html="$(curl -fsS "$B$1")" || { echo "⛔ $1 응답 실패" >&2; return 1; }
+  printf '%s' "$html" | grep -qF "buildId:\"$want\"" || { echo "⛔ $1 이 이 빌드($want)의 응답이 아니다" >&2; return 1; }
+  printf '%s' "$html" | tr '\n' ' ' | sed -e 's/<[^>]*data-pending[^>]*>/⟦P⟧/g' -e 's/<[^>]*>//g' \
+    -e 's/&nbsp;/ /g; s/&#160;/ /g; s/&#xa0;/ /g' -e $'s/\xc2\xa0/ /g' -e 's/（/(/g; s/）/)/g' | tr -s '[:space:]' ' '
+}
+n() { printf '%s' "$1" | grep -oF -e "$2" | wc -l | tr -d ' '; }
+left=0
+# chk <페이지> <양성 대조 글자 — ; 로 여럿> [D-30 예외 자리 …] — 예외 자리 밖의 ⟦P⟧ · «(확정 전)» 은 0 이어야 한다
+chk() {
+  local p=$1 t m s k ok_p=0 ok_d=0; local -a must; IFS=';' read -ra must <<<"$2"; shift 2
+  t="$(txt "$p")" || exit 1
+  for m in "${must[@]}"; do [ "$(n "$t" "$m")" -ge 1 ] || { echo "⛔ $p 에 «$m» 이 없다(양성 대조 실패 — 빈 · 오류 화면이 0건으로 통과하지 않게)"; exit 1; }; done
+  for s in "$@"; do k=$(n "$t" "$s"); ok_p=$((ok_p + k * $(n "$s" '⟦P⟧'))); ok_d=$((ok_d + k * $(n "$s" '(확정 전)'))); left=$((left + k)); done
+  [ "$(n "$t" '⟦P⟧')" = "$ok_p" ] || { echo "⛔ $p 값 자리 $(n "$t" '⟦P⟧')건 — D-30 예외 자리는 ${ok_p}건뿐"; exit 1; }
+  [ "$(n "$t" '(확정 전)')" = "$ok_d" ] || { echo "⛔ $p «(확정 전)» $(n "$t" '(확정 전)')건 — D-30 예외 자리는 ${ok_d}건뿐(D-47)"; exit 1; }
+  [ "$(n "$t" '문안을 확정하고 있어요')" = 0 ] || { echo "⛔ $p 에 확정 전 안내 문안"; exit 1; }
+}
+O=2026092300000101   # 아무 주문번호 — DB 가 없어 화면 틀만 그린다
+chk / '704-24-01747;eSIM 발급은;호스팅 서비스:' '호스팅 서비스: ⟦P⟧(확정 전)'
+chk /privacy '이심마니 개인정보처리방침;(Amazon Web Services 서울 리전);(주)누리고(Solapi)' '⟦P⟧ (Amazon Web Services 서울 리전)' '(주)누리고(Solapi) ⟦P⟧'
+chk /terms '이심마니 서비스 이용약관'
+chk /refund '취소·환불 정책'
+chk /supported-devices '지원하는지 확인해 주세요'
+chk /verify/$O '주문하신 분이 맞는지 확인할게요'
+chk /details/$O '발행할 이심을 선택해 주세요'
+chk /select-date/$O '사용 시작 날짜를 선택해 주세요'
+chk /view/$O 'eSIM 발급이 완료됐어요'
+echo "✓ 렌더 확인 통과 — 남은 D-30 예외 자리 ${left}/3 (0 이 되면 spec D-30 을 닫는다)"
+SH
 ```
-⚠️ 클래스 이름(`legal-md__pending`)이 아니라 `data-pending` 속성을 센다 — production SSR 은 컴포넌트 CSS 를 HTML 에 넣어 클래스 선택자 글자가 매 페이지에 있다.
+
+- ⚠️ 클래스 이름(`legal-md__pending`)이 아니라 `data-pending` 속성을 센다 — production SSR 은 컴포넌트 CSS 를 HTML 에 넣어 클래스 선택자 글자가 매 페이지에 있다.
+- 예외 자리는 «있어도 되는» 곳이지 «있어야 하는» 곳이 아니다 — P9-22 값이 와서 `legal:import` 로 자리가 사라져도 통과하고, 끝 줄의 남은 자리 수만 줄어든다. 행 글자(«(Amazon Web Services 서울 리전)» · «(주)누리고(Solapi)» · «호스팅 서비스:») 는 양성 대조라 값이 와도 남아야 한다 — 정본이 그 글자를 바꾸면 여기서 멈추니 이 블록을 먼저 고친다.
+- 발급 확인 팝업 · 하단 시트(약관 · 환불 · 방침 · 지원 기기)는 열어야 그려져 SSR HTML 에 없다 — 그 글자는 소스 테스트(`legal-content.test.ts` 의 05-A 줄 고정 · 값 자리 수)가 지키고, 시트 본문은 위 단독 페이지와 같은 문서를 그린다.
 
 ### Phase 5 — 마이그레이션/DB 변경 안전성
 
