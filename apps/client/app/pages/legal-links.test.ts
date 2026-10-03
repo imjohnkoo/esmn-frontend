@@ -7,7 +7,7 @@ import { parse } from 'vue/compiler-sfc'
 
 /**
  * client-shell spec F-20 · D-32 · D-35 · D-36 — 발급기 화면의 법정 링크 · 고지 문구(개인정보 보호법 30조 · 약관 3조① · 6조④ · 12조③).
- * 화면 배선은 소스로 본다(main 에는 컴포넌트 렌더 테스트 의존성이 없다 — 그리는 규칙 자체는 utils/legal-render.test.ts 가 실문서로 본다).
+ * 화면 배선은 소스로 본다(그리는 규칙은 utils/legal-render.test.ts 가 실문서로, 시트가 «그 문서» 를 열고 닫는가는 components/legal/DocSheet.dom.test.ts 가 마운트로 본다).
  */
 const read = (p: string) => readFileSync(fileURLToPath(new URL(p, import.meta.url)), 'utf8')
 
@@ -109,6 +109,15 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src).toMatch(/const openLegalSheet = \((\w+): DocSheetKey\) => \{\s*legalSheet\.value = \1\s*\}/)
     expect(src.match(/legalSheet\.value = /g)).toHaveLength(2) // 여는 곳 하나 · 팝업이 닫힐 때 null 하나
     expect(src).toMatch(/watch\(isConfirmOrderVisible, \(open\) => \{\s*if \(!open\) legalSheet\.value = null/)
+  })
+
+  it('시트는 두 페이지 묶음에 함께 싣는다(정적 import) — 지연 로드는 배포 뒤 묶음 이름이 바뀐 화면에서 실패해 링크가 먹통이 된다(링크는 일반 클릭을 막는다)', () => {
+    for (const page of ['./select-date/[orderId].vue', './verify/[orderId].vue']) {
+      const src = read(page)
+      // Nuxt 자동 등록 이름은 LegalDocSheet 라 <DocSheet> 는 이 import 가 없으면 아무것도 그리지 않는다
+      expect(src.match(/^import DocSheet from '~\/components\/legal\/DocSheet\.vue'$/gm), page).toHaveLength(1)
+      expect(src, page).not.toMatch(/defineAsyncComponent|import\(\s*['"]~\/components\/legal\/DocSheet/)
+    }
   })
 
   it('공용 DocSheet(D-45 · D-46 · D-48) — 법정 3종 = 생성물 · 지원 기기 = 페이지와 같은 컴포넌트 · X(closable) · 제목 · 본문만 스크롤 · 본문 h1 숨김', () => {

@@ -16062,7 +16062,7 @@ __metadata:
     "@pinia/nuxt": "npm:^0.11.3"
     "@portone/browser-sdk": "npm:^0.1.11"
     "@tailwindcss/vite": "npm:^4"
-    "@vitejs/plugin-vue": "npm:^5.2.0"
+    "@vitejs/plugin-vue": "npm:^6.0.4"
     "@vue/test-utils": "npm:^2.4.10"
     "@vueuse/nuxt": "npm:^14.1.0"
     date-fns: "npm:^4.1.0"
