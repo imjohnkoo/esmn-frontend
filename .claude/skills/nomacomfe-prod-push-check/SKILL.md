@@ -118,17 +118,24 @@ yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 - 영향 앱 dev 서버 띄워서 (`yarn workspace nomacom-admin run dev`) golden path 수동 검증
 - 자동 테스트는 feature correctness 가 아닌 code correctness 만 검증함
 
-**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남고(D-47), main 은 D-30 예외로 정해진 3자리(방침 4장 AWS · Solapi 행 · 푸터 호스팅)에만 값 자리를 둔 채 나간다. **그 3자리 밖에 값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 한 자리에 값 자리가 둘 이상이거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). Phase 3 빌드 직후 같은 체크아웃의 저장소 루트에서 그대로 돌린다:
+**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남고(D-47), main 은 D-30 예외로 정해진 3자리(방침 4장 AWS · Solapi 행 · 푸터 호스팅)에만 값 자리를 둔 채 나간다. **그 3자리 밖에 값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 한 자리에 값 자리가 둘 이상이거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 올릴 커밋(`origin/main`)을 체크아웃한 저장소 루트에서 그대로 돌린다(블록이 그 자리에서 빌드한다 — turbo 캐시가 맞으면 몇 초). **Phase 7 에서 prod 로 올리는 sha 는 끝 줄에 찍힌 커밋과 같아야 한다**:
 
 ```bash
 # Phase 3 빌드의 .output 을 루프백에 · DB · 벤더 env 없이(env -i — DATABASE_URL 이 없으면 서버는 DB 에 붙지 않는다) — 화면 HTML 만 본다
 bash <<'SH'
 set -u
 cd apps/client || exit 1
-# .output = 지금 체크아웃(승격할 커밋)의 빌드인가 — 미커밋 변경 없음 · 빌드 시각이 HEAD 커밋 뒤
-st="$(git status --porcelain -- . ../../packages)" || { echo "⛔ git 체크아웃이 아니다"; exit 1; }
-[ -z "$st" ] || { echo "⛔ 미커밋 변경 — 승격할 커밋 그대로 다시 빌드"; exit 1; }
-node -e 'const b=new Date(require("./.output/nitro.json").date),c=new Date(process.argv[1]);process.exit(b>=c?0:1)' "$(git log -1 --format=%cI)" || { echo "⛔ .output 이 HEAD 커밋보다 먼저 빌드됐다 — Phase 3 빌드부터"; exit 1; }
+# 확인할 커밋 = 올릴 커밋 — RC_REF(기본 origin/main = prod 로 올라가는 ref)를 받아 와 HEAD 와 같아야 한다
+RC_REF="${RC_REF:-origin/main}"
+case "$RC_REF" in origin/*) git fetch -q origin "${RC_REF#origin/}" || { echo "⛔ $RC_REF 받아 오기 실패"; exit 1; } ;; esac
+head="$(git rev-parse HEAD)" || { echo "⛔ git 체크아웃이 아니다"; exit 1; }
+[ "$head" = "$(git rev-parse "$RC_REF^{commit}")" ] || { echo "⛔ HEAD($head) ≠ $RC_REF — 올릴 커밋을 체크아웃하고 다시"; exit 1; }
+# .output = 이 커밋의 빌드 — 저장소 전체 미커밋 · 추적 안 된 파일 0 에서 여기서 빌드한다(빌드 시각으로 판정하지 않는다).
+# turbo 는 입력 파일 해시로 캐시를 고르므로 캐시가 맞아도 같은 소스의 산출물이다
+st="$(git -C ../.. status --porcelain)" || exit 1
+[ -z "$st" ] || { echo "⛔ 미커밋 · 추적 안 된 파일 — 올릴 커밋 그대로에서만:"; printf '%s\n' "$st" | head -5; exit 1; }
+(cd ../.. && yarn turbo run build --filter=nomacom-client >/dev/null 2>&1) || { echo "⛔ 빌드 실패 — Phase 3 부터"; exit 1; }
+[ -z "$(git -C ../.. status --porcelain)" ] || { echo "⛔ 빌드가 추적 파일을 바꿨다"; exit 1; }
 PORT=3099   # 이미 누가 쓰고 있으면 중단 — 남의 서버 · 지난 빌드를 보고 통과하지 않게
 if lsof -nP -iTCP:$PORT -sTCP:LISTEN >/dev/null 2>&1; then echo "⛔ $PORT 에 이미 서버가 있다 — 다른 빈 포트로"; exit 1; fi
 want="$(sed -n 's/.*"id":"\([^"]*\)".*/\1/p' .output/public/_nuxt/builds/latest.json)"
@@ -177,7 +184,7 @@ chk /view/$O 'eSIM 발급이 완료됐어요'
 # 검사하지 않은 페이지가 없는가 — app/pages 의 .vue 와 위 목록이 같아야 한다(새 페이지는 chk 줄을 먼저 넣는다)
 pages="$(cd app/pages && find . -name '*.vue' | sed -e 's|^\./||' -e 's|\.vue$||' -e 's|^index$||' -e 's|/index$||' -e 's|\[[^]]*\]|:id|g' -e 's|^|/|' | sort)"
 [ "$pages" = "$(printf '%s' "$seen" | sort)" ] || { echo "⛔ 검사 목록과 app/pages 가 다르다 — 빠진 페이지에 chk 줄을 넣는다:"; diff <(printf '%s\n' "$pages") <(printf '%s' "$seen" | sort); exit 1; }
-echo "✓ 렌더 확인 통과 — 남은 D-30 예외 자리 ${left}/3 (0 이 되면 spec D-30 을 닫는다)"
+echo "✓ 렌더 확인 통과 — 커밋 $head(= $RC_REF) · 남은 D-30 예외 자리 ${left}/3 (0 이 되면 spec D-30 을 닫는다)"
 SH
 ```
 

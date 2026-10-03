@@ -65,6 +65,7 @@ describe('renderBlocks — 그린 HTML', () => {
         `문단 ${P} 끝`,
         `- 목록 ${P} 끝`,
         `- **굵게 ${P}** 끝`,
+        `[안 링크 ${P}](/terms) · [바깥 링크 ${P}](https://example.invalid/x)`,
         '',
         `| 머리 ${P} | 업무 |`,
         '| --- | --- |',
@@ -72,8 +73,10 @@ describe('renderBlocks — 그린 HTML', () => {
       ].join('\n'),
     )
     const mark = '<span class="legal-md__pending" data-pending></span>'
-    // 7자리(h2 · h3 · p · li · li 안 strong · th · td) 모두 빈 표식
-    expect(html.split(mark).length - 1).toBe(7)
+    // 9자리(h2 · h3 · p · li · li 안 strong · 사이트 안 링크 · 바깥 링크 · th · td) 모두 빈 표식
+    expect(html.split(mark).length - 1).toBe(9)
+    expect(html).toContain(`<a href="/terms" class="legal-md__link">안 링크 ${mark}</a>`)
+    expect(html).toMatch(new RegExp(`<a href="https://example.invalid/x"[^>]*>바깥 링크 ${mark}`))
     expect(html).toContain(`<h2 class="legal-md__h2">제3장 수탁자 ${mark}</h2>`)
     expect(html).toContain(`<p class="legal-md__p">문단 ${mark} 끝</p>`)
     expect(html).toContain(`<li>목록 ${mark} 끝</li>`)
@@ -84,6 +87,12 @@ describe('renderBlocks — 그린 HTML', () => {
     expect(html).toContain('aria-label="제9조 (위탁) 표"')
     expect(html).not.toContain('(확정 전)')
     expect(html).not.toContain(P)
+  })
+
+  it('표 영역 이름 — 제목의 굵게 · 링크 안 값 자리도 글자 없이(D-47 «낭독기 글자 0»)', async () => {
+    const html = await render([`## 제3장 **수탁자 ${P9_4_PENDING}** [목록 ${P9_4_PENDING}](/x)`, '', '| a | b |', '| - | - |', '| 1 | 2 |'].join('\n'))
+    expect(html).toContain('aria-label="제3장 수탁자 목록 표"')
+    expect(html).not.toContain('(확정 전)')
   })
 
   it('표 영역 이름 = 바로 앞 제목(같은 제목 아래 둘째 표부터 번호) — 낭독기에서 표끼리 구분된다', async () => {

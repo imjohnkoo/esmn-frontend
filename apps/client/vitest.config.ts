@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vitest/config'
 
-// 순수 유닛 테스트만 대상으로 한다.
+// 순수 유닛 테스트 + 컴포넌트 마운트 테스트(happy-dom · `*.dom.test.ts` — DB · 네트워크 없이 도는 것만)를 대상으로 한다.
 // .env.local / 로컬 PG / 외부 API 에 의존하는 테스트는 여기 include 에 넣지 말 것 —
 // 러너가 환경에 따라 흔들리면 회귀 자산이 아니라 소음이 된다.
 // (그런 테스트가 필요하면 별도 config 로 분리하고 plan 에 "로컬 전용" 으로 표기)
