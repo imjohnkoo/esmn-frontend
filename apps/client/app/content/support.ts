@@ -2,15 +2,17 @@
  * 고객센터 채널(client-shell spec S-3 · F-12) — 마이(/my#cs) · 검색 화면이 읽는다.
  * 값은 legal-pages 정본 그대로 — support.test.ts 가 생성물(content/legal/business · refund · privacy) 글자와 대조한다(정본 밖 값 0).
  * 순서는 04 3절 권장 배치(카카오톡 채널 → 전화 → 이메일 → 네이버 톡톡) + 운영 시간.
- * 카카오톡 채널 URL 만 확정 전(spec D-29③): 링크 없이 채널명만 보인다.
+ * 카카오톡 채널 URL 은 정본에 아직 없다 — John 결정 글자(spec D-54 · 2026-10-03) 그대로 둔다(정본 rev 가 오면 대조로 바꾼다).
  */
-import { P9_4_PENDING, displayValue, isPending, type ContentValue } from './pending'
+import { displayValue, isPending, type ContentValue } from './pending'
 
 export const SMARTSTORE_URL = 'https://smartstore.naver.com/esimmany'
 export const SUPPORT_PHONE = '070-8064-5232'
 export const SUPPORT_EMAIL = 'esimmany@naver.com'
 export const SUPPORT_HOURS = '평일 09:00–18:00, 주말·공휴일 휴무'
 export const SUPPORT_KAKAO = '@이심마니'
+/** 카카오톡 채널 URL(spec D-54 — John 2026-10-03 «채널 url은 http://pf.kakao.com/_TjTCG 로 업데이트해» · 받은 글자 그대로) */
+export const SUPPORT_KAKAO_URL = 'http://pf.kakao.com/_TjTCG'
 
 export interface SupportChannel {
   key: 'kakao' | 'naver' | 'phone' | 'email' | 'hours'
@@ -21,7 +23,7 @@ export interface SupportChannel {
 }
 
 export const SUPPORT_CHANNELS: readonly SupportChannel[] = [
-  { key: 'kakao', label: '카카오톡 채널', value: SUPPORT_KAKAO, href: P9_4_PENDING },
+  { key: 'kakao', label: '카카오톡 채널', value: SUPPORT_KAKAO, href: SUPPORT_KAKAO_URL },
   { key: 'phone', label: '전화', value: SUPPORT_PHONE, href: `tel:${SUPPORT_PHONE}` },
   { key: 'email', label: '이메일', value: SUPPORT_EMAIL },
   { key: 'naver', label: '네이버 톡톡', value: '스마트스토어 채팅 문의', href: SMARTSTORE_URL },

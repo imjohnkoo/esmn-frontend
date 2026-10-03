@@ -1,9 +1,8 @@
 // 생성물 — scripts/legal-import.mjs 가 legal-pages 정본에서 게시 규칙(08 D절)을 적용해 만든다.
 // 손으로 고치지 말 것 — 정본을 고친 뒤 `yarn workspace nomacom-client legal:import --from <정본 폴더>` 로 다시 만든다.
 // 정본: 04_사업자정보-고객센터.md ## 1. · legal-pages @f64203c
-// sha256(본문): 1204b979c2c33a1e37ebd787b30cc4e551357517de8bc6d7e7726583617b4a91
-import { P9_4_PENDING } from '../pending'
-
+// sha256(본문): d914620e6a42082c79b675837189ac36e89d0fa66df083755f9d364ef3c4390b
+// 값 채움 1건 — 정본의 값 자리를 결정 글자로(규칙 scripts/legal-posting.ts 의 fills · spec D-54)
 export const BUSINESS_INFO = {
   brand: '이심마니 | 상호: 노마컴 | 대표: 구장회',
   registration: '사업자등록번호: 704-24-01747 [사업자정보확인](https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7042401747)',
@@ -11,7 +10,7 @@ export const BUSINESS_INFO = {
   address: '주소: 제주특별자치도 제주시 신대로 145, 멘써빌딩 2층 (1-27호)(연동)',
   contact: '전화: 070-8064-5232 (평일 09:00–18:00, 주말·공휴일 휴무) | 이메일: esimmany@naver.com',
   privacyOfficer: '개인정보보호책임자: 구장회',
-  hosting: `호스팅 서비스: ${P9_4_PENDING}`,
+  hosting: '호스팅 서비스: AWS',
   legalLinks: '이용약관 | 개인정보처리방침 | 취소·환불 정책 | 사업자정보',
   copyright: '© 2026 노마컴. All rights reserved.',
 } as const

@@ -149,10 +149,12 @@ describe('개인정보처리방침 — 구조 · 확정 문장 · 자리표시�
     expect(text).toContain('개인을 식별할 수 있는 정보를 국외로 이전하지 않습니다')
     expect(text).toContain('이 개인정보처리방침은 2026년 9월 1일부터 적용됩니다.')
   })
-  it('미확정 값 2곳(4장 — 호스팅 계약 법인명 · 알림톡 수탁사 계약 주체)만 «(확정 전)» · 수탁사 이름은 남는다(D-29)', () => {
-    expect(PRIVACY_DOC.markdown.split(P9_4_PENDING)).toHaveLength(3)
-    expect(text).toContain('(확정 전) (Amazon Web Services 서울 리전)')
-    expect(text).toMatch(/\(주\)누리고\(Solapi\) \(확정 전\) \| 알림톡·문자 발송/)
+  it('4장 수탁자 표 — 값 채움(D-54 · John 10-03): «AWS (Amazon Web Services 서울 리전)» · 알림톡 수탁사 «솔라피(주)» · 값 자리 0', () => {
+    expect(PRIVACY_DOC.markdown).not.toContain(P9_4_PENDING)
+    expect(text).toContain('AWS (Amazon Web Services 서울 리전) | 서비스 인프라·데이터 보관')
+    expect(text).toMatch(/(^|\n)솔라피\(주\) \| 알림톡·문자 발송 \| 현행/)
+    expect(text).not.toContain('누리고')
+    expect(DOC_RULES.privacy.fills).toEqual({ 0: 'AWS', 1: '' })
   })
 })
 
@@ -230,7 +232,7 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
       { line: '5ccceaa412d5bbe591a837489e87a66b1905fb249d602496ca6adb7080ace3b7', from: ' · 070-8064-5232', to: '' },
     ])
     expect(DOC_RULES.terms.edits).toEqual([{ line: 'fbf7c3835a588a2040eb24b5d6b6249ba9df6a3002e3feefc5e13fd76eb54549', from: '(예: 한국시간 자정 기준)', to: '' }])
-    expect(DOC_RULES.privacy.edits ?? []).toEqual([])
+    expect(DOC_RULES.privacy.edits).toEqual([{ line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' }])
   })
 })
 
@@ -269,7 +271,7 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
     expect(LEGAL_LINKS.map((l) => l.label)).toEqual(canon.filter((label) => label !== '사업자정보'))
     expect(LEGAL_LINKS.map((l) => l.to)).toEqual(['/terms', '/privacy', '/refund'])
   })
-  it('사업자정보 7줄 — 순서 · 공정위 조회 링크 · 호스팅 칸만 확정 전', () => {
+  it('사업자정보 7줄 — 순서 · 공정위 조회 링크 · 호스팅 = AWS(D-54 값 채움 · 값 자리 0)', () => {
     expect(Object.keys(BUSINESS_INFO)).toEqual([
       'brand',
       'registration',
@@ -284,8 +286,8 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
     expect(BUSINESS_INFO.registration).toBe(
       '사업자등록번호: 704-24-01747 [사업자정보확인](https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7042401747)',
     )
-    expect(BUSINESS_INFO.hosting).toBe(`호스팅 서비스: ${P9_4_PENDING}`)
-    expect(Object.values(BUSINESS_INFO).filter((l) => l.includes(P9_4_PENDING))).toHaveLength(1)
+    expect(BUSINESS_INFO.hosting).toBe('호스팅 서비스: AWS')
+    expect(Object.values(BUSINESS_INFO).filter((l) => l.includes(P9_4_PENDING))).toHaveLength(0)
   })
   it('발급 화면 고지 — 설치 전 3,500원 환불 · 이용약관 동의 포함(약관 6조④ · 12조③)', () => {
     expect(ISSUE_NOTICE.refund).toBe(

@@ -1,8 +1,9 @@
 // 생성물 — scripts/legal-import.mjs 가 legal-pages 정본에서 게시 규칙(08 D절)을 적용해 만든다.
 // 손으로 고치지 말 것 — 정본을 고친 뒤 `yarn workspace nomacom-client legal:import --from <정본 폴더>` 로 다시 만든다.
 // 정본: 02_개인정보처리방침.md · legal-pages @f64203c
-// sha256(본문): 4ec9fad4d8c24982cc956511e7ff99ee6db2667288d0d35d42731c5d4146ffb4
-import { P9_4_PENDING } from '../pending'
+// sha256(본문): 9a7a53e6aa21e98b41008e994b88447d9132d8815a9c57aaa1cc1eb83e85a729
+// 값 채움 2건 — 정본의 값 자리를 결정 글자로(규칙 scripts/legal-posting.ts 의 fills · spec D-54)
+// 게시 수정 1건 — 정본과 다른 글자(규칙 scripts/legal-posting.ts 의 edits · spec 결정)
 import type { LegalMarkdownDoc } from '../../utils/legal-markdown'
 
 export const PRIVACY_DOC: LegalMarkdownDoc = {
@@ -65,8 +66,8 @@ export const PRIVACY_DOC: LegalMarkdownDoc = {
 
 | 수탁자 | 위탁 업무 | 시행 |
 | --- | --- | --- |
-| ${P9_4_PENDING} (Amazon Web Services 서울 리전) | 서비스 인프라·데이터 보관, 전자우편 발송(Amazon SES) | 현행(전자우편 발송은 자체 결제 서비스 개시일부터) |
-| (주)누리고(Solapi) ${P9_4_PENDING} | 알림톡·문자 발송 | 현행 |
+| AWS (Amazon Web Services 서울 리전) | 서비스 인프라·데이터 보관, 전자우편 발송(Amazon SES) | 현행(전자우편 발송은 자체 결제 서비스 개시일부터) |
+| 솔라피(주) | 알림톡·문자 발송 | 현행 |
 | (주)카카오 | 카카오톡 채널 상담, 알림톡 전달 | 현행 |
 | (주)코리아포트원 · (주)토스페이먼츠 | 결제 연동·결제 대행, 결제 확인, 환불 처리 | 자체 결제 서비스 개시일부터 |
 
