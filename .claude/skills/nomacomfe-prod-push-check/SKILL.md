@@ -117,6 +117,21 @@ yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 - 영향 앱 dev 서버 띄워서 (`yarn workspace nomacom-admin run dev`) golden path 수동 검증
 - 자동 테스트는 feature correctness 가 아닌 code correctness 만 검증함
 
+**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남고(D-47), main 은 D-30 예외로 정해진 3칸만 미확정인 채 나간다. 그 3칸만 있는지 센다 — 하나라도 다르면 중단하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터):
+
+```bash
+# Phase 3 빌드의 .output 을 루프백에 · DB · 벤더 env 없이(env -i) — 화면 HTML 만 본다
+PORT=<빈 포트>; (cd apps/client && env -i PATH="$PATH" HOME="$HOME" HOST=127.0.0.1 PORT=$PORT node .output/server/index.mjs) & SRV=$!
+sleep 3; BASE=http://127.0.0.1:$PORT
+cnt() { curl -fsS "$BASE$1" | grep -o -e "$2" | wc -l | tr -d ' '; }   # 실패(4xx · 5xx)면 빈 값 → 아래 비교에서 걸린다
+[ "$(cnt /privacy 'data-pending')" = 2 ] || echo "⛔ /privacy 값 자리 수가 D-30 예외(방침 4장 2칸)와 다르다"
+for p in /terms /refund /supported-devices; do [ "$(cnt $p 'data-pending')" = 0 ] || echo "⛔ $p 에 값 자리"; done
+[ "$(cnt / '(확정 전)')" = 1 ] || echo "⛔ / 의 «(확정 전)» 수가 D-30 · D-36 예외(호스팅 1칸)와 다르다"
+for p in /privacy /terms /refund; do [ "$(cnt $p '(확정 전)')" = 0 ] || echo "⛔ $p 본문에 «(확정 전)» 글자(D-47 위반)"; done
+kill $SRV
+```
+⚠️ 클래스 이름(`legal-md__pending`)이 아니라 `data-pending` 속성을 센다 — production SSR 은 컴포넌트 CSS 를 HTML 에 넣어 클래스 선택자 글자가 매 페이지에 있다.
+
 ### Phase 5 — 마이그레이션/DB 변경 안전성
 
 nomacom-frontend 도 Drizzle 사용 (`apps/admin/server/`, `apps/client/server/`):

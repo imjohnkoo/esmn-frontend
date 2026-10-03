@@ -3,6 +3,7 @@ import { createSSRApp, h, type VNode } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import { BUSINESS_INFO } from '../content/legal/business'
 import { PRIVACY_DOC } from '../content/legal/privacy'
+import { REFUND_DOC } from '../content/legal/refund'
 import { TERMS_DOC } from '../content/legal/terms'
 import { P9_4_PENDING } from '../content/pending'
 import { parseLegalMarkdown } from './legal-markdown'
@@ -68,6 +69,12 @@ describe('renderBlocks — 그린 HTML', () => {
     ])
   })
 
+  it('앞에 제목이 없는 표는 문서 제목으로 — «표 1» 로 읽히지 않는다', async () => {
+    const doc = { slug: 'refund', title: '취소·환불 정책', markdown: '| 구분 | 기준 |\n| - | - |\n| 발급 전 | 전액 |\n' } as const
+    const html = await ssr(() => renderDoc(doc))
+    expect([...html.matchAll(/aria-label="([^"]+)"/g)].map((m) => m[1])).toEqual(['취소·환불 정책 표'])
+  })
+
   it('표 최소 폭 = 열마다 120px(최소 320)', async () => {
     const six = await render(
       '| a | b | c | d | e | f |\n| - | - | - | - | - | - |\n| 1 | 2 | 3 | 4 | 5 | 6 |',
@@ -112,7 +119,7 @@ describe('renderBlocks — 그린 HTML', () => {
   })
 })
 
-describe.each([TERMS_DOC, PRIVACY_DOC])('renderDoc($slug) — 실문서를 그대로 그린다', (doc) => {
+describe.each([TERMS_DOC, PRIVACY_DOC, REFUND_DOC])('renderDoc($slug) — 실문서를 그대로 그린다', (doc) => {
   /** 게시용 마크다운 → 화면에 보여야 할 글자(꾸밈 기호 · 번호 · 구분행 · 표 칸 경계 제거, 자리표시자 → 표기) — 공백은 비교하지 않는다 */
   const expected = doc.markdown
     .split('\n')
@@ -223,8 +230,16 @@ describe('renderNoticeList — 발급 화면 고지 목록(05-A · F-21)', () =>
     const [ul] = [renderNoticeList(['기기 [지원 기기 확인](/supported-devices)'], [], { sheet })]
     const a = (ul!.children as VNode[])[0]!.children as VNode[]
     const link = a.find((n) => typeof n === 'object' && n.type === 'a')!
+    type Click = { preventDefault: () => void; metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean; button: number }
+    const click = link.props!.onClick as (e: Click) => void
     let prevented = false
-    ;(link.props!.onClick as (e: { preventDefault: () => void }) => void)({ preventDefault: () => (prevented = true) })
+    click({ preventDefault: () => (prevented = true), button: 0 })
     expect([prevented, opened]).toEqual([true, 1])
+    // 보조키 · 다른 버튼 클릭은 브라우저 기본 동작(새 탭 등) — 막지도 시트를 열지도 않는다
+    for (const k of [{ metaKey: true }, { ctrlKey: true }, { shiftKey: true }, { altKey: true }, { button: 1 }]) {
+      prevented = false
+      click({ preventDefault: () => (prevented = true), button: 0, ...k })
+      expect([prevented, opened]).toEqual([false, 1])
+    }
   })
 })
