@@ -36,6 +36,13 @@ describe('NBottomSheet', () => {
     w.unmount()
   })
 
+  it('제목 없이 closable 만 줘도 X 가 있는 머리줄이 그려진다', async () => {
+    const w = await open({ closable: true, title: undefined })
+    expect(document.body.querySelector('.n-bottom-sheet__title')).toBeNull()
+    expect(document.body.querySelector('.n-bottom-sheet__header .n-bottom-sheet__close')).not.toBeNull()
+    w.unmount()
+  })
+
   it('closeLabel 로 접근 이름을 바꾼다', async () => {
     const w = await open({ closable: true, closeLabel: '약관 닫기' })
     expect(document.body.querySelector('.n-bottom-sheet__close')?.getAttribute('aria-label')).toBe('약관 닫기')

@@ -104,8 +104,8 @@ yarn turbo run build --filter=nomacom-admin --filter=nomacom-client || exit 1
 Phase 2에서 판정된 앱만 테스트:
 
 ```bash
-yarn workspace @imjohnkoo/design-vue run test --run   # DS 변경 시 (136 tests — 2026-10-03)
-yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A 줄 고정 · 동의 문구 · 하단 시트 마운트 포함(471 tests — 2026-10-03)
+yarn workspace @imjohnkoo/design-vue run test --run   # DS 변경 시 (137 tests — 2026-10-03)
+yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A 줄 고정 · 동의 문구 · 하단 시트 마운트 포함(전부 통과해야 한다 — 2026-10-03 기준 476 tests)
 yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 ```
 
@@ -118,10 +118,10 @@ yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 - 영향 앱 dev 서버 띄워서 (`yarn workspace nomacom-admin run dev`) golden path 수동 검증
 - 자동 테스트는 feature correctness 가 아닌 code correctness 만 검증함
 
-**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남고(D-47), main 은 D-30 예외로 정해진 3자리(방침 4장 AWS · Solapi 행 · 푸터 호스팅)에만 값 자리를 둔 채 나간다. **그 3자리 밖에 값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 한 자리에 값 자리가 둘 이상이거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 올릴 커밋(`origin/main`)을 체크아웃한 저장소 루트에서 그대로 돌린다(블록이 그 자리에서 빌드한다 — turbo 캐시가 맞으면 몇 초). **Phase 7 에서 prod 로 올리는 sha 는 끝 줄에 찍힌 커밋과 같아야 한다**:
+**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남고(D-47), main 은 D-30 예외로 정해진 3자리(방침 4장 AWS · Solapi 행 · `/` 임시 블록(D-36)의 호스팅 줄)에만 값 자리를 둔 채 나간다. **그 3자리 밖에 값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 한 자리에 값 자리가 둘 이상이거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 올릴 커밋(`origin/main`)을 체크아웃한 저장소 루트에서 그대로 돌린다(블록이 그 자리에서 빌드한다 — turbo 캐시가 맞으면 몇 초). **Phase 7 에서 prod 로 올리는 sha 는 끝 줄에 찍힌 커밋과 같아야 한다**:
 
 ```bash
-# Phase 3 빌드의 .output 을 루프백에 · DB · 벤더 env 없이(env -i — DATABASE_URL 이 없으면 서버는 DB 에 붙지 않는다) — 화면 HTML 만 본다
+# 블록이 그 자리에서 빌드한 .output 을 루프백에 · DB · 벤더 env 없이(env -i — DATABASE_URL 이 없으면 서버는 DB 에 붙지 않는다) — 화면 HTML 만 본다
 bash <<'SH'
 set -u
 cd apps/client || exit 1
@@ -151,7 +151,8 @@ get() {
   html="$(curl -fsS "$B$1")" || { echo "⛔ $1 응답 실패"; return 1; }
   printf '%s' "$html" | grep -qF "buildId:\"$want\"" || { echo "⛔ $1 이 이 빌드($want)의 응답이 아니다"; return 1; }
   raw="$(printf '%s' "$html" | tr '\n' ' ' | sed -e 's/<[^>]*data-pending[^>]*>/⟦P⟧/g' \
-    -e 's/&nbsp;/ /g; s/&#160;/ /g; s/&#xa0;/ /g' -e $'s/\xc2\xa0/ /g' -e 's/（/(/g; s/）/)/g' | tr -s '[:space:]' ' ')"
+    -e 's/&nbsp;/ /g; s/&#160;/ /g; s/&#xa0;/ /g' -e $'s/\xc2\xa0/ /g' -e 's/（/(/g; s/）/)/g' \
+    -e $'s/\xe2\x80\x8b//g; s/\xe2\x80\x8c//g; s/\xe2\x80\x8d//g; s/\xe2\x81\xa0//g; s/\xef\xbb\xbf//g' | tr -s '[:space:]' ' ')"   # zero-width(U+200B~D · 2060 · FEFF)는 지운다 — «(확정\u200b 전)» 도 «(확정 전)»
   body="$(printf '%s' "$raw" | sed -e 's/<head>.*<\/head>//' -e 's/<[^>]*>//g' | tr -s ' ' ' ')"
 }
 n() { printf '%s' "$1" | grep -oF -e "$2" | wc -l | tr -d ' '; }
@@ -184,8 +185,8 @@ chk /verify/$O '주문하신 분이 맞는지 확인할게요'
 chk /details/$O '발행할 이심을 선택해 주세요'
 chk /select-date/$O '사용 시작 날짜를 선택해 주세요'
 chk /view/$O 'eSIM 발급이 완료됐어요'
-# 검사하지 않은 페이지가 없는가 — app/pages 의 페이지 파일(.vue · .ts · .tsx · .js · .jsx — 테스트 제외)과 위 목록이 같아야 한다(새 페이지는 chk 줄을 먼저 넣는다)
-pages="$(cd app/pages && find . -type f \( -name '*.vue' -o -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' \) ! -name '*.test.*' ! -name '*.spec.*' ! -name '*.d.ts' | sed -E -e 's#^\./##' -e 's#\.(vue|tsx?|jsx?)$##' -e 's#^index$##' -e 's#/index$##' -e 's#\[[^]]*\]#:id#g' -e 's#^#/#' | sort)"
+# 검사하지 않은 페이지가 없는가 — app/pages 의 페이지 파일(.vue · .js · .ts · .jsx · .tsx · .mjs · .mts · .cjs · .cts — 테스트 제외)과 위 목록이 같아야 한다(새 페이지는 chk 줄을 먼저 넣는다)
+pages="$(cd app/pages && find . -type f \( -name '*.vue' -o -name '*.[jt]s' -o -name '*.[jt]sx' -o -name '*.m[jt]s' -o -name '*.c[jt]s' \) ! -name '*.test.*' ! -name '*.spec.*' ! -name '*.d.ts' | sed -E -e 's#^\./##' -e 's#\.(vue|[cm]?[jt]sx?)$##' -e 's#^index$##' -e 's#/index$##' -e 's#\[[^]]*\]#:id#g' -e 's#^#/#' | sort)"
 [ "$pages" = "$(printf '%s' "$seen" | sort)" ] || { echo "⛔ 검사 목록과 app/pages 가 다르다 — 빠진 페이지에 chk 줄을 넣는다:"; diff <(printf '%s\n' "$pages") <(printf '%s' "$seen" | sort); exit 1; }
 echo "✓ 렌더 확인 통과 — 커밋 $head(= $RC_REF) · 남은 D-30 예외 자리 ${left}/3 (0 이 되면 spec D-30 을 닫는다)"
 SH
@@ -193,7 +194,7 @@ SH
 
 - ⚠️ 클래스 이름(`legal-md__pending`)이 아니라 `data-pending` 속성을 센다 — production SSR 은 컴포넌트 CSS 를 HTML 에 넣어 클래스 선택자 글자가 매 페이지에 있다.
 - 예외 자리는 «있어도 되는» 곳이지 «있어야 하는» 곳이 아니다 — P9-22 값이 와서 `legal:import` 로 자리가 사라져도 통과하고, 끝 줄의 남은 자리 수만 줄어든다. 행 글자(«(Amazon Web Services 서울 리전)» · «(주)누리고(Solapi)» · «호스팅 서비스:») 는 양성 대조라 값이 와도 남아야 한다 — 정본이 그 글자를 바꾸면 여기서 멈추니 이 블록을 먼저 고친다.
-- 발급 확인 팝업 · 하단 시트(약관 · 환불 · 방침 · 지원 기기)는 열어야 그려져 SSR HTML 에 없다 — 그 글자 · 동작은 위 client 테스트가 지킨다(`legal-content.test.ts` 05-A 줄 고정 · 값 자리 수 · 생성 문서 원문에 «(확정 전)» 글자 0 · `legal-links.test.ts` 동의 문구 · 링크 연결 · 시트 · 동의 문구 정적 import · `DocSheet.dom.test.ts` 시트가 «그 문서» 를 열고 닫는가). 시트 본문은 위 단독 페이지와 같은 문서를 그린다.
+- 발급 확인 팝업 · 하단 시트(약관 · 환불 · 방침 · 지원 기기)는 열어야 그려져 SSR HTML 에 없다 — 그 글자 · 동작은 위 client 테스트가 지킨다(`legal-content.test.ts` 05-A 줄 고정 · 값 자리 수 · 생성 문서 원문에 «(확정 전)» 글자 0 · `legal-gate.test.ts` 05-A 등 생성물 코드에 값 자리 0 · `legal-links.test.ts` 동의 문구 · 링크 연결 · 시트 · 동의 문구 정적 import · `DocSheet.dom.test.ts` 시트가 «그 문서» 를 열고 닫는가). 시트 본문은 위 단독 페이지와 같은 문서를 그린다.
 
 ### Phase 5 — 마이그레이션/DB 변경 안전성
 
