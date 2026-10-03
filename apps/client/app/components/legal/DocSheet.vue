@@ -35,7 +35,8 @@ const isOpen = computed({
 
 <template>
   <NBottomSheet v-model="isOpen" :title="title" closable>
-    <div class="legal-sheet">
+    <!-- 본문 스크롤 영역 — 키보드로도 스크롤(포커스 가능 · 영역 이름 = 문서 제목) -->
+    <div class="legal-sheet" tabindex="0" role="region" :aria-label="title">
       <LegalMarkdown v-if="doc" :doc="doc" />
       <SupportedDevicesContent v-else />
     </div>
@@ -43,10 +44,16 @@ const isOpen = computed({
 </template>
 
 <style scoped>
+
+.legal-sheet:focus-visible {
+  outline: 2px solid #6239ff;
+  outline-offset: 2px;
+}
 .legal-sheet {
   /* 본문만 스크롤 — 제목 · X 는 시트 위에 남는다 */
-  max-height: 68vh;
-  max-height: 68dvh;
+  /* 시트 최대 높이(90vh) 안에 머리(손잡이 · 제목 · X ≈ 100px)까지 들어가게 — 낮은 가로 화면에서 X 가 밀려나지 않는다 */
+  max-height: min(68vh, calc(90vh - 112px));
+  max-height: min(68dvh, calc(90dvh - 112px));
   overflow-y: auto;
   overscroll-behavior: contain;
   text-align: left;

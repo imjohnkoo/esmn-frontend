@@ -277,7 +277,9 @@ onMounted(() => window.addEventListener('resize', fitConfirm))
 onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
 
 // 약관 · 환불 정책 하단 시트(spec D-45 · John 2026-10-03) — 새 탭 대신. 열린 문서 하나 · 시트를 닫아도 확인 팝업 · 체크는 그대로
-import DocSheet, { type DocSheetKey } from '~/components/legal/DocSheet.vue'
+import type { DocSheetKey } from '~/components/legal/DocSheet.vue'
+// 시트(법정 문서 3종 + 지원 기기 본문)는 첫 화면 묶음에서 뺀다
+const DocSheet = defineAsyncComponent(() => import('~/components/legal/DocSheet.vue'))
 
 const legalSheet = ref<DocSheetKey | null>(null)
 const openLegalSheet = (doc: DocSheetKey) => {

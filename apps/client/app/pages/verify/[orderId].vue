@@ -84,7 +84,9 @@ const onSubmit = async () => {
 definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 
 // 개인정보처리방침 · 이용약관 하단 시트(spec D-46 · John 2026-10-03) — 새 탭 대신(입력한 이름 · 전화를 잃지 않는다)
-import DocSheet, { type DocSheetKey } from '~/components/legal/DocSheet.vue'
+import type { DocSheetKey } from '~/components/legal/DocSheet.vue'
+// 시트(법정 문서 3종 + 지원 기기 본문)는 첫 화면 묶음에서 뺀다 — 화면이 빨리 준비돼 링크가 시트로 열린다
+const DocSheet = defineAsyncComponent(() => import('~/components/legal/DocSheet.vue'))
 
 const legalSheet = ref<DocSheetKey | null>(null)
 </script>
@@ -151,11 +153,13 @@ const legalSheet = ref<DocSheetKey | null>(null)
         </NTrustNote>
       </div>
 
-      <!-- 법정 링크(client-shell spec F-20 · 개인정보 보호법 30조) — 방침은 굵게 · 색으로 구분. 입력을 잃지 않게 하단 시트로(D-46 — 새 탭 대신) -->
+      <!-- 법정 링크(client-shell spec F-20 · 개인정보 보호법 30조) — 방침은 굵게 · 색으로 구분. 입력을 잃지 않게 하단 시트로(D-46) — 화면 준비(하이드레이션) 전 · 보조키 클릭은 target 으로 새 탭 -->
       <p class="verify-page__policy">
         <a
           class="verify-page__policy-link verify-page__policy-link--privacy"
           href="/privacy"
+          target="_blank"
+          rel="noopener"
           aria-haspopup="dialog"
           @click.exact.prevent="legalSheet = 'privacy'"
           >개인정보처리방침</a
@@ -164,6 +168,8 @@ const legalSheet = ref<DocSheetKey | null>(null)
         <a
           class="verify-page__policy-link"
           href="/terms"
+          target="_blank"
+          rel="noopener"
           aria-haspopup="dialog"
           @click.exact.prevent="legalSheet = 'terms'"
           >이용약관</a
