@@ -1,6 +1,6 @@
 /**
  * 고객센터 채널(client-shell spec S-3 · F-12) — 마이(/my#cs) · 검색 화면이 읽는다.
- * 값은 legal-pages 정본 그대로 — support.test.ts 가 생성물(content/legal/business · refund · privacy) 글자와 대조한다(정본 밖 값 0).
+ * 값은 legal-pages 정본 그대로 — support.test.ts 가 생성물(content/legal/business · refund · privacy) 글자와 대조한다(정본 밖 값은 카카오톡 채널 URL 하나 — John 결정 D-54).
  * 순서는 04 3절 권장 배치(카카오톡 채널 → 전화 → 이메일 → 네이버 톡톡) + 운영 시간.
  * 카카오톡 채널 URL 은 정본에 아직 없다 — John 결정 글자(spec D-54 · 2026-10-03) 그대로 둔다(정본 rev 가 오면 대조로 바꾼다).
  */

@@ -235,6 +235,22 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
 /** 값 자리 표시 — 모듈 생성 때 자리표시자 상수로 바뀐다 */
 export const PENDING_MARK = '\u0000PENDING\u0000'
 const slotMark = (i: number) => `\u0000SLOT${i}\u0000`
+/** 값 채움 자리 표식 — 채운 글자 앞에 붙였다가, 걷어 내기가 끝난 뒤 «그 자리가 게시 본문에 남았는가» 를 보고 지운다(QA ⑥ D-54 m1) */
+const fillMark = (i: number) => `\u0000FILL${i}\u0000`
+
+/** 채운 자리마다 게시 본문에 남았는지(걷어 내는 줄 · 인용 블록 · 결정 기록 안에만 있었으면 멈춘다) 본 뒤 표식을 지운다 */
+function takeFills(body: string, rules: TagRules): string {
+  for (const k of Object.keys(rules.fills ?? {}))
+    if (!(Number(k) >= 0 && Number(k) < rules.placeholders.length))
+      throw new Error(`값 채움 순번 ${k} 에 해당하는 값 자리가 없다(값 자리 ${rules.placeholders.length}개)`)
+  for (const k of Object.keys(rules.fills ?? {})) {
+    const i = Number(k)
+    if (!body.includes(fillMark(i)))
+      throw new Error(`값 채움 ${i + 1} 의 자리가 게시 본문에 없다(걷어 내는 줄 안에만 있었다 — 정본이 바뀌었다)`)
+    body = body.split(fillMark(i)).join('')
+  }
+  return body
+}
 
 /** eSIM 도메인 불변(사용일수는 첫 연결부터 24시간 단위) — 날짜 경계 낱말 자체를 금지: 자정(«당일자정» 처럼 붙여 써도) ·
  *  0시 · 00시 · 24시(«24시간» 은 제외) · 0:00 · 00:00 · 24:00 · 23:59(공백 허용) · 오전/밤/새벽 12시 · 영시 · 열두 시 · 12 AM · midnight. 법정 문서에 정상으로 쓰일 일이 없어 시끄럽게 멈추는 쪽.
@@ -318,7 +334,7 @@ function applyTags(text: string, rules: TagRules, tagRe: RegExp): string {
     if (slot >= 0) {
       seen.add(h)
       const fill = rules.fills?.[slot]
-      return fill === undefined ? slotMark(slot) : fill
+      return fill === undefined ? slotMark(slot) : fillMark(slot) + fill
     }
     if (rules.notes.includes(h)) {
       seen.add(h)
@@ -418,7 +434,7 @@ export function toPosting(source: string, rules: TagRules & { edits?: readonly P
   }
   if (!title) throw new Error('문서 제목(# …)이 없다')
   if (/[[\]`]/.test(title)) throw new Error(`제목에 태그 · 백틱이 남았다: ${title}`)
-  let body = out.join('\n')
+  let body = takeFills(out.join('\n'), rules)
   // 메모를 지운 자리의 앞 공백 정리(문장 끝 «. ` [..]`» → «.»)
   body = body.replace(/[ \t]+\n/g, '\n').replace(/(?<=\S)[ \t]{2,}(?=\S)/g, ' ')
   body = body.replace(/`([^`\n]*)`/g, '$1')
@@ -491,7 +507,7 @@ export function toBlock(source: string, rules: BlockRules): BlockPosting {
   })
   for (const s of skip)
     if (!skipped.has(s.sha256)) throw new Error(`건너뛸 줄을 정본에서 찾지 못했다(정본이 바뀌었다): ${s.why}`)
-  const { body, pendingCount } = finish(Object.values(picked).join('\n') + '\n', rules)
+  const { body, pendingCount } = finish(takeFills(Object.values(picked).join('\n') + '\n', rules), rules)
   const out = body.trimEnd().split('\n')
   return {
     lines: Object.fromEntries(rules.pick.map((p, i) => [p.key, out[i]!])),
