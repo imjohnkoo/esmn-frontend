@@ -46,13 +46,13 @@ const code = (dir: string) =>
   walk(dir).filter((f) => /\.(vue|ts)$/.test(f) && !/\.test\.ts$/.test(f))
 
 describe('발급기 법정 링크(F-20)', () => {
-  it('verify — 개인정보처리방침(굵게 · 색 구분 클래스) · 이용약관 → 하단 시트(D-46 — 새 탭 아님 · href 유지)', () => {
+  it('verify — 개인정보처리방침(굵게 · 색 구분 클래스) · 이용약관 → 하단 시트(D-46) · 화면 준비 전 · 보조키는 target 새 탭', () => {
     const src = read('./verify/[orderId].vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
     const links = findAll(tpl, (n) => n.tag === 'a' && /^\/(privacy|terms)$/.test(attr(n, 'href') ?? '')).map((l) => l.node)
     expect(links.map((l) => [cls(l), attr(l, 'href'), attr(l, 'target'), attr(l, 'aria-haspopup'), dir(l, '@click.exact.prevent')])).toEqual([
-      ['verify-page__policy-link verify-page__policy-link--privacy', '/privacy', undefined, 'dialog', "legalSheet = 'privacy'"],
-      ['verify-page__policy-link', '/terms', undefined, 'dialog', "legalSheet = 'terms'"],
+      ['verify-page__policy-link verify-page__policy-link--privacy', '/privacy', '_blank', 'dialog', "legalSheet = 'privacy'"],
+      ['verify-page__policy-link', '/terms', '_blank', 'dialog', "legalSheet = 'terms'"],
     ])
     expect(text(links[0]!)).toContain('>개인정보처리방침</a')
     expect(text(links[1]!)).toContain('>이용약관</a')
@@ -69,6 +69,12 @@ describe('발급기 법정 링크(F-20)', () => {
     // 크게 확대해도 두 링크 줄이 넘치지 않게(넘치면 «개인정보처리방침» 앞 글자가 가려진다) · 링크 글자는 안 갈림
     expect(css).toMatch(/\.verify-page__policy \{[^}]*flex-wrap: wrap;/)
     expect(css).toMatch(/\.verify-page__policy-link \{[^}]*white-space: nowrap;/)
+  })
+
+  it('/refund — 생성물을 그린다 · 동의 문구 링크(href)가 가리키는 페이지가 있다(D-50)', () => {
+    expect(template(read('./refund.vue'))).toContain('<LegalMarkdown :doc="REFUND_DOC" />')
+    expect(read('./refund.vue')).toContain("import { REFUND_DOC } from '~/content/legal/refund'")
+    expect(read('../components/legal/IssueConsentLabel.vue')).toContain('href="/refund"')
   })
 
   it('발급 필수 동의 문구(D-44 · D-51) — 글자 그대로 · «이용약관» · «취소·환불 정책» 링크는 하단 시트를 연다(D-45 — 새 탭 아님 · href 는 남김)', () => {
@@ -117,6 +123,10 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src).toMatch(/import \{ REFUND_DOC \} from '~\/content\/legal\/refund'/)
     expect(src).toMatch(/\.legal-sheet \{[^}]*overflow-y: auto;[^}]*\}/)
     expect(src).toMatch(/\.legal-sheet :deep\(\.legal-md__title\) \{[^}]*display: none;/)
+    // 본문은 키보드로도 스크롤(포커스 · 영역 이름) · 낮은 화면에서 머리(X)까지 시트 안에
+    const body = find(sheet, (n) => cls(n) === 'legal-sheet')!
+    expect([attr(body, 'tabindex'), attr(body, 'role'), dir(body, ':aria-label')]).toEqual(['0', 'region', 'title'])
+    expect(src).toMatch(/max-height: min\(68dvh, calc\(90dvh - 112px\)\);/)
   })
 
   it('select-date 확인 팝업(템플릿 AST) — 요약 → 고지(D-42) · 스크롤 영역 배선 · 동의 체크는 밖(compact 면 안) · 체크 전 발급 비활성', () => {

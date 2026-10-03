@@ -278,7 +278,9 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
 // 발급 확인 팝업 — 안내 · 동의 · 하단 시트(client-shell spec D-43 · D-44 · D-45 · D-48 · D-49 · D-50 — W1-2 와 같은 배치). 스크립트 끝에 둔다(typecheck 기준선 줄 번호 불변)
 import { renderNoticeList } from '~/utils/legal-render'
 import IssueConsentLabel from '~/components/legal/IssueConsentLabel.vue'
-import DocSheet, { type DocSheetKey } from '~/components/legal/DocSheet.vue'
+import type { DocSheetKey } from '~/components/legal/DocSheet.vue'
+// 시트(법정 문서 3종 + 지원 기기 본문)는 첫 화면 묶음에서 뺀다
+const DocSheet = defineAsyncComponent(() => import('~/components/legal/DocSheet.vue'))
 
 // 05-A 안내 중 «지원 기기 확인» 1줄만(D-43 · D-49)
 const NOTICE_LINES = [ISSUE_NOTICE.device]
