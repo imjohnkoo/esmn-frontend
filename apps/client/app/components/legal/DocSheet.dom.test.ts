@@ -71,6 +71,13 @@ describe('DocSheet — 키마다 그 문서', () => {
       expect(body()).toContain(t)
     expect(body()).not.toContain('17 Air')
     expect(body()).toContain('XR · XS Max · 11 ~ 16 시리즈')
+    // iPad 카드 경고(D-55) — 제목 바로 아래 · 카드가 접혀 있어도 보인다(카드 본문 밖)
+    const warn = document.body.querySelector<HTMLElement>('.legal-sheet .devices-page__warning')!
+    expect(warn.textContent?.trim()).toBe('Wi-Fi 모델은 사용이 불가합니다.')
+    expect(warn.getAttribute('role')).toBe('note')
+    expect(warn.closest('.devices-page__card-body')).toBeNull()
+    expect(warn.closest('.devices-page__card')?.querySelector('.devices-page__brand')?.textContent).toBe('iPad (셀룰러 모델)')
+    expect(document.body.querySelectorAll('.legal-sheet .devices-page__warning')).toHaveLength(1)
     expect(body()).toContain('사용할 수 있어요')
     expect(body()).toContain('사용할 수 없어요')
     // 제품명은 «아이폰»(D-52 — 카피 규칙 9/13) · 모델명 · iPad 는 그대로
