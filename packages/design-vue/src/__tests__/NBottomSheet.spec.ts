@@ -1,7 +1,10 @@
-import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, describe, it, expect } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import NBottomSheet from '../components/NBottomSheet/NBottomSheet.vue'
+
+// 단언이 실패해도 포털이 다음 테스트로 새지 않게
+enableAutoUnmount(afterEach)
 
 const open = async (props: Record<string, unknown> = {}) => {
   const wrapper = mount(NBottomSheet, {

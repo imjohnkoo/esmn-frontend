@@ -60,7 +60,7 @@ describe('발급기 법정 링크(F-20)', () => {
     const src = read('./verify/[orderId].vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
     const links = findAll(tpl, (n) => n.tag === 'a' && /^\/(privacy|terms)$/.test(attr(n, 'href') ?? '')).map((l) => l.node)
-    expect(links.map((l) => [cls(l), attr(l, 'href'), attr(l, 'target'), attr(l, 'aria-haspopup'), dir(l, '@click.prevent')])).toEqual([
+    expect(links.map((l) => [cls(l), attr(l, 'href'), attr(l, 'target'), attr(l, 'aria-haspopup'), dir(l, '@click.exact.prevent')])).toEqual([
       ['verify-page__policy-link verify-page__policy-link--privacy', '/privacy', undefined, 'dialog', "legalSheet = 'privacy'"],
       ['verify-page__policy-link', '/terms', undefined, 'dialog', "legalSheet = 'terms'"],
     ])
@@ -85,7 +85,7 @@ describe('발급기 법정 링크(F-20)', () => {
     const src = read('../components/legal/IssueConsentLabel.vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
     const links = findAll(tpl, (n) => n.tag === 'a').map((l) => l.node)
-    expect(links.map((l) => [attr(l, 'href'), attr(l, 'target'), attr(l, 'aria-haspopup'), dir(l, '@click.prevent')])).toEqual([
+    expect(links.map((l) => [attr(l, 'href'), attr(l, 'target'), attr(l, 'aria-haspopup'), dir(l, '@click.exact.prevent')])).toEqual([
       ['/terms', undefined, 'dialog', "emit('open', 'terms')"],
       ['/refund', undefined, 'dialog', "emit('open', 'refund')"],
     ])

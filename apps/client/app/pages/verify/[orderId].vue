@@ -157,7 +157,7 @@ const legalSheet = ref<DocSheetKey | null>(null)
           class="verify-page__policy-link verify-page__policy-link--privacy"
           href="/privacy"
           aria-haspopup="dialog"
-          @click.prevent="legalSheet = 'privacy'"
+          @click.exact.prevent="legalSheet = 'privacy'"
           >개인정보처리방침</a
         >
         <span class="verify-page__policy-sep" aria-hidden="true">·</span>
@@ -165,7 +165,7 @@ const legalSheet = ref<DocSheetKey | null>(null)
           class="verify-page__policy-link"
           href="/terms"
           aria-haspopup="dialog"
-          @click.prevent="legalSheet = 'terms'"
+          @click.exact.prevent="legalSheet = 'terms'"
           >이용약관</a
         >
       </p>

@@ -68,6 +68,8 @@ export function renderInlines(
               class: 'legal-md__link',
               'aria-haspopup': 'dialog',
               onClick: (e: MouseEvent) => {
+                // cmd · ctrl · shift · alt 클릭(데스크톱 «새 탭에서 열기»)은 브라우저 기본 동작 그대로(href)
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
                 e.preventDefault()
                 openSheet()
               },

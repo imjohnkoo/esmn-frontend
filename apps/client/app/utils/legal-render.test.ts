@@ -230,9 +230,17 @@ describe('renderNoticeList — 발급 화면 고지 목록(05-A · F-21)', () =>
     const [ul] = [renderNoticeList(['기기 [지원 기기 확인](/supported-devices)'], [], { sheet })]
     const a = (ul!.children as VNode[])[0]!.children as VNode[]
     const link = a.find((n) => typeof n === 'object' && n.type === 'a')!
+    type Click = { preventDefault: () => void; metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean; button: number }
+    const click = link.props!.onClick as (e: Click) => void
     let prevented = false
-    ;(link.props!.onClick as (e: { preventDefault: () => void }) => void)({ preventDefault: () => (prevented = true) })
+    click({ preventDefault: () => (prevented = true), button: 0 })
     expect([prevented, opened]).toEqual([true, 1])
+    // 보조키 · 다른 버튼 클릭은 브라우저 기본 동작(새 탭 등) — 막지도 시트를 열지도 않는다
+    for (const k of [{ metaKey: true }, { ctrlKey: true }, { shiftKey: true }, { altKey: true }, { button: 1 }]) {
+      prevented = false
+      click({ preventDefault: () => (prevented = true), button: 0, ...k })
+      expect([prevented, opened]).toEqual([false, 1])
+    }
   })
 })
 
