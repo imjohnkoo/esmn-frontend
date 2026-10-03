@@ -6,7 +6,7 @@ import { PRIVACY_DOC } from '../content/legal/privacy'
 import { TERMS_DOC } from '../content/legal/terms'
 import { P9_4_PENDING } from '../content/pending'
 import { parseLegalMarkdown } from './legal-markdown'
-import { renderBlocks, renderBusinessInfo, renderDoc } from './legal-render'
+import { renderBlocks, renderNoticeList, renderBusinessInfo, renderDoc } from './legal-render'
 
 /** client-shell spec F-12 · F-20 · D-36 — 블록 · 실문서를 실제 HTML 로 그려 본다(서버 렌더 — 브라우저 없이) */
 const ssr = (node: () => VNode | VNode[]) =>
@@ -128,6 +128,12 @@ describe.each([TERMS_DOC, PRIVACY_DOC])('renderDoc($slug) — 실문서를 그�
     .join('')
     .replace(/\s+/g, '')
 
+  it('값 자리 수 = 빈 표식 수(D-47 — 글자는 없고 표식은 남는다)', async () => {
+    const html = await ssr(() => renderDoc(doc))
+    expect(html.split('<span class="legal-md__pending" data-pending></span>').length - 1).toBe(doc.markdown.split(P9_4_PENDING).length - 1)
+    expect(html).not.toContain('(확정 전)')
+  })
+
   it('화면 글자 = 원문 글자(한 글자도 빠지거나 더해지지 않는다) · 제목 · 자리표시자 이름 0', async () => {
     const html = await ssr(() => renderDoc(doc))
     const shown = visible(html)
@@ -193,5 +199,32 @@ describe('renderBusinessInfo — 발급기 사업자정보 블록(D-36)', () => 
     expect(html).toMatch(/<a href="\/terms" class="issuer-biz__link">이용약관<\/a>/)
     expect(html).toContain('aria-label="사업자정보"')
     expect(html).not.toContain(P9_4_PENDING)
+  })
+})
+
+describe('renderNoticeList — 발급 화면 고지 목록(05-A · F-21)', () => {
+  it('줄마다 한 항목 · 지정한 줄만 굵게 · 사이트 안 링크도 새 창(팝업 상태를 잃지 않게) · 낭독기 «(새 창)»', async () => {
+    const html = await ssr(() =>
+      renderNoticeList(['첫 줄', '둘째 3,500원', '기기 확인 [지원 기기 확인](/supported-devices)'], [1]),
+    )
+    expect(html).toMatch(/^<div><ul class="issue-notice__list"><li>첫 줄<\/li><li><strong>둘째 3,500원<\/strong><\/li>/)
+    expect(html).toContain(
+      '<a href="/supported-devices" class="legal-md__link" target="_blank" rel="noopener">지원 기기 확인<span class="legal-md__sr sr-only"> (새 창)</span></a>',
+    )
+  })
+  it('sheet 옵션 — 고른 주소만 하단 시트(href 유지 · 새 창 표기 없음 · aria-haspopup) · 누르면 이동 대신 함수 · 다른 주소는 새 창 그대로(D-48)', async () => {
+    let opened = 0
+    const sheet = (href: string) => (href === '/supported-devices' ? () => opened++ : undefined)
+    const html = await ssr(() =>
+      renderNoticeList(['기기 [지원 기기 확인](/supported-devices)', '약관 [보기](/terms)'], [], { sheet }),
+    )
+    expect(html).toContain('<a href="/supported-devices" class="legal-md__link" aria-haspopup="dialog">지원 기기 확인</a>')
+    expect(html).toContain('<a href="/terms" class="legal-md__link" target="_blank" rel="noopener">보기<span class="legal-md__sr sr-only"> (새 창)</span></a>')
+    const [ul] = [renderNoticeList(['기기 [지원 기기 확인](/supported-devices)'], [], { sheet })]
+    const a = (ul!.children as VNode[])[0]!.children as VNode[]
+    const link = a.find((n) => typeof n === 'object' && n.type === 'a')!
+    let prevented = false
+    ;(link.props!.onClick as (e: { preventDefault: () => void }) => void)({ preventDefault: () => (prevented = true) })
+    expect([prevented, opened]).toEqual([true, 1])
   })
 })

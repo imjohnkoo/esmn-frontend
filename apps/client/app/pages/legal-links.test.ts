@@ -46,14 +46,20 @@ const code = (dir: string) =>
   walk(dir).filter((f) => /\.(vue|ts)$/.test(f) && !/\.test\.ts$/.test(f))
 
 describe('발급기 법정 링크(F-20)', () => {
-  it('verify — 개인정보처리방침(굵게 · 색 구분 클래스) · 이용약관, 새 탭', () => {
-    const t = template(read('./verify/[orderId].vue'))
-    expect(t).toMatch(
-      /<a\s+class="verify-page__policy-link verify-page__policy-link--privacy"\s+href="\/privacy"\s+target="_blank"\s+rel="noopener"\s*>개인정보처리방침<span class="sr-only"> \(새 창\)<\/span><\/a/,
-    )
-    expect(t).toMatch(
-      /href="\/terms"\s+target="_blank"\s+rel="noopener"\s*>이용약관<span class="sr-only"> \(새 창\)<\/span><\/a/,
-    )
+  it('verify — 개인정보처리방침(굵게 · 색 구분 클래스) · 이용약관 → 하단 시트(D-46 — 새 탭 아님 · href 유지)', () => {
+    const src = read('./verify/[orderId].vue')
+    const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
+    const links = findAll(tpl, (n) => n.tag === 'a' && /^\/(privacy|terms)$/.test(attr(n, 'href') ?? '')).map((l) => l.node)
+    expect(links.map((l) => [cls(l), attr(l, 'href'), attr(l, 'target'), attr(l, 'aria-haspopup'), dir(l, '@click.prevent')])).toEqual([
+      ['verify-page__policy-link verify-page__policy-link--privacy', '/privacy', undefined, 'dialog', "legalSheet = 'privacy'"],
+      ['verify-page__policy-link', '/terms', undefined, 'dialog', "legalSheet = 'terms'"],
+    ])
+    expect(text(links[0]!)).toContain('>개인정보처리방침</a')
+    expect(text(links[1]!)).toContain('>이용약관</a')
+    // 시트 하나 · v-model = 링크가 고르는 키 · ref 는 공용 키 타입
+    const sheets = findAll(tpl, (n) => n.tag === 'DocSheet')
+    expect(sheets.map((x) => dir(x.node, 'v-model'))).toEqual(['legalSheet'])
+    expect(src).toMatch(/const legalSheet = ref<DocSheetKey \| null>\(null\)/)
     // 방침은 굵게 · 색으로 다른 링크와 구분(처리방침 작성지침) · 터치 영역 24px 이상
     const css = read('./verify/[orderId].vue')
     expect(css).toMatch(
@@ -63,6 +69,54 @@ describe('발급기 법정 링크(F-20)', () => {
     // 크게 확대해도 두 링크 줄이 넘치지 않게(넘치면 «개인정보처리방침» 앞 글자가 가려진다) · 링크 글자는 안 갈림
     expect(css).toMatch(/\.verify-page__policy \{[^}]*flex-wrap: wrap;/)
     expect(css).toMatch(/\.verify-page__policy-link \{[^}]*white-space: nowrap;/)
+  })
+
+  it('발급 필수 동의 문구(D-44 · D-51) — 글자 그대로 · «이용약관» · «취소·환불 정책» 링크는 하단 시트를 연다(D-45 — 새 탭 아님 · href 는 남김)', () => {
+    const src = read('../components/legal/IssueConsentLabel.vue')
+    const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
+    const links = findAll(tpl, (n) => n.tag === 'a').map((l) => l.node)
+    expect(links.map((l) => [attr(l, 'href'), attr(l, 'target'), attr(l, 'aria-haspopup'), dir(l, '@click.prevent')])).toEqual([
+      ['/terms', undefined, 'dialog', "emit('open', 'terms')"],
+      ['/refund', undefined, 'dialog', "emit('open', 'refund')"],
+    ])
+    expect(src).toMatch(/defineEmits<\{ open: \[doc: 'terms' \| 'refund'\] \}>\(\)/)
+    // 화면 글자(줄바꿈 정리) = 결정 글자
+    const shown = template(src).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+    expect(shown).toBe('(필수) 이용약관과 취소·환불 정책을 확인했으며 QR 발급 후 환불 시 환불 비용이 발생하는 것에 동의합니다.')
+  })
+
+  it('약관 · 환불 정책 · 지원 기기 하단 시트(D-45 · D-48) — 확인 팝업 안 공용 DocSheet · 두 동의 자리 모두 시트를 연다 · 안내 줄 «지원 기기 확인» 도 · 팝업을 닫으면 시트도', () => {
+    const src = read('./select-date/[orderId].vue')
+    const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
+    const dialog = find(tpl, (n) => n.tag === 'NAlertDialog' && dir(n, 'v-model') === 'isConfirmOrderVisible')!
+    expect(findAll(dialog, (n) => n.tag === 'DocSheet').map((x) => dir(x.node, 'v-model'))).toEqual(['legalSheet'])
+    expect(findAll(tpl, (n) => n.tag === 'DocSheet')).toHaveLength(1) // 팝업 밖에는 없다(중첩 레이어)
+    // 안내 줄의 «지원 기기 확인» 만 시트로(D-48) — 그 밖 주소는 렌더러 기본
+    expect(src).toMatch(/const noticeSheet = \(href: string\) => \(href === '\/supported-devices' \? \(\) => openLegalSheet\('devices'\) : undefined\)/)
+    const labels = findAll(dialog, (n) => n.tag === 'IssueConsentLabel').map((l) => dir(l.node, '@open'))
+    expect(labels).toEqual(['openLegalSheet', 'openLegalSheet'])
+    expect(src).toMatch(/watch\(isConfirmOrderVisible, \(open\) => \{\s*if \(!open\) legalSheet\.value = null/)
+  })
+
+  it('공용 DocSheet(D-45 · D-46 · D-48) — 법정 3종 = 생성물 · 지원 기기 = 페이지와 같은 컴포넌트 · X(closable) · 제목 · 본문만 스크롤 · 본문 h1 숨김', () => {
+    const src = read('../components/legal/DocSheet.vue')
+    const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
+    const sheet = find(tpl, (n) => n.tag === 'NBottomSheet')!
+    expect(dir(sheet, 'v-model')).toBe('isOpen')
+    expect(dir(sheet, ':title')).toBe('title')
+    expect(src).toMatch(/const title = computed\(\(\) => doc\.value\?\.title \?\? DEVICES_TITLE\)/)
+    expect(src).toMatch(/const DEVICES_TITLE = 'eSIM 지원 기기'/)
+    const devices = find(sheet, (n) => n.tag === 'SupportedDevicesContent')!
+    expect(devices.props!.some((p) => p.type === 7 && p.rawName === 'v-else')).toBe(true)
+    expect(sheet.props!.some((p) => p.type === 6 && p.name === 'closable')).toBe(true)
+    const md = find(sheet, (n) => n.tag === 'LegalMarkdown')!
+    expect([dir(md, ':doc'), dir(md, 'v-if')]).toEqual(['doc', 'doc'])
+    expect(src).toMatch(/const DOCS = \{ terms: TERMS_DOC, privacy: PRIVACY_DOC, refund: REFUND_DOC \} as const/)
+    expect(src).toMatch(/import \{ TERMS_DOC \} from '~\/content\/legal\/terms'/)
+    expect(src).toMatch(/import \{ PRIVACY_DOC \} from '~\/content\/legal\/privacy'/)
+    expect(src).toMatch(/import \{ REFUND_DOC \} from '~\/content\/legal\/refund'/)
+    expect(src).toMatch(/\.legal-sheet \{[^}]*overflow-y: auto;[^}]*\}/)
+    expect(src).toMatch(/\.legal-sheet :deep\(\.legal-md__title\) \{[^}]*display: none;/)
   })
 
   it('select-date 확인 팝업(템플릿 AST) — 요약 → 고지(D-42) · 스크롤 영역 배선 · 동의 체크는 밖(compact 면 안) · 체크 전 발급 비활성', () => {
@@ -75,22 +129,30 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(attr(scroll, 'ref')).toBe('confirmScrollEl')
     expect(dir(scroll, ':style')).toBe('confirmScrollStyle')
     expect(dir(scroll, '@scroll')).toBe('updateConfirmMore')
-    // 스크롤 안 — 주문 요약 → 고지(05-A 14행 · 약관 12조③ «미리 표시» — 같은 팝업 안) 순서(D-42 · John 2026-10-02) · 이용약관 보기(새 탭)
+    // 스크롤 안 — 주문 요약 → 고지(05-A 원문 · 약관 12조③ «미리 표시» — 같은 팝업 안) 순서(D-42)
     const kids = (scroll.children ?? []).filter((c) => c.type === ELEMENT)
     const policyAt = kids.findIndex((c) => cls(c) === 'select-date-page__confirm-policy')
     const summaryAt = kids.findIndex((c) => cls(c) === 'select-date-page__confirm')
-    expect(summaryAt).toBe(0)
+    expect(summaryAt).toBe(0) // D-42 — 주문 요약 → 고지(John 2026-10-02)
     expect(policyAt).toBe(1)
-    // D-32 «팝업 본문(굵게)» — 고지는 <b> 로
-    const bold = find(kids[policyAt]!, (n) => n.tag === 'b')!
-    expect(text(bold)).toBe('<b>{{ ISSUE_NOTICE.refund }}</b>')
-    const terms = find(kids[policyAt]!, (n) => n.tag === 'a' && attr(n, 'href') === '/terms')!
-    expect([attr(terms, 'target'), attr(terms, 'rel')]).toEqual(['_blank', 'noopener'])
-    expect(text(terms)).toContain('이용약관 보기')
-    // 동의 체크(05-A 19행) — 둘: 보통은 스크롤 밖(늘 보임), 공간이 모자라면 스크롤 안 끝(compact). 동시에 그려지지 않는다
+    // F-21 · D-43 · D-49 — 05-A 제목 + 안내 «지원 기기 확인» 1줄만(John 2026-10-03) · 굵은 줄 없음
+    expect(text(kids[policyAt]!)).toContain('{{ ISSUE_NOTICE.heading }}')
+    expect(text(kids[policyAt]!)).toContain('<component :is="renderNoticeList(NOTICE_LINES, [], { sheet: noticeSheet })" />')
+    expect(src).toMatch(/const NOTICE_LINES = \[ISSUE_NOTICE\.device\]/)
+    expect(src.match(/ISSUE_NOTICE\.(?:start|refund|period|trouble)\b/g) ?? []).toEqual([])
+    // 안내 줄은 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03)
+    expect(src).toMatch(/\.select-date-page__confirm-policy :deep\(\.issue-notice__list\) \{[^}]*padding: 0;[^}]*list-style: none;[^}]*\}/)
+    // 동의 체크 — 둘: 보통은 스크롤 밖(늘 보임), 공간이 모자라면 스크롤 안 끝(compact). 동시에 그려지지 않는다
     const boxes = findAll(dialog!, (n) => n.tag === 'NCheckbox' && dir(n, 'v-model') === 'isPolicyAgreed')
     expect(boxes).toHaveLength(2)
-    for (const b of boxes) expect(dir(b.node, ':label')).toBe('ISSUE_NOTICE.consent')
+    // D-44 — 문구는 slot 의 IssueConsentLabel 하나(두 자리 같은 글자) · label 글자 없음 · 따로 있던 링크 줄 없음
+    for (const b of boxes) {
+      expect(dir(b.node, ':label')).toBeUndefined()
+      expect((b.node.children ?? []).filter((c) => c.type === ELEMENT).map((c) => c.tag)).toEqual(['IssueConsentLabel'])
+      const agree = b.ancestors[b.ancestors.length - 1]!
+      expect(findAll(agree, (n) => n.tag === 'a')).toEqual([])
+    }
+    expect(src).not.toMatch(/confirm-links|이용약관 보기|취소·환불 정책 보기/)
     const inside = boxes.find((b) => b.ancestors.includes(scroll))!
     const outside = boxes.find((b) => !b.ancestors.includes(scroll))!
     expect(inside.ancestors.some((a) => dir(a, 'v-if') === 'confirmCompact')).toBe(true)
@@ -106,7 +168,7 @@ describe('발급기 법정 링크(F-20)', () => {
     // compact 안 체크는 스크롤 영역의 마지막(고지 · 요약 뒤)
     expect(kids[kids.length - 1]).toBe(inside.ancestors[inside.ancestors.length - 1])
     // 체크 전에는 발급하기 비활성 · 눌러도 막힘 · 다시 열면 체크를 지운다(D-35 — 약관 동의 자리)
-    const issue = find(dialog!, (n) => n.tag === 'NButton' && text(n).includes('발급하기'))!
+    const issue = find(dialog!, (n) => n.tag === 'NButton' && text(n).includes('발급하기'))! // main 판 버튼 글자 «발급하기»(W1-2 는 «eSIM 발급하기»)
     expect(dir(issue, ':disabled')).toBe('isSubmitting || !isPolicyAgreed')
     expect(src).toMatch(/if \(isSubmitting\.value \|\| !isPolicyAgreed\.value\) return/)
     expect(src).toMatch(/isPolicyAgreed\.value = false\n\s*isConfirmOrderVisible\.value = true/)

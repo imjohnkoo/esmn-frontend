@@ -274,6 +274,24 @@ watch(isConfirmOrderVisible, async (open) => {
 })
 onMounted(() => window.addEventListener('resize', fitConfirm))
 onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
+
+// 발급 확인 팝업 — 안내 · 동의 · 하단 시트(client-shell spec D-43 · D-44 · D-45 · D-48 · D-49 · D-50 — W1-2 와 같은 배치). 스크립트 끝에 둔다(typecheck 기준선 줄 번호 불변)
+import { renderNoticeList } from '~/utils/legal-render'
+import IssueConsentLabel from '~/components/legal/IssueConsentLabel.vue'
+import DocSheet, { type DocSheetKey } from '~/components/legal/DocSheet.vue'
+
+// 05-A 안내 중 «지원 기기 확인» 1줄만(D-43 · D-49)
+const NOTICE_LINES = [ISSUE_NOTICE.device]
+const legalSheet = ref<DocSheetKey | null>(null)
+const openLegalSheet = (doc: DocSheetKey) => {
+  legalSheet.value = doc
+}
+// 안내 줄의 «지원 기기 확인» 도 새 탭 대신 하단 시트(D-48) — 다른 주소는 렌더러 기본(새 탭)
+const noticeSheet = (href: string) => (href === '/supported-devices' ? () => openLegalSheet('devices') : undefined)
+// 확인 팝업을 닫으면(뒤로 · 발급) 시트도 닫는다
+watch(isConfirmOrderVisible, (open) => {
+  if (!open) legalSheet.value = null
+})
 </script>
 
 <template>
@@ -522,37 +540,18 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
               <line x1="12" y1="9" x2="12" y2="13" />
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
-            <p>
-              <!-- 05-A 14행(client-shell spec D-32) — 약관 12조③ 의 «발급 요청 화면에 미리 표시» -->
-              <b>{{ ISSUE_NOTICE.refund }}</b>
-              사용하실 기기가 eSIM 지원 기기인지 발급 전에 꼭 확인해 주세요.
-              <a
-                class="select-date-page__confirm-policy-link"
-                href="/supported-devices"
-                target="_blank"
-                rel="noopener"
-                >지원 기기 목록 보기<span class="sr-only"> (새 창)</span></a
-              >
-              <!-- 법정 링크(client-shell spec F-20) — 05-A 원문 전체(5줄 · 링크 3)는 W1-2 K3(F-21) -->
-              <span aria-hidden="true"> · </span>
-              <a
-                class="select-date-page__confirm-policy-link"
-                href="/terms"
-                target="_blank"
-                rel="noopener"
-                >이용약관 보기<span class="sr-only"> (새 창)</span></a
-              >
-            </p>
+            <!-- 05-A(client-shell spec F-21 · D-43 · D-49) — 제목 + «지원 기기 확인» 1줄 · 링크는 하단 시트(D-48) -->
+            <div class="select-date-page__confirm-notice">
+              <p class="select-date-page__confirm-notice-title">{{ ISSUE_NOTICE.heading }}</p>
+              <component :is="renderNoticeList(NOTICE_LINES, [], { sheet: noticeSheet })" />
+            </div>
           </div>
           <!-- 공간이 모자라는 화면(가로 · 글자 크게)에서만 동의 체크를 스크롤 안 끝으로 — 버튼을 지킨다 -->
           <div
             v-if="confirmCompact"
             class="select-date-page__confirm-agree"
           >
-            <NCheckbox
-              v-model="isPolicyAgreed"
-              :label="ISSUE_NOTICE.consent"
-            />
+            <NCheckbox v-model="isPolicyAgreed"><IssueConsentLabel @open="openLegalSheet" /></NCheckbox>
           </div>
         </div>
       </div>
@@ -561,9 +560,11 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
         v-if="!confirmCompact"
         class="select-date-page__confirm-agree"
       >
-        <!-- 05-A 19행(D-35) — 약관 6조④ 의 발급 화면 약관 동의 · 체크 구조 · 서버 기록은 W1-2 K3 · W1-6 -->
-        <NCheckbox v-model="isPolicyAgreed" :label="ISSUE_NOTICE.consent" />
+        <!-- 필수 동의(D-44 · D-51) — 문구 안 «이용약관» · «취소·환불 정책» 링크(하단 시트) · 서버 기록은 W1-6 -->
+        <NCheckbox v-model="isPolicyAgreed"><IssueConsentLabel @open="openLegalSheet" /></NCheckbox>
       </div>
+      <!-- 약관 · 환불 정책 · 지원 기기 본문(D-45 · D-48) — 하단 시트 · 팝업 안에 둔다(중첩 레이어 — 바깥 누름 · X · Esc 는 시트만 닫는다) -->
+      <DocSheet v-model="legalSheet" />
       <template #actions>
         <div class="select-date-page__confirm-actions">
           <NButton variant="secondary" @click="isConfirmOrderVisible = false">뒤로</NButton>
@@ -763,6 +764,20 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
   overscroll-behavior: contain;
 }
 
+.select-date-page__confirm-notice-title {
+  margin: 0 0 6px;
+  color: #111827;
+  font-weight: 700;
+}
+.select-date-page__confirm-policy :deep(.issue-notice__list) {
+  /* 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03 화면 피드백) */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.select-date-page__confirm-policy :deep(.issue-notice__list li) {
+  margin: 0 0 4px;
+}
 .select-date-page__confirm-policy {
   margin-top: 10px;
   word-break: keep-all;

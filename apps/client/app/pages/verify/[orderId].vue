@@ -71,6 +71,11 @@ const onSubmit = async () => {
     isSubmitting.value = false
   }
 }
+
+// 개인정보처리방침 · 이용약관 하단 시트(client-shell spec D-46 · D-50) — 새 탭 대신(입력한 이름 · 전화를 잃지 않는다). 스크립트 끝(typecheck 기준선 줄 번호 불변)
+import DocSheet, { type DocSheetKey } from '~/components/legal/DocSheet.vue'
+
+const legalSheet = ref<DocSheetKey | null>(null)
 </script>
 
 <template>
@@ -131,20 +136,25 @@ const onSubmit = async () => {
         </NTrustNote>
       </div>
 
-      <!-- 법정 링크(client-shell spec F-20 · 개인정보 보호법 30조) — 방침은 굵게 · 색으로 구분. 입력을 잃지 않게 새 탭 -->
+      <!-- 법정 링크(client-shell spec F-20 · 개인정보 보호법 30조) — 방침은 굵게 · 색으로 구분. 입력을 잃지 않게 하단 시트로(D-46 · D-50 — 새 탭 대신) -->
       <p class="verify-page__policy">
         <a
           class="verify-page__policy-link verify-page__policy-link--privacy"
           href="/privacy"
-          target="_blank"
-          rel="noopener"
-          >개인정보처리방침<span class="sr-only"> (새 창)</span></a
+          aria-haspopup="dialog"
+          @click.prevent="legalSheet = 'privacy'"
+          >개인정보처리방침</a
         >
         <span class="verify-page__policy-sep" aria-hidden="true">·</span>
-        <a class="verify-page__policy-link" href="/terms" target="_blank" rel="noopener"
-          >이용약관<span class="sr-only"> (새 창)</span></a
+        <a
+          class="verify-page__policy-link"
+          href="/terms"
+          aria-haspopup="dialog"
+          @click.prevent="legalSheet = 'terms'"
+          >이용약관</a
         >
       </p>
+      <DocSheet v-model="legalSheet" />
 
       <div class="verify-page__cta">
         <NButton type="submit" variant="primary" size="xl" full-width :disabled="isSubmitting">
