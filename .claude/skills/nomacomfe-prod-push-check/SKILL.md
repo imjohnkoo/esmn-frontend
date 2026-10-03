@@ -125,7 +125,7 @@ yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 bash <<'SH'
 set -u
 cd apps/client || exit 1
-# 확인할 커밋 = 올릴 커밋 — RC_REF(기본 origin/main = prod 로 올라가는 ref)를 받아 와 HEAD 와 같아야 한다
+# 확인할 커밋 = 올릴 커밋 — RC_REF(기본 origin/main = prod 로 올라가는 ref)를 받아 와 HEAD 와 같아야 한다. ⛔ 승격에서는 RC_REF 를 주지 않는다(다른 값은 블록 자체를 시험할 때만)
 RC_REF="${RC_REF:-origin/main}"
 case "$RC_REF" in origin/*) git fetch -q origin "${RC_REF#origin/}" || { echo "⛔ $RC_REF 받아 오기 실패"; exit 1; } ;; esac
 head="$(git rev-parse HEAD)" || { echo "⛔ git 체크아웃이 아니다"; exit 1; }
@@ -167,9 +167,12 @@ chk() {
     ok_p=$((ok_p + k * $(n "$s" '⟦P⟧'))); ok_d=$((ok_d + k * $(n "$s" '(확정 전)'))); left=$((left + k))
   done
   [ "$(n "$raw" '⟦P⟧')" = "$ok_p" ] || { echo "⛔ $p 값 자리 $(n "$raw" '⟦P⟧')건 — D-30 예외 자리는 ${ok_p}건뿐"; exit 1; }
-  [ "$(n "$raw" '(확정 전)')" = "$ok_d" ] || { echo "⛔ $p «(확정 전)» $(n "$raw" '(확정 전)')건(속성 · head 포함) — D-30 예외 자리는 ${ok_d}건뿐(D-47)"; exit 1; }
-  [ "$(n "$raw" 'P9_4_PENDING')" = 0 ] || { echo "⛔ $p 에 자리표시자 이름 «P9_4_PENDING» 이 그대로 나온다"; exit 1; }
-  [ "$(n "$raw" '문안을 확정하고 있어요')" = 0 ] || { echo "⛔ $p 에 확정 전 안내 문안"; exit 1; }
+  # 글자는 양쪽에서 센다 — raw(속성 · head) 와 body(태그를 벗긴 글자 — 렌더러가 «(확정» · «전)» 을 줄바꿈 방지 span 으로 나눠 감싼다)
+  for v in "$raw" "$body"; do
+    [ "$(n "$v" '(확정 전)')" = "$ok_d" ] || { echo "⛔ $p «(확정 전)» $(n "$raw" '(확정 전)')건(속성 · head) · $(n "$body" '(확정 전)')건(글자) — D-30 예외 자리는 ${ok_d}건뿐(D-47)"; exit 1; }
+    [ "$(n "$v" 'P9_4_PENDING')" = 0 ] || { echo "⛔ $p 에 자리표시자 이름 «P9_4_PENDING» 이 그대로 나온다"; exit 1; }
+    [ "$(n "$v" '문안을 확정하고 있어요')" = 0 ] || { echo "⛔ $p 에 확정 전 안내 문안"; exit 1; }
+  done
 }
 O=2026092300000101   # 아무 주문번호 — DB 가 없어 화면 틀만 그린다
 chk / '704-24-01747;eSIM 발급은;호스팅 서비스:' '호스팅 서비스: ⟦P⟧(확정 전)'
@@ -181,8 +184,8 @@ chk /verify/$O '주문하신 분이 맞는지 확인할게요'
 chk /details/$O '발행할 이심을 선택해 주세요'
 chk /select-date/$O '사용 시작 날짜를 선택해 주세요'
 chk /view/$O 'eSIM 발급이 완료됐어요'
-# 검사하지 않은 페이지가 없는가 — app/pages 의 .vue 와 위 목록이 같아야 한다(새 페이지는 chk 줄을 먼저 넣는다)
-pages="$(cd app/pages && find . -name '*.vue' | sed -e 's|^\./||' -e 's|\.vue$||' -e 's|^index$||' -e 's|/index$||' -e 's|\[[^]]*\]|:id|g' -e 's|^|/|' | sort)"
+# 검사하지 않은 페이지가 없는가 — app/pages 의 페이지 파일(.vue · .ts · .tsx · .js · .jsx — 테스트 제외)과 위 목록이 같아야 한다(새 페이지는 chk 줄을 먼저 넣는다)
+pages="$(cd app/pages && find . -type f \( -name '*.vue' -o -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' \) ! -name '*.test.*' ! -name '*.spec.*' ! -name '*.d.ts' | sed -E -e 's#^\./##' -e 's#\.(vue|tsx?|jsx?)$##' -e 's#^index$##' -e 's#/index$##' -e 's#\[[^]]*\]#:id#g' -e 's#^#/#' | sort)"
 [ "$pages" = "$(printf '%s' "$seen" | sort)" ] || { echo "⛔ 검사 목록과 app/pages 가 다르다 — 빠진 페이지에 chk 줄을 넣는다:"; diff <(printf '%s\n' "$pages") <(printf '%s' "$seen" | sort); exit 1; }
 echo "✓ 렌더 확인 통과 — 커밋 $head(= $RC_REF) · 남은 D-30 예외 자리 ${left}/3 (0 이 되면 spec D-30 을 닫는다)"
 SH
@@ -190,7 +193,7 @@ SH
 
 - ⚠️ 클래스 이름(`legal-md__pending`)이 아니라 `data-pending` 속성을 센다 — production SSR 은 컴포넌트 CSS 를 HTML 에 넣어 클래스 선택자 글자가 매 페이지에 있다.
 - 예외 자리는 «있어도 되는» 곳이지 «있어야 하는» 곳이 아니다 — P9-22 값이 와서 `legal:import` 로 자리가 사라져도 통과하고, 끝 줄의 남은 자리 수만 줄어든다. 행 글자(«(Amazon Web Services 서울 리전)» · «(주)누리고(Solapi)» · «호스팅 서비스:») 는 양성 대조라 값이 와도 남아야 한다 — 정본이 그 글자를 바꾸면 여기서 멈추니 이 블록을 먼저 고친다.
-- 발급 확인 팝업 · 하단 시트(약관 · 환불 · 방침 · 지원 기기)는 열어야 그려져 SSR HTML 에 없다 — 그 글자 · 동작은 위 client 테스트가 지킨다(`legal-content.test.ts` 05-A 줄 고정 · `legal-gate.test.ts` 값 자리 · `legal-links.test.ts` 동의 문구 · 링크 연결 · `DocSheet.dom.test.ts` 시트가 «그 문서» 를 열고 닫는가). 시트 본문은 위 단독 페이지와 같은 문서를 그린다.
+- 발급 확인 팝업 · 하단 시트(약관 · 환불 · 방침 · 지원 기기)는 열어야 그려져 SSR HTML 에 없다 — 그 글자 · 동작은 위 client 테스트가 지킨다(`legal-content.test.ts` 05-A 줄 고정 · 값 자리 수 · 생성 문서 원문에 «(확정 전)» 글자 0 · `legal-links.test.ts` 동의 문구 · 링크 연결 · 시트 · 동의 문구 정적 import · `DocSheet.dom.test.ts` 시트가 «그 문서» 를 열고 닫는가). 시트 본문은 위 단독 페이지와 같은 문서를 그린다.
 
 ### Phase 5 — 마이그레이션/DB 변경 안전성
 
@@ -245,9 +248,11 @@ git diff origin/prod...HEAD \
 git fetch origin --quiet
 git log --oneline --graph origin/main origin/prod | head -20
 git merge-base --is-ancestor origin/prod origin/main && echo "✔ fast-forward 가능" || echo "⛔ prod 가 main 에 없는 커밋을 갖고 있다 — 되감기 위험, 중단"
+# client 승격이면 — Phase 4 렌더 확인 끝 줄의 sha(RC=<그 sha>)가 지금 origin/main 과 같아야 한다(그 사이 머지되면 확인 안 된 커밋이 나간다)
+[ "$(git rev-parse origin/main)" = "$RC" ] || echo "⛔ origin/main 이 렌더 확인한 커밋($RC)과 다르다 — Phase 4 부터 다시"
 ```
 
-**prod 에만 있는 커밋이 있으면 중단하고 사용자에게 보고한다.** ref 되감기는 남의 배포를 되돌리고 커밋을 소실시킨다 — `guard-prod-push.sh` 가 force 이동을 차단하는 이유다.
+올릴 것은 **그 sha** 다(`origin/main` 이름이 아니라 — 사용자 승인 뒤 `<RC sha>:prod`). **prod 에만 있는 커밋이 있으면 중단하고 사용자에게 보고한다.** ref 되감기는 남의 배포를 되돌리고 커밋을 소실시킨다 — `guard-prod-push.sh` 가 force 이동을 차단하는 이유다.
 
 ### Phase 8 — CI/Deploy 확인
 
@@ -280,6 +285,7 @@ Build:        ✓ yarn turbo run build (admin, client) pass
 Typecheck:    — n/a (admin/client 에 script 없음 — 인프라 갭)
 Tests:        ✓ design-vue 129 pass  /  — admin·client n/a
 UI manual:    ✓ admin/client golden path 검증 완료 (유일한 기능 검증)
+Render check: ✓ <sha> = origin/main · 남은 D-30 예외 자리 n/3 (client 승격 시 — 올릴 sha 와 같아야)
 Migrations:   ✗ none
 DDL:          ✗ none
 DS bump:      ✗ N/A (DS 변경 없음)

@@ -114,6 +114,8 @@ describe('발급기 법정 링크(F-20)', () => {
       expect(src.match(/^import DocSheet from '~\/components\/legal\/DocSheet\.vue'$/gm), page).toHaveLength(1)
       expect(src, page).not.toMatch(/defineAsyncComponent|import\(\s*['"]~\/components\/legal\/DocSheet/)
     }
+    // 동의 문구도 같다 — Nuxt 자동 등록 이름은 LegalIssueConsentLabel 이라 import 가 없으면 체크박스에 문구 · 링크가 통째로 사라진다
+    expect(read('./select-date/[orderId].vue').match(/^import IssueConsentLabel from '~\/components\/legal\/IssueConsentLabel\.vue'$/gm)).toHaveLength(1)
   })
 
   it('공용 DocSheet(D-45 · D-46 · D-48) — 법정 3종 = 생성물 · 지원 기기 = 페이지와 같은 컴포넌트 · X(closable) · 제목 · 본문만 스크롤 · 본문 h1 숨김', () => {
@@ -218,6 +220,9 @@ describe('발급기 법정 링크(F-20)', () => {
         /(?:취소|환불)[와과·/\s]*(?:환불)?\s*(?:이|가|은|을)?\s*(?:불가|X\b)|환불(?:이|은)?\s*안\s*(?:돼|됩)|(?:환불|취소)(?:을|를)?\s*(?:받을|할|해\s*드릴)\s*수\s*없|환불받을\s*수\s*없|환불되지\s*않아요|환불이\s*어려|취소할\s*수\s*없/,
       )
     expect(read('./supported-devices.vue')).toContain('${ISSUE_NOTICE.refund}')
+    // 지원 기기 본문은 페이지 · 시트 공용 컴포넌트 하나(D-48 · D-50⑤ — 목록이 두 곳에서 갈리지 않게)
+    expect(template(read('./supported-devices.vue'))).toContain('<SupportedDevicesContent />')
+    expect(read('./supported-devices.vue')).not.toMatch(/supportedGroups|unsupportedItems/)
     expect(read('../components/popup/ConfirmOrderModal.vue')).toContain(
       '*{{ ISSUE_NOTICE.refund }}',
     )

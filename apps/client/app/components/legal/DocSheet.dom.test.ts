@@ -78,6 +78,16 @@ describe('DocSheet — 키마다 그 문서', () => {
     card.click()
     await settle()
     expect(models.style.display).toBe('')
+    // «사용할 수 없어요» 카드도 접힌 채 시작해 누르면 설명이 열린다
+    const noCard = [...document.body.querySelectorAll<HTMLButtonElement>('.legal-sheet .devices-page__card--no .devices-page__card-head')].find((b) =>
+      b.textContent?.includes('통신사 잠금 기기'),
+    )!
+    const desc = noCard.parentElement!.querySelector<HTMLElement>('.devices-page__card-body')!
+    expect(desc.textContent).toContain('캐리어 락')
+    expect(desc.style.display).toBe('none')
+    noCard.click()
+    await settle()
+    expect(desc.style.display).toBe('')
   })
 
   it('법정 3종의 제목 · 본문은 문서 생성물 그대로(본문 첫 장 제목 = 생성물의 첫 «## » 줄)', async () => {

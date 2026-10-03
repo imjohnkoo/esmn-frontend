@@ -287,3 +287,17 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
     }
   })
 })
+
+describe('값 자리는 토큰으로만(D-29 · D-30 · D-47)', () => {
+  it('생성 문서 원문에 «(확정 전)» 글자를 직접 쓰지 않는다 — 렌더러가 괄호 낱말을 나눠 감싸 HTML 검사로는 안 보인다 · 값 자리는 P9_4_PENDING 토큰만', () => {
+    const norm = (s: string) => s.replace(/[\u00a0\u2007\u202f]/g, ' ').replace(/\uff08/g, '(').replace(/\uff09/g, ')')
+    const texts: [string, string][] = [
+      ['terms', TERMS_DOC.markdown],
+      ['privacy', PRIVACY_DOC.markdown],
+      ['refund', REFUND_DOC.markdown],
+      ...Object.entries(BUSINESS_INFO).map(([k, v]): [string, string] => [`business.${k}`, v]),
+      ...Object.entries(ISSUE_NOTICE).map(([k, v]): [string, string] => [`issue-notice.${k}`, v]),
+    ]
+    for (const [name, t] of texts) expect(norm(t), name).not.toMatch(/확정\s*전/)
+  })
+})
