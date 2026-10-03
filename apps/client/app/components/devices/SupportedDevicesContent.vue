@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // eSIM 지원 기기 본문(기준일 · 사용할 수 있어요 · 사용할 수 없어요) — /supported-devices 페이지와 하단 시트(DocSheet · spec D-48)가 같이 쓴다.
-// 근거: docs/data/2026-08-19-esim-supported-devices-kr.md (웹검색 검증본)
+// 근거: nomacom-wiki wiki/frontend/reference/2026-10-04-esim-supported-devices-kr.md(웹 검증 · 애플 · 삼성 공식 문서 우선 · spec D-55)
 import { NInfoChip } from '@imjohnkoo/design-vue'
 
 // 아코디언 상태 — 복수 열림 허용, 기본 전부 접힘 (view 페이지 multi-QR 패턴)
@@ -23,21 +23,24 @@ const supportedGroups: DeviceGroup[] = [
     brand: '아이폰',
     models: [
       'XS · XR',
-      '11 ~ 15 전 모델 (Plus · Pro · mini)',
+      '11 ~ 16 전 모델 (Plus · Pro · mini)',
       '16e',
       '17 전 모델',
+      'Air',
       '17e',
+      '18 Pro · 18 Pro Max',
+      'Duo (접는 모델)',
       'SE 2 · 3세대',
       '이후 출시 모델',
     ],
-    note: '아이폰 17 Air 는 물리심 없이 eSIM 만 쓰는 eSIM 전용 모델이에요.',
+    note: '아이폰 Air 와 Duo 는 물리심 없이 eSIM 만 쓰는 eSIM 전용 모델이에요.',
   },
   {
     brand: 'iPad (셀룰러 모델)',
     models: [
-      'Pro 11 전 세대',
+      'Pro 11 · Pro 13 전 모델',
       'Pro 12.9 3세대 이후',
-      'Air 3세대 이후',
+      'Air 3세대 이후 (11 · 13 포함)',
       'mini 5세대 이후',
       '기본 7세대 이후',
       '이후 출시 모델',
@@ -46,15 +49,16 @@ const supportedGroups: DeviceGroup[] = [
   {
     brand: '갤럭시 (국내판)',
     models: [
-      'S23 · S24 · S25 전 모델',
+      'S23 · S24 · S25 · S26 전 모델',
       'S25 Edge',
-      'S26 · S26+ · S26 울트라',
+      'S23 FE · S24 FE · S25 FE · S26 FE',
       'Z 플립 4 · 5 · 6 · 7 · 8',
       'Z 폴드 4 · 5 · 6 · 7 · 8 · 8 울트라',
+      'Z 트라이폴드',
       'A35 · A36',
       'A54 · A55 · A56',
-      '탭 S9+',
-      '탭 S11 울트라 5G',
+      '퀀텀4 이후 모델',
+      '탭 S9 이후 5G 모델',
       '이후 출시 모델',
     ],
   },
@@ -84,11 +88,16 @@ const unsupportedItems: UnsupportedItem[] = [
   {
     title: '중국 본토에서 구매한 아이폰',
     description:
-      '17 Air (eSIM 전용) 와 17e 만 eSIM 을 쓸 수 있어요. 그 외 전 모델 (17 · 17 Pro 포함) 은 물리심 전용이에요.',
+      'Air (eSIM 전용) · 17e · 18 Pro · 18 Pro Max 만 eSIM 을 쓸 수 있어요. 그 외 모델 (17 · 17 Pro 포함) 은 물리심 전용이에요.',
   },
   {
     title: '홍콩 · 마카오에서 구매한 아이폰',
-    description: '17 Air · 17e · 16e · 13 mini · 12 mini · SE 2 · 3세대 · XS 만 사용할 수 있어요.',
+    description:
+      'XR · XS Max · 11 ~ 16 시리즈 (12 mini · 13 mini · 16e 제외) 는 물리심 두 개를 쓰는 모델이라 eSIM 을 쓸 수 없어요.',
+  },
+  {
+    title: 'Wi-Fi 전용 태블릿',
+    description: '셀룰러 기능이 없는 iPad · 갤럭시 탭 (Wi-Fi 전용 모델) 은 eSIM 을 쓸 수 없어요.',
   },
   {
     title: '통신사 잠금 기기',
@@ -105,7 +114,7 @@ const unsupportedItems: UnsupportedItem[] = [
 <template>
   <div class="devices-content">
     <div class="devices-page__chip">
-      <NInfoChip label="기준일" value="2026.08.19">
+      <NInfoChip label="기준일" value="2026.10.04">
         <template #icon>
           <svg
             width="14"
