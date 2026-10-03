@@ -123,7 +123,11 @@ describe('발급기 법정 링크(F-20)', () => {
   })
 
   it('«발급 후 취소 · 환불 불가» 문장이 앱 어디에도 없다 — 같은 자리는 05-A 14행(D-32)', () => {
-    for (const f of code(APP))
+    // 제외는 취소·환불 정책 생성물 하나 — 정본 03 의 «설치 후 단순 변심 환불 불가»(설치 뒤 이야기)라서(D-50 으로 main 에 들어옴 · W1-2 와 같은 규칙).
+    // 발급 팝업(05-A) 등 다른 생성물은 그대로 본다(정본 rev 로 이 문장이 들어오면 막힌다)
+    const REFUND = '/content/legal/refund.ts'
+    expect(code(APP).some((f) => f.endsWith(REFUND))).toBe(true)
+    for (const f of code(APP).filter((f) => !f.endsWith(REFUND)))
       expect(readFileSync(f, 'utf8'), f).not.toMatch(
         /(?:취소|환불)[와과·/\s]*(?:환불)?\s*(?:이|가|은|을)?\s*(?:불가|X\b)|환불(?:이|은)?\s*안\s*(?:돼|됩)|(?:환불|취소)(?:을|를)?\s*(?:받을|할|해\s*드릴)\s*수\s*없|환불받을\s*수\s*없|환불되지\s*않아요|환불이\s*어려|취소할\s*수\s*없/,
       )

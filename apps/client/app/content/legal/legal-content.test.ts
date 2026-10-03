@@ -8,6 +8,7 @@ import { P9_4_PENDING } from '../pending'
 import { BUSINESS_INFO } from './business'
 import { ISSUE_NOTICE } from './issue-notice'
 import { PRIVACY_DOC } from './privacy'
+import { REFUND_DOC } from './refund'
 import { TERMS_DOC } from './terms'
 
 /**
@@ -17,6 +18,7 @@ import { TERMS_DOC } from './terms'
 const DOCS = [
   { doc: TERMS_DOC, file: './terms.ts', key: 'terms' },
   { doc: PRIVACY_DOC, file: './privacy.ts', key: 'privacy' },
+  { doc: REFUND_DOC, file: './refund.ts', key: 'refund' },
 ] as const
 const read = (f: string) => readFileSync(fileURLToPath(new URL(f, import.meta.url)), 'utf8')
 const sha = (s: string) => createHash('sha256').update(s).digest('hex')
@@ -38,7 +40,7 @@ describe.each(DOCS)('$doc.slug — 게시 형태', ({ doc, file, key }) => {
   })
 
   it('정본 출처(파일 · legal-pages 커밋)는 주석에만 — 공개 JS 에 실리는 값에는 없다', () => {
-    expect(src).toMatch(/^\/\/ 정본: 0[12]_.+\.md · legal-pages @[0-9a-f]{7}$/m)
+    expect(src).toMatch(/^\/\/ 정본: 0[123]_.+\.md · legal-pages @[0-9a-f]{7}$/m)
     expect(JSON.stringify(doc)).not.toMatch(/legal-pages|\.md/)
   })
 
@@ -73,6 +75,84 @@ describe('D-33 — 약관 8조② 자정 예시 없음 · 게시 수정 = 결정
     expect(DOC_RULES.terms.edits).toEqual([
       { line: 'fbf7c3835a588a2040eb24b5d6b6249ba9df6a3002e3feefc5e13fd76eb54549', from: '(예: 한국시간 자정 기준)', to: '' },
     ])
+    expect(DOC_RULES.privacy.edits ?? []).toEqual([])
+  })
+})
+
+describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그대로)', () => {
+  const blocks = parseLegalMarkdown(REFUND_DOC.markdown)
+  const text = blocksText(blocks)
+  it('«한눈에 보기» 표 + 1~7절 · «결정 기록» 절 없음', () => {
+    expect(blocks.filter((b) => b.t === 'h2').map((b) => blocksText([b]))).toEqual([
+      '한눈에 보기',
+      '1. 발급 전에는 언제든 전액 환불됩니다',
+      '2. 발급 후에는 청약철회가 제한됩니다',
+      '3. eSIM에 문제가 있으면 재발급 또는 전액 환불합니다',
+      '4. 발급 기한(유효기간)과 이용 기간',
+      '5. 환불은 이렇게 처리됩니다',
+      '6. 미성년자 구매',
+      '7. 분쟁 해결',
+    ])
+    expect(text).not.toMatch(/결정 기록|채택안|원가/)
+  })
+  it('설치 전 폐기 비용 · 발급 전 전액 · 환불 기한(약관 12조와 같은 말)', () => {
+    expect(text).toContain('폐기 비용 **3,500원**을 부담하시면 환불됩니다'.replace(/\*\*/g, ''))
+    expect(text).toContain('발급을 요청하기 전이라면 사유를 묻지 않고 결제 금액 전액을 환불합니다.')
+    expect(text).toContain('환불 요청을 받은 날부터 3영업일 이내에 환불하며')
+  })
+  // D-28 — 공제 문장은 정본 그대로(리뷰 blocker). 2절(청약철회 제한 · 설치 전 폐기 비용 · 예외)은 줄 전체를, 그 밖은
+  // 3,500원 · 폐기 비용 · 전액 환불이 든 줄을 글자 그대로 고정한다 — 가져오기 버그로 한 줄이 빠지거나 바뀌어도 막힌다
+  it('공제 문장 줄 전체 = 정본(2절 전부 + 3,500원 · 폐기 비용 · 전액이 든 줄)', () => {
+    const lines = REFUND_DOC.markdown.split('\n')
+    const s2 = lines.findIndex((l) => l.startsWith('## 2.'))
+    const e2 = lines.findIndex((l, i) => i > s2 && l.startsWith('## '))
+    expect(lines.slice(s2, e2).filter((l) => l.trim())).toEqual([
+      "## 2. 발급 후에는 청약철회가 제한됩니다",
+      "- eSIM 발급은 상품 제공을 시작하는 절차입니다. 발급하면 eSIM이 그 주문에 배정되며, 회수·재사용이 불가능한 디지털콘텐츠이므로 「전자상거래 등에서의 소비자보호에 관한 법률」 제17조 제2항 제5호에 따라 발급 이후에는 단순 변심에 의한 청약철회가 제한됩니다.",
+      "- 이 내용은 발급 화면에서 다시 한 번 안내하고 동의를 받은 뒤에만 발급이 진행됩니다. (결제 후 30일이 지나 자동 발급되는 경우는 4항을 따릅니다.)",
+      "- 고객센터가 eSIM을 직접 발급해 카카오톡 채널·전자우편 등으로 보내 드린 경우에도, 보내 드린 때부터 발급된 것으로 봅니다. 이때는 발급 전에 고객센터가 같은 내용을 안내하고 동의를 받습니다.",
+      "- **발급은 했지만 아직 설치하지 않았다면** 고객센터로 요청해 주세요. eSIM이 설치되지 않은 것을 확인한 뒤, 이미 발급된 eSIM을 폐기해야 하므로 폐기 비용 **3,500원**을 부담하시면 환불됩니다. 실물 배송이 없어 그 밖의 반품 비용은 없습니다.",
+      "- 설치(QR 스캔·수동 등록)한 뒤에는 단순 변심 환불이 불가능합니다. 삭제해도 설치 이력이 남으므로 마찬가지입니다.",
+      "- 다만 다음 경우에는 폐기 비용 없이 전액 환불합니다.",
+      "  - 상품 내용이 표시·광고와 다르거나 계약과 다르게 이행된 경우 (받은 날부터 3개월, 안 날부터 30일 이내)",
+      "  - 회사나 공급사의 잘못으로 주문과 다른 국가·상품이 발급된 경우 — 설치 전이라도 폐기 비용을 받지 않습니다",
+      "  - eSIM 자체의 하자로 설치·개통이 되지 않는 경우 (아래 3항)",
+      "  - 만 19세 미만 미성년자가 법정대리인 동의 없이 구매해 계약을 취소하는 경우 (약관 제14조)",
+    ])
+    expect(
+      lines.filter((l, i) => (i < s2 || i >= e2) && /3,500|폐기 비용|전액/.test(l)),
+    ).toEqual([
+      "| ① 결제 완료, **발급 요청 전** | QR 코드가 아직 만들어지지 않음 | **전액 환불** (수수료 없음) | 네이버 구매: 스마트스토어 취소 요청 · 자체 결제: 마이 > 주문 내역 > 취소 (자체 결제 서비스 개시 후) |",
+      "| ② **발급 완료**(QR 코드 수령 — 고객센터가 직접 발급해 전달한 경우 포함), 설치 전 | eSIM이 주문자에게 배정됨 | 미설치 확인 후 **폐기 비용 3,500원**을 부담하시면 환불 | 고객센터 (주문번호·연락처) |",
+      "| ③ 설치 완료, 개통 전 | 단말기에 등록됨, 아직 현지 망 미접속 | 단순 변심 환불 불가 · eSIM 하자 시 재발급 또는 전액 환불 | 고객센터 |",
+      "| ④ 개통 후(이용 중) | 현지 망 접속, 이용 기간 진행 중 | 단순 변심 환불 불가 · 현지 망 24시간 이상 연속 장애는 일할 환불(무제한 상품) · 회사 귀책 하자 시 재발급 또는 전액 | 고객센터 (현지에서, 이용 기간 내 접수) |",
+      "| ⑥ 결제 후 30일 미발급 (자동 발급 기능 도입 후 결제된 주문) | 자동 발급(별도 알림 없음) → ② 상태 | ②와 동일 (폐기 비용 3,500원) | 고객센터 |",
+      "## 1. 발급 전에는 언제든 전액 환불됩니다",
+      "- 발급을 요청하기 전이라면 사유를 묻지 않고 결제 금액 전액을 환불합니다. 수수료·위약금은 없습니다.",
+      "## 3. eSIM에 문제가 있으면 재발급 또는 전액 환불합니다",
+      "회사 또는 공급사 원인으로 eSIM이 작동하지 않으면 고객이 원하는 방법(재발급 / 전액 환불)으로 처리합니다. 이용 중 현지 통신망 장애로 데이터를 쓰지 못한 경우, 공급사 기록과 고객이 보내 주신 자료로 **24시간 이상 연속 장애**가 확인되면 그 일수만큼 계산해 환불합니다. 일할 환불은 매일 제공되는 무제한 상품에 적용하며, 용량형(종량제) 상품은 재발급 또는 전액 환불로 처리합니다.",
+      "- 국가·일수·용량을 잘못 고른 경우 (발급 전이라면 1항에 따라 전액 환불 후 다시 구매하시면 됩니다)",
+      "- 자동 발급 기능이 도입된 뒤 결제된 주문은 30일이 지나면 별도 알림 없이 **자동 발급**되며, 그 뒤에는 발급 후 환불 기준(폐기 비용 3,500원)이 적용됩니다.",
+      "- 환불은 원칙적으로 결제하신 수단으로 돌려드립니다. 환불 요청을 받은 날부터 **3영업일 이내**에 환불하며(폐기 비용 부담의 확인이 필요한 경우에는 확인을 마친 날부터), 카드사·결제대행사 사정에 따라 실제 입금까지 3~7영업일이 걸릴 수 있습니다.",
+    ])
+  })
+  it('자리표시자 없음', () => {
+    expect(REFUND_DOC.markdown).not.toContain(P9_4_PENDING)
+  })
+  it('전화번호 없음(D-41) — 3항 고객센터 안내는 카카오톡 채널만 · 그 줄은 정본 줄에서 « · 070-8064-5232» 만 뺀 글자', () => {
+    // 지역 · 휴대 · 인터넷 전화 · 대표번호(15xx~19xx) · 국가번호 · 괄호 지역번호 꼴 + «전화» 낱말
+    expect(REFUND_DOC.markdown).not.toMatch(
+      /(?:\+\s?82[-.\s]?0?\d{1,2}|\(?0\d{1,2}\)?)[-.\s)]?\d{3,4}[-.\s]?\d{4}|(?<!\d)1[5-9]\d{2}[-.\s]?\d{4}(?!\d)|전화/,
+    )
+    expect(REFUND_DOC.markdown.split('\n').filter((l) => l.includes('고객센터(카카오톡 채널'))).toEqual([
+      '- 문제가 생기면 eSIM을 **삭제하지 말고** 그 상태 그대로 고객센터(카카오톡 채널 @이심마니)에 연락해 주세요. 대부분은 설정 안내로 바로 해결됩니다. 운영 시간(평일 09:00–18:00) 외에는 카카오톡 채널에 남겨 주시면 남기신 시각을 접수 시각으로 봅니다.',
+    ])
+  })
+  it('게시 수정 = 결정된 것 그대로(D-41 전화번호 · D-33 자정 예시 괄호 — 다른 수정 0)', () => {
+    expect(DOC_RULES.refund.edits).toEqual([
+      { line: '5ccceaa412d5bbe591a837489e87a66b1905fb249d602496ca6adb7080ace3b7', from: ' · 070-8064-5232', to: '' },
+    ])
+    expect(DOC_RULES.terms.edits).toEqual([{ line: 'fbf7c3835a588a2040eb24b5d6b6249ba9df6a3002e3feefc5e13fd76eb54549', from: '(예: 한국시간 자정 기준)', to: '' }])
     expect(DOC_RULES.privacy.edits ?? []).toEqual([])
   })
 })
@@ -196,7 +276,7 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
   it('공개 금지어 · 대괄호 태그 없음', () => {
     for (const l of [...Object.values(BUSINESS_INFO), ...Object.values(ISSUE_NOTICE)]) {
       expect(forbiddenIn(unmark(l))).toEqual([])
-      expect(l.replace(/\[[^\]\n]+\]\(https:\/\/[^)\s]*\)/g, '')).not.toMatch(/[[\]]/)
+      expect(l.replace(/\[[^\]\n]+\]\((?:https:\/\/|\/)[^)\s]*\)/g, '')).not.toMatch(/[[\]]/) // 사이트 안 링크(05-A «지원 기기 확인») 포함
     }
   })
 })
