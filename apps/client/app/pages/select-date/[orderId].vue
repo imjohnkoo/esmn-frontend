@@ -802,9 +802,10 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
 }
 
 .select-date-page__confirm-policy :deep(.issue-notice__list) {
+  /* 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03 화면 피드백) */
   margin: 0;
-  padding-left: 16px;
-  list-style: disc outside;
+  padding: 0;
+  list-style: none;
 }
 
 .select-date-page__confirm-policy :deep(.issue-notice__list li) {

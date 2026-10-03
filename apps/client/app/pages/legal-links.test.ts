@@ -97,6 +97,8 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(text(kids[policyAt]!)).toContain('<component :is="renderNoticeList(NOTICE_LINES, [])" />')
     expect(src).toMatch(/const NOTICE_LINES = \[ISSUE_NOTICE\.device, ISSUE_NOTICE\.trouble\]/)
     expect(src.match(/ISSUE_NOTICE\.(?:start|refund|period)\b/g) ?? []).toEqual([])
+    // 안내 줄은 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03)
+    expect(src).toMatch(/\.select-date-page__confirm-policy :deep\(\.issue-notice__list\) \{[^}]*padding: 0;[^}]*list-style: none;[^}]*\}/)
     // 지운 줄의 핵심(설치 전 폐기 비용 3,500원 · 청약철회 제한)은 필수 동의 체크 문구가 맡는다(약관 12조③ «발급 요청 화면에 미리 표시»)
     expect(ISSUE_NOTICE.consent).toMatch(/청약철회가 제한/)
     expect(ISSUE_NOTICE.consent).toMatch(/폐기 비용 3,500원/)
