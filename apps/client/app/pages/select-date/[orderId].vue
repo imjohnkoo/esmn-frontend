@@ -230,8 +230,8 @@ import { confirmScrollFit } from '~/utils/confirm-fit'
 import { renderNoticeList } from '~/utils/legal-render'
 import IssueConsentLabel from '~/components/legal/IssueConsentLabel.vue'
 
-// 05-A 안내 중 2줄만(spec D-43 · John 2026-10-02) — 지원 기기 · 문제 시 연락. 설치 전 3,500원 · 청약철회 제한은 아래 필수 동의 체크 문구가 맡는다
-const NOTICE_LINES = [ISSUE_NOTICE.device, ISSUE_NOTICE.trouble]
+// 05-A 안내 중 «지원 기기 확인» 1줄만(spec D-43 · D-49 · John 2026-10-03)
+const NOTICE_LINES = [ISSUE_NOTICE.device]
 
 // 발급 확인 팝업 — 안내 · 요약만 스크롤하고 동의 체크 · 버튼은 화면 안. 높이는 열릴 때 실제 크기로(utils/confirm-fit)
 const confirmScrollEl = ref<HTMLElement | null>(null)

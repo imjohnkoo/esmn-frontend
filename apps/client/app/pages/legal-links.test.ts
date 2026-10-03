@@ -145,11 +145,11 @@ describe('발급기 법정 링크(F-20)', () => {
     const summaryAt = kids.findIndex((c) => cls(c) === 'select-date-page__confirm')
     expect(summaryAt).toBe(0) // D-42 — 주문 요약 → 고지(John 2026-10-02)
     expect(policyAt).toBe(1)
-    // F-21 · D-43 — 05-A 제목 + 안내 2줄만(지원 기기 · 문제 시 고객센터 — John 2026-10-02) · 굵은 줄 없음
+    // F-21 · D-43 · D-49 — 05-A 제목 + 안내 «지원 기기 확인» 1줄만(John 2026-10-03) · 굵은 줄 없음
     expect(text(kids[policyAt]!)).toContain('{{ ISSUE_NOTICE.heading }}')
     expect(text(kids[policyAt]!)).toContain('<component :is="renderNoticeList(NOTICE_LINES, [], { sheet: noticeSheet })" />')
-    expect(src).toMatch(/const NOTICE_LINES = \[ISSUE_NOTICE\.device, ISSUE_NOTICE\.trouble\]/)
-    expect(src.match(/ISSUE_NOTICE\.(?:start|refund|period)\b/g) ?? []).toEqual([])
+    expect(src).toMatch(/const NOTICE_LINES = \[ISSUE_NOTICE\.device\]/)
+    expect(src.match(/ISSUE_NOTICE\.(?:start|refund|period|trouble)\b/g) ?? []).toEqual([])
     // 안내 줄은 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03)
     expect(src).toMatch(/\.select-date-page__confirm-policy :deep\(\.issue-notice__list\) \{[^}]*padding: 0;[^}]*list-style: none;[^}]*\}/)
     // 동의 체크 — 둘: 보통은 스크롤 밖(늘 보임), 공간이 모자라면 스크롤 안 끝(compact). 동시에 그려지지 않는다
