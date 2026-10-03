@@ -341,7 +341,7 @@ describe('값 자리는 토큰으로만(D-29 · D-30 · D-47)', () => {
     for (const [name, v] of sources) {
       const all = strings(v)
       expect(all.length, name).toBeGreaterThan(0)
-      for (const t of all) expect(norm(t), name).not.toMatch(/확정\s*전/)
+      for (const t of all) expect(norm(t), name).not.toMatch(/\(\s*확정\s*전\s*\)/) // «구매확정 전» 같은 문장은 막지 않는다
     }
   })
 })
