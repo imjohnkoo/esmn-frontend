@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import ts from 'typescript'
 import { parse } from 'vue/compiler-sfc'
-import { ISSUE_NOTICE } from '../content/legal/issue-notice'
 
 /**
  * client-shell spec F-20 · D-32 · D-35 · D-36 — 발급기 화면의 법정 링크 · 고지 문구(개인정보 보호법 30조 · 약관 3조① · 6조④ · 12조③).
@@ -76,6 +75,25 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(css).toMatch(/\.verify-page__policy-link \{[^}]*white-space: nowrap;/)
   })
 
+  it('발급 필수 동의 문구(D-44 · John 2026-10-03) — 글자 그대로 · «이용약관» · «취소·환불 정책» 링크는 새 탭 · 낭독기 «(새 창)»', () => {
+    const src = read('../components/legal/IssueConsentLabel.vue')
+    const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
+    const links = findAll(tpl, (n) => n.tag === 'a').map((l) => l.node)
+    expect(links.map((l) => [attr(l, 'href'), attr(l, 'target'), attr(l, 'rel')])).toEqual([
+      ['/terms', '_blank', 'noopener'],
+      ['/refund', '_blank', 'noopener'],
+    ])
+    for (const l of links) expect(text(l)).toContain('<span class="sr-only"> (새 창)</span>')
+    // 화면 글자(낭독기 전용 «(새 창)» 빼고 · 줄바꿈 정리) = 결정 글자
+    const shown = template(src)
+      .replace(/<span class="sr-only">[^<]*<\/span>/g, '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\s+/g, ' ')
+      .replace(/ (과|을) /g, '$1 ')
+      .trim()
+    expect(shown).toBe('(필수) 이용약관과 취소·환불 정책을 확인했으며 설치 전 환불 시 환불 비용이 발생하는 것에 동의합니다.')
+  })
+
   it('select-date 확인 팝업(템플릿 AST) — 요약 → 고지(D-42) · 스크롤 영역 배선 · 동의 체크는 밖(compact 면 안) · 체크 전 발급 비활성', () => {
     const src = read('./select-date/[orderId].vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
@@ -99,25 +117,17 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src.match(/ISSUE_NOTICE\.(?:start|refund|period)\b/g) ?? []).toEqual([])
     // 안내 줄은 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03)
     expect(src).toMatch(/\.select-date-page__confirm-policy :deep\(\.issue-notice__list\) \{[^}]*padding: 0;[^}]*list-style: none;[^}]*\}/)
-    // 지운 줄의 핵심(설치 전 폐기 비용 3,500원 · 청약철회 제한)은 필수 동의 체크 문구가 맡는다(약관 12조③ «발급 요청 화면에 미리 표시»)
-    expect(ISSUE_NOTICE.consent).toMatch(/청약철회가 제한/)
-    expect(ISSUE_NOTICE.consent).toMatch(/폐기 비용 3,500원/)
-    // 동의 체크(05-A 19행) — 둘: 보통은 스크롤 밖(늘 보임), 공간이 모자라면 스크롤 안 끝(compact). 동시에 그려지지 않는다
+    // 동의 체크 — 둘: 보통은 스크롤 밖(늘 보임), 공간이 모자라면 스크롤 안 끝(compact). 동시에 그려지지 않는다
     const boxes = findAll(dialog!, (n) => n.tag === 'NCheckbox' && dir(n, 'v-model') === 'isPolicyAgreed')
     expect(boxes).toHaveLength(2)
-    for (const b of boxes) expect(dir(b.node, ':label')).toBe('ISSUE_NOTICE.consent')
-    // 05-A 링크 줄 — 동의 체크 바로 아래(안 · 밖 둘 다) · 이용약관 보기 · 취소·환불 정책 보기 · 새 창
+    // D-44 — 문구는 slot 의 IssueConsentLabel 하나(두 자리 같은 글자) · label 글자 없음 · 따로 있던 링크 줄 없음
     for (const b of boxes) {
+      expect(dir(b.node, ':label')).toBeUndefined()
+      expect((b.node.children ?? []).filter((c) => c.type === ELEMENT).map((c) => c.tag)).toEqual(['IssueConsentLabel'])
       const agree = b.ancestors[b.ancestors.length - 1]!
-      const links = findAll(agree, (n) => n.tag === 'a').map((l) => [attr(l.node, 'href'), attr(l.node, 'target'), text(l.node)])
-      expect(links.map(([h]) => h)).toEqual(['/terms', '/refund'])
-      for (const [, target, t] of links) {
-        expect(target).toBe('_blank')
-        expect(t).toContain('(새 창)')
-      }
-      expect(links[0]![2]).toContain('이용약관 보기')
-      expect(links[1]![2]).toContain('취소·환불 정책 보기')
+      expect(findAll(agree, (n) => n.tag === 'a')).toEqual([])
     }
+    expect(src).not.toMatch(/confirm-links|이용약관 보기|취소·환불 정책 보기/)
     const inside = boxes.find((b) => b.ancestors.includes(scroll))!
     const outside = boxes.find((b) => !b.ancestors.includes(scroll))!
     expect(inside.ancestors.some((a) => dir(a, 'v-if') === 'confirmCompact')).toBe(true)

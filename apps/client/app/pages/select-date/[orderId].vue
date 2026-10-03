@@ -228,6 +228,7 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
 import { confirmScrollFit } from '~/utils/confirm-fit'
 import { renderNoticeList } from '~/utils/legal-render'
+import IssueConsentLabel from '~/components/legal/IssueConsentLabel.vue'
 
 // 05-A 안내 중 2줄만(spec D-43 · John 2026-10-02) — 지원 기기 · 문제 시 연락. 설치 전 3,500원 · 청약철회 제한은 아래 필수 동의 체크 문구가 맡는다
 const NOTICE_LINES = [ISSUE_NOTICE.device, ISSUE_NOTICE.trouble]
@@ -533,18 +534,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
             v-if="confirmCompact"
             class="select-date-page__confirm-agree"
           >
-            <NCheckbox
-              v-model="isPolicyAgreed"
-              :label="ISSUE_NOTICE.consent"
-            />
-            <p class="select-date-page__confirm-links">
-              <a href="/terms" target="_blank" rel="noopener"
-                >이용약관 보기<span class="sr-only"> (새 창)</span></a
-              >
-              <a href="/refund" target="_blank" rel="noopener"
-                >취소·환불 정책 보기<span class="sr-only"> (새 창)</span></a
-              >
-            </p>
+            <NCheckbox v-model="isPolicyAgreed"><IssueConsentLabel /></NCheckbox>
           </div>
         </div>
       </div>
@@ -553,17 +543,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
         v-if="!confirmCompact"
         class="select-date-page__confirm-agree"
       >
-        <!-- 05-A 19행(D-35) — 약관 6조④ 의 발급 화면 약관 동의 · 체크 구조 · 서버 기록은 W1-2 K3 · W1-6 -->
-        <NCheckbox v-model="isPolicyAgreed" :label="ISSUE_NOTICE.consent" />
-        <!-- 05-A 링크 줄 «이용약관 보기 · 취소·환불 정책 보기»(버튼 «eSIM 발급하기» 와 같은 줄 — 정본 배치) -->
-        <p class="select-date-page__confirm-links">
-          <a href="/terms" target="_blank" rel="noopener"
-            >이용약관 보기<span class="sr-only"> (새 창)</span></a
-          >
-          <a href="/refund" target="_blank" rel="noopener"
-            >취소·환불 정책 보기<span class="sr-only"> (새 창)</span></a
-          >
-        </p>
+        <!-- 필수 동의(D-44 · John 2026-10-03) — 문구 안 «이용약관» · «취소·환불 정책» 링크(새 탭) · 따로 있던 링크 줄은 없앴다 · 서버 기록은 W1-6 -->
+        <NCheckbox v-model="isPolicyAgreed"><IssueConsentLabel /></NCheckbox>
       </div>
       <template #actions>
         <div class="select-date-page__confirm-actions">
@@ -823,25 +804,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
   color: #6239ff;
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-.select-date-page__confirm-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin: 6px 0 0 28px;
-  font-size: 12px;
-}
-
-.select-date-page__confirm-links a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  color: #6239ff;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  white-space: nowrap;
 }
 
 .select-date-page__confirm-policy b {
