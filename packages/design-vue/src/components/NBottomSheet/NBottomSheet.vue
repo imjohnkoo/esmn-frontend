@@ -7,10 +7,18 @@
       <Transition name="n-bottom-sheet-content">
         <DialogContent v-if="open" class="n-bottom-sheet__content">
           <div v-if="grip" class="n-bottom-sheet__grip" aria-hidden="true" />
-          <header v-if="title || $slots.header" class="n-bottom-sheet__header">
+          <header
+            v-if="title || $slots.header || closable"
+            :class="['n-bottom-sheet__header', { 'n-bottom-sheet__header--closable': closable }]"
+          >
             <slot name="header">
               <DialogTitle v-if="title" class="n-bottom-sheet__title">{{ title }}</DialogTitle>
             </slot>
+            <DialogClose v-if="closable" class="n-bottom-sheet__close" :aria-label="closeLabel">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </DialogClose>
           </header>
           <div class="n-bottom-sheet__body">
             <slot />
@@ -25,18 +33,24 @@
 </template>
 
 <script setup lang="ts">
-import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle } from 'reka-ui'
+import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogClose } from 'reka-ui'
 
 export interface NBottomSheetProps {
   title?: string
   grip?: boolean
   maxWidth?: number | string
+  /** 제목 줄 오른쪽 X 닫기 버튼 — 바깥 누름 · Esc 외에 눈에 보이는 닫기(긴 본문 시트) */
+  closable?: boolean
+  /** X 버튼 접근 이름 */
+  closeLabel?: string
 }
 
 withDefaults(defineProps<NBottomSheetProps>(), {
   title: undefined,
   grip: true,
   maxWidth: 420,
+  closable: false,
+  closeLabel: '닫기',
 })
 
 const open = defineModel<boolean>({ default: false })
@@ -83,6 +97,38 @@ const open = defineModel<boolean>({ default: false })
 
 .n-bottom-sheet__header {
   margin-bottom: 12px;
+}
+
+.n-bottom-sheet__header--closable {
+  position: relative;
+  min-height: 32px;
+  padding: 0 40px;
+}
+
+.n-bottom-sheet__close {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--n-radius-full, 9999px);
+  background: transparent;
+  color: var(--n-color-neutral-600, #525252);
+  cursor: pointer;
+}
+
+.n-bottom-sheet__close:hover {
+  background-color: var(--n-color-neutral-100, #f5f5f5);
+}
+
+.n-bottom-sheet__close:focus-visible {
+  outline: 2px solid var(--n-color-primary-500, #6239ff);
+  outline-offset: 2px;
 }
 
 .n-bottom-sheet__title {
