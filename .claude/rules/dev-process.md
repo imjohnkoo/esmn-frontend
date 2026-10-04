@@ -70,10 +70,10 @@ spec/plan 헤더 **pill** + 주간 SoT(`$NOMACOM_MANAGER/docs/weekly/frontend-cu
 | 제약                                                                                                  | 프로세스 대응                                                                                               |
 | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | **admin/client 테스트는 얇다** (INF-1 로 러너는 붙었다 — client 28건, admin 0건) | 회귀 테스트를 **우선 시도**하고, 대상이 순수 로직이 아니면 검증 증거(커맨드 출력·Orca 스크린샷)로 대체 + plan 에 사유 명시 |
-| **검증 3층이 갖춰졌다** — 로컬(INF-1) · PR/main CI(INF-2) · Dockerfile(INF-3)                          | 세 곳이 **같은 스크립트·같은 기준선**(`typecheck-gate.sh`, admin 0 / client 7)을 쓴다. 다만 게이트는 «타입» 만 본다 — 동작 검증은 `nomacomfe-prod-push-check` 의 UI 수동 확인 몫 |
+| **검증 3층이 갖춰졌다** — 로컬(INF-1) · PR/dev CI(INF-2) · Dockerfile(INF-3)                          | 세 곳이 **같은 스크립트·같은 기준선**(`typecheck-gate.sh`, admin 0 / client 7)을 쓴다. 다만 게이트는 «타입» 만 본다 — 동작 검증은 `nomacomfe-prod-push-check` 의 UI 수동 확인 몫 |
 | **admin 스테이징 없음** — prod 가 첫 통합 환경                                                        | 데이터를 만드는 T3 는 **배포 후 값 대조**가 필수 게이트                                                     |
 | **prod push = 즉시 배포** (무검증)                                                                    | `guard-prod-push.sh` 가 prod push 를 **차단**. m8 은 해제했지만 nomacom 은 유지                             |
-| **dev 브랜치 없음** — main(개발·DS publish) / prod(배포)                                              | PR base 는 항상 `main`. prod↔dev sync 단계는 존재하지 않는다                                                |
+| **브랜치 둘** — dev(개발·DS publish — 2026-10-04 `main` 에서 이름 변경) / prod(배포)                   | PR base 는 항상 `dev`. 승격은 dev → prod 한 방향 — prod↔dev sync 단계는 존재하지 않는다                     |
 | **Orca setup hook 등록됨** (`yarn install`, run-by-default)                                           | `orca worktree create ... --setup run` 이 정상. m8 의 `--setup skip` 복사 금지                              |
 | **prod DB 는 TypeORM camelCase**                                                                      | Drizzle 정의와 어긋날 수 있다. 스키마 관련 spec/plan 은 prod 실측으로 확인                                  |
 

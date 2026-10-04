@@ -6,12 +6,12 @@
 |---|---|
 | Registry | `https://npm.pkg.github.com` (scope `@imjohnkoo`) |
 | Workflow | `.github/workflows/design-system-publish.yml` |
-| 트리거 | `main` 브랜치 push + `packages/design-tokens/**` 또는 `packages/design-vue/**` 경로 변경, 또는 `workflow_dispatch` 수동 트리거 |
+| 트리거 | `dev` 브랜치 push + `packages/design-tokens/**` 또는 `packages/design-vue/**` 경로 변경, 또는 `workflow_dispatch` 수동 트리거 |
 | 빌드 | `yarn workspace @imjohnkoo/design-tokens run build` → `yarn workspace @imjohnkoo/design-vue run build` (순차) |
 | Publish 순서 | `design-tokens` → `design-vue` (Yarn Berry 가 `workspace:*` 를 자동 버전 치환) |
 | 중복 처리 | `yarn npm publish --tolerate-republish || yarn npm publish` — 같은 버전이면 no-op 로 통과. fallback 은 사전 GET 이 403 으로 fatal 나는 경우 (권한 미부여 신규 패키지 등) 를 위한 안전망 — plain publish 는 GET 없이 바로 PUT 하고, 기존 버전 재발행은 서버가 거부하므로 이중 발행 위험 없음 |
 | 인증 | `YARN_NPM_AUTH_TOKEN = secrets.GITHUB_TOKEN` (workflow `packages: write` 권한) |
-| 브랜치 모델 | `main` = DS publish 트리거 / `prod` = admin/client app 배포 트리거 (서로 분리) |
+| 브랜치 모델 | `dev` = DS publish 트리거 / `prod` = admin/client app 배포 트리거 (서로 분리) |
 
 ## 대상 패키지
 
@@ -49,10 +49,10 @@ npmScopes:
 
 `packages/design-tokens/**` + `packages/design-vue/**` 는 본 publish workflow 외에도 `admin-production.yml` / `client-production.yml` 의 paths 필터에도 잡혀 있습니다. 그래서 DS 변경 push:
 
-- `main` push → `design-system-publish.yml` 만 트리거 (admin/client workflow 는 `branches: [prod]` 만 트리거)
-- `prod` 머지 → `admin-production.yml` + `client-production.yml` 둘 다 재배포 트리거. DS publish 는 별도 (main 에서 이미 끝)
+- `dev` push → `design-system-publish.yml` 만 트리거 (admin/client workflow 는 `branches: [prod]` 만 트리거)
+- `prod` 머지 → `admin-production.yml` + `client-production.yml` 둘 다 재배포 트리거. DS publish 는 별도 (dev 에서 이미 끝)
 
-즉 **main push 시 DS publish 단독 / prod 머지 시 app 재배포 단독** 으로 자연 분리됩니다.
+즉 **dev push 시 DS publish 단독 / prod 머지 시 app 재배포 단독** 으로 자연 분리됩니다.
 
 ## 첫 publish 완료 기록 (2026-08-18)
 
@@ -70,5 +70,5 @@ npmScopes:
 ## 관련 문서
 
 - `CLAUDE.md` "비포함 범위" — C-1 결정 기록
-- `.claude/rules/deployment.md` — 브랜치 모델 (main / prod) 전체 그림
+- `.claude/rules/deployment.md` — 브랜치 모델 (dev / prod) 전체 그림
 - `packages/design-vue/CHANGELOG.md` — 버전별 변경 이력

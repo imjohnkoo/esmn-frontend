@@ -1,6 +1,6 @@
 ---
 name: nomacomfe-prod-push-check
-description: Pre-flight checklist before pushing to nomacom-frontend prod or merging to the prod branch. Verifies clean working tree, paths-filter deploy impact, build for affected apps, manual UI verification, migration safety, DS version bump, and main->prod fast-forward. Use before any push that triggers admin/client prod deploy.
+description: Pre-flight checklist before pushing to nomacom-frontend prod or merging to the prod branch. Verifies clean working tree, paths-filter deploy impact, build for affected apps, manual UI verification, migration safety, DS version bump, and dev->prod fast-forward. Use before any push that triggers admin/client prod deploy.
 ---
 
 # nomacom-frontend Prod Push Check
@@ -10,7 +10,7 @@ Prevent broken/unsafe prod deployments by running a structured pre-flight check.
 **Announce at start:** "I'm using the nomacomfe-prod-push-check skill to verify prod-push readiness."
 
 > **상태 (2026-09-02)**: 배포 파이프라인은 **가동 중**이다 — prod push 가 `admin-production.yml`/`client-production.yml` 을 트리거해 DockerHub 빌드 → CodeDeploy 로 이어진다.
-> ✅ 검증 3층 가동 중 (2026-09-02): 로컬(INF-1) · PR·main CI(INF-2, `ci.yml`) · **Dockerfile 게이트(INF-3)**.
+> ✅ 검증 3층 가동 중 (2026-09-02): 로컬(INF-1) · PR·dev CI(INF-2, `ci.yml`) · **Dockerfile 게이트(INF-3)**.
 > `prod` 브랜치에 CI 는 없지만, `apps/{admin,client}/Dockerfile` 이 `nuxt build` 직전에 typecheck 게이트를 돌리므로 **타입 에러면 이미지 자체가 안 만들어진다**.
 > ⚠️ 단 게이트는 «타입» 만 본다. **동작이 맞는지는 아무도 안 본다** — Phase 4 의 UI 수동 검증이 여전히 유일한 기능 검증이다. 생략 금지.
 
@@ -26,7 +26,7 @@ Prevent broken/unsafe prod deployments by running a structured pre-flight check.
 **Not needed for:**
 
 - Pushing to feature branches
-- Pushing to `main` 또는 feature 브랜치
+- Pushing to `dev` 또는 feature 브랜치
 - Local merges that don't push
 
 ## Check Phases
@@ -74,7 +74,7 @@ git diff origin/prod...HEAD --name-only
 | `deploy/scripts/**`, `appspec.yml`                                    | **둘 다**                                         |
 | `.github/workflows/admin-production.yml`                              | admin                                             |
 | `.github/workflows/client-production.yml`                             | client                                            |
-| `packages/design-*/**` (main 브랜치 + publish 정책 채택 시)           | + design-system-publish.yml                       |
+| `packages/design-*/**` (dev 브랜치 + publish 정책 채택 시)            | + design-system-publish.yml                       |
 | `turbo.json`, `tsconfig.base.json`, `.yarnrc.yml`, `apps/design-*/**` | **제외** (workflow paths 필터에 없음 — 확인 필요) |
 
 **출력 포맷**:
@@ -84,7 +84,7 @@ Paths-filter 영향:
   ✓ admin   (reason: apps/admin/server/api/...)
   ✓ client  (reason: packages/design-vue/components/...)
   - mobile  (reason: 변경 없음)
-  - DS publish: ✗ (prod 브랜치는 publish 안 함, main에서만)
+  - DS publish: ✗ (prod 브랜치는 publish 안 함, dev에서만)
 ```
 
 ### Phase 3 — Build + Typecheck 검증
@@ -118,15 +118,15 @@ yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 - 영향 앱 dev 서버 띄워서 (`yarn workspace nomacom-admin run dev`) golden path 수동 검증
 - 자동 테스트는 feature correctness 가 아닌 code correctness 만 검증함
 
-**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남는다(D-47). D-30 이 예외로 둔 3자리(방침 4장 AWS · Solapi 행 · `/` 임시 블록(D-36)의 호스팅 줄)는 **D-54(2026-10-03)로 채워졌다** — main 은 값 자리 0 으로 나간다. 아래 `chk` 의 셋째 인자부터는 «있어도 되는 예외 자리» 인데 지금은 하나도 없다(새 예외는 spec 결정 뒤에만 넣는다). **값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 올릴 커밋(`origin/main`)을 체크아웃한 저장소 루트에서 그대로 돌린다(블록이 그 자리에서 빌드한다 — turbo 캐시가 맞으면 몇 초). **Phase 7 에서 prod 로 올리는 sha 는 끝 줄에 찍힌 커밋과 같아야 한다**:
+**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남는다(D-47). D-30 이 예외로 둔 3자리(방침 4장 AWS · Solapi 행 · `/` 임시 블록(D-36)의 호스팅 줄)는 **D-54(2026-10-03)로 채워졌다** — dev 는 값 자리 0 으로 나간다. 아래 `chk` 의 셋째 인자부터는 «있어도 되는 예외 자리» 인데 지금은 하나도 없다(새 예외는 spec 결정 뒤에만 넣는다). **값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 올릴 커밋(`origin/dev`)을 체크아웃한 저장소 루트에서 그대로 돌린다(블록이 그 자리에서 빌드한다 — turbo 캐시가 맞으면 몇 초). **Phase 7 에서 prod 로 올리는 sha 는 끝 줄에 찍힌 커밋과 같아야 한다**:
 
 ```bash
 # 블록이 그 자리에서 빌드한 .output 을 루프백에 · DB · 벤더 env 없이(env -i — DATABASE_URL 이 없으면 서버는 DB 에 붙지 않는다) — 화면 HTML 만 본다
 bash <<'SH'
 set -u
 cd apps/client || exit 1
-# 확인할 커밋 = 올릴 커밋 — RC_REF(기본 origin/main = prod 로 올라가는 ref)를 받아 와 HEAD 와 같아야 한다. ⛔ 승격에서는 RC_REF 를 주지 않는다(다른 값은 블록 자체를 시험할 때만)
-RC_REF="${RC_REF:-origin/main}"
+# 확인할 커밋 = 올릴 커밋 — RC_REF(기본 origin/dev = prod 로 올라가는 ref)를 받아 와 HEAD 와 같아야 한다. ⛔ 승격에서는 RC_REF 를 주지 않는다(다른 값은 블록 자체를 시험할 때만)
+RC_REF="${RC_REF:-origin/dev}"
 case "$RC_REF" in origin/*) git fetch -q origin "${RC_REF#origin/}" || { echo "⛔ $RC_REF 받아 오기 실패"; exit 1; } ;; esac
 head="$(git rev-parse HEAD)" || { echo "⛔ git 체크아웃이 아니다"; exit 1; }
 [ "$head" = "$(git rev-parse "$RC_REF^{commit}")" ] || { echo "⛔ HEAD($head) ≠ $RC_REF — 올릴 커밋을 체크아웃하고 다시"; exit 1; }
@@ -216,7 +216,7 @@ git diff origin/prod...HEAD | grep -iE "CREATE INDEX|DROP INDEX|ALTER TABLE|UPDA
 
 ### Phase 6 — Design System Version Bump 확인
 
-> DS publish 는 **`main` push 트리거** (`design-system-publish.yml`). prod 머지는 app 재배포만 트리거한다 — 두 경로는 분리돼 있다.
+> DS publish 는 **`dev` push 트리거** (`design-system-publish.yml`). prod 머지는 app 재배포만 트리거한다 — 두 경로는 분리돼 있다.
 
 DS 패키지 변경이 있고 외부 consumer 에 영향 있으면 version bump 필수:
 
@@ -239,21 +239,21 @@ git diff origin/prod...HEAD \
   - 영향 있음 (API 변경, 신규 컴포넌트, 버그 수정) → version bump 후 재푸시
   - 내부 리팩터/주석만 → bump 불필요
 
-### Phase 7 — main↔prod 관계 확인
+### Phase 7 — dev↔prod 관계 확인
 
-> ⛔ **dev sync 단계는 존재하지 않는다.** nomacom 은 브랜치 모델 (b) 확정 — `main`(개발·DS publish) / `prod`(배포) 2분기이고 **`dev` 브랜치가 없다** (`.claude/rules/deployment.md`). m8-frontend 의 prod↔dev sync 규약을 복사하지 말 것.
+> ⛔ **prod↔dev sync 단계는 존재하지 않는다.** nomacom 은 브랜치 모델 (b) 확정 — `dev`(개발·DS publish — 2026-10-04 `main` 에서 이름 변경) / `prod`(배포) 2분기이고 승격은 **dev → prod 한 방향**이다 (`.claude/rules/deployment.md`). m8-frontend 의 prod↔dev sync 규약을 복사하지 말 것.
 
-확인할 것은 **prod 가 main 의 조상인가** — 즉 이 push 가 fast-forward 인가다.
+확인할 것은 **prod 가 dev 의 조상인가** — 즉 이 push 가 fast-forward 인가다.
 
 ```bash
 git fetch origin --quiet
-git log --oneline --graph origin/main origin/prod | head -20
-git merge-base --is-ancestor origin/prod origin/main && echo "✔ fast-forward 가능" || echo "⛔ prod 가 main 에 없는 커밋을 갖고 있다 — 되감기 위험, 중단"
-# client 승격이면 — Phase 4 렌더 확인 끝 줄의 sha(RC=<그 sha>)가 지금 origin/main 과 같아야 한다(그 사이 머지되면 확인 안 된 커밋이 나간다)
-[ "$(git rev-parse origin/main)" = "$RC" ] || echo "⛔ origin/main 이 렌더 확인한 커밋($RC)과 다르다 — Phase 4 부터 다시"
+git log --oneline --graph origin/dev origin/prod | head -20
+git merge-base --is-ancestor origin/prod origin/dev && echo "✔ fast-forward 가능" || echo "⛔ prod 가 dev 에 없는 커밋을 갖고 있다 — 되감기 위험, 중단"
+# client 승격이면 — Phase 4 렌더 확인 끝 줄의 sha(RC=<그 sha>)가 지금 origin/dev 와 같아야 한다(그 사이 머지되면 확인 안 된 커밋이 나간다)
+[ "$(git rev-parse origin/dev)" = "$RC" ] || echo "⛔ origin/dev 가 렌더 확인한 커밋($RC)과 다르다 — Phase 4 부터 다시"
 ```
 
-올릴 것은 **그 sha** 다(`origin/main` 이름이 아니라 — 사용자 승인 뒤 `<RC sha>:prod`). **prod 에만 있는 커밋이 있으면 중단하고 사용자에게 보고한다.** ref 되감기는 남의 배포를 되돌리고 커밋을 소실시킨다 — `guard-prod-push.sh` 가 force 이동을 차단하는 이유다.
+올릴 것은 **그 sha** 다(`origin/dev` 이름이 아니라 — 사용자 승인 뒤 `<RC sha>:prod`). **prod 에만 있는 커밋이 있으면 중단하고 사용자에게 보고한다.** ref 되감기는 남의 배포를 되돌리고 커밋을 소실시킨다 — `guard-prod-push.sh` 가 force 이동을 차단하는 이유다.
 
 ### Phase 8 — CI/Deploy 확인
 
@@ -280,18 +280,18 @@ Paths-filter impact:
   ✓ admin   (reason: apps/admin/server/api/...)
   ✓ client  (reason: packages/design-vue/components/...)
   - mobile  (reason: 변경 없음)
-  - DS publish: ✗ (prod 브랜치 — publish 는 main 에서만)
+  - DS publish: ✗ (prod 브랜치 — publish 는 dev 에서만)
 
 Build:        ✓ yarn turbo run build (admin, client) pass
 Typecheck:    — n/a (admin/client 에 script 없음 — 인프라 갭)
 Tests:        ✓ design-vue 129 pass  /  — admin·client n/a
 UI manual:    ✓ admin/client golden path 검증 완료 (유일한 기능 검증)
-Render check: ✓ <sha> = origin/main · 예외 자리 0 (client 승격 시 — 올릴 sha 와 같아야)
+Render check: ✓ <sha> = origin/dev · 예외 자리 0 (client 승격 시 — 올릴 sha 와 같아야)
 Migrations:   ✗ none
 DDL:          ✗ none
 DS bump:      ✗ N/A (DS 변경 없음)
 
-main→prod:    ✓ fast-forward 가능 (prod 고유 커밋 0)
+dev→prod:     ✓ fast-forward 가능 (prod 고유 커밋 0)
 
 Recent prod deploys: all green (last 5)
 
@@ -337,10 +337,10 @@ READY to push. Proceed?
 Claude 가 실제로 실수했거나 빠질 수 있는 덫:
 
 - **`.env.example` 과 `.env.local` 구분 실패**: Phase 1.3 의 grep 패턴이 `.env.example` 도 잡을 수 있어 false positive. 명시적 `grep -v '\.env\.example$'` 적용
-- **DS publish 는 `main` push 트리거**: `design-system-publish.yml` 이 `main` 에서 돈다. prod 머지는 app 재배포만 트리거하고 DS publish 는 별개다
+- **DS publish 는 `dev` push 트리거**: `design-system-publish.yml` 이 `dev` 에서 돈다. prod 머지는 app 재배포만 트리거하고 DS publish 는 별개다
 - **`--tolerate-republish` 함정** (publish 정책 채택 후): 같은 버전 republish 해도 CI 초록. "CI 초록 = 버전 올라간 것" 오판 금지. 실제 bump 는 `package.json` diff 로만 확인
 - **Paths filter 에 없는 변경이 더 위험**: `turbo.json`, `tsconfig.base.json`, `.yarnrc.yml`, `apps/design-*/**` 은 workflow paths 필터에 없음 — 변경 시 **배포 안 되지만 로컬 dev 에서 깨질 수 있음**. PR 에 workflow paths 도 함께 수정해야 하는지 검토
-- **dev sync 를 찾지 말 것**: nomacom 에는 `dev` 브랜치가 없다(브랜치 모델 (b) 확정). m8-frontend 스킬을 참조하다 prod↔dev sync 단계를 만들어내는 것이 대표적 오이식이다
+- **prod↔dev sync 를 찾지 말 것**: nomacom 의 `dev` 는 통합 브랜치(2026-10-04 `main` 에서 이름 변경)이고 승격은 dev → prod 한 방향이다(브랜치 모델 (b)). m8-frontend 스킬을 참조하다 prod → dev 역동기화 단계를 만들어내는 것이 대표적 오이식이다
 - **DB ownership 미확정**: m8 는 main DB 가 backend 소유라 admin/client 가 schema 변경 시 backend 합의 필수. nomacom 은 backend 가 별도 service 인지 admin server 자체에서 owns 인지 audit 필요. Phase 5 에서 이 구분 모호하면 보수적으로 "변경 보류 + 확인 요청"
 - **prod push hook 차단**: `.claude/hooks/guard-prod-push.sh` 가 `git push *prod*` 차단. 본 skill 완료 후에도 사용자 명시 승인 필요
 - **mobile 경로는 본 skill 범위 밖**: `apps/mobile/**` 변경은 Expo EAS / OTA 경로로 별도. CodeDeploy 파이프라인 (admin/client) 과 분리. mobile prod 배포는 EAS 채널 기준 별도 절차 필요

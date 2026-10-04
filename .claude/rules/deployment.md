@@ -1,7 +1,7 @@
 # 배포 흐름 (CodeDeploy + GitHub Actions)
 
 > **상태 (2026-09-02 갱신)**: 배포 자산은 **구축 완료**다 — `.github/workflows/{admin,client}-production.yml` · `appspec.yml` · `deploy/scripts/{before,after}_deploy.sh` · `apps/{admin,client}/Dockerfile` · `deploy/cloudfront/` 모두 실재한다. SSM 경로는 `.claude/rules/ssm-paths.md` 에서 확정됐다.
-> ⚠️ **남은 갭**: ① Dockerfile 안에 typecheck/test **게이트가 없다** — 이미지가 무조건 만들어지므로 배포 경로에 기계 검증이 0 이다. ② PR/main CI 도 없다. 그래서 `guard-prod-push.sh` 의 prod 차단과 `nomacomfe-prod-push-check` 가 유일한 사전 방어선이다 (Phase 3 인프라 트랙 후보).
+> ⚠️ **남은 갭**: ① Dockerfile 안에 typecheck/test **게이트가 없다** — 이미지가 무조건 만들어지므로 배포 경로에 기계 검증이 0 이다. ② PR/dev CI 도 없다. 그래서 `guard-prod-push.sh` 의 prod 차단과 `nomacomfe-prod-push-check` 가 유일한 사전 방어선이다 (Phase 3 인프라 트랙 후보).
 
 ```
 GitHub push (prod branch)
@@ -64,16 +64,17 @@ paths:
 - repo = `imjohnkoo/nomacom-frontend` · CodeDeploy `--deployment-group-name prod` · config `CodeDeployDefault.OneAtATime`
 - 구 레포(`nomacom-admin`, `nomacom-client-nuxt3`, `nomacom-design-system`) 는 2026-05-21 Archived
 
-## 브랜치 전략 — **(b) 확정 (2026-09-02)**
+## 브랜치 전략 — **(b) 확정 (2026-09-02) · 통합 브랜치 이름 `main` → `dev` (2026-10-04)**
 
 | 브랜치 | 역할 |
 |---|---|
-| `main` | **개발 기본 base** + DS publish 트리거 (`design-system-publish.yml`) |
+| `dev` | **개발 기본 base** + DS publish 트리거 (`design-system-publish.yml`) — GitHub 기본 브랜치 |
 | `prod` | **배포 트리거** — `admin-production.yml` / `client-production.yml` |
 
-- 1인 운영에 3분기(dev/prod/main)는 과잉이라 **(b) 단순화**를 채택했다. `dev` 브랜치는 만들지 않는다.
-- 따라서 **prod↔dev 동기화 단계는 존재하지 않는다** — m8-frontend 규약을 복사하지 말 것.
-- 모든 작업 브랜치/PR 의 base 는 **항상 `main`**.
+- 1인 운영에 3분기(dev/prod/main)는 과잉이라 **(b) 단순화**를 채택했다 — 브랜치는 둘(통합 · 배포)뿐이다.
+- **2026-10-04 John 결정**: 통합 브랜치 이름을 `main` → `dev` 로 바꿨다(GitHub branch rename — 이력 · PR 그대로, 기본 브랜치 = `dev`). backend(`dev` → `prod`)와 같은 어휘다. **`main` 브랜치는 없다** — 옛 문서 · 스크립트의 `main` · `origin/main` 은 `dev` · `origin/dev` 로 읽는다. 로컬 클론은 `git branch -m main dev && git fetch origin && git branch -u origin/dev dev && git remote set-head origin -a && git remote prune origin`.
+- 승격은 **dev → prod 한 방향**이다 — **prod↔dev 동기화 단계는 존재하지 않는다**(m8-frontend 의 sync 규약을 복사하지 말 것).
+- 모든 작업 브랜치/PR 의 base 는 **항상 `dev`**.
 
 ## prod push 정책
 

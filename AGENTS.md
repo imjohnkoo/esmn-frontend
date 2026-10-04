@@ -93,7 +93,7 @@ monorepo 공유 도메인/운영 룰은 `.claude/rules/` 아래에 분리:
 - `.claude/rules/dev-process.md` — **개발 프로세스 v2 정본** (Tier · 게이트 · QA · 환경 제약)
 - `.claude/rules/turbo.md` — Turbo 의존 그래프 + 커맨드 상세
 - `.claude/rules/claude-code-assets.md` — Skills/Hooks 카탈로그 + Vendoring 정책
-- `.claude/rules/deployment.md` — CodeDeploy 배포 흐름, path filter, 브랜치 전략 **((b) 확정 2026-09-02: `main` 개발·DS publish / `prod` 배포. dev 브랜치 없음)**
+- `.claude/rules/deployment.md` — CodeDeploy 배포 흐름, path filter, 브랜치 전략 **((b) 확정 2026-09-02: `dev` 개발·DS publish / `prod` 배포 — 2026-10-04 `main` → `dev` 이름 변경, `main` 브랜치 없음)**
 - `.claude/rules/ssm-paths.md` — SSM Parameter Store 경로 + Secret naming 원칙 **(확정)**
 
 - `.claude/rules/design-system-publish.md` — `@imjohnkoo/design-*` GitHub Packages publish 흐름 + 버전 bump 정책 **(C-2 완료 — 0.4.0 첫 publish 성공 2026-08-18)**
@@ -147,7 +147,7 @@ spec-driven + maker-checker QA + 관문 접합. **정본은 `.claude/rules/dev-p
 | 배포 | `nomacomfe-prod-push-check`                                                     |
 
 > ✅ **INF-1(2026-09-02)**: `yarn turbo run lint typecheck test` 가 실제로 돈다 — typecheck 는 `.github/scripts/typecheck-gate.sh` 의 **baseline 초과분만 차단**(admin 0 / client 7), test 는 **157건**(design-vue 129 + client 28), lint 는 에러만 차단.
-> ✅ **INF-2(2026-09-02)**: `.github/workflows/ci.yml` 이 **PR + main push** 에서 lint·test·typecheck(+ 게이트/훅 회귀 테스트)를 강제한다.
+> ✅ **INF-2(2026-09-02)**: `.github/workflows/ci.yml` 이 **PR + dev push** 에서 lint·test·typecheck(+ 게이트/훅 회귀 테스트)를 강제한다.
 > ✅ **INF-3(2026-09-02)**: `apps/{admin,client}/Dockerfile` 이 `nuxt build` 직전에 typecheck 게이트를 돌린다 — **어떤 경로로 배포하든** 타입 에러면 이미지가 만들어지지 않는다(검증: 에러 주입 시 build exit 1).
 > ⚠️ 남은 갭: admin staging 부재(INF-4) · `design-storybook-mobile` 빌드 파손(INF-5). 게이트가 «타입» 만 보므로 동작 검증은 여전히 `nomacomfe-prod-push-check` 의 UI 수동 확인 몫이다.
 
@@ -168,7 +168,7 @@ spec-driven + maker-checker QA + 관문 접합. **정본은 `.claude/rules/dev-p
 | mobile EAS 배포 흐름 정의                                                           | eas.json 구축 — 실행 (eas init/build) 승인 대기 | weekly B 트랙     |
 | 개발 프로세스 v2 이식 (spec 제도 · QA 게이트 · 스킬 6종)                            | ✅ 완료 (2026-09-02)                            | —                 |
 | **admin/client 검증 러너** (typecheck 게이트 + vitest + lint)                        | ✅ 완료 — INF-1 (2026-09-02)                    | 프로세스 v2 후속  |
-| **PR/main CI 게이트** (`ci.yml` — lint / test / typecheck gate)                      | ✅ 완료 — INF-2 (2026-09-02, run 33599247862)   | 프로세스 v2 후속  |
+| **PR/dev CI 게이트** (`ci.yml` — lint / test / typecheck gate)                       | ✅ 완료 — INF-2 (2026-09-02, run 33599247862)   | 프로세스 v2 후속  |
 | **Dockerfile 배포 게이트** (이미지 빌드 시 typecheck)                               | ✅ 완료 — INF-3 (2026-09-02)                    | 프로세스 v2 후속  |
 | `design-storybook-mobile` 빌드 파손 (clean install 에서 preset 미해결)              | ❌ INF-5 (2026-09-02 발견)                      | 프로세스 v2 후속  |
 | admin staging 환경 (prod 가 첫 통합 환경)                                           | 구조적 갭 — 프로세스가 완화만 함                | 프로세스 v2 후속  |

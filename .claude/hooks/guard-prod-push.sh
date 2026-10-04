@@ -57,8 +57,8 @@ flat=$(strip_heredoc_bodies "$cmd" | tr '\n' ' ' | tr -s ' ')
 
 # ⭐ 명령 경계로 쪼갠 뒤 «그 명령» 안에서만 판정한다.
 # flat 전체를 훑으면 복합 명령에 섞인 다른 명령의 토큰을 git push 것으로 오인한다:
-#   git push origin HEAD:main ; echo "prod = $(git log -1 origin/prod)"
-#     → main 으로 가는 push 인데 뒤쪽 echo 의 prod 문자열 때문에 차단
+#   git push origin HEAD:dev ; echo "prod = $(git log -1 origin/prod)"
+#     → dev 로 가는 push 인데 뒤쪽 echo 의 prod 문자열 때문에 차단
 #   git push origin feat/x ... ; gh api ... -f sha=$SHA
 #     → gh api 의 -f(field) 를 `git push -f` 로 읽고 force push 차단
 # 변수 치환 우회(git push $BRANCH)는 잡지 못한다 — 훅은 실수 방지용이지
