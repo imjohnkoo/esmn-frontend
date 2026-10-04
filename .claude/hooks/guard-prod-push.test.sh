@@ -31,12 +31,12 @@ echo "== ALLOW (정상 작업 — 막히면 안 됨) =="
 
 # 복합 명령 오탐 ①: gh api 의 -f(field) 를 force push 로 오인하면 안 된다
 run allow 'git push -q origin feat/client-toss 2>&1 | tail -3; SHA=$(git rev-parse HEAD); gh api -X PATCH repos/o/r/git/refs/heads/staging --field sha=$SHA'
-# 복합 명령 오탐 ②: main push 인데 뒤쪽 echo 의 prod 문자열로 차단되면 안 된다
-run allow 'git fetch origin --quiet && git push -q origin HEAD:main 2>&1 | tail -3; echo "prod = $(git log -1 --format=%h origin/prod)"'
+# 복합 명령 오탐 ②: dev push 인데 뒤쪽 echo 의 prod 문자열로 차단되면 안 된다
+run allow 'git fetch origin --quiet && git push -q origin HEAD:dev 2>&1 | tail -3; echo "prod = $(git log -1 --format=%h origin/prod)"'
 
-# main 은 nomacom 의 기본 개발 브랜치 — 막지 않는다
-run allow 'git push origin main'
-run allow 'git push origin HEAD:main'
+# dev 는 nomacom 의 기본 개발 브랜치(2026-10-04 main 에서 이름 변경) — 막지 않는다
+run allow 'git push origin dev'
+run allow 'git push origin HEAD:dev'
 run allow 'git push origin feat/my-branch'
 run allow 'git push -u origin imjohnkoo/admin-ui-update'
 
@@ -47,7 +47,7 @@ run allow 'git push origin chore/production-notes'
 
 # 조회는 전부 안전
 run allow 'git log -1 origin/prod'
-run allow 'git diff --name-only origin/prod origin/main -- apps/admin'
+run allow 'git diff --name-only origin/prod origin/dev -- apps/admin'
 run allow 'gh api repos/o/r/git/refs/heads/prod --jq .object.sha'
 run allow 'gh run list --branch prod --limit 4'
 run allow 'aws deploy get-deployment --deployment-id d-ABC123'
@@ -74,12 +74,12 @@ run block 'git --no-pager -c user.name=x push origin HEAD:prod'
 run block 'gh api -X PATCH repos/imjohnkoo/nomacom-frontend/git/refs/heads/prod -f sha=abc123'
 run block 'gh api --method PATCH repos/imjohnkoo/nomacom-frontend/git/refs/heads/prod -f sha=abc123'
 # ref 되감기 — 배포를 되돌리고 커밋이 소실된다
-run block 'gh api -X PATCH repos/o/r/git/refs/heads/main -f sha=abc -F force=true'
+run block 'gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc -F force=true'
 
 # force push 는 어느 브랜치든 차단
-run block 'git push --force origin main'
+run block 'git push --force origin dev'
 run block 'git push -f origin feat/x'
-run block 'git push --force-with-lease origin main'
+run block 'git push --force-with-lease origin dev'
 
 # 나머지 파괴적 명령
 run block 'git reset --hard HEAD~3'

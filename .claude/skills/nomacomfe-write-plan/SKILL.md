@@ -14,7 +14,7 @@ description: Write the coding plan (nomacom-wiki wiki/frontend/plans/) for nomac
 - `$NOMACOM_WIKI/wiki/frontend/plans/<app>/YYYY-MM-DD-<topic>-plan.md`(+ 같은 이름 `.html`) (크로스앱은 `wiki/frontend/plans/` 직하위) — 이 리포에 docs/ 는 없다(2026-09-22). frontmatter 는 `$NOMACOM_WIKI/schema/templates/plan.md`, 저장·커밋은 `nomacom-wiki-update`
 - **`.md` + `.html` 두 벌 동시 산출** (루트 CLAUDE.md 규칙). `.md` = 에이전트가 읽는 정본, `.html` = john 이 브라우저로 훑는 용도. **둘 중 하나만 고치는 것 금지** — 이중 진실이 된다
 - 헤더에 **Tier pill** (`T1`/`T2`/`T3`/`D`) — `nomacomfe-finish-branch` Step 0 이 QA 게이트 적용 여부를 이 값으로 판정
-- **PR base = `main` (항상).** plan 에 base 를 `prod` 로 적지 말 것 — prod 는 배포 트리거이지 개발 base 가 아니다
+- **PR base = `dev` (항상).** plan 에 base 를 `prod` 로 적지 말 것 — prod 는 배포 트리거이지 개발 base 가 아니다
 - 작성 후 `orca tab create --url file://<절대경로>` 로 열기 (Orca 내장 브라우저 — chrome extension 금지)
 
 ## T1 경량 양식 (버그픽스·단일 파일 소기능)
