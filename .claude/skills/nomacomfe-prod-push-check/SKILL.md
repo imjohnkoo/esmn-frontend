@@ -135,7 +135,7 @@ Phase 2에서 판정된 앱만 테스트:
 
 ```bash
 yarn workspace @imjohnkoo/design-vue run test --run   # DS 변경 시 (137 tests — 2026-10-03)
-yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A · 05-B · 동의 문구 · 하단 시트 · 테스트 체크아웃 마운트 포함(전부 통과해야 한다 — 2026-10-04 W1-2 머지 기준 @CLIENT_TESTS@ tests)
+yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A · 05-B · 동의 문구 · 하단 시트 · 테스트 체크아웃 마운트 포함(전부 통과해야 한다 — 2026-10-04 W1-2 · W1-3 머지 기준 1343 tests)
 yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 ```
 
@@ -149,7 +149,7 @@ yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 
 - 자동 테스트는 feature correctness 가 아닌 code correctness 만 검증함
 
-**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남는다(D-47). D-30 이 예외로 둔 3자리(방침 4장 AWS · Solapi 행 · 옛 `/` 임시 블록(D-36)의 호스팅 줄)는 **D-54(2026-10-03)로 채워졌다** — dev 는 값 자리 0 으로 나간다. W1-2 머지(2026-10-04) 뒤로는 **모든 페이지에 푸터(사업자등록번호)** 가 있고, 4-step 의 details · select-date · view 는 세션 없이 들어오면 서버 가드가 `/verify/{id}?reason=reverify` 로 302 를 돌려준다(client-shell K8 — 그 응답 자체를 본다) · `/business` 는 404(D-39). 아래 `chk` 의 셋째 인자부터는 «있어도 되는 예외 자리» 인데 지금은 하나도 없다(새 예외는 spec 결정 뒤에만 넣는다). **값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 올릴 커밋(`origin/dev`)을 체크아웃한 저장소 루트에서 그대로 돌린다(블록이 그 자리에서 빌드한다 — turbo 캐시가 맞으면 몇 초). **Phase 7 에서 prod 로 올리는 sha 는 끝 줄에 찍힌 커밋과 같아야 한다**:
+**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남는다(D-47). D-30 이 예외로 둔 3자리(방침 4장 AWS · Solapi 행 · 옛 `/` 임시 블록(D-36)의 호스팅 줄)는 **D-54(2026-10-03)로 채워졌다** — dev 는 값 자리 0 으로 나간다. W1-2 머지(2026-10-04) 뒤로는 **모든 페이지에 푸터(사업자등록번호)** 가 있고, 카탈로그(W1-3)의 `/countries/{iso3}` · `/products/{zone}` 은 프리렌더 HTML 하나씩을 본다 · 4-step 의 details · select-date · view 는 세션 없이 들어오면 서버 가드가 `/verify/{id}?reason=reverify` 로 302 를 돌려준다(client-shell K8 — 그 응답 자체를 본다) · `/business` 는 404(D-39). 아래 `chk` 의 셋째 인자부터는 «있어도 되는 예외 자리» 인데 지금은 하나도 없다(새 예외는 spec 결정 뒤에만 넣는다). **값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 올릴 커밋(`origin/dev`)을 체크아웃한 저장소 루트에서 그대로 돌린다(블록이 그 자리에서 빌드한다 — turbo 캐시가 맞으면 몇 초). **Phase 7 에서 prod 로 올리는 sha 는 끝 줄에 찍힌 커밋과 같아야 한다**:
 
 ```bash
 # 블록이 그 자리에서 빌드한 .output 을 루프백에 · DB · 벤더 env 없이(env -i — DATABASE_URL 이 없으면 서버는 DB 에 붙지 않는다) — 화면 HTML 만 본다
@@ -192,7 +192,8 @@ left=0; seen=""
 chk() {
   local p=$1 m s k ok_p=0 ok_d=0; local -a must; IFS=';' read -ra must <<<"$2"; shift 2
   get "$p" || exit 1
-  seen="$seen${p//$O/:id}"$'\n'
+  local q=${p//$O/:id}; q=${q/#\/countries\/$C/\/countries\/:id}; q=${q/#\/products\/$Z/\/products\/:id}   # 동적 경로는 :id 로 센다
+  seen="$seen$q"$'\n'
   must+=('704-24-01747')   # 모든 페이지에 푸터 사업자정보(W1-2 F-7)
   for m in "${must[@]}"; do [ "$(n "$body" "$m")" -ge 1 ] || { echo "⛔ $p 본문에 «$m» 이 없다(양성 대조 실패 — 빈 · 오류 화면이 0건으로 통과하지 않게)"; exit 1; }; done
   for s in "$@"; do
@@ -208,6 +209,7 @@ chk() {
   done
 }
 O=2026092300000101   # 아무 주문번호 — DB 가 없어 화면 틀만 그린다
+C=fra; Z=fra00       # 프리렌더된 아무 나라 · 상품(W1-3 catalog F-9 — 카탈로그에서 라우트 목록을 만든다)
 chk / '어느 나라로 떠나세요?;이미 구매하셨나요?;호스팅 서비스: AWS;1950 호 (경기도 광주시)'
 chk /privacy '개인정보의 처리 목적;AWS (Amazon Web Services 서울 리전);솔라피(주);쿠키 1개를 저장합니다'
 chk /terms '제1장 총칙'
@@ -219,6 +221,8 @@ chk /guide '설치 가이드'
 chk /search '국가 검색'
 chk /checkout-preview '구매 전 확인;(필수) 만 14세 이상입니다;결제 전 안내'
 chk /verify/$O '맞는지 확인할게요'
+chk /countries/$C '프랑스 eSIM;프랑스만 가요'
+chk /products/$Z '프랑스 eSIM;사용일수는 이렇게 계산해요;구매하기'
 # 4-step 가드(K8) — 세션 없이 오면 서버가 verify 로 302(본문 없음). 다른 코드 · 다른 곳으로 가면 중단
 guard() {
   local r; r="$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$B$1")"
