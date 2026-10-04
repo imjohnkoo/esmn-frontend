@@ -163,7 +163,20 @@ record 2 $? "mktemp 실패 → 검사 불가"
 # 객체를 못 읽으면(손상 · 누락) «없음» 이 아니라 검사 불가
 g checkout -q "$CLEAN"
 blob="$(git -C "$TMP" rev-parse "$CLEAN:apps/client/app/content/business.ts")"
-mv "$TMP/.git/objects/${blob:0:2}/${blob:2}" "$TMP/missing-object"
+obj="$TMP/.git/objects/${blob:0:2}/${blob:2}"
+# 환경에 따라(CI 러너의 git) 객체가 낱개가 아니라 팩에 들어 있다 — 팩을 풀어 낱개로 만든 뒤 그 객체 하나만 치운다
+if [[ ! -f "$obj" ]]; then
+  for pk in "$TMP"/.git/objects/pack/*.pack; do
+    [[ -f "$pk" ]] || continue
+    mv "$pk" "$TMP/unpack.pack" && mv "${pk%.pack}.idx" "$TMP/unpack.idx" 2>/dev/null
+    git -C "$TMP" unpack-objects -q <"$TMP/unpack.pack"
+  done
+fi
+if [[ -f "$obj" ]]; then
+  mv "$obj" "$TMP/missing-object"
+else
+  echo "진단: 객체 $blob 를 낱개로 만들지 못했다"; git -C "$TMP" count-objects -v; ls -R "$TMP/.git/objects" | head -20
+fi
 expect 2 "blob 누락 → 검사 불가 (통과 아님)" "$CLEAN"
 
 echo "content-pending-gate: $pass pass · $fail fail"
