@@ -458,6 +458,8 @@ describe('toBlock — 정본 한 절의 코드 블록에서 줄 고르기', () =
     // 줄 차례는 pick 차례 — 정수 꼴 키도 섞이지 않는다
     const numeric = { ...two, pick: [{ key: 'b', startsWith: '상호:' }, { key: '1', startsWith: '신고:' }] }
     expect(toBlock(src, numeric).lines).toEqual({ b: '상호: 노마컴', 1: '신고: 제 1950 호' })
+    // 같은 키를 두 번 고르면 멈춘다(한 줄이 소리 없이 덮이지 않게)
+    expect(() => toBlock(src, { ...two, pick: [{ key: 'a', startsWith: '상호:' }, { key: 'a', startsWith: '신고:' }] })).toThrow(/키가 겹친다/)
     // 수정이 줄을 통째로 비우면 멈춘다(가운데 줄이어도)
     const three = { ...two, pick: [{ key: 'mail', startsWith: '신고:' }, { key: 'name', startsWith: '상호:' }] }
     expect(() => toBlock(src, { ...three, edits: [{ line: sha256('신고: 제 1950 호'), from: '신고: 제 1950 호', to: '' }] })).toThrow(/비었다/)

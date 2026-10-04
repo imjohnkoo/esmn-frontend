@@ -38,7 +38,8 @@ Prevent broken/unsafe prod deployments by running a structured pre-flight check.
 #     build · UI · paths-filter · 시크릿 검사는 HEAD 를, 게이트 · push 는 PROMOTE_SHA 를 보므로 둘이 같아야 한다.
 #     fetch 가 실패하면 멈춘다(오래된 ref 로 판정하지 않는다). client 를 올리면 PROMOTE_SHA = origin/dev 끝뿐이다 — Phase 4 렌더 확인이
 #     HEAD = origin/dev 를 요구한다(승격에서 RC_REF 를 주지 않는다). dev 의 더 앞 SHA 로 바꿔 올리는 것은 client workflow 가 트리거되지 않는 승격
-#     (Phase 2 표 — apps/client · packages/design-* · 루트 package.json · yarn.lock · deploy/scripts · appspec.yml 변경 0)일 때만.
+#     (Phase 2 표 — apps/client · packages/design-* · 루트 package.json · yarn.lock · deploy/scripts · appspec.yml ·
+#     .github/workflows/client-production.yml 변경 0 — 실제 판정은 그 workflow 의 paths 필터)일 때만.
 #     ⚠️ 점검 중에 dev 가 앞서 나가면(다른 세션의 머지) 고쳐 쓰지 말고 **Phase 1.0 부터** 새 끝으로 다시 — 앞 Phase(시크릿 · 게이트 · 테스트)가 새 커밋을 보지 않았다.
 git fetch origin --quiet || exit 1
 PROMOTE_SHA="$(git rev-parse origin/dev)"
@@ -138,7 +139,7 @@ Phase 2에서 판정된 앱만 테스트:
 
 ```bash
 yarn workspace @imjohnkoo/design-vue run test --run   # DS 변경 시 (137 tests — 2026-10-03)
-yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A · 05-B · 동의 문구 · 하단 시트 · 테스트 체크아웃 마운트 포함(전부 통과해야 한다 — 2026-10-04 W1-2 · W1-3 머지 기준 1359 tests)
+yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A · 05-B · 동의 문구 · 하단 시트 · 테스트 체크아웃 마운트 포함(전부 통과해야 한다 — 2026-10-04 W1-2 · W1-3 머지 기준 1363 tests)
 yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 ```
 

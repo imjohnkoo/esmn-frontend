@@ -686,6 +686,10 @@ describe('방침 9장① · 1장 발급 행 = 흐름 쿠키 실제(D-31)', () =>
       'credentials)',
       'credentials)',
     ])
+    // 쿠키는 «본인 확인을 마친 뒤» — 같은 credentials 로 verify 를 부르고, 통과(verified · 취소 아님) 분기 안에서만 쓴다
+    expect(verify).toMatch(
+      /const response = await api\.verifyOrder\(credentials\)\s*const \{ verified, cancelled, details \} = response\s*if \(verified && !cancelled\) \{\s*orderStore\.setOrders\(details \|\| \[\]\)\s*flowSession\.start\(credentials\)\s*router\.push\(/,
+    )
   })
   it('실제로 거는 쿠키(useFlowSession) = 방침 문장 — 이름 nomacom_flow · 1시간 · 쓸 때마다 갱신 · 경로 / · 호스트 한정(domain 없음) · 담는 키', () => {
     const calls: { name: string; opts: Record<string, unknown> }[] = []

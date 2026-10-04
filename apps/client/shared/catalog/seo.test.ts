@@ -43,6 +43,18 @@ describe('정적 페이지 결선 — 각 페이지가 자기 경로의 설명�
     expect(calls[0]).toContain(`description: STATIC_DESCRIPTIONS['${route}']`)
     expect(STATIC_ROUTES as readonly string[]).toContain(route)
   })
+  it.each([
+    ['terms.vue', 'TERMS_DOC'],
+    ['privacy.vue', 'PRIVACY_DOC'],
+    ['refund.vue', 'REFUND_DOC'],
+  ] as const)('%s 의 제목 = 자기 생성물(%s)의 제목', (f, doc) => {
+    expect(page(f)).toMatch(new RegExp(`useCatalogSeo\\(\\{ title: ${doc}\\.title,`))
+    expect(page(f)).toContain(`import { ${doc} } from '~/content/legal/`)
+  })
+  it('og:title 은 문서 제목 규칙(pageTitle — 이미 «이심마니» 로 시작하면 다시 붙이지 않는다)', () => {
+    const seo = readFileSync(new URL('../../app/composables/useCatalogSeo.ts', import.meta.url), 'utf8')
+    expect(seo).toMatch(/ogTitle: pageTitle\(meta\.title\),/)
+  })
   it('정적 경로마다 페이지가 있다 · app.vue 가 html lang="ko"', () => {
     expect([...STATIC_ROUTES].sort()).toEqual(['/guide', '/privacy', '/refund', '/supported-devices', '/terms'])
     expect(readFileSync(new URL('../../app/app.vue', import.meta.url), 'utf8')).toMatch(/htmlAttrs: \{ lang: 'ko' \}/)

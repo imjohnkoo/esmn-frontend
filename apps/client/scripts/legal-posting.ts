@@ -532,6 +532,8 @@ export function toBlock(source: string, rules: BlockRules): BlockPosting {
   for (const s of skip)
     if (!skipped.has(s.sha256)) throw new Error(`건너뛸 줄을 정본에서 찾지 못했다(정본이 바뀌었다): ${s.why}`)
   // 게시 수정은 고른 줄(링크 뒤)에 — 문서 경로처럼 검사(값 채움 · 남은 태그 · 자리표시자 수) 전에 적용한다
+  const keys = rules.pick.map((p) => p.key)
+  if (new Set(keys).size !== keys.length) throw new Error(`고를 줄의 키가 겹친다: ${keys.join(', ')}`)
   // 줄 차례 = pick 차례(Object.values 는 정수 꼴 키를 앞으로 올린다)
   const edited = applyEdits(rules.pick.map((p) => picked[p.key]!).join('\n'), rules.edits)
   const { body, pendingCount } = finish(takeFills(edited + '\n', rules), rules)
