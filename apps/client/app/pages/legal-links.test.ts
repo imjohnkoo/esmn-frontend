@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import ts from 'typescript'
 import { parse } from 'vue/compiler-sfc'
 import { PRIVACY_DOC } from '../content/legal/privacy'
-import { FLOW_COOKIE, FLOW_COOKIE_MAX_AGE, buildFlowSession } from '../utils/flow-session'
+import { FLOW_COOKIE, FLOW_COOKIE_MAX_AGE, buildFlowSession, parseFlowSession } from '../utils/flow-session'
 import { useFlowSession } from '../composables/useFlowSession'
 import { ref } from 'vue'
 
@@ -183,6 +183,8 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src.match(/ISSUE_NOTICE\.(?:start|refund|period|trouble)\b/g) ?? []).toEqual([])
     // 안내 줄은 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03)
     expect(src).toMatch(/\.select-date-page__confirm-policy :deep\(\.issue-notice__list\) \{[^}]*padding: 0;[^}]*list-style: none;[^}]*\}/)
+    // 안내 줄 링크(«지원 기기 확인»)는 링크로 보인다 — 렌더러가 그린 a 라 :deep 규칙(색 · 밑줄)
+    expect(src).toMatch(/\.select-date-page__confirm-policy :deep\(\.legal-md__link\) \{[^}]*color: #6239ff;[^}]*text-decoration: underline;/)
     // 동의 체크 — 둘: 보통은 스크롤 밖(늘 보임), 공간이 모자라면 스크롤 안 끝(compact). 동시에 그려지지 않는다
     const boxes = findAll(dialog!, (n) => n.tag === 'NCheckbox' && dir(n, 'v-model') === 'isPolicyAgreed')
     expect(boxes).toHaveLength(2)
@@ -618,6 +620,42 @@ describe('방침 9장① · 1장 발급 행 = 흐름 쿠키 실제(D-31)', () =>
     const s = buildFlowSession({ orderId: 1, fullName: '가', phoneNumber: '01000000000', productOrderId: 2, extra: 'x' } as never)
     expect(Object.keys(s!).sort()).toEqual(['fullName', 'orderId', 'phoneNumber', 'productOrderId', 'v'])
   })
+  it('담는 값이 늘지 않는다 — 파서가 읽는 키 = 방침의 4가지(+ 판 번호) · 쿠키를 쓰는 함수 = start · select(그 밖은 read · clear)', () => {
+    // 파서가 입력에서 읽는 키를 기록한다 — 새 키를 허용하면(예: 이용 시작일) 여기서 빨개진다 → 방침 9장① 문장을 같이 고친다
+    const read = new Set<string>()
+    const probe = new Proxy(
+      { v: 1, orderId: 1, fullName: '가', phoneNumber: '01000000000', productOrderId: 2 },
+      {
+        get: (t, k, r) => (typeof k === 'string' && read.add(k), Reflect.get(t, k, r)),
+        has: (t, k) => (typeof k === 'string' && read.add(k), Reflect.has(t, k)),
+        ownKeys: (t) => (read.add('*'), Reflect.ownKeys(t)),
+      },
+    )
+    expect(parseFlowSession(probe)).not.toBeNull()
+    expect([...read].sort()).toEqual(['fullName', 'orderId', 'phoneNumber', 'productOrderId', 'v'])
+    const g = globalThis as Record<string, unknown>
+    const before = g.useCookie
+    g.useCookie = () => ref(null)
+    try {
+      expect(Object.keys(useFlowSession()).sort()).toEqual(['clear', 'read', 'select', 'start'])
+    } finally {
+      g.useCookie = before
+    }
+  })
+  it('쿠키의 이름 · 전화 = verify 에 이용자가 입력해 통과한 값(«이용자가 입력한» — DB 수령인 값이 아니다 · F-15)', () => {
+    const src = codeOnly(read('./verify/[orderId].vue'))
+    expect(src).toMatch(
+      /const credentials = \{\s*fullName: fullName\.value,\s*phoneNumber: phoneNumber\.value,\s*orderId: orderId\.value,\s*\}/,
+    )
+    expect(src).toMatch(/await api\.verifyOrder\(credentials\)/)
+    expect(src.match(/flowSession\.start\([^)]*\)/g)).toEqual(['flowSession.start(credentials)'])
+    // 상품 선택은 상품주문번호만 더한다(이름 · 전화는 쿠키에 있던 값 그대로)
+    const details = codeOnly(read('./details/[orderId].vue'))
+    expect(details.match(/flowSession\.(?:start|select)\([^)]*\)/g)).toEqual([
+      'flowSession.select(orderId.value, refreshed.productOrderId)',
+      'flowSession.select(orderId.value, target.productOrderId)',
+    ])
+  })
   it('실제로 거는 쿠키(useFlowSession) = 방침 문장 — 이름 nomacom_flow · 1시간 · 쓸 때마다 갱신 · 경로 / · 호스트 한정(domain 없음) · 담는 키', () => {
     const calls: { name: string; opts: Record<string, unknown> }[] = []
     const jar = ref<unknown>(null)
@@ -645,12 +683,14 @@ describe('방침 9장① · 1장 발급 행 = 흐름 쿠키 실제(D-31)', () =>
       g.useCookie = before
     }
   })
-  it('쿠키를 만드는 길은 흐름 쿠키 하나 — 앱 · 서버 · shared 코드(.vue · .ts · .js · .mjs) · nuxt.config 의 useCookie · document.cookie · setCookie · Set-Cookie 는 useFlowSession 에만', () => {
+  it('쿠키를 만드는 길은 흐름 쿠키 하나 — 앱 · 서버 · shared · modules 코드(.vue · .ts · .tsx · .js · .mjs · .cjs) · nuxt.config 의 useCookie · document.cookie · setCookie · Set-Cookie 는 useFlowSession 에만', () => {
     const SHARED = fileURLToPath(new URL('../../shared', import.meta.url))
     const CONFIG = fileURLToPath(new URL('../../nuxt.config.ts', import.meta.url))
-    const scripts = (dir: string) => walk(dir).filter((f) => /\.(vue|ts|js|mjs)$/.test(f) && !/\.test\.ts$/.test(f))
-    const makers = [...scripts(APP), ...scripts(SERVER), ...scripts(SHARED), CONFIG].filter((f) =>
-      /useCookie|document\.cookie|setCookie\(|set-cookie/i.test(codeOnly(readFileSync(f, 'utf8'))),
+    const MODULES = fileURLToPath(new URL('../../modules', import.meta.url))
+    const scripts = (dir: string) =>
+      walk(dir).filter((f) => /\.(vue|ts|tsx|js|mjs|cjs)$/.test(f) && !/\.(test|spec)\.ts$/.test(f))
+    const makers = [...scripts(APP), ...scripts(SERVER), ...scripts(SHARED), ...scripts(MODULES), CONFIG].filter((f) =>
+      /useCookie|document\.cookie|cookieStore|setCookie\b|set-cookie/i.test(codeOnly(readFileSync(f, 'utf8'))),
     )
     expect(makers.map((f) => f.slice(APP.length))).toEqual(['composables/useFlowSession.ts'])
   })

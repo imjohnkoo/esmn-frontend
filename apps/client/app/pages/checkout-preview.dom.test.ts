@@ -19,6 +19,7 @@ const portone = { storeId: 'store-test-only', testChannelKey: 'channel-key-test-
 // 상품 = 빌드 모듈이 앱 설정에 넣는 값(catalog F-12) — 여기서는 카탈로그 픽스처로 같은 함수를 돌린다
 const PREVIEW_ITEM = checkoutPreviewFromCatalog(parseCatalog(fixtureRaw()))
 const navigateTo = vi.fn()
+const route: { query: Record<string, string> } = { query: {} }
 // Nuxt 자동 import 대신 — 페이지가 전역 이름으로 찾는다
 Object.assign(globalThis, {
   ref,
@@ -27,7 +28,7 @@ Object.assign(globalThis, {
   onBeforeUnmount,
   definePageMeta: () => {},
   useHead: () => {},
-  useRoute: () => ({ query: {} }),
+  useRoute: () => route,
   useRuntimeConfig: () => ({ public: { portone } }),
   useAppConfig: () => ({ checkoutPreview: PREVIEW_ITEM }),
   navigateTo,
@@ -37,6 +38,7 @@ enableAutoUnmount(afterEach)
 beforeEach(() => {
   sdk.requestPayment.mockClear()
   navigateTo.mockClear()
+  route.query = {}
   portone.storeId = 'store-test-only'
   portone.testChannelKey = 'channel-key-test-only'
 })
@@ -114,6 +116,59 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
     expect(sdk.requestPayment).not.toHaveBeenCalled()
     expect(payButton().disabled).toBe(true)
   })
+
+  it.each([
+    [{}],
+    [
+      {
+        paymentId: 'pv-1790105212345-abababababababababababab',
+        code: 'FAILURE_TYPE_PG',
+        message: '테스트',
+      },
+    ],
+    [{ retry: '1', pay: '1' }],
+  ])(
+    '동의 전 — 모든 요소에 여러 입력(click · pointer · mouse · touch · Enter) · 복귀 쿼리 %o · 타이머를 끝까지 돌려도 SDK 호출 0',
+    async (query) => {
+      route.query = query
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] })
+      try {
+        await render()
+        const stop = (e: Event) => e.preventDefault()
+        document.addEventListener('click', stop)
+        for (const el of document.body.querySelectorAll('*')) {
+          if (el.closest('.n-checkbox')) continue // 동의 자체 — 이 테스트는 동의 전 상태를 지킨다
+          for (const type of [
+            'click',
+            'pointerdown',
+            'pointerup',
+            'mousedown',
+            'mouseup',
+            'touchstart',
+            'touchend',
+          ])
+            el.dispatchEvent(new Event(type, { bubbles: true, cancelable: true }))
+          el.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+          )
+          el.dispatchEvent(
+            new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }),
+          )
+        }
+        document.removeEventListener('click', stop)
+        await vi.runAllTimersAsync()
+        await settle()
+        expect(
+          [...document.body.querySelectorAll('[role="checkbox"]')].map((b) =>
+            b.getAttribute('aria-checked'),
+          ),
+        ).toEqual(['false', 'false', 'false'])
+        expect(sdk.requestPayment).not.toHaveBeenCalled()
+      } finally {
+        vi.useRealTimers()
+      }
+    },
+  )
 
   it.each([
     ['약관만', [TERMS]],

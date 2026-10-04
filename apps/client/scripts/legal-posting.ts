@@ -167,7 +167,8 @@ export interface BlockRules extends TagRules {
   /** 고르지 않는 코드 블록 줄 — 줄 글자(앞뒤 공백 제거)의 sha256 + 이유. 고르지도 건너뛰지도 않는 줄이 있거나,
    *  건너뛸 줄이 정본에서 바뀌면 가져오기가 멈춘다(정본에 줄이 늘거나 바뀐 것을 조용히 버리지 않는다) */
   skip?: readonly { sha256: string; why: string }[]
-  /** 게시 수정(spec D-40) — 고른 줄(값 채움 · 링크 뒤 최종 글자)의 sha256 · 바꿀 글자. 문서 규칙의 edits 와 같은 규칙(정확히 한 줄 · 한 번) */
+  /** 게시 수정(spec D-40) — 고른 줄(링크 뒤 · 값 채움 전)의 sha256 · 바꿀 글자. 문서 규칙의 edits 와 같은 규칙(정확히 한 줄 · 한 번 · 검사 전에 적용).
+   *  ⚠️ 값 자리가 있는 줄은 내부 표식 상태로 해시된다(PostingEdit 주석과 같다) — 지금은 값 자리 없는 줄만 고친다 */
   edits?: readonly PostingEdit[]
 }
 
@@ -258,6 +259,9 @@ const fillMark = (i: number) => `\u0000FILL${i}\u0000`
 
 /** 채운 자리마다 게시 본문에 남았는지(걷어 내는 줄 · 인용 블록 · 결정 기록 안에만 있었으면 멈춘다) 본 뒤 표식을 지운다 */
 function takeFills(body: string, rules: TagRules): string {
+  // 값 채움 글자는 한 줄 안 — 줄바꿈이 섞이면 조각의 줄 고르기가 밀려 뒤 글자가 조용히 빠진다(게시 수정과 같은 규칙)
+  for (const [k, v] of Object.entries(rules.fills ?? {}))
+    if (/[\r\n\u2028\u2029]/.test(v)) throw new Error(`값 채움 ${Number(k) + 1} 의 글자에 줄바꿈이 있다(한 줄 안에서만 채운다)`)
   for (const k of Object.keys(rules.fills ?? {}))
     if (!(Number(k) >= 0 && Number(k) < rules.placeholders.length))
       throw new Error(`값 채움 순번 ${k} 에 해당하는 값 자리가 없다(값 자리 ${rules.placeholders.length}개)`)
@@ -471,7 +475,7 @@ export function applyEdits(body: string, edits: readonly PostingEdit[] = []): st
     if (!edit.from || line.split(edit.from).length !== 2)
       throw new Error(`게시 수정 ${i + 1}: 바꿀 글자가 그 줄에 정확히 한 번 있어야 한다(정본이 바뀌었다)`)
     // 한 줄 안에서만 바꾼다 — 줄바꿈이 들어오면 뒤 줄이 밀린다(블록은 줄 차례가 키)
-    if (/[\r\n]/.test(edit.to)) throw new Error(`게시 수정 ${i + 1}: 바꿀 글자에 줄바꿈이 있다(한 줄 안에서만 바꾼다)`)
+    if (/[\r\n\u2028\u2029]/.test(edit.to)) throw new Error(`게시 수정 ${i + 1}: 바꿀 글자에 줄바꿈이 있다(한 줄 안에서만 바꾼다)`)
     lines[at[0]!] = line.replace(edit.from, () => edit.to)
   })
   return lines.join('\n')

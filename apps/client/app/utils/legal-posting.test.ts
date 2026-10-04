@@ -449,6 +449,12 @@ describe('toBlock — 정본 한 절의 코드 블록에서 줄 고르기', () =
     expect(() => toBlock(src, { ...two, edits: [{ ...edit, to: '1950 호 [검토 메모]' }] })).toThrow()
     expect(() => toBlock(src, { ...two, edits: [{ ...edit, to: '1950 호\n주소: 다른 줄' }] })).toThrow(/줄바꿈/)
     expect(() => applyEdits('가나\n', [{ line: sha256('가나'), from: '나', to: '나\n다' }])).toThrow(/줄바꿈/)
+    expect(() => applyEdits('가나\n', [{ line: sha256('가나'), from: '나', to: '나\u2028다' }])).toThrow(/줄바꿈/)
+    // 값 채움 글자도 한 줄 안 — 줄바꿈이 섞이면 줄 고르기가 밀려 뒤 글자(«나 호»)가 조용히 빠진다 → 멈춘다
+    const slotted = { ...two, placeholders: [sha256('[{{값}}]')], fills: { 0: '가\n나' } }
+    const withSlot = src.replace('제 1950 호', '제 [{{값}}] 호')
+    expect(() => toBlock(withSlot, slotted)).toThrow(/줄바꿈/)
+    expect(toBlock(withSlot, { ...slotted, fills: { 0: '가' } }).lines.mail).toBe('신고: 제 가 호')
   })
   it('절의 코드 블록은 정확히 1개 — 둘째 블록(새 동의 · 새 고지)을 조용히 버리지 않는다 · 닫히지 않은 블록도 멈춘다', () => {
     const one = { ...block, pick: [{ key: 'name', startsWith: '상호:' }], placeholders: [] }
