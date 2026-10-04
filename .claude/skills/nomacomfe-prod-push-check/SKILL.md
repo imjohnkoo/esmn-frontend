@@ -149,7 +149,7 @@ yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 
 - 자동 테스트는 feature correctness 가 아닌 code correctness 만 검증함
 
-**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남는다(D-47). D-30 이 예외로 둔 3자리(방침 4장 AWS · Solapi 행 · `/` 임시 블록(D-36)의 호스팅 줄)는 **D-54(2026-10-03)로 채워졌다** — dev 는 값 자리 0 으로 나간다. 아래 `chk` 의 셋째 인자부터는 «있어도 되는 예외 자리» 인데 지금은 하나도 없다(새 예외는 spec 결정 뒤에만 넣는다). **값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 올릴 커밋(`origin/dev`)을 체크아웃한 저장소 루트에서 그대로 돌린다(블록이 그 자리에서 빌드한다 — turbo 캐시가 맞으면 몇 초). **Phase 7 에서 prod 로 올리는 sha 는 끝 줄에 찍힌 커밋과 같아야 한다**:
+**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남는다(D-47). D-30 이 예외로 둔 3자리(방침 4장 AWS · Solapi 행 · 옛 `/` 임시 블록(D-36)의 호스팅 줄)는 **D-54(2026-10-03)로 채워졌다** — dev 는 값 자리 0 으로 나간다. W1-2 머지(2026-10-04) 뒤로는 **모든 페이지에 푸터(사업자등록번호)** 가 있고, 4-step 의 details · select-date · view 는 세션 없이 들어오면 서버 가드가 `/verify/{id}?reason=reverify` 로 302 를 돌려준다(client-shell K8 — 그 응답 자체를 본다) · `/business` 는 404(D-39). 아래 `chk` 의 셋째 인자부터는 «있어도 되는 예외 자리» 인데 지금은 하나도 없다(새 예외는 spec 결정 뒤에만 넣는다). **값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 올릴 커밋(`origin/dev`)을 체크아웃한 저장소 루트에서 그대로 돌린다(블록이 그 자리에서 빌드한다 — turbo 캐시가 맞으면 몇 초). **Phase 7 에서 prod 로 올리는 sha 는 끝 줄에 찍힌 커밋과 같아야 한다**:
 
 ```bash
 # 블록이 그 자리에서 빌드한 .output 을 루프백에 · DB · 벤더 env 없이(env -i — DATABASE_URL 이 없으면 서버는 DB 에 붙지 않는다) — 화면 HTML 만 본다
@@ -193,6 +193,7 @@ chk() {
   local p=$1 m s k ok_p=0 ok_d=0; local -a must; IFS=';' read -ra must <<<"$2"; shift 2
   get "$p" || exit 1
   seen="$seen${p//$O/:id}"$'\n'
+  must+=('704-24-01747')   # 모든 페이지에 푸터 사업자정보(W1-2 F-7)
   for m in "${must[@]}"; do [ "$(n "$body" "$m")" -ge 1 ] || { echo "⛔ $p 본문에 «$m» 이 없다(양성 대조 실패 — 빈 · 오류 화면이 0건으로 통과하지 않게)"; exit 1; }; done
   for s in "$@"; do
     k=$(n "$body" "$s"); [ "$k" -le 1 ] || { echo "⛔ $p 예외 자리 «$s» 가 ${k}번 — 자리마다 많아야 1(D-30 은 3자리뿐)"; exit 1; }
@@ -207,15 +208,28 @@ chk() {
   done
 }
 O=2026092300000101   # 아무 주문번호 — DB 가 없어 화면 틀만 그린다
-chk / '704-24-01747;eSIM 발급은;호스팅 서비스: AWS'
-chk /privacy '개인정보의 처리 목적;AWS (Amazon Web Services 서울 리전);솔라피(주)'
+chk / '어느 나라로 떠나세요?;이미 구매하셨나요?;호스팅 서비스: AWS;1950 호 (경기도 광주시)'
+chk /privacy '개인정보의 처리 목적;AWS (Amazon Web Services 서울 리전);솔라피(주);쿠키 1개를 저장합니다'
 chk /terms '제1장 총칙'
 chk /refund '한눈에 보기'
 chk /supported-devices '지원하는지 확인해 주세요;갤럭시 (국내판)'
-chk /verify/$O '주문하신 분이 맞는지 확인할게요'
-chk /details/$O '발행할 이심을 선택해 주세요'
-chk /select-date/$O '사용 시작 날짜를 선택해 주세요'
-chk /view/$O 'eSIM 발급이 완료됐어요'
+chk /my '로그인은 준비 중이에요;고객센터;약관 및 정책'
+chk /my-esim 'eSIM 을 찾아요'
+chk /guide '설치 가이드'
+chk /search '국가 검색'
+chk /checkout-preview '구매 전 확인;(필수) 만 14세 이상입니다;결제 전 안내'
+chk /verify/$O '맞는지 확인할게요'
+# 4-step 가드(K8) — 세션 없이 오면 서버가 verify 로 302(본문 없음). 다른 코드 · 다른 곳으로 가면 중단
+guard() {
+  local r; r="$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$B$1")"
+  [ "$r" = "302 $B/verify/$O?reason=reverify" ] || { echo "⛔ $1 → «$r» — 302 $B/verify/$O?reason=reverify 여야 한다(4-step 가드)"; exit 1; }
+  seen="$seen${1//$O/:id}"$'\n'
+}
+guard /details/$O
+guard /select-date/$O
+guard /view/$O
+r="$(curl -s -o /dev/null -w '%{http_code}' "$B/business")"   # D-39 — 페이지가 없어야 한다(되살아나거나 3xx 로 돌리면 중단)
+[ "$r" = 404 ] || { echo "⛔ /business 응답 $r — 404 여야 한다(D-39)"; exit 1; }
 # 검사하지 않은 페이지가 없는가 — app/pages 의 페이지 파일(Nuxt 규칙: .vue · .js · .jsx · .mjs · .ts · .tsx · 링크 따라감 · 제외는 *.{spec,test}.{js,cts,mts,ts,jsx,tsx} 만)과 위 목록이 같아야 한다(새 페이지는 chk 줄을 먼저 넣는다)
 pages="$(cd app/pages && find -L . -type f \( -name '*.vue' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.ts' -o -name '*.tsx' \) ! \( \( -name '*.test.*' -o -name '*.spec.*' \) \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' -o -name '*.mts' -o -name '*.cts' \) \) | sed -E -e 's#^\./##' -e 's#\.(vue|m?jsx?|tsx?)$##' -e 's#^index$##' -e 's#/index$##' -e 's#\[[^]]*\]#:id#g' -e 's#^#/#' | sort)"
 [ "$pages" = "$(printf '%s' "$seen" | sort)" ] || { echo "⛔ 검사 목록과 app/pages 가 다르다 — 빠진 페이지에 chk 줄을 넣는다:"; diff <(printf '%s\n' "$pages") <(printf '%s' "$seen" | sort); exit 1; }
