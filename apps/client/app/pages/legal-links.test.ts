@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import ts from 'typescript'
 import { parse } from 'vue/compiler-sfc'
+import { PRIVACY_DOC } from '../content/legal/privacy'
+import { FLOW_COOKIE_MAX_AGE, buildFlowSession } from '../utils/flow-session'
 
 /**
  * client-shell spec F-20 · D-32 · D-35 · D-36 — 발급기 화면의 법정 링크 · 고지 문구(개인정보 보호법 30조 · 약관 3조① · 6조④ · 12조③).
@@ -54,6 +56,13 @@ const walk = (dir: string): string[] =>
   })
 const code = (dir: string) =>
   walk(dir).filter((f) => /\.(vue|ts)$/.test(f) && !/\.test\.ts$/.test(f))
+// 주석은 걷고 본다(설명 글의 «PortOne» · «useCookie» 는 그 길이 아니다 — 주석 표식 뒤의 URL 글자 · 문자열 속 «//» 는 남는다)
+const codeOnly = (s: string) =>
+  s
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/(?<=[;,{}()\s])\/\/(?!\S*\.(?:io|com|net)).*$/gm, '')
 
 describe('발급기 법정 링크(F-20)', () => {
   it('verify — 개인정보처리방침(굵게 · 색 구분 클래스) · 이용약관 → 하단 시트(D-46) · 화면 준비 전 · 보조키는 target 새 탭', () => {
@@ -429,13 +438,6 @@ describe('발급기 법정 링크(F-20)', () => {
     // 결제 SDK(PortOne — npm · CDN · window.PortOne 어떤 꼴이든)는 client 앱 브라우저 코드 전체에서 이 페이지 한 곳만
     // (도우미 · 컴포저블 · .js · lib/ 로 빼 가드 밖에서 부르는 길). server/ 는 결제 검증용 server-sdk 자리라 제외 · 테스트 · 설정 키(nuxt.config)는 제외
     const CLIENT = fileURLToPath(new URL('../..', import.meta.url))
-    // 주석은 걷고 본다(설명 글의 «PortOne» 은 결제 경로가 아니다 — 주석 표식 뒤의 URL 글자 · 문자열 속 «//» 는 남는다)
-    const codeOnly = (s: string) =>
-      s
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/^\s*\/\/.*$/gm, '')
-        .replace(/(?<=[;,{}()\s])\/\/(?!\S*\.(?:io|com|net)).*$/gm, '')
     const scan = (d: string): string[] =>
       readdirSync(d).flatMap((n) => {
         if (/^(?:node_modules|\.nuxt|\.output|\.git|server|dist|coverage)$/.test(n)) return []
@@ -594,16 +596,30 @@ describe('발급기 법정 링크(F-20)', () => {
   })
 })
 
-// ⛔ spec D-31 — W1-2 의 흐름 쿠키(F-15 `nomacom_flow`)가 들어와 방침 9장① 이 거짓이 됐다 → W1-2 main 머지 게이트.
-// it.fails 는 «지금 실패하는 것이 정상». legal-pages 방침 rev(쿠키 한 줄 · «회사 서버에 저장하지 않음»)를 들여올 때
-// 이 블록을 «방침 9장 문장 = 흐름 쿠키 실제(이름 · 보관 시간)» 대조 테스트로 바꾼다.
-describe('방침 9장① «발급 화면은 쿠키를 사용하지 않습니다» 가 참이다(D-31 — W1-2 머지 게이트)', () => {
-  // W1-2 의 흐름 쿠키가 들어오면 이 테스트가 실패한다 — 방침 rev(legal-pages)를 같이 들여오고 이 테스트를 고친다.
-  // 읽기(server 의 getCookie — 아무도 만들지 않는 세션 쿠키 자리)는 «사용» 이 아니다 — 쿠키를 만드는 길만 본다
-  it.fails('앱 · 서버 코드에 쿠키를 만드는 길이 없다(useCookie · document.cookie · setCookie · Set-Cookie)', () => {
-    for (const f of [...code(APP), ...code(SERVER)])
-      expect(readFileSync(f, 'utf8'), f).not.toMatch(
-        /useCookie|document\.cookie|setCookie\(|set-cookie/i,
-      )
+// spec D-31 — W1-2 의 흐름 쿠키(F-15 `nomacom_flow`)를 방침 9장① · 1장 발급 행이 적는다(2026-10-04 게시 수정 — legal-pages rev 대신).
+// 흐름 쿠키의 실제(담는 값 · 보관 시간)와 방침 문장을 맞대 본다 — 한쪽만 바뀌면 빨개진다(방침 = scripts/legal-posting.ts 의 privacy edits).
+describe('방침 9장① · 1장 발급 행 = 흐름 쿠키 실제(D-31)', () => {
+  const policy = PRIVACY_DOC.markdown
+  const ninth = policy.split('\n').filter((l) => l.startsWith('1. eSIM 발급 화면은'))
+  it('9장①: 쿠키 1개 · 담는 값 4가지 · 마지막 이용 후 1시간 · 회사 서버에 저장 안 함 · 발급 화면 문장에 호스트 이름 없음(두 호스트에서 생긴다)', () => {
+    expect(ninth).toHaveLength(1)
+    const [cookie] = ninth[0]!.split(' 판매 사이트(esimmany.com)는 ')
+    expect(cookie).toBe(
+      '1. eSIM 발급 화면은 본인 확인을 마친 뒤 발급 단계를 이어 가기 위해 이용자의 브라우저에 쿠키 1개를 저장합니다. 이 쿠키에는 주문번호·상품주문번호와 이용자가 입력한 이름·휴대전화번호가 담기며, 마지막 이용 후 1시간이 지나면 자동으로 삭제되고 회사 서버에는 저장되지 않습니다.',
+    )
+    expect(cookie).not.toMatch(/esimmany\.com/)
+    expect(policy).not.toContain('쿠키를 사용하지 않습니다')
+    expect(policy).toContain('회사 서버에 저장하지 않음 — 발급 단계를 이어 가도록 이용자 브라우저 쿠키에 마지막 이용 후 1시간 보관, 9장')
+  })
+  it('흐름 쿠키 실제: 1시간 · 담는 키 = 주문번호 · 이름 · 휴대전화번호 · 상품주문번호(+ 판 번호) — 그 밖은 버린다', () => {
+    expect(FLOW_COOKIE_MAX_AGE).toBe(60 * 60)
+    const s = buildFlowSession({ orderId: 1, fullName: '가', phoneNumber: '01000000000', productOrderId: 2, extra: 'x' } as never)
+    expect(Object.keys(s!).sort()).toEqual(['fullName', 'orderId', 'phoneNumber', 'productOrderId', 'v'])
+  })
+  it('쿠키를 만드는 길은 흐름 쿠키 하나 — 앱 · 서버 코드의 useCookie · document.cookie · setCookie · Set-Cookie 는 useFlowSession 에만', () => {
+    const makers = [...code(APP), ...code(SERVER)].filter((f) =>
+      /useCookie|document\.cookie|setCookie\(|set-cookie/i.test(codeOnly(readFileSync(f, 'utf8'))),
+    )
+    expect(makers.map((f) => f.slice(APP.length))).toEqual(['composables/useFlowSession.ts'])
   })
 })

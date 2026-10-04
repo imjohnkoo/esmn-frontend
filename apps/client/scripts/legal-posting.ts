@@ -76,7 +76,21 @@ export const DOC_RULES: Record<DocKey, DocRules> = {
     // 값 채움 · 게시 수정(spec D-54 — John 2026-10-03 «AWS는 AWS로 표기, 알림톡 솔라피는 솔라피(주)로 변경»):
     // AWS 행 = «AWS (Amazon Web Services 서울 리전)» · 알림톡 행 수탁자 칸 전체 = «솔라피(주)»(정본 rev 가 오면 지운다)
     fills: { 0: 'AWS', 1: '' },
-    edits: [{ line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' }],
+    edits: [
+      { line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' },
+      // 게시 수정(spec D-31 — John 2026-10-04 «게시 수정으로 지금 맞춤»): 흐름 쿠키 `nomacom_flow`(F-15)를 적는다 — 1장 발급 행 · 9장①.
+      // 호스트 이름을 쓰지 않는다(두 호스트에서 생긴다). 정본 rev 가 오면 지운다
+      {
+        line: '357c59c7a3e6de6021f376c2b7fb02291d79a54f1c67e1a3335eb395aec8bc7a',
+        from: '주문 정보와 대조해 본인을 확인하는 데에만 쓰고 저장하지 않음',
+        to: '주문 정보와 대조해 본인을 확인하는 데에만 쓰고 회사 서버에 저장하지 않음 — 발급 단계를 이어 가도록 이용자 브라우저 쿠키에 마지막 이용 후 1시간 보관, 9장',
+      },
+      {
+        line: '6fa32529429fd9304adf05649670af702b36f2ebea2b2e146dd449bc3521802c',
+        from: 'eSIM 발급 화면(app.esimmany.com)은 쿠키를 사용하지 않습니다.',
+        to: 'eSIM 발급 화면은 본인 확인을 마친 뒤 발급 단계를 이어 가기 위해 이용자의 브라우저에 쿠키 1개를 저장합니다. 이 쿠키에는 주문번호·상품주문번호와 이용자가 입력한 이름·휴대전화번호가 담기며, 마지막 이용 후 1시간이 지나면 자동으로 삭제되고 회사 서버에는 저장되지 않습니다.',
+      },
+    ],
   },
   // 03 — «결정 기록» 절은 걷는다(DECISION) · 4항의 확인 메모(발급 후 설치 기한 — 값은 상품 상세 몫, D-29)
   refund: {
@@ -153,6 +167,8 @@ export interface BlockRules extends TagRules {
   /** 고르지 않는 코드 블록 줄 — 줄 글자(앞뒤 공백 제거)의 sha256 + 이유. 고르지도 건너뛰지도 않는 줄이 있거나,
    *  건너뛸 줄이 정본에서 바뀌면 가져오기가 멈춘다(정본에 줄이 늘거나 바뀐 것을 조용히 버리지 않는다) */
   skip?: readonly { sha256: string; why: string }[]
+  /** 게시 수정(spec D-40) — 고른 줄(값 채움 · 링크 뒤 최종 글자)의 sha256 · 바꿀 글자. 문서 규칙의 edits 와 같은 규칙(정확히 한 줄 · 한 번) */
+  edits?: readonly PostingEdit[]
 }
 
 export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
@@ -178,6 +194,8 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
     placeholders: ['fbb49b2998f2c4650e47969848dd7c006c102bd6a8ca18e6b429bd40e7a92b69'],
     // 값 채움(spec D-54 — John 2026-10-03 «AWS는 AWS로 표기»): 호스팅 서비스 = AWS(정본 rev 가 오면 지운다)
     fills: { 0: 'AWS' },
+    // 게시 수정(spec D-40 — John 2026-10-04 «신고기관 붙임»): 통신판매업 줄에 신고기관(전자상거래법 13조①3호 · 정본 04 2절 표의 값)(정본 rev 가 오면 지운다)
+    edits: [{ line: 'f71a51520585665b3445cb4cd65f00ed0f47d05d9046ce297b748a7cf32934dc', from: '1950 호', to: '1950 호 (경기도 광주시)' }],
   },
   // 05-A — 발급 화면 고지(제목 · 안내 5줄 — F-21) · 환불 안내(14행 · D-32) · 동의 체크 문구(19행 · D-35)
   'issue-notice': {
@@ -508,7 +526,8 @@ export function toBlock(source: string, rules: BlockRules): BlockPosting {
   for (const s of skip)
     if (!skipped.has(s.sha256)) throw new Error(`건너뛸 줄을 정본에서 찾지 못했다(정본이 바뀌었다): ${s.why}`)
   const { body, pendingCount } = finish(takeFills(Object.values(picked).join('\n') + '\n', rules), rules)
-  const out = body.trimEnd().split('\n')
+  // 게시 수정은 고른 줄의 최종 글자에 — 줄 수는 그대로(한 줄 안에서만 바꾼다)
+  const out = applyEdits(body.trimEnd(), rules.edits).split('\n')
   return {
     lines: Object.fromEntries(rules.pick.map((p, i) => [p.key, out[i]!])),
     pendingCount,
@@ -655,7 +674,9 @@ export function blockModuleSource(
 ): string {
   const rules = BLOCK_RULES[key]
   const imports = posting.pendingCount ? `import { ${pendingIdent} } from '../pending'\n\n` : ''
-  const note = fillsNote(rules)
+  const note =
+    fillsNote(rules) +
+    (rules.edits?.length ? `// 게시 수정 ${rules.edits.length}건 — 정본과 다른 글자(규칙 scripts/legal-posting.ts 의 edits · spec 결정)\n` : '')
   const entries = Object.entries(posting.lines)
     .map(([k, v]) => `  ${k}: ${v.includes(PENDING_MARK) ? tpl(v, pendingIdent) : q(v)},`)
     .join('\n')

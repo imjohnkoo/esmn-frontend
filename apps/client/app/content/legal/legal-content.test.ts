@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { DOC_RULES, MIDNIGHT, forbiddenIn, unsupportedIn } from '../../../scripts/legal-posting'
+import { BLOCK_RULES, DOC_RULES, MIDNIGHT, forbiddenIn, unsupportedIn } from '../../../scripts/legal-posting'
 import { blocksText, parseLegalMarkdown } from '../../utils/legal-markdown'
 import { P9_4_PENDING } from '../pending'
 import { BUSINESS_INFO } from './business'
@@ -146,10 +146,11 @@ describe('개인정보처리방침 — 구조 · 확정 문장 · 자리표시�
       '노마컴(이하 「회사」)은 「개인정보 보호법」 제30조에 따라 정보주체의 개인정보를 보호하고 관련 고충을 신속하게 처리하기 위하여 다음과 같이 개인정보처리방침을 수립·공개합니다.',
     )
   })
-  it('발급 화면(verify)에서 받는 이름 · 전화의 처리 고지(1장 — F-20 의 이유) · 국외 이전 없음 · 시행일', () => {
+  it('발급 화면(verify)에서 받는 이름 · 전화의 처리 고지(1장 — F-20 의 이유 · D-31 흐름 쿠키) · 국외 이전 없음 · 시행일', () => {
     expect(text).toContain(
-      '이름·휴대전화번호(주문 정보와 대조해 본인을 확인하는 데에만 쓰고 저장하지 않음)',
+      '이름·휴대전화번호(주문 정보와 대조해 본인을 확인하는 데에만 쓰고 회사 서버에 저장하지 않음 — 발급 단계를 이어 가도록 이용자 브라우저 쿠키에 마지막 이용 후 1시간 보관, 9장)',
     )
+    expect(text).not.toContain('데에만 쓰고 저장하지 않음)')
     expect(text).toContain('개인을 식별할 수 있는 정보를 국외로 이전하지 않습니다')
     expect(text).toContain('이 개인정보처리방침은 2026년 9월 1일부터 적용됩니다.')
   })
@@ -236,7 +237,13 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
       { line: '5ccceaa412d5bbe591a837489e87a66b1905fb249d602496ca6adb7080ace3b7', from: ' · 070-8064-5232', to: '' },
     ])
     expect(DOC_RULES.terms.edits).toEqual([{ line: 'fbf7c3835a588a2040eb24b5d6b6249ba9df6a3002e3feefc5e13fd76eb54549', from: '(예: 한국시간 자정 기준)', to: '' }])
-    expect(DOC_RULES.privacy.edits).toEqual([{ line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' }])
+    expect(DOC_RULES.privacy.edits?.map((e) => e.line)).toEqual([
+      '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', // D-54 솔라피
+      '357c59c7a3e6de6021f376c2b7fb02291d79a54f1c67e1a3335eb395aec8bc7a', // D-31 1장 발급 행
+      '6fa32529429fd9304adf05649670af702b36f2ebea2b2e146dd449bc3521802c', // D-31 9장①
+    ])
+    expect(DOC_RULES.privacy.edits?.[0]).toEqual({ line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' })
+    expect(BLOCK_RULES.business.edits).toEqual([{ line: 'f71a51520585665b3445cb4cd65f00ed0f47d05d9046ce297b748a7cf32934dc', from: '1950 호', to: '1950 호 (경기도 광주시)' }])
   })
 })
 
@@ -246,7 +253,7 @@ describe('푸터 사업자정보(04 1절) — 법정 표시 항목(D-11) · `/bu
     ['상호', '상호: 노마컴'],
     ['대표자', '대표: 구장회'],
     ['사업자등록번호', '사업자등록번호: 704-24-01747'],
-    ['통신판매업 신고번호', '통신판매업신고: 제 2023-경기광주-1950 호'],
+    ['통신판매업 신고번호 · 신고기관(D-40)', '통신판매업신고: 제 2023-경기광주-1950 호 (경기도 광주시)'],
     ['사업장 소재지', '주소: 제주특별자치도 제주시 신대로 145'],
     ['전화', '전화: 070-8064-5232'],
     ['이메일', '이메일: esimmany@naver.com'],
