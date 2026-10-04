@@ -555,6 +555,7 @@ describe('발급기 법정 링크(F-20)', () => {
   })
 
   it('/refund — 생성물을 그린다 · /business 는 없다(D-39) — 페이지 · 생성물 · 앱 코드(app · server · shared · nuxt.config — 프리렌더 · sitemap · routeRules 포함)의 경로 글자 0', () => {
+    expect(read('./refund.vue')).toContain("import { REFUND_DOC } from '~/content/legal/refund'")
     expect(template(read('./refund.vue'))).toContain('<LegalMarkdown :doc="REFUND_DOC" />')
     const files = walk(APP)
     expect(files.filter((f) => /[/\\]pages[/\\]business(?:\.vue|[/\\])/.test(f))).toEqual([])
@@ -642,18 +643,48 @@ describe('방침 9장① · 1장 발급 행 = 흐름 쿠키 실제(D-31)', () =>
       g.useCookie = before
     }
   })
-  it('쿠키의 이름 · 전화 = verify 에 이용자가 입력해 통과한 값(«이용자가 입력한» — DB 수령인 값이 아니다 · F-15)', () => {
-    const src = codeOnly(read('./verify/[orderId].vue'))
-    expect(src).toMatch(
+  it('흐름 쿠키를 쓰는 곳은 셋뿐 — verify start(credentials) 1 · details select 2 · 미들웨어 read · clear(별칭 · 구조 분해 · 다른 파일 0) · 이름 · 전화 = 이용자 입력(F-15)', () => {
+    const SHARED = fileURLToPath(new URL('../../shared', import.meta.url))
+    const MODULES = fileURLToPath(new URL('../../modules', import.meta.url))
+    const all = [APP, SERVER, SHARED, MODULES].flatMap((d) =>
+      walk(d).filter((f) => /\.(vue|ts|tsx|js|mjs|cjs)$/.test(f) && !/\.(test|spec)\.ts$/.test(f)),
+    )
+    const users = all.filter((f) => /\buseFlowSession\b/.test(codeOnly(readFileSync(f, 'utf8'))))
+    expect(users.map((f) => f.slice(APP.length)).sort()).toEqual([
+      'composables/useFlowSession.ts',
+      'middleware/order-flow.ts',
+      'pages/details/[orderId].vue',
+      'pages/verify/[orderId].vue',
+    ])
+    const calls: Record<string, string[]> = {}
+    for (const f of users.filter((u) => !u.endsWith('composables/useFlowSession.ts'))) {
+      const src = codeOnly(readFileSync(f, 'utf8'))
+      // useFlowSession 은 import 줄 그대로 + 호출 1 · 결과는 const flowSession 한 이름에만
+      expect(src.match(/^import \{ useFlowSession \} from '~\/composables\/useFlowSession'$/gm), f).toHaveLength(1)
+      expect(src.match(/\buseFlowSession\b/g), f).toHaveLength(3)
+      expect(src.match(/const flowSession = useFlowSession\(\)/g), f).toHaveLength(1)
+      // flowSession 이 나오는 곳은 선언 하나 + «.read( · .clear( · .start( · .select(» 호출뿐(별칭 · 구조 분해 · 넘겨주기 0)
+      const uses = [...src.matchAll(/\bflowSession\b(.{0,20})/g)].map((m) => m[1]!)
+      expect(uses.filter((u) => !/^ = useFlowSession\(\)/.test(u) && !/^\.(?:read|clear|start|select)\(/.test(u)), f).toEqual([])
+      calls[f.slice(APP.length)] = src.match(/flowSession\.(?:read|clear|start|select)\([^)]*\)/g) ?? []
+    }
+    expect(calls).toEqual({
+      'middleware/order-flow.ts': ['flowSession.read()', 'flowSession.clear()'],
+      'pages/details/[orderId].vue': [
+        'flowSession.select(orderId.value, refreshed.productOrderId)',
+        'flowSession.select(orderId.value, target.productOrderId)',
+      ],
+      'pages/verify/[orderId].vue': ['flowSession.start(credentials)'],
+    })
+    // credentials = 입력칸 값 그대로 · 바꾸지 않는다(다른 사람 — 수령인 — 값이 들어가지 않게)
+    const verify = codeOnly(read('./verify/[orderId].vue'))
+    expect(verify).toMatch(
       /const credentials = \{\s*fullName: fullName\.value,\s*phoneNumber: phoneNumber\.value,\s*orderId: orderId\.value,\s*\}/,
     )
-    expect(src).toMatch(/await api\.verifyOrder\(credentials\)/)
-    expect(src.match(/flowSession\.start\([^)]*\)/g)).toEqual(['flowSession.start(credentials)'])
-    // 상품 선택은 상품주문번호만 더한다(이름 · 전화는 쿠키에 있던 값 그대로)
-    const details = codeOnly(read('./details/[orderId].vue'))
-    expect(details.match(/flowSession\.(?:start|select)\([^)]*\)/g)).toEqual([
-      'flowSession.select(orderId.value, refreshed.productOrderId)',
-      'flowSession.select(orderId.value, target.productOrderId)',
+    expect(verify.match(/\bcredentials\b(.{0,3})/g)).toEqual([
+      'credentials = ',
+      'credentials)',
+      'credentials)',
     ])
   })
   it('실제로 거는 쿠키(useFlowSession) = 방침 문장 — 이름 nomacom_flow · 1시간 · 쓸 때마다 갱신 · 경로 / · 호스트 한정(domain 없음) · 담는 키', () => {

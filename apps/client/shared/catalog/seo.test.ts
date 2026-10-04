@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { isNoindexPath } from '../utils/robots'
 import { countriesOf, zoneByCode, zonesOfCountry } from './derive'
@@ -24,6 +25,27 @@ describe('정적 페이지 목록 (spec S-6)', () => {
     expect([...STATIC_ROUTES].sort()).toEqual(
       ['/guide', '/privacy', '/refund', '/supported-devices', '/terms'].sort(),
     )
+  })
+})
+
+describe('정적 페이지 결선 — 각 페이지가 자기 경로의 설명으로 useCatalogSeo 를 부른다 · html lang(머지에서 한쪽만 고르면 빠지는 자리)', () => {
+  const page = (f: string) => readFileSync(new URL(`../../app/pages/${f}`, import.meta.url), 'utf8')
+  it.each([
+    ['terms.vue', '/terms'],
+    ['privacy.vue', '/privacy'],
+    ['refund.vue', '/refund'],
+    ['supported-devices.vue', '/supported-devices'],
+    ['guide/index.vue', '/guide'],
+  ] as const)('%s → useCatalogSeo(설명 = STATIC_DESCRIPTIONS[%s]) 한 번', (f, route) => {
+    const src = page(f)
+    const calls = src.match(/useCatalogSeo\(\{[^}]*\}\)/g) ?? []
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toContain(`description: STATIC_DESCRIPTIONS['${route}']`)
+    expect(STATIC_ROUTES as readonly string[]).toContain(route)
+  })
+  it('정적 경로마다 페이지가 있다 · app.vue 가 html lang="ko"', () => {
+    expect([...STATIC_ROUTES].sort()).toEqual(['/guide', '/privacy', '/refund', '/supported-devices', '/terms'])
+    expect(readFileSync(new URL('../../app/app.vue', import.meta.url), 'utf8')).toMatch(/htmlAttrs: \{ lang: 'ko' \}/)
   })
 })
 

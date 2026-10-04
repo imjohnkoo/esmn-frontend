@@ -37,7 +37,9 @@ Prevent broken/unsafe prod deployments by running a structured pre-flight check.
 # 1.0 올릴 SHA 를 먼저 하나로 정하고, **그 SHA 가 체크아웃된 상태에서** 모든 Phase 를 돈다 (W1-2 D-17 · QA ⑥).
 #     build · UI · paths-filter · 시크릿 검사는 HEAD 를, 게이트 · push 는 PROMOTE_SHA 를 보므로 둘이 같아야 한다.
 #     fetch 가 실패하면 멈춘다(오래된 ref 로 판정하지 않는다). client 를 올리면 PROMOTE_SHA = origin/dev 끝뿐이다 — Phase 4 렌더 확인이
-#     HEAD = origin/dev 를 요구한다(승격에서 RC_REF 를 주지 않는다). dev 의 더 앞 SHA 로 바꿔 올리는 것은 client 변경이 없는 승격(admin 만)일 때만.
+#     HEAD = origin/dev 를 요구한다(승격에서 RC_REF 를 주지 않는다). dev 의 더 앞 SHA 로 바꿔 올리는 것은 client workflow 가 트리거되지 않는 승격
+#     (Phase 2 표 — apps/client · packages/design-* · 루트 package.json · yarn.lock · deploy/scripts · appspec.yml 변경 0)일 때만.
+#     ⚠️ 점검 중에 dev 가 앞서 나가면(다른 세션의 머지) 고쳐 쓰지 말고 **Phase 1.0 부터** 새 끝으로 다시 — 앞 Phase(시크릿 · 게이트 · 테스트)가 새 커밋을 보지 않았다.
 git fetch origin --quiet || exit 1
 PROMOTE_SHA="$(git rev-parse origin/dev)"
 git merge-base --is-ancestor "$PROMOTE_SHA" origin/dev || { echo "⛔ origin/dev 에 없는 SHA — prod 는 dev 의 한 SHA"; exit 1; }
@@ -136,7 +138,7 @@ Phase 2에서 판정된 앱만 테스트:
 
 ```bash
 yarn workspace @imjohnkoo/design-vue run test --run   # DS 변경 시 (137 tests — 2026-10-03)
-yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A · 05-B · 동의 문구 · 하단 시트 · 테스트 체크아웃 마운트 포함(전부 통과해야 한다 — 2026-10-04 W1-2 · W1-3 머지 기준 1351 tests)
+yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A · 05-B · 동의 문구 · 하단 시트 · 테스트 체크아웃 마운트 포함(전부 통과해야 한다 — 2026-10-04 W1-2 · W1-3 머지 기준 1359 tests)
 yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 ```
 
@@ -161,7 +163,7 @@ cd apps/client || exit 1
 RC_REF="${RC_REF:-origin/dev}"
 case "$RC_REF" in origin/*) git fetch -q origin "${RC_REF#origin/}" || { echo "⛔ $RC_REF 받아 오기 실패"; exit 1; } ;; esac
 head="$(git rev-parse HEAD)" || { echo "⛔ git 체크아웃이 아니다"; exit 1; }
-[ "$head" = "$(git rev-parse "$RC_REF^{commit}")" ] || { echo "⛔ HEAD($head) ≠ $RC_REF — 올릴 커밋을 체크아웃하고 다시"; exit 1; }
+[ "$head" = "$(git rev-parse "$RC_REF^{commit}")" ] || { echo "⛔ HEAD($head) ≠ $RC_REF — dev 가 앞서 나갔다면 Phase 1.0 부터 새 끝으로 다시(PROMOTE_SHA 를 고쳐 쓰지 않는다)"; exit 1; }
 # .output = 이 커밋의 빌드 — 저장소 전체 미커밋 · 추적 안 된 파일 0 에서 여기서 빌드한다(빌드 시각으로 판정하지 않는다).
 # turbo 는 입력 파일 해시로 캐시를 고르므로 캐시가 맞아도 같은 소스의 산출물이다
 st="$(git -C ../.. status --porcelain)" || exit 1
@@ -302,7 +304,7 @@ git log --oneline --graph origin/dev origin/prod | head -20
 git merge-base --is-ancestor origin/prod "$PROMOTE_SHA" && echo "✔ fast-forward 가능" || echo "⛔ prod 가 승격 SHA 에 없는 커밋을 갖고 있다 — 되감기 위험, 중단"
 # client 승격이면 — Phase 4 렌더 확인 끝 줄의 커밋이 올릴 SHA 와 같아야 한다(다른 커밋을 확인했으면 Phase 4 부터 다시)
 RC=<Phase 4 끝 줄의 커밋>
-[ "$RC" = "$PROMOTE_SHA" ] || echo "⛔ 렌더 확인한 커밋($RC) ≠ PROMOTE_SHA — Phase 4 부터 다시"
+[ "$RC" = "$PROMOTE_SHA" ] || echo "⛔ 렌더 확인한 커밋($RC) ≠ PROMOTE_SHA — Phase 1.0 부터 새 dev 끝으로 다시(PROMOTE_SHA 를 고쳐 쓰지 않는다)"
 ```
 
 올릴 것은 **그 sha** 다(`origin/dev` 이름이 아니라 — 사용자 승인 뒤 `<RC sha>:prod`). **prod 에만 있는 커밋이 있으면 중단하고 사용자에게 보고한다.** ref 되감기는 남의 배포를 되돌리고 커밋을 소실시킨다 — `guard-prod-push.sh` 가 force 이동을 차단하는 이유다.

@@ -243,6 +243,46 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
   )
 })
 
+describe('테스트 체크아웃 — 바깥에서 들어오는 길(D-38 (b) · F-19)', () => {
+  it('읽는 쿼리 키 = 복귀 결과 5키뿐 · 전역 리스너 = pageshow 하나뿐(쿼리 · 포커스 · 메시지 · 키 입력으로 동의를 미리 채우거나 결제를 부르는 길 0)', async () => {
+    const readKeys = new Set<string>()
+    route.query = new Proxy({} as Record<string, string>, {
+      get: (t, k, r) => (typeof k === 'string' && readKeys.add(k), Reflect.get(t, k, r)),
+      has: (t, k) => (typeof k === 'string' && readKeys.add(k), Reflect.has(t, k)),
+      ownKeys: (t) => (readKeys.add('*'), Reflect.ownKeys(t)),
+    })
+    const added: string[] = []
+    const watch = (target: EventTarget, name: string) => {
+      const orig = target.addEventListener.bind(target)
+      return vi.spyOn(target, 'addEventListener').mockImplementation((type, ...rest) => {
+        added.push(`${name}:${type}`)
+        return orig(
+          type,
+          ...(rest as [EventListenerOrEventListenerObject, AddEventListenerOptions]),
+        )
+      })
+    }
+    const spies = [watch(window, 'window'), watch(document, 'document')]
+    try {
+      await render()
+      await toggle(TERMS)
+      await toggle(AGE)
+      payButton().click()
+      await settle()
+    } finally {
+      spies.forEach((s) => s.mockRestore())
+    }
+    expect(
+      [...readKeys].filter(
+        (k) =>
+          !k.startsWith('__v_') &&
+          !['paymentId', 'code', 'message', 'pgCode', 'pgMessage'].includes(k),
+      ),
+    ).toEqual([])
+    expect([...new Set(added)]).toEqual(['window:pageshow'])
+  })
+})
+
 describe('테스트 체크아웃 — 렌더된 동의 블록 글자 = 05-B(생성물) 그대로', () => {
   it('동의 3 · 선택 안내 · 개인정보 수집 · 이용 안내(체크 없음) · 결제 전 안내 — 순서 · 글자 · 링크가 정본 조각과 같고 다른 글자가 없다', async () => {
     await render()

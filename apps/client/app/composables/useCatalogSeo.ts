@@ -1,4 +1,5 @@
 import { SITE_ORIGIN, canonicalUrl, type PageMeta } from '#shared/catalog/seo'
+import { pageTitle } from '~/utils/page-title'
 
 /**
  * 카탈로그 페이지 메타(catalog spec F-9 · S-6 · D-15) — 제목(템플릿 « · 이심마니») · 설명 · canonical · og.
@@ -10,7 +11,8 @@ export function useCatalogSeo(meta: PageMeta, image?: string) {
   useSeoMeta({
     title: meta.title,
     description: meta.description,
-    ogTitle: `${meta.title} · 이심마니`,
+    // 문서 제목과 같은 규칙(client-shell F-1) — 정본 제목이 이미 «이심마니» 로 시작하면 다시 붙이지 않는다
+    ogTitle: pageTitle(meta.title),
     ogDescription: meta.description,
     ogUrl: url,
     ogType: 'website',

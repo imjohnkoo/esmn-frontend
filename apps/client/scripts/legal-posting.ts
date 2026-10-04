@@ -532,10 +532,14 @@ export function toBlock(source: string, rules: BlockRules): BlockPosting {
   for (const s of skip)
     if (!skipped.has(s.sha256)) throw new Error(`건너뛸 줄을 정본에서 찾지 못했다(정본이 바뀌었다): ${s.why}`)
   // 게시 수정은 고른 줄(링크 뒤)에 — 문서 경로처럼 검사(값 채움 · 남은 태그 · 자리표시자 수) 전에 적용한다
-  const edited = applyEdits(Object.values(picked).join('\n'), rules.edits)
+  // 줄 차례 = pick 차례(Object.values 는 정수 꼴 키를 앞으로 올린다)
+  const edited = applyEdits(rules.pick.map((p) => picked[p.key]!).join('\n'), rules.edits)
   const { body, pendingCount } = finish(takeFills(edited + '\n', rules), rules)
   const out = body.trimEnd().split('\n')
   if (out.length !== rules.pick.length) throw new Error(`고른 줄 ${rules.pick.length}개가 ${out.length}줄이 됐다(줄 차례가 키 — 정본이 바뀌었다)`)
+  out.forEach((l, i) => {
+    if (!l.trim()) throw new Error(`«${rules.pick[i]!.startsWith}» 줄이 비었다(게시 수정 · 값 채움이 줄을 통째로 지웠다)`)
+  })
   return {
     lines: Object.fromEntries(rules.pick.map((p, i) => [p.key, out[i]!])),
     pendingCount,
