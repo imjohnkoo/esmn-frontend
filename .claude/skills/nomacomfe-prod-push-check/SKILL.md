@@ -36,7 +36,8 @@ Prevent broken/unsafe prod deployments by running a structured pre-flight check.
 ```bash
 # 1.0 올릴 SHA 를 먼저 하나로 정하고, **그 SHA 가 체크아웃된 상태에서** 모든 Phase 를 돈다 (W1-2 D-17 · QA ⑥).
 #     build · UI · paths-filter · 시크릿 검사는 HEAD 를, 게이트 · push 는 PROMOTE_SHA 를 보므로 둘이 같아야 한다.
-#     fetch 가 실패하면 멈춘다(오래된 ref 로 판정하지 않는다). 다른 SHA 를 올린다면 여기서 그 SHA 로 바꾼다.
+#     fetch 가 실패하면 멈춘다(오래된 ref 로 판정하지 않는다). client 를 올리면 PROMOTE_SHA = origin/dev 끝뿐이다 — Phase 4 렌더 확인이
+#     HEAD = origin/dev 를 요구한다(승격에서 RC_REF 를 주지 않는다). dev 의 더 앞 SHA 로 바꿔 올리는 것은 client 변경이 없는 승격(admin 만)일 때만.
 git fetch origin --quiet || exit 1
 PROMOTE_SHA="$(git rev-parse origin/dev)"
 git merge-base --is-ancestor "$PROMOTE_SHA" origin/dev || { echo "⛔ origin/dev 에 없는 SHA — prod 는 dev 의 한 SHA"; exit 1; }
@@ -135,7 +136,7 @@ Phase 2에서 판정된 앱만 테스트:
 
 ```bash
 yarn workspace @imjohnkoo/design-vue run test --run   # DS 변경 시 (137 tests — 2026-10-03)
-yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A · 05-B · 동의 문구 · 하단 시트 · 테스트 체크아웃 마운트 포함(전부 통과해야 한다 — 2026-10-04 W1-2 · W1-3 머지 기준 1343 tests)
+yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A · 05-B · 동의 문구 · 하단 시트 · 테스트 체크아웃 마운트 포함(전부 통과해야 한다 — 2026-10-04 W1-2 · W1-3 머지 기준 1351 tests)
 yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 ```
 

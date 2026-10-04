@@ -50,7 +50,7 @@ description: Write the coding plan (nomacom-wiki wiki/frontend/plans/) for nomac
 | 대상                        | 회귀 증거 규칙                                                                                                                                                   |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `packages/design-vue`       | **원칙 그대로** — vitest 있음(17 files / 129 tests). 회귀 테스트 동봉, 불가하면 사유 1줄                                                                         |
-| `apps/client` | 순수 로직이면 **회귀 테스트 동봉**(vitest 1343건 있음 · 컴포넌트 테스트는 happy-dom · `server/**` · `app/**` · `shared/**` 의 `*.test.ts`). 화면·환경 의존이면 검증 증거(커맨드 출력·Orca 스크린샷) + 사유 명시 |
+| `apps/client` | 순수 로직이면 **회귀 테스트 동봉**(vitest 1351건 있음 · 컴포넌트 테스트는 happy-dom · `server/**` · `app/**` · `shared/**` 의 `*.test.ts`). 화면·환경 의존이면 검증 증거(커맨드 출력·Orca 스크린샷) + 사유 명시 |
 | `apps/admin` | 아직 테스트 0건(도메인 코드가 거의 없음). 로직이 들어오는 트랙부터 테스트 동봉 |
 | `apps/mobile`               | `yarn workspace nomacom-mobile run typecheck` 통과 + Expo dev 부팅 확인이 최소 증거                                                                              |
 | `design/` (D 트랙)          | 테스트 개념 없음 — **소스 기본값 반영 확인** 이 종결 조건 (슬라이더 런타임 값만 바꾸고 렌더하면 승인본과 산출물이 어긋난다)                                      |

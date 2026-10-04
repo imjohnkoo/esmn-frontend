@@ -84,7 +84,7 @@ jobs:
         run: yarn install --immutable --mode=skip-build
 
       # 테스트(수 초)를 typecheck(수십 초)보다 앞에 — 빨리 깨질 수 있는 것부터.
-      # 현재 실체: design-vue 137 + client 1343(2026-10-04 W1-2 · W1-3 머지) (admin 은 도메인 코드가 아직 없어 0건).
+      # 현재 실체: design-vue 137 + client 1351(2026-10-04 W1-2 · W1-3 머지) (admin 은 도메인 코드가 아직 없어 0건).
       #
       # ⚠️ `--filter` 로 좁히는 것은 의도적이다. turbo 의 `test` 는 `dependsOn: ["build"]`
       #    라, 필터 없이 돌리면 **테스트가 없는 데모 워크스페이스의 build 까지** 끌고 온다

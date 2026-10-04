@@ -268,6 +268,10 @@ describe('가격 리터럴 0 (spec 불변식 2 · DoD 2)', () => {
   // 그 파일에서도 다른 금액 글자는 잡는다(정본 rev 가 금액을 더 넣으면 여기서 멈춰 사람이 다시 정한다)
   const LEGAL_GENERATED = /^app\/content\/legal\/[^/]+\.ts$/
   const LEGAL_FEE = '문자열 «3,500원»'
+  // 법정 문서는 문서 전체가 문자열 하나라 offenders(문자열마다 첫 금액)로는 «3,500원» 뒤의 다른 금액이 가려진다 — 파일의 금액을 전부 센다
+  const allWon = (text: string) =>
+    [...nfkc(text).matchAll(new RegExp(WON.source, 'gi'))].map((m) => m[0].replace(/\s+/g, ''))
+  const legalAmounts = (text: string) => allWon(text).filter((w) => w !== '3,500원')
   it('앱 소스에 금액 글자 · 가격 문맥의 숫자가 없다(법정 생성물의 폐기 비용 «3,500원» 만 예외)', () => {
     const found = sources.flatMap((f) =>
       offenders(join(APP_DIR, f))
@@ -286,6 +290,22 @@ describe('가격 리터럴 0 (spec 불변식 2 · DoD 2)', () => {
       offendersOf('app/content/legal/x.ts', "export const A = { t: '폐기 비용 4,900원' }"),
     ).toEqual(['문자열 «4,900원»'])
     expect(LEGAL_GENERATED.test('app/content/product-detail.ts')).toBe(false)
+  })
+  it('법정 생성물의 금액은 전부 «3,500원» — 같은 문자열 안 둘째 · 셋째 금액도 센다(정본 rev 가 금액을 더 넣으면 멈춘다)', () => {
+    const legal = sources.filter((f) => LEGAL_GENERATED.test(f))
+    const others = legal.flatMap((f) =>
+      legalAmounts(readFileSync(join(APP_DIR, f), 'utf8')).map((w) => `${f}: ${w}`),
+    )
+    expect(others).toEqual([])
+    expect(
+      legal.flatMap((f) => allWon(readFileSync(join(APP_DIR, f), 'utf8'))).length,
+    ).toBeGreaterThan(0)
+    // 대조군 — 3,500원 뒤에 다른 금액이 같은 문자열에 있어도 잡는다
+    expect(
+      legalAmounts(
+        'export const A = { markdown: `폐기 비용 3,500원 · 변경 수수료 9,900원 · 2만 원` }',
+      ),
+    ).toEqual(['9,900원', '2만원'])
   })
 
   describe('검사식이 실제로 잡는다(대조군)', () => {
