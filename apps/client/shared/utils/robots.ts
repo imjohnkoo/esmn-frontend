@@ -10,6 +10,8 @@
  * 함께 건다 — CloudFront 캐시 도입(K4) 뒤에도 공유 캐시가 잡으면 안 된다(Proposal P9-16).
  */
 
+import { SITE_ORIGIN } from './site'
+
 /** 패턴 문법: 정확히 일치하는 경로 또는 `/<prefix>/**`(그 경로 자체 + 하위 전부) */
 export const NOINDEX_ROUTES = [
   '/verify/**',
@@ -20,6 +22,8 @@ export const NOINDEX_ROUTES = [
   '/my/**',
   '/my-esim',
   '/checkout-preview',
+  // 국가 검색 — 입력으로 그리는 얇은 페이지(catalog spec D-12). 국가 · 상품 페이지가 색인 대상이다
+  '/search',
 ] as const
 
 /** noindex 중에서 응답 캐시까지 금지할 경로 — 고객 주문 정보를 렌더하는 4-step */
@@ -79,6 +83,8 @@ export function buildRobotsTxt(): string {
     '# 생성물 — apps/client/shared/utils/robots.ts (noindex 목록과 같은 출처)',
     'User-agent: *',
     ...robotsDisallowPrefixes().map((prefix) => `Disallow: ${prefix}`),
+    '',
+    `Sitemap: ${SITE_ORIGIN}/sitemap.xml`,
   ]
   return `${lines.join('\n')}\n`
 }

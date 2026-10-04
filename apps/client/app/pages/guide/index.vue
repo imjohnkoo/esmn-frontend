@@ -1,8 +1,10 @@
 <script setup lang="ts">
 // 설치 가이드 자리 (spec S-5 · D-16) — 현행 외부 가이드 링크 + 지원 기기. 여정 3단계 본문 · /guide/devices 는 W1-4.
+import { STATIC_DESCRIPTIONS } from '#shared/catalog/seo'
 import { NLinkCard } from '@imjohnkoo/design-vue'
 
-useHead({ title: '설치 가이드' })
+// canonical · 설명 — sitemap 에 든 정적 페이지(catalog F-9 · QA ⑥ R11)
+useCatalogSeo({ title: '설치 가이드', description: STATIC_DESCRIPTIONS['/guide'] })
 
 // view 화면의 현행 가이드 카드와 같은 값 (W1-4 에서 이 사이트의 가이드로 바뀐다)
 const GUIDE_URL = 'https://esimmany.super.site'

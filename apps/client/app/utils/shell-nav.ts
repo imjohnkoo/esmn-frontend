@@ -57,7 +57,8 @@ const isUnder = (path: string, base: string) => path === base || path.startsWith
 /** 경로 → 활성 탭. 탭 네 곳 밖(4-step · 체크아웃 등)은 null */
 export function activeTabOf(path: string): TabKey | null {
   const p = normalizePath(path)
-  if (p === '/' || p === '/search') return 'home'
+  // 카탈로그(국가 · 상품 상세)는 «홈» 탭 구역 — aria-current 는 'true'(catalog spec D-18)
+  if (p === '/' || p === '/search' || isUnder(p, '/countries') || isUnder(p, '/products')) return 'home'
   if (p === '/my-esim') return 'my-esim'
   if (isUnder(p, '/guide') || p === '/supported-devices') return 'guide'
   if (isUnder(p, '/my') || LEGAL_LINKS.some((link) => link.to === p)) return 'my'

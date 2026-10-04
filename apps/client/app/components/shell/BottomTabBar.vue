@@ -10,8 +10,10 @@ import {
   UserIcon as UserSolidIcon,
 } from '@heroicons/vue/24/solid'
 import { SHELL_TABS, activeTabOf, tabAriaCurrent, type TabKey } from '~/utils/shell-nav'
+import { useShellRoute } from '~/composables/useShellRoute'
 
-const route = useRoute()
+// 오류 화면에서는 그 오류가 난 주소(error.vue 가 내려 준다) — useShellRoute
+const route = useShellRoute()
 const active = computed(() => activeTabOf(route.path))
 
 const ICONS: Record<TabKey, { outline: Component; solid: Component }> = {

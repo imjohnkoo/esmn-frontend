@@ -5,11 +5,13 @@
 import { NHeader, NLogo } from '@imjohnkoo/design-vue'
 import { Bars3Icon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import ShellMenu from '~/components/shell/ShellMenu.vue'
+import { useShellRoute } from '~/composables/useShellRoute'
 
 const isMenuOpen = ref(false)
 
 // 경로가 바뀌면 닫는다 — 항목 누름 말고도 뒤로가기(안드로이드 back 제스처 포함)로 이동할 때 시트 · 스크롤 잠금이 남지 않게
-const route = useRoute()
+// 오류 화면에서는 그 오류가 난 주소(error.vue 가 내려 준다) — useShellRoute
+const route = useShellRoute()
 watch(
   () => route.fullPath,
   () => {

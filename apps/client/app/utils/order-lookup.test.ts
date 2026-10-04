@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ORDER_LOOKUP_MESSAGES,
   buildGuestVerifyUrl,
+  resolveGuestOrigin,
   normalizeOrderInput,
   validateOrderNumber,
 } from './order-lookup'
@@ -54,5 +55,40 @@ describe('buildGuestVerifyUrl', () => {
     expect(buildGuestVerifyUrl('http://localhost:3000/', '1234567890')).toBe(
       'http://localhost:3000/verify/1234567890',
     )
+  })
+})
+
+describe('resolveGuestOrigin (catalog D-17 — 로컬 walk 가 실호스트로 나가지 않게)', () => {
+  const PROD = 'https://app.esimmany.com'
+
+  it.each([
+    ['http://127.0.0.1:3006', 'http://127.0.0.1:3006'],
+    ['http://127.0.0.2:3006', 'http://127.0.0.2:3006'],
+    ['http://0.0.0.0:3006', 'http://0.0.0.0:3006'],
+    ['http://localhost:3007', 'http://localhost:3007'],
+    ['http://localhost.:3007', 'http://localhost.:3007'],
+    ['http://app.localhost:3007', 'http://app.localhost:3007'],
+    ['http://[::1]:3006', 'http://[::1]:3006'],
+    ['http://[::ffff:127.0.0.1]:3006', 'http://[::ffff:7f00:1]:3006'],
+  ])('루프백 %s 에서 열린 페이지 → 자기 출처', (page, want) => {
+    expect(resolveGuestOrigin(PROD, page)).toBe(want)
+    expect(buildGuestVerifyUrl(resolveGuestOrigin(PROD, page), '2026092312345678')).toBe(
+      `${want}/verify/2026092312345678`,
+    )
+  })
+
+  it.each([
+    'https://esimmany.com',
+    'https://app.esimmany.com',
+    'https://127.0.0.1.example.com',
+    'https://localhost.example.com',
+    'http://10.0.0.5:3006',
+  ])('%s → 설정값 그대로', (page) => {
+    expect(resolveGuestOrigin(PROD, page)).toBe(PROD)
+  })
+
+  it('출처가 없거나 읽을 수 없으면 설정값', () => {
+    expect(resolveGuestOrigin(PROD, undefined)).toBe(PROD)
+    expect(resolveGuestOrigin(PROD, 'not a url')).toBe(PROD)
   })
 })

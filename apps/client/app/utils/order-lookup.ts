@@ -40,3 +40,34 @@ export function validateOrderNumber(raw: string): OrderLookupResult {
 export function buildGuestVerifyUrl(guestAppOrigin: string, orderId: string): string {
   return `${guestAppOrigin.replace(/\/+$/, '')}/verify/${orderId}`
 }
+
+/** 루프백 — 127.0.0.0/8 · 0.0.0.0 · localhost(끝 점 · 하위 이름 포함) · ::1 · ::ffff:127.x */
+function isLoopback(hostname: string): boolean {
+  const h = hostname.replace(/\.$/, '').toLowerCase()
+  return (
+    /^127(\.\d{1,3}){3}$/.test(h) ||
+    h === '0.0.0.0' ||
+    h === 'localhost' ||
+    h.endsWith('.localhost') ||
+    h === '[::1]' ||
+    /^\[::ffff:(127\.\d{1,3}\.\d{1,3}\.\d{1,3}|7f[0-9a-f]{2}:[0-9a-f]{1,4})\]$/.test(h)
+  )
+}
+
+/**
+ * 주문번호 조회가 보낼 발급 호스트(catalog D-17) — 프리렌더된 페이지에는 공개 설정(`guestAppOrigin`)이 **빌드 값**으로 굳고,
+ * 그 페이지에서 클라이언트 이동한 세션도 그 값을 쓴다. 그래서 루프백 주소(127.0.0.1 · localhost · ::1)에서 열린 페이지면
+ * 자기 출처로 보낸다 — 로컬 prod 봉투 walk 가 실호스트(app.esimmany.com)로 나가지 않게(John 09-23 안전 지시).
+ * 그 밖의 호스트(esimmany.com · app.esimmany.com)는 설정값 그대로.
+ */
+// 루프백 페이지에서는 NUXT_PUBLIC_GUEST_APP_ORIGIN 도 쓰지 않는다 — 로컬은 한 서버가 두 호스트 몫을 한다(shell F-9)
+export function resolveGuestOrigin(configured: string, pageOrigin: string | undefined): string {
+  if (!pageOrigin) return configured
+  try {
+    const page = new URL(pageOrigin)
+    if (isLoopback(page.hostname)) return page.origin
+  } catch {
+    /* 출처를 못 읽으면 설정값 */
+  }
+  return configured
+}

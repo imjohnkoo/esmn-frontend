@@ -5,7 +5,9 @@ import { describe, expect, it } from 'vitest'
 import ts from 'typescript'
 import { parse } from 'vue/compiler-sfc'
 import { PRIVACY_DOC } from '../content/legal/privacy'
-import { FLOW_COOKIE_MAX_AGE, buildFlowSession } from '../utils/flow-session'
+import { FLOW_COOKIE, FLOW_COOKIE_MAX_AGE, buildFlowSession, parseFlowSession } from '../utils/flow-session'
+import { useFlowSession } from '../composables/useFlowSession'
+import { ref } from 'vue'
 
 /**
  * client-shell spec F-20 · D-32 · D-35 · D-36 — 발급기 화면의 법정 링크 · 고지 문구(개인정보 보호법 30조 · 약관 3조① · 6조④ · 12조③).
@@ -181,6 +183,8 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(src.match(/ISSUE_NOTICE\.(?:start|refund|period|trouble)\b/g) ?? []).toEqual([])
     // 안내 줄은 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03)
     expect(src).toMatch(/\.select-date-page__confirm-policy :deep\(\.issue-notice__list\) \{[^}]*padding: 0;[^}]*list-style: none;[^}]*\}/)
+    // 안내 줄 링크(«지원 기기 확인»)는 링크로 보인다 — 렌더러가 그린 a 라 :deep 규칙(색 · 밑줄)
+    expect(src).toMatch(/\.select-date-page__confirm-policy :deep\(\.legal-md__link\) \{[^}]*color: #6239ff;[^}]*text-decoration: underline;/)
     // 동의 체크 — 둘: 보통은 스크롤 밖(늘 보임), 공간이 모자라면 스크롤 안 끝(compact). 동시에 그려지지 않는다
     const boxes = findAll(dialog!, (n) => n.tag === 'NCheckbox' && dir(n, 'v-model') === 'isPolicyAgreed')
     expect(boxes).toHaveLength(2)
@@ -551,6 +555,7 @@ describe('발급기 법정 링크(F-20)', () => {
   })
 
   it('/refund — 생성물을 그린다 · /business 는 없다(D-39) — 페이지 · 생성물 · 앱 코드(app · server · shared · nuxt.config — 프리렌더 · sitemap · routeRules 포함)의 경로 글자 0', () => {
+    expect(read('./refund.vue')).toContain("import { REFUND_DOC } from '~/content/legal/refund'")
     expect(template(read('./refund.vue'))).toContain('<LegalMarkdown :doc="REFUND_DOC" />')
     const files = walk(APP)
     expect(files.filter((f) => /[/\\]pages[/\\]business(?:\.vue|[/\\])/.test(f))).toEqual([])
@@ -616,9 +621,111 @@ describe('방침 9장① · 1장 발급 행 = 흐름 쿠키 실제(D-31)', () =>
     const s = buildFlowSession({ orderId: 1, fullName: '가', phoneNumber: '01000000000', productOrderId: 2, extra: 'x' } as never)
     expect(Object.keys(s!).sort()).toEqual(['fullName', 'orderId', 'phoneNumber', 'productOrderId', 'v'])
   })
-  it('쿠키를 만드는 길은 흐름 쿠키 하나 — 앱 · 서버 코드의 useCookie · document.cookie · setCookie · Set-Cookie 는 useFlowSession 에만', () => {
-    const makers = [...code(APP), ...code(SERVER)].filter((f) =>
-      /useCookie|document\.cookie|setCookie\(|set-cookie/i.test(codeOnly(readFileSync(f, 'utf8'))),
+  it('담는 값이 늘지 않는다 — 파서가 읽는 키 = 방침의 4가지(+ 판 번호) · 쿠키를 쓰는 함수 = start · select(그 밖은 read · clear)', () => {
+    // 파서가 입력에서 읽는 키를 기록한다 — 새 키를 허용하면(예: 이용 시작일) 여기서 빨개진다 → 방침 9장① 문장을 같이 고친다
+    const read = new Set<string>()
+    const probe = new Proxy(
+      { v: 1, orderId: 1, fullName: '가', phoneNumber: '01000000000', productOrderId: 2 },
+      {
+        get: (t, k, r) => (typeof k === 'string' && read.add(k), Reflect.get(t, k, r)),
+        has: (t, k) => (typeof k === 'string' && read.add(k), Reflect.has(t, k)),
+        ownKeys: (t) => (read.add('*'), Reflect.ownKeys(t)),
+      },
+    )
+    expect(parseFlowSession(probe)).not.toBeNull()
+    expect([...read].sort()).toEqual(['fullName', 'orderId', 'phoneNumber', 'productOrderId', 'v'])
+    const g = globalThis as Record<string, unknown>
+    const before = g.useCookie
+    g.useCookie = () => ref(null)
+    try {
+      expect(Object.keys(useFlowSession()).sort()).toEqual(['clear', 'read', 'select', 'start'])
+    } finally {
+      g.useCookie = before
+    }
+  })
+  it('흐름 쿠키를 쓰는 곳은 셋뿐 — verify start(credentials) 1 · details select 2 · 미들웨어 read · clear(별칭 · 구조 분해 · 다른 파일 0) · 이름 · 전화 = 이용자 입력(F-15)', () => {
+    const SHARED = fileURLToPath(new URL('../../shared', import.meta.url))
+    const MODULES = fileURLToPath(new URL('../../modules', import.meta.url))
+    const all = [APP, SERVER, SHARED, MODULES].flatMap((d) =>
+      walk(d).filter((f) => /\.(vue|ts|tsx|js|mjs|cjs)$/.test(f) && !/\.(test|spec)\.ts$/.test(f)),
+    )
+    const users = all.filter((f) => /\buseFlowSession\b/.test(codeOnly(readFileSync(f, 'utf8'))))
+    expect(users.map((f) => f.slice(APP.length)).sort()).toEqual([
+      'composables/useFlowSession.ts',
+      'middleware/order-flow.ts',
+      'pages/details/[orderId].vue',
+      'pages/verify/[orderId].vue',
+    ])
+    const calls: Record<string, string[]> = {}
+    for (const f of users.filter((u) => !u.endsWith('composables/useFlowSession.ts'))) {
+      const src = codeOnly(readFileSync(f, 'utf8'))
+      // useFlowSession 은 import 줄 그대로 + 호출 1 · 결과는 const flowSession 한 이름에만
+      expect(src.match(/^import \{ useFlowSession \} from '~\/composables\/useFlowSession'$/gm), f).toHaveLength(1)
+      expect(src.match(/\buseFlowSession\b/g), f).toHaveLength(3)
+      expect(src.match(/const flowSession = useFlowSession\(\)/g), f).toHaveLength(1)
+      // flowSession 이 나오는 곳은 선언 하나 + «.read( · .clear( · .start( · .select(» 호출뿐(별칭 · 구조 분해 · 넘겨주기 0)
+      const uses = [...src.matchAll(/\bflowSession\b(.{0,20})/g)].map((m) => m[1]!)
+      expect(uses.filter((u) => !/^ = useFlowSession\(\)/.test(u) && !/^\.(?:read|clear|start|select)\(/.test(u)), f).toEqual([])
+      calls[f.slice(APP.length)] = src.match(/flowSession\.(?:read|clear|start|select)\([^)]*\)/g) ?? []
+    }
+    expect(calls).toEqual({
+      'middleware/order-flow.ts': ['flowSession.read()', 'flowSession.clear()'],
+      'pages/details/[orderId].vue': [
+        'flowSession.select(orderId.value, refreshed.productOrderId)',
+        'flowSession.select(orderId.value, target.productOrderId)',
+      ],
+      'pages/verify/[orderId].vue': ['flowSession.start(credentials)'],
+    })
+    // credentials = 입력칸 값 그대로 · 바꾸지 않는다(다른 사람 — 수령인 — 값이 들어가지 않게)
+    const verify = codeOnly(read('./verify/[orderId].vue'))
+    expect(verify).toMatch(
+      /const credentials = \{\s*fullName: fullName\.value,\s*phoneNumber: phoneNumber\.value,\s*orderId: orderId\.value,\s*\}/,
+    )
+    expect(verify.match(/\bcredentials\b(.{0,3})/g)).toEqual([
+      'credentials = ',
+      'credentials)',
+      'credentials)',
+    ])
+    // 쿠키는 «본인 확인을 마친 뒤» — 같은 credentials 로 verify 를 부르고, 통과(verified · 취소 아님) 분기 안에서만 쓴다
+    expect(verify).toMatch(
+      /const response = await api\.verifyOrder\(credentials\)\s*const \{ verified, cancelled, details \} = response\s*if \(verified && !cancelled\) \{\s*orderStore\.setOrders\(details \|\| \[\]\)\s*flowSession\.start\(credentials\)\s*router\.push\(/,
+    )
+  })
+  it('실제로 거는 쿠키(useFlowSession) = 방침 문장 — 이름 nomacom_flow · 1시간 · 쓸 때마다 갱신 · 경로 / · 호스트 한정(domain 없음) · 담는 키', () => {
+    const calls: { name: string; opts: Record<string, unknown> }[] = []
+    const jar = ref<unknown>(null)
+    const g = globalThis as Record<string, unknown>
+    const before = g.useCookie
+    g.useCookie = (name: string, opts: Record<string, unknown>) => (calls.push({ name, opts }), jar)
+    try {
+      const flow = useFlowSession()
+      expect(calls).toHaveLength(1)
+      expect(calls[0]!.name).toBe(FLOW_COOKIE)
+      expect(FLOW_COOKIE).toBe('nomacom_flow')
+      expect(calls[0]!.opts).toEqual({
+        maxAge: 60 * 60,
+        sameSite: 'lax',
+        secure: true,
+        path: '/',
+        refresh: true,
+        default: expect.any(Function),
+      })
+      flow.start({ orderId: 1, fullName: '가', phoneNumber: '01000000000' })
+      expect(Object.keys(jar.value as object).sort()).toEqual(['fullName', 'orderId', 'phoneNumber', 'v'])
+      flow.select(1, 2)
+      expect(Object.keys(jar.value as object).sort()).toEqual(['fullName', 'orderId', 'phoneNumber', 'productOrderId', 'v'])
+    } finally {
+      g.useCookie = before
+    }
+  })
+  it('쿠키를 만드는 길은 흐름 쿠키 하나 — 앱 · 서버 · shared · modules 코드(.vue · .ts · .tsx · .js · .mjs · .cjs) · nuxt.config 의 useCookie · document.cookie · setCookie · Set-Cookie 는 useFlowSession 에만', () => {
+    const SHARED = fileURLToPath(new URL('../../shared', import.meta.url))
+    const CONFIG = fileURLToPath(new URL('../../nuxt.config.ts', import.meta.url))
+    const MODULES = fileURLToPath(new URL('../../modules', import.meta.url))
+    const scripts = (dir: string) =>
+      walk(dir).filter((f) => /\.(vue|ts|tsx|js|mjs|cjs)$/.test(f) && !/\.(test|spec)\.ts$/.test(f))
+    const makers = [...scripts(APP), ...scripts(SERVER), ...scripts(SHARED), ...scripts(MODULES), CONFIG].filter((f) =>
+      /useCookie|document\.cookie|cookieStore|setCookie\b|set-cookie/i.test(codeOnly(readFileSync(f, 'utf8'))),
     )
     expect(makers.map((f) => f.slice(APP.length))).toEqual(['composables/useFlowSession.ts'])
   })

@@ -1,0 +1,6525 @@
+{
+ "meta": {
+  "schema": "k1-v1",
+  "generatedAt": "2026-09-23T00:00:00+09:00",
+  "snapshotDir": "nomacom-manager/data/naver-product-backup/2026-09-22_pre-detail-v2",
+  "skuCount": 7,
+  "zoneCount": 5,
+  "cellCount": 494,
+  "excludedZones": [
+   "CHN00",
+   "JPN00",
+   "KHM00",
+   "LAO00",
+   "MYS00",
+   "PHL00",
+   "TWN00"
+  ],
+  "fixture": "표본 — W1-3 개발 · 테스트 전용(5 zone · 7 SKU). 실 catalog.json(W1-1 export)이 커밋되면 로더가 그쪽을 읽는다. 손편집 금지"
+ },
+ "zones": [
+  {
+   "zone": "CZE00",
+   "nameKr": "체코",
+   "subtitle": "프라하·체스키크룸로프 등 전지역",
+   "countries": [
+    {
+     "iso3": "CZE",
+     "iso2": "CZ",
+     "nameKr": "체코",
+     "flag": "🇨🇿",
+     "cities": [
+      "프라하",
+      "체스키크룸로프",
+      "브르노",
+      "카를로비바리"
+     ],
+     "operators": [
+      "O2",
+      "T-Mobile",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    }
+   ],
+   "map": {
+    "svg": "/catalog/maps/CZE00.svg",
+    "pins": [
+     {
+      "name": "프라하",
+      "x": 39.8,
+      "y": 44.9,
+      "size": "big",
+      "labelDir": "left"
+     },
+     {
+      "name": "체스키크룸로프",
+      "x": 38.6,
+      "y": 68.0,
+      "size": "normal",
+      "labelDir": "left"
+     }
+    ]
+   },
+   "products": [
+    {
+     "sku": "CZE00U",
+     "kind": "U",
+     "channelProductNo": 9382876791,
+     "naverName": "체코 eSIM 무제한 데이터 유럽",
+     "naverUrl": "https://smartstore.naver.com/esimmany/products/9382876791?nt_source=esimmany-web&nt_medium=detail&nt_detail=CZE00U",
+     "saleStatus": "SALE",
+     "displayStatus": "ON",
+     "images": {
+      "thumb": "/catalog/thumbs/CZE00U.webp"
+     },
+     "salePriceWon": 119900,
+     "immediateDiscountWon": 119000,
+     "options": [
+      {
+       "id": 37772613227,
+       "code": "CZE00U01D01V2",
+       "cap": 1,
+       "days": 1,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 0,
+       "finalWon": 900,
+       "usable": true
+      },
+      {
+       "id": 60136454306,
+       "code": "CZE00U01D02V2",
+       "cap": 1,
+       "days": 2,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 400,
+       "finalWon": 1300,
+       "usable": true
+      },
+      {
+       "id": 37772613229,
+       "code": "CZE00U01D03V2",
+       "cap": 1,
+       "days": 3,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 1000,
+       "finalWon": 1900,
+       "usable": true
+      },
+      {
+       "id": 60136454307,
+       "code": "CZE00U01D04V2",
+       "cap": 1,
+       "days": 4,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 1900,
+       "finalWon": 2800,
+       "usable": true
+      },
+      {
+       "id": 37772613232,
+       "code": "CZE00U01D05V2",
+       "cap": 1,
+       "days": 5,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 2500,
+       "finalWon": 3400,
+       "usable": true
+      },
+      {
+       "id": 60136454308,
+       "code": "CZE00U01D06V2",
+       "cap": 1,
+       "days": 6,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 3300,
+       "finalWon": 4200,
+       "usable": true
+      },
+      {
+       "id": 37772613234,
+       "code": "CZE00U01D07V2",
+       "cap": 1,
+       "days": 7,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 4000,
+       "finalWon": 4900,
+       "usable": true
+      },
+      {
+       "id": 60136454309,
+       "code": "CZE00U01D08V2",
+       "cap": 1,
+       "days": 8,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 4900,
+       "finalWon": 5800,
+       "usable": true
+      },
+      {
+       "id": 60136454310,
+       "code": "CZE00U01D09V2",
+       "cap": 1,
+       "days": 9,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 5600,
+       "finalWon": 6500,
+       "usable": true
+      },
+      {
+       "id": 37772613236,
+       "code": "CZE00U01D10V2",
+       "cap": 1,
+       "days": 10,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 6100,
+       "finalWon": 7000,
+       "usable": true
+      },
+      {
+       "id": 60136454311,
+       "code": "CZE00U01D11V2",
+       "cap": 1,
+       "days": 11,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 7000,
+       "finalWon": 7900,
+       "usable": true
+      },
+      {
+       "id": 60136454312,
+       "code": "CZE00U01D12V2",
+       "cap": 1,
+       "days": 12,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 7900,
+       "finalWon": 8800,
+       "usable": true
+      },
+      {
+       "id": 60136454313,
+       "code": "CZE00U01D13V2",
+       "cap": 1,
+       "days": 13,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 8700,
+       "finalWon": 9600,
+       "usable": true
+      },
+      {
+       "id": 60136454314,
+       "code": "CZE00U01D14V2",
+       "cap": 1,
+       "days": 14,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 9200,
+       "finalWon": 10100,
+       "usable": true
+      },
+      {
+       "id": 37772613238,
+       "code": "CZE00U01D15V2",
+       "cap": 1,
+       "days": 15,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 9900,
+       "finalWon": 10800,
+       "usable": true
+      },
+      {
+       "id": 60136454315,
+       "code": "CZE00U01D16V2",
+       "cap": 1,
+       "days": 16,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 10800,
+       "finalWon": 11700,
+       "usable": true
+      },
+      {
+       "id": 60136454316,
+       "code": "CZE00U01D17V2",
+       "cap": 1,
+       "days": 17,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 11500,
+       "finalWon": 12400,
+       "usable": true
+      },
+      {
+       "id": 60136454317,
+       "code": "CZE00U01D18V2",
+       "cap": 1,
+       "days": 18,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 12300,
+       "finalWon": 13200,
+       "usable": true
+      },
+      {
+       "id": 60136454318,
+       "code": "CZE00U01D19V2",
+       "cap": 1,
+       "days": 19,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 13200,
+       "finalWon": 14100,
+       "usable": true
+      },
+      {
+       "id": 60136454319,
+       "code": "CZE00U01D20V2",
+       "cap": 1,
+       "days": 20,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 13700,
+       "finalWon": 14600,
+       "usable": true
+      },
+      {
+       "id": 60136454320,
+       "code": "CZE00U01D21V2",
+       "cap": 1,
+       "days": 21,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 14600,
+       "finalWon": 15500,
+       "usable": true
+      },
+      {
+       "id": 60136454321,
+       "code": "CZE00U01D22V2",
+       "cap": 1,
+       "days": 22,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 15500,
+       "finalWon": 16400,
+       "usable": true
+      },
+      {
+       "id": 60136454322,
+       "code": "CZE00U01D23V2",
+       "cap": 1,
+       "days": 23,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 16400,
+       "finalWon": 17300,
+       "usable": true
+      },
+      {
+       "id": 60136454323,
+       "code": "CZE00U01D24V2",
+       "cap": 1,
+       "days": 24,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 17200,
+       "finalWon": 18100,
+       "usable": true
+      },
+      {
+       "id": 60136454324,
+       "code": "CZE00U01D25V2",
+       "cap": 1,
+       "days": 25,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 18000,
+       "finalWon": 18900,
+       "usable": true
+      },
+      {
+       "id": 60136454325,
+       "code": "CZE00U01D26V2",
+       "cap": 1,
+       "days": 26,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 18700,
+       "finalWon": 19600,
+       "usable": true
+      },
+      {
+       "id": 60136454326,
+       "code": "CZE00U01D27V2",
+       "cap": 1,
+       "days": 27,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 19500,
+       "finalWon": 20400,
+       "usable": true
+      },
+      {
+       "id": 60136454327,
+       "code": "CZE00U01D28V2",
+       "cap": 1,
+       "days": 28,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 20200,
+       "finalWon": 21100,
+       "usable": true
+      },
+      {
+       "id": 60136454328,
+       "code": "CZE00U01D29V2",
+       "cap": 1,
+       "days": 29,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 21000,
+       "finalWon": 21900,
+       "usable": true
+      },
+      {
+       "id": 37772613240,
+       "code": "CZE00U01D30V2",
+       "cap": 1,
+       "days": 30,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 21800,
+       "finalWon": 22700,
+       "usable": true
+      },
+      {
+       "id": 60136454329,
+       "code": "CZE00U01D60V2",
+       "cap": 1,
+       "days": 60,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 42200,
+       "finalWon": 43100,
+       "usable": true
+      },
+      {
+       "id": 60136454330,
+       "code": "CZE00U01D90V2",
+       "cap": 1,
+       "days": 90,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 61500,
+       "finalWon": 62400,
+       "usable": true
+      },
+      {
+       "id": 37772613242,
+       "code": "CZE00U02D01V2",
+       "cap": 2,
+       "days": 1,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 200,
+       "finalWon": 1100,
+       "usable": true
+      },
+      {
+       "id": 60136454331,
+       "code": "CZE00U02D02V2",
+       "cap": 2,
+       "days": 2,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 1600,
+       "finalWon": 2500,
+       "usable": true
+      },
+      {
+       "id": 37772613244,
+       "code": "CZE00U02D03V2",
+       "cap": 2,
+       "days": 3,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 2500,
+       "finalWon": 3400,
+       "usable": true
+      },
+      {
+       "id": 60136454332,
+       "code": "CZE00U02D04V2",
+       "cap": 2,
+       "days": 4,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 4200,
+       "finalWon": 5100,
+       "usable": true
+      },
+      {
+       "id": 37772613246,
+       "code": "CZE00U02D05V2",
+       "cap": 2,
+       "days": 5,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 5400,
+       "finalWon": 6300,
+       "usable": true
+      },
+      {
+       "id": 60136454333,
+       "code": "CZE00U02D06V2",
+       "cap": 2,
+       "days": 6,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 7000,
+       "finalWon": 7900,
+       "usable": true
+      },
+      {
+       "id": 37772613249,
+       "code": "CZE00U02D07V2",
+       "cap": 2,
+       "days": 7,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 8200,
+       "finalWon": 9100,
+       "usable": true
+      },
+      {
+       "id": 60136454334,
+       "code": "CZE00U02D08V2",
+       "cap": 2,
+       "days": 8,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 9900,
+       "finalWon": 10800,
+       "usable": true
+      },
+      {
+       "id": 60136454335,
+       "code": "CZE00U02D09V2",
+       "cap": 2,
+       "days": 9,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 11100,
+       "finalWon": 12000,
+       "usable": true
+      },
+      {
+       "id": 37772613252,
+       "code": "CZE00U02D10V2",
+       "cap": 2,
+       "days": 10,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 11900,
+       "finalWon": 12800,
+       "usable": true
+      },
+      {
+       "id": 60136454336,
+       "code": "CZE00U02D11V2",
+       "cap": 2,
+       "days": 11,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 13800,
+       "finalWon": 14700,
+       "usable": true
+      },
+      {
+       "id": 60136454337,
+       "code": "CZE00U02D12V2",
+       "cap": 2,
+       "days": 12,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 15500,
+       "finalWon": 16400,
+       "usable": true
+      },
+      {
+       "id": 60136454338,
+       "code": "CZE00U02D13V2",
+       "cap": 2,
+       "days": 13,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 17000,
+       "finalWon": 17900,
+       "usable": true
+      },
+      {
+       "id": 60136454339,
+       "code": "CZE00U02D14V2",
+       "cap": 2,
+       "days": 14,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 18300,
+       "finalWon": 19200,
+       "usable": true
+      },
+      {
+       "id": 37772613255,
+       "code": "CZE00U02D15V2",
+       "cap": 2,
+       "days": 15,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 19200,
+       "finalWon": 20100,
+       "usable": true
+      },
+      {
+       "id": 60136454340,
+       "code": "CZE00U02D16V2",
+       "cap": 2,
+       "days": 16,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 20900,
+       "finalWon": 21800,
+       "usable": true
+      },
+      {
+       "id": 60136454341,
+       "code": "CZE00U02D17V2",
+       "cap": 2,
+       "days": 17,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 22600,
+       "finalWon": 23500,
+       "usable": true
+      },
+      {
+       "id": 60136454342,
+       "code": "CZE00U02D18V2",
+       "cap": 2,
+       "days": 18,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 24000,
+       "finalWon": 24900,
+       "usable": true
+      },
+      {
+       "id": 60136454343,
+       "code": "CZE00U02D19V2",
+       "cap": 2,
+       "days": 19,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 25200,
+       "finalWon": 26100,
+       "usable": true
+      },
+      {
+       "id": 60136454344,
+       "code": "CZE00U02D20V2",
+       "cap": 2,
+       "days": 20,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 26200,
+       "finalWon": 27100,
+       "usable": true
+      },
+      {
+       "id": 60136454345,
+       "code": "CZE00U02D21V2",
+       "cap": 2,
+       "days": 21,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 27900,
+       "finalWon": 28800,
+       "usable": true
+      },
+      {
+       "id": 60136454346,
+       "code": "CZE00U02D22V2",
+       "cap": 2,
+       "days": 22,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 29500,
+       "finalWon": 30400,
+       "usable": true
+      },
+      {
+       "id": 60136454347,
+       "code": "CZE00U02D23V2",
+       "cap": 2,
+       "days": 23,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 30900,
+       "finalWon": 31800,
+       "usable": true
+      },
+      {
+       "id": 60136454348,
+       "code": "CZE00U02D24V2",
+       "cap": 2,
+       "days": 24,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 32400,
+       "finalWon": 33300,
+       "usable": true
+      },
+      {
+       "id": 60136454349,
+       "code": "CZE00U02D25V2",
+       "cap": 2,
+       "days": 25,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 33700,
+       "finalWon": 34600,
+       "usable": true
+      },
+      {
+       "id": 60136454350,
+       "code": "CZE00U02D26V2",
+       "cap": 2,
+       "days": 26,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 35200,
+       "finalWon": 36100,
+       "usable": true
+      },
+      {
+       "id": 60136454351,
+       "code": "CZE00U02D27V2",
+       "cap": 2,
+       "days": 27,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 36600,
+       "finalWon": 37500,
+       "usable": true
+      },
+      {
+       "id": 60136454352,
+       "code": "CZE00U02D28V2",
+       "cap": 2,
+       "days": 28,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 38000,
+       "finalWon": 38900,
+       "usable": true
+      },
+      {
+       "id": 60136454353,
+       "code": "CZE00U02D29V2",
+       "cap": 2,
+       "days": 29,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 39300,
+       "finalWon": 40200,
+       "usable": true
+      },
+      {
+       "id": 37772613258,
+       "code": "CZE00U02D30V2",
+       "cap": 2,
+       "days": 30,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 40200,
+       "finalWon": 41100,
+       "usable": true
+      },
+      {
+       "id": 60136454354,
+       "code": "CZE00U02D60V2",
+       "cap": 2,
+       "days": 60,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 77100,
+       "finalWon": 78000,
+       "usable": true
+      },
+      {
+       "id": 60136454355,
+       "code": "CZE00U02D90V2",
+       "cap": 2,
+       "days": 90,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 112100,
+       "finalWon": 113000,
+       "usable": true
+      },
+      {
+       "id": 60136454356,
+       "code": "CZE00U03D01V2",
+       "cap": 3,
+       "days": 1,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 700,
+       "finalWon": 1600,
+       "usable": true
+      },
+      {
+       "id": 60136454357,
+       "code": "CZE00U03D02V2",
+       "cap": 3,
+       "days": 2,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 2700,
+       "finalWon": 3600,
+       "usable": true
+      },
+      {
+       "id": 60136454358,
+       "code": "CZE00U03D03V2",
+       "cap": 3,
+       "days": 3,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 4600,
+       "finalWon": 5500,
+       "usable": true
+      },
+      {
+       "id": 60136454359,
+       "code": "CZE00U03D04V2",
+       "cap": 3,
+       "days": 4,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 6500,
+       "finalWon": 7400,
+       "usable": true
+      },
+      {
+       "id": 60136454360,
+       "code": "CZE00U03D05V2",
+       "cap": 3,
+       "days": 5,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 7900,
+       "finalWon": 8800,
+       "usable": true
+      },
+      {
+       "id": 60136454361,
+       "code": "CZE00U03D06V2",
+       "cap": 3,
+       "days": 6,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 9900,
+       "finalWon": 10800,
+       "usable": true
+      },
+      {
+       "id": 60136454362,
+       "code": "CZE00U03D07V2",
+       "cap": 3,
+       "days": 7,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 11800,
+       "finalWon": 12700,
+       "usable": true
+      },
+      {
+       "id": 60136454363,
+       "code": "CZE00U03D08V2",
+       "cap": 3,
+       "days": 8,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 13700,
+       "finalWon": 14600,
+       "usable": true
+      },
+      {
+       "id": 60136454364,
+       "code": "CZE00U03D09V2",
+       "cap": 3,
+       "days": 9,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 15000,
+       "finalWon": 15900,
+       "usable": true
+      },
+      {
+       "id": 60136454365,
+       "code": "CZE00U03D10V2",
+       "cap": 3,
+       "days": 10,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 15500,
+       "finalWon": 16400,
+       "usable": true
+      },
+      {
+       "id": 60136454366,
+       "code": "CZE00U03D11V2",
+       "cap": 3,
+       "days": 11,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 16800,
+       "finalWon": 17700,
+       "usable": true
+      },
+      {
+       "id": 60136454367,
+       "code": "CZE00U03D12V2",
+       "cap": 3,
+       "days": 12,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 17700,
+       "finalWon": 18600,
+       "usable": true
+      },
+      {
+       "id": 60136454368,
+       "code": "CZE00U03D13V2",
+       "cap": 3,
+       "days": 13,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 19800,
+       "finalWon": 20700,
+       "usable": true
+      },
+      {
+       "id": 60136454369,
+       "code": "CZE00U03D14V2",
+       "cap": 3,
+       "days": 14,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 21700,
+       "finalWon": 22600,
+       "usable": true
+      },
+      {
+       "id": 60136454370,
+       "code": "CZE00U03D15V2",
+       "cap": 3,
+       "days": 15,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 23400,
+       "finalWon": 24300,
+       "usable": true
+      },
+      {
+       "id": 60136454371,
+       "code": "CZE00U03D16V2",
+       "cap": 3,
+       "days": 16,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 25200,
+       "finalWon": 26100,
+       "usable": true
+      },
+      {
+       "id": 60136454372,
+       "code": "CZE00U03D17V2",
+       "cap": 3,
+       "days": 17,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 28700,
+       "finalWon": 29600,
+       "usable": true
+      },
+      {
+       "id": 60136454373,
+       "code": "CZE00U03D18V2",
+       "cap": 3,
+       "days": 18,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 31200,
+       "finalWon": 32100,
+       "usable": true
+      },
+      {
+       "id": 60136454374,
+       "code": "CZE00U03D19V2",
+       "cap": 3,
+       "days": 19,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 33600,
+       "finalWon": 34500,
+       "usable": true
+      },
+      {
+       "id": 60136454375,
+       "code": "CZE00U03D20V2",
+       "cap": 3,
+       "days": 20,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 36400,
+       "finalWon": 37300,
+       "usable": true
+      },
+      {
+       "id": 60136454376,
+       "code": "CZE00U03D21V2",
+       "cap": 3,
+       "days": 21,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 38700,
+       "finalWon": 39600,
+       "usable": true
+      },
+      {
+       "id": 60136454377,
+       "code": "CZE00U03D22V2",
+       "cap": 3,
+       "days": 22,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 40800,
+       "finalWon": 41700,
+       "usable": true
+      },
+      {
+       "id": 60136454379,
+       "code": "CZE00U03D23V2",
+       "cap": 3,
+       "days": 23,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 42700,
+       "finalWon": 43600,
+       "usable": true
+      },
+      {
+       "id": 60136454380,
+       "code": "CZE00U03D24V2",
+       "cap": 3,
+       "days": 24,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 44700,
+       "finalWon": 45600,
+       "usable": true
+      },
+      {
+       "id": 60136454382,
+       "code": "CZE00U03D25V2",
+       "cap": 3,
+       "days": 25,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 46600,
+       "finalWon": 47500,
+       "usable": true
+      },
+      {
+       "id": 60136454384,
+       "code": "CZE00U03D26V2",
+       "cap": 3,
+       "days": 26,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 48600,
+       "finalWon": 49500,
+       "usable": true
+      },
+      {
+       "id": 60136454386,
+       "code": "CZE00U03D27V2",
+       "cap": 3,
+       "days": 27,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 50500,
+       "finalWon": 51400,
+       "usable": true
+      },
+      {
+       "id": 60136454388,
+       "code": "CZE00U03D28V2",
+       "cap": 3,
+       "days": 28,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 52400,
+       "finalWon": 53300,
+       "usable": true
+      },
+      {
+       "id": 60136454390,
+       "code": "CZE00U03D29V2",
+       "cap": 3,
+       "days": 29,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 54300,
+       "finalWon": 55200,
+       "usable": true
+      },
+      {
+       "id": 60136454392,
+       "code": "CZE00U03D30V2",
+       "cap": 3,
+       "days": 30,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 55800,
+       "finalWon": 56700,
+       "usable": true
+      },
+      {
+       "id": 60136454393,
+       "code": "CZE00U03D60V2",
+       "cap": 3,
+       "days": 60,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 106800,
+       "finalWon": 107700,
+       "usable": true
+      },
+      {
+       "id": 60136454394,
+       "code": "CZE00U03D90V2",
+       "cap": 3,
+       "days": 90,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 155000,
+       "finalWon": 155900,
+       "usable": true
+      }
+     ]
+    },
+    {
+     "sku": "CZE00L",
+     "kind": "L",
+     "channelProductNo": 9762838217,
+     "naverName": "체코 eSIM 종량제 데이터 유럽",
+     "naverUrl": "https://smartstore.naver.com/esimmany/products/9762838217?nt_source=esimmany-web&nt_medium=detail&nt_detail=CZE00L",
+     "saleStatus": "SALE",
+     "displayStatus": "ON",
+     "images": {
+      "thumb": "/catalog/thumbs/CZE00L.webp"
+     },
+     "salePriceWon": 119900,
+     "immediateDiscountWon": 115400,
+     "options": [
+      {
+       "id": 37807448501,
+       "code": "CZE00L01D30V2",
+       "cap": 1,
+       "days": 30,
+       "optionName1": "1기가",
+       "optionName2": "30일",
+       "optionPriceWon": 0,
+       "finalWon": 4500,
+       "usable": true
+      },
+      {
+       "id": 37807448502,
+       "code": "CZE00L03D30V2",
+       "cap": 3,
+       "days": 30,
+       "optionName1": "3기가",
+       "optionName2": "30일",
+       "optionPriceWon": 4100,
+       "finalWon": 8600,
+       "usable": true
+      },
+      {
+       "id": 37807448503,
+       "code": "CZE00L05D30V2",
+       "cap": 5,
+       "days": 30,
+       "optionName1": "5기가",
+       "optionName2": "30일",
+       "optionPriceWon": 7200,
+       "finalWon": 11700,
+       "usable": true
+      },
+      {
+       "id": 37807448504,
+       "code": "CZE00L07D30V2",
+       "cap": 7,
+       "days": 30,
+       "optionName1": "7기가",
+       "optionName2": "30일",
+       "optionPriceWon": 11300,
+       "finalWon": 15800,
+       "usable": true
+      },
+      {
+       "id": 37807448505,
+       "code": "CZE00L10D30V2",
+       "cap": 10,
+       "days": 30,
+       "optionName1": "10기가",
+       "optionName2": "30일",
+       "optionPriceWon": 17500,
+       "finalWon": 22000,
+       "usable": true
+      },
+      {
+       "id": 37807448506,
+       "code": "CZE00L20D30V2",
+       "cap": 20,
+       "days": 30,
+       "optionName1": "20기가",
+       "optionName2": "30일",
+       "optionPriceWon": 33100,
+       "finalWon": 37600,
+       "usable": true
+      },
+      {
+       "id": 37807448507,
+       "code": "CZE00L30D30V2",
+       "cap": 30,
+       "days": 30,
+       "optionName1": "30기가",
+       "optionName2": "30일",
+       "optionPriceWon": 49300,
+       "finalWon": 53800,
+       "usable": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "zone": "FRA00",
+   "nameKr": "프랑스",
+   "subtitle": "파리·니스·보르도 등 전지역",
+   "countries": [
+    {
+     "iso3": "FRA",
+     "iso2": "FR",
+     "nameKr": "프랑스",
+     "flag": "🇫🇷",
+     "cities": [
+      "파리",
+      "니스",
+      "보르도",
+      "리옹",
+      "몽생미셸",
+      "스트라스부르"
+     ],
+     "operators": [
+      "Bouygues Telecom",
+      "Free",
+      "Orange"
+     ],
+     "network": "4G/LTE · 5G"
+    }
+   ],
+   "map": {
+    "svg": "/catalog/maps/FRA00.svg",
+    "pins": [
+     {
+      "name": "파리",
+      "x": 49.8,
+      "y": 31.6,
+      "size": "big",
+      "labelDir": "left"
+     },
+     {
+      "name": "니스",
+      "x": 70.2,
+      "y": 67.6,
+      "size": "normal",
+      "labelDir": "left"
+     },
+     {
+      "name": "보르도",
+      "x": 37.7,
+      "y": 59.7,
+      "size": "normal",
+      "labelDir": "left"
+     }
+    ]
+   },
+   "products": [
+    {
+     "sku": "FRA00U",
+     "kind": "U",
+     "channelProductNo": 9380293397,
+     "naverName": "프랑스 eSIM 무제한 데이터 유럽",
+     "naverUrl": "https://smartstore.naver.com/esimmany/products/9380293397?nt_source=esimmany-web&nt_medium=detail&nt_detail=FRA00U",
+     "saleStatus": "SALE",
+     "displayStatus": "ON",
+     "images": {
+      "thumb": "/catalog/thumbs/FRA00U.webp"
+     },
+     "salePriceWon": 119900,
+     "immediateDiscountWon": 119000,
+     "options": [
+      {
+       "id": 37756972241,
+       "code": "FRA00U01D01V2",
+       "cap": 1,
+       "days": 1,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 0,
+       "finalWon": 900,
+       "usable": true
+      },
+      {
+       "id": 60136459784,
+       "code": "FRA00U01D02V2",
+       "cap": 1,
+       "days": 2,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 400,
+       "finalWon": 1300,
+       "usable": true
+      },
+      {
+       "id": 37756972244,
+       "code": "FRA00U01D03V2",
+       "cap": 1,
+       "days": 3,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 1000,
+       "finalWon": 1900,
+       "usable": true
+      },
+      {
+       "id": 60136459785,
+       "code": "FRA00U01D04V2",
+       "cap": 1,
+       "days": 4,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 1900,
+       "finalWon": 2800,
+       "usable": true
+      },
+      {
+       "id": 37756972245,
+       "code": "FRA00U01D05V2",
+       "cap": 1,
+       "days": 5,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 2500,
+       "finalWon": 3400,
+       "usable": true
+      },
+      {
+       "id": 60136459786,
+       "code": "FRA00U01D06V2",
+       "cap": 1,
+       "days": 6,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 3300,
+       "finalWon": 4200,
+       "usable": true
+      },
+      {
+       "id": 37756972248,
+       "code": "FRA00U01D07V2",
+       "cap": 1,
+       "days": 7,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 4000,
+       "finalWon": 4900,
+       "usable": true
+      },
+      {
+       "id": 60136459787,
+       "code": "FRA00U01D08V2",
+       "cap": 1,
+       "days": 8,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 4900,
+       "finalWon": 5800,
+       "usable": true
+      },
+      {
+       "id": 60136459788,
+       "code": "FRA00U01D09V2",
+       "cap": 1,
+       "days": 9,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 5600,
+       "finalWon": 6500,
+       "usable": true
+      },
+      {
+       "id": 37756972250,
+       "code": "FRA00U01D10V2",
+       "cap": 1,
+       "days": 10,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 6100,
+       "finalWon": 7000,
+       "usable": true
+      },
+      {
+       "id": 60136459789,
+       "code": "FRA00U01D11V2",
+       "cap": 1,
+       "days": 11,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 7000,
+       "finalWon": 7900,
+       "usable": true
+      },
+      {
+       "id": 60136459790,
+       "code": "FRA00U01D12V2",
+       "cap": 1,
+       "days": 12,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 7900,
+       "finalWon": 8800,
+       "usable": true
+      },
+      {
+       "id": 60136459791,
+       "code": "FRA00U01D13V2",
+       "cap": 1,
+       "days": 13,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 8700,
+       "finalWon": 9600,
+       "usable": true
+      },
+      {
+       "id": 60136459792,
+       "code": "FRA00U01D14V2",
+       "cap": 1,
+       "days": 14,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 9200,
+       "finalWon": 10100,
+       "usable": true
+      },
+      {
+       "id": 37756972252,
+       "code": "FRA00U01D15V2",
+       "cap": 1,
+       "days": 15,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 9900,
+       "finalWon": 10800,
+       "usable": true
+      },
+      {
+       "id": 60136459793,
+       "code": "FRA00U01D16V2",
+       "cap": 1,
+       "days": 16,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 10800,
+       "finalWon": 11700,
+       "usable": true
+      },
+      {
+       "id": 60136459794,
+       "code": "FRA00U01D17V2",
+       "cap": 1,
+       "days": 17,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 11500,
+       "finalWon": 12400,
+       "usable": true
+      },
+      {
+       "id": 60136459795,
+       "code": "FRA00U01D18V2",
+       "cap": 1,
+       "days": 18,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 12300,
+       "finalWon": 13200,
+       "usable": true
+      },
+      {
+       "id": 60136459796,
+       "code": "FRA00U01D19V2",
+       "cap": 1,
+       "days": 19,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 13200,
+       "finalWon": 14100,
+       "usable": true
+      },
+      {
+       "id": 60136459797,
+       "code": "FRA00U01D20V2",
+       "cap": 1,
+       "days": 20,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 13700,
+       "finalWon": 14600,
+       "usable": true
+      },
+      {
+       "id": 60136459798,
+       "code": "FRA00U01D21V2",
+       "cap": 1,
+       "days": 21,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 14600,
+       "finalWon": 15500,
+       "usable": true
+      },
+      {
+       "id": 60136459799,
+       "code": "FRA00U01D22V2",
+       "cap": 1,
+       "days": 22,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 15500,
+       "finalWon": 16400,
+       "usable": true
+      },
+      {
+       "id": 60136459800,
+       "code": "FRA00U01D23V2",
+       "cap": 1,
+       "days": 23,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 16400,
+       "finalWon": 17300,
+       "usable": true
+      },
+      {
+       "id": 60136459801,
+       "code": "FRA00U01D24V2",
+       "cap": 1,
+       "days": 24,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 17200,
+       "finalWon": 18100,
+       "usable": true
+      },
+      {
+       "id": 60136459802,
+       "code": "FRA00U01D25V2",
+       "cap": 1,
+       "days": 25,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 18000,
+       "finalWon": 18900,
+       "usable": true
+      },
+      {
+       "id": 60136459803,
+       "code": "FRA00U01D26V2",
+       "cap": 1,
+       "days": 26,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 18700,
+       "finalWon": 19600,
+       "usable": true
+      },
+      {
+       "id": 60136459804,
+       "code": "FRA00U01D27V2",
+       "cap": 1,
+       "days": 27,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 19500,
+       "finalWon": 20400,
+       "usable": true
+      },
+      {
+       "id": 60136459805,
+       "code": "FRA00U01D28V2",
+       "cap": 1,
+       "days": 28,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 20200,
+       "finalWon": 21100,
+       "usable": true
+      },
+      {
+       "id": 60136459806,
+       "code": "FRA00U01D29V2",
+       "cap": 1,
+       "days": 29,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 21000,
+       "finalWon": 21900,
+       "usable": true
+      },
+      {
+       "id": 37756972254,
+       "code": "FRA00U01D30V2",
+       "cap": 1,
+       "days": 30,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 21800,
+       "finalWon": 22700,
+       "usable": true
+      },
+      {
+       "id": 60136459807,
+       "code": "FRA00U01D60V2",
+       "cap": 1,
+       "days": 60,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 42200,
+       "finalWon": 43100,
+       "usable": true
+      },
+      {
+       "id": 60136459808,
+       "code": "FRA00U01D90V2",
+       "cap": 1,
+       "days": 90,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 61500,
+       "finalWon": 62400,
+       "usable": true
+      },
+      {
+       "id": 37756972256,
+       "code": "FRA00U02D01V2",
+       "cap": 2,
+       "days": 1,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 200,
+       "finalWon": 1100,
+       "usable": true
+      },
+      {
+       "id": 60136459809,
+       "code": "FRA00U02D02V2",
+       "cap": 2,
+       "days": 2,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 1600,
+       "finalWon": 2500,
+       "usable": true
+      },
+      {
+       "id": 37756972258,
+       "code": "FRA00U02D03V2",
+       "cap": 2,
+       "days": 3,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 2500,
+       "finalWon": 3400,
+       "usable": true
+      },
+      {
+       "id": 60136459810,
+       "code": "FRA00U02D04V2",
+       "cap": 2,
+       "days": 4,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 4200,
+       "finalWon": 5100,
+       "usable": true
+      },
+      {
+       "id": 37756972260,
+       "code": "FRA00U02D05V2",
+       "cap": 2,
+       "days": 5,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 5400,
+       "finalWon": 6300,
+       "usable": true
+      },
+      {
+       "id": 60136459811,
+       "code": "FRA00U02D06V2",
+       "cap": 2,
+       "days": 6,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 7000,
+       "finalWon": 7900,
+       "usable": true
+      },
+      {
+       "id": 37756972262,
+       "code": "FRA00U02D07V2",
+       "cap": 2,
+       "days": 7,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 8200,
+       "finalWon": 9100,
+       "usable": true
+      },
+      {
+       "id": 60136459812,
+       "code": "FRA00U02D08V2",
+       "cap": 2,
+       "days": 8,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 9900,
+       "finalWon": 10800,
+       "usable": true
+      },
+      {
+       "id": 60136459813,
+       "code": "FRA00U02D09V2",
+       "cap": 2,
+       "days": 9,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 11100,
+       "finalWon": 12000,
+       "usable": true
+      },
+      {
+       "id": 37756972264,
+       "code": "FRA00U02D10V2",
+       "cap": 2,
+       "days": 10,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 11900,
+       "finalWon": 12800,
+       "usable": true
+      },
+      {
+       "id": 60136459814,
+       "code": "FRA00U02D11V2",
+       "cap": 2,
+       "days": 11,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 13800,
+       "finalWon": 14700,
+       "usable": true
+      },
+      {
+       "id": 60136459815,
+       "code": "FRA00U02D12V2",
+       "cap": 2,
+       "days": 12,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 15500,
+       "finalWon": 16400,
+       "usable": true
+      },
+      {
+       "id": 60136459816,
+       "code": "FRA00U02D13V2",
+       "cap": 2,
+       "days": 13,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 17000,
+       "finalWon": 17900,
+       "usable": true
+      },
+      {
+       "id": 60136459817,
+       "code": "FRA00U02D14V2",
+       "cap": 2,
+       "days": 14,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 18300,
+       "finalWon": 19200,
+       "usable": true
+      },
+      {
+       "id": 37756972267,
+       "code": "FRA00U02D15V2",
+       "cap": 2,
+       "days": 15,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 19200,
+       "finalWon": 20100,
+       "usable": true
+      },
+      {
+       "id": 60136459818,
+       "code": "FRA00U02D16V2",
+       "cap": 2,
+       "days": 16,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 20900,
+       "finalWon": 21800,
+       "usable": true
+      },
+      {
+       "id": 60136459819,
+       "code": "FRA00U02D17V2",
+       "cap": 2,
+       "days": 17,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 22600,
+       "finalWon": 23500,
+       "usable": true
+      },
+      {
+       "id": 60136459820,
+       "code": "FRA00U02D18V2",
+       "cap": 2,
+       "days": 18,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 24000,
+       "finalWon": 24900,
+       "usable": true
+      },
+      {
+       "id": 60136459821,
+       "code": "FRA00U02D19V2",
+       "cap": 2,
+       "days": 19,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 25200,
+       "finalWon": 26100,
+       "usable": true
+      },
+      {
+       "id": 60136459822,
+       "code": "FRA00U02D20V2",
+       "cap": 2,
+       "days": 20,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 26200,
+       "finalWon": 27100,
+       "usable": true
+      },
+      {
+       "id": 60136459823,
+       "code": "FRA00U02D21V2",
+       "cap": 2,
+       "days": 21,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 27900,
+       "finalWon": 28800,
+       "usable": true
+      },
+      {
+       "id": 60136459824,
+       "code": "FRA00U02D22V2",
+       "cap": 2,
+       "days": 22,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 29500,
+       "finalWon": 30400,
+       "usable": true
+      },
+      {
+       "id": 60136459825,
+       "code": "FRA00U02D23V2",
+       "cap": 2,
+       "days": 23,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 30900,
+       "finalWon": 31800,
+       "usable": true
+      },
+      {
+       "id": 60136459826,
+       "code": "FRA00U02D24V2",
+       "cap": 2,
+       "days": 24,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 32400,
+       "finalWon": 33300,
+       "usable": true
+      },
+      {
+       "id": 60136459827,
+       "code": "FRA00U02D25V2",
+       "cap": 2,
+       "days": 25,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 33700,
+       "finalWon": 34600,
+       "usable": true
+      },
+      {
+       "id": 60136459828,
+       "code": "FRA00U02D26V2",
+       "cap": 2,
+       "days": 26,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 35200,
+       "finalWon": 36100,
+       "usable": true
+      },
+      {
+       "id": 60136459829,
+       "code": "FRA00U02D27V2",
+       "cap": 2,
+       "days": 27,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 36600,
+       "finalWon": 37500,
+       "usable": true
+      },
+      {
+       "id": 60136459830,
+       "code": "FRA00U02D28V2",
+       "cap": 2,
+       "days": 28,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 38000,
+       "finalWon": 38900,
+       "usable": true
+      },
+      {
+       "id": 60136459831,
+       "code": "FRA00U02D29V2",
+       "cap": 2,
+       "days": 29,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 39300,
+       "finalWon": 40200,
+       "usable": true
+      },
+      {
+       "id": 37756972269,
+       "code": "FRA00U02D30V2",
+       "cap": 2,
+       "days": 30,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 40200,
+       "finalWon": 41100,
+       "usable": true
+      },
+      {
+       "id": 60136459832,
+       "code": "FRA00U02D60V2",
+       "cap": 2,
+       "days": 60,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 77100,
+       "finalWon": 78000,
+       "usable": true
+      },
+      {
+       "id": 60136459833,
+       "code": "FRA00U02D90V2",
+       "cap": 2,
+       "days": 90,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 112100,
+       "finalWon": 113000,
+       "usable": true
+      },
+      {
+       "id": 60136459834,
+       "code": "FRA00U03D01V2",
+       "cap": 3,
+       "days": 1,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 700,
+       "finalWon": 1600,
+       "usable": true
+      },
+      {
+       "id": 60136459835,
+       "code": "FRA00U03D02V2",
+       "cap": 3,
+       "days": 2,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 2700,
+       "finalWon": 3600,
+       "usable": true
+      },
+      {
+       "id": 60136459836,
+       "code": "FRA00U03D03V2",
+       "cap": 3,
+       "days": 3,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 4600,
+       "finalWon": 5500,
+       "usable": true
+      },
+      {
+       "id": 60136459837,
+       "code": "FRA00U03D04V2",
+       "cap": 3,
+       "days": 4,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 6500,
+       "finalWon": 7400,
+       "usable": true
+      },
+      {
+       "id": 60136459838,
+       "code": "FRA00U03D05V2",
+       "cap": 3,
+       "days": 5,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 7900,
+       "finalWon": 8800,
+       "usable": true
+      },
+      {
+       "id": 60136459839,
+       "code": "FRA00U03D06V2",
+       "cap": 3,
+       "days": 6,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 9900,
+       "finalWon": 10800,
+       "usable": true
+      },
+      {
+       "id": 60136459840,
+       "code": "FRA00U03D07V2",
+       "cap": 3,
+       "days": 7,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 11800,
+       "finalWon": 12700,
+       "usable": true
+      },
+      {
+       "id": 60136459841,
+       "code": "FRA00U03D08V2",
+       "cap": 3,
+       "days": 8,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 13700,
+       "finalWon": 14600,
+       "usable": true
+      },
+      {
+       "id": 60136459842,
+       "code": "FRA00U03D09V2",
+       "cap": 3,
+       "days": 9,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 15000,
+       "finalWon": 15900,
+       "usable": true
+      },
+      {
+       "id": 60136459843,
+       "code": "FRA00U03D10V2",
+       "cap": 3,
+       "days": 10,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 15500,
+       "finalWon": 16400,
+       "usable": true
+      },
+      {
+       "id": 60136459844,
+       "code": "FRA00U03D11V2",
+       "cap": 3,
+       "days": 11,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 16800,
+       "finalWon": 17700,
+       "usable": true
+      },
+      {
+       "id": 60136459845,
+       "code": "FRA00U03D12V2",
+       "cap": 3,
+       "days": 12,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 17700,
+       "finalWon": 18600,
+       "usable": true
+      },
+      {
+       "id": 60136459846,
+       "code": "FRA00U03D13V2",
+       "cap": 3,
+       "days": 13,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 19800,
+       "finalWon": 20700,
+       "usable": true
+      },
+      {
+       "id": 60136459847,
+       "code": "FRA00U03D14V2",
+       "cap": 3,
+       "days": 14,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 21700,
+       "finalWon": 22600,
+       "usable": true
+      },
+      {
+       "id": 60136459848,
+       "code": "FRA00U03D15V2",
+       "cap": 3,
+       "days": 15,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 23400,
+       "finalWon": 24300,
+       "usable": true
+      },
+      {
+       "id": 60136459849,
+       "code": "FRA00U03D16V2",
+       "cap": 3,
+       "days": 16,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 25200,
+       "finalWon": 26100,
+       "usable": true
+      },
+      {
+       "id": 60136459850,
+       "code": "FRA00U03D17V2",
+       "cap": 3,
+       "days": 17,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 28700,
+       "finalWon": 29600,
+       "usable": true
+      },
+      {
+       "id": 60136459851,
+       "code": "FRA00U03D18V2",
+       "cap": 3,
+       "days": 18,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 31200,
+       "finalWon": 32100,
+       "usable": true
+      },
+      {
+       "id": 60136459852,
+       "code": "FRA00U03D19V2",
+       "cap": 3,
+       "days": 19,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 33600,
+       "finalWon": 34500,
+       "usable": true
+      },
+      {
+       "id": 60136459853,
+       "code": "FRA00U03D20V2",
+       "cap": 3,
+       "days": 20,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 36400,
+       "finalWon": 37300,
+       "usable": true
+      },
+      {
+       "id": 60136459854,
+       "code": "FRA00U03D21V2",
+       "cap": 3,
+       "days": 21,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 38700,
+       "finalWon": 39600,
+       "usable": true
+      },
+      {
+       "id": 60136459855,
+       "code": "FRA00U03D22V2",
+       "cap": 3,
+       "days": 22,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 40800,
+       "finalWon": 41700,
+       "usable": true
+      },
+      {
+       "id": 60136459856,
+       "code": "FRA00U03D23V2",
+       "cap": 3,
+       "days": 23,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 42700,
+       "finalWon": 43600,
+       "usable": true
+      },
+      {
+       "id": 60136459857,
+       "code": "FRA00U03D24V2",
+       "cap": 3,
+       "days": 24,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 44700,
+       "finalWon": 45600,
+       "usable": true
+      },
+      {
+       "id": 60136459858,
+       "code": "FRA00U03D25V2",
+       "cap": 3,
+       "days": 25,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 46600,
+       "finalWon": 47500,
+       "usable": true
+      },
+      {
+       "id": 60136459859,
+       "code": "FRA00U03D26V2",
+       "cap": 3,
+       "days": 26,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 48600,
+       "finalWon": 49500,
+       "usable": true
+      },
+      {
+       "id": 60136459860,
+       "code": "FRA00U03D27V2",
+       "cap": 3,
+       "days": 27,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 50500,
+       "finalWon": 51400,
+       "usable": true
+      },
+      {
+       "id": 60136459861,
+       "code": "FRA00U03D28V2",
+       "cap": 3,
+       "days": 28,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 52400,
+       "finalWon": 53300,
+       "usable": true
+      },
+      {
+       "id": 60136459862,
+       "code": "FRA00U03D29V2",
+       "cap": 3,
+       "days": 29,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 54300,
+       "finalWon": 55200,
+       "usable": true
+      },
+      {
+       "id": 60136459863,
+       "code": "FRA00U03D30V2",
+       "cap": 3,
+       "days": 30,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 55800,
+       "finalWon": 56700,
+       "usable": true
+      },
+      {
+       "id": 60136459864,
+       "code": "FRA00U03D60V2",
+       "cap": 3,
+       "days": 60,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 106800,
+       "finalWon": 107700,
+       "usable": true
+      },
+      {
+       "id": 60136459865,
+       "code": "FRA00U03D90V2",
+       "cap": 3,
+       "days": 90,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 155000,
+       "finalWon": 155900,
+       "usable": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "zone": "EU340",
+   "nameKr": "유럽 34개국",
+   "subtitle": "영국·스위스·튀르키예 포함",
+   "countries": [
+    {
+     "iso3": "AUT",
+     "iso2": "AT",
+     "nameKr": "오스트리아",
+     "flag": "🇦🇹",
+     "cities": [
+      "비엔나",
+      "빈",
+      "잘츠부르크",
+      "할슈타트",
+      "인스브루크",
+      "그라츠"
+     ],
+     "operators": [
+      "A1",
+      "Magenta"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "BEL",
+     "iso2": "BE",
+     "nameKr": "벨기에",
+     "flag": "🇧🇪",
+     "cities": [
+      "브뤼셀",
+      "브뤼헤",
+      "겐트",
+      "안트베르펜"
+     ],
+     "operators": [
+      "Orange",
+      "Proximus",
+      "Telenet"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "BGR",
+     "iso2": "BG",
+     "nameKr": "불가리아",
+     "flag": "🇧🇬",
+     "cities": [
+      "소피아",
+      "플로브디프"
+     ],
+     "operators": [
+      "A1",
+      "Vivacom",
+      "Yettel"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "CHE",
+     "iso2": "CH",
+     "nameKr": "스위스",
+     "flag": "🇨🇭",
+     "cities": [
+      "취리히",
+      "인터라켄",
+      "루체른",
+      "그린델발트",
+      "제네바"
+     ],
+     "operators": [
+      "Salt",
+      "Sunrise"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "CYP",
+     "iso2": "CY",
+     "nameKr": "키프로스",
+     "flag": "🇨🇾",
+     "cities": [
+      "리마솔",
+      "라르나카",
+      "파포스"
+     ],
+     "operators": [
+      "Epic"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "CZE",
+     "iso2": "CZ",
+     "nameKr": "체코",
+     "flag": "🇨🇿",
+     "cities": [
+      "프라하",
+      "체스키크룸로프",
+      "브르노",
+      "카를로비바리"
+     ],
+     "operators": [
+      "O2",
+      "T-Mobile",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "DEU",
+     "iso2": "DE",
+     "nameKr": "독일",
+     "flag": "🇩🇪",
+     "cities": [
+      "프랑크푸르트",
+      "함부르크",
+      "베를린",
+      "뮌헨",
+      "쾰른",
+      "뒤셀도르프",
+      "하이델베르크",
+      "퓌센"
+     ],
+     "operators": [
+      "O2",
+      "Telekom",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "DNK",
+     "iso2": "DK",
+     "nameKr": "덴마크",
+     "flag": "🇩🇰",
+     "cities": [
+      "코펜하겐",
+      "오르후스",
+      "오덴세"
+     ],
+     "operators": [
+      "TDC",
+      "Telenor"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "EST",
+     "iso2": "EE",
+     "nameKr": "에스토니아",
+     "flag": "🇪🇪",
+     "cities": [
+      "탈린",
+      "타르투",
+      "패르누"
+     ],
+     "operators": [
+      "Elisa",
+      "Tele2",
+      "Telia"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "FIN",
+     "iso2": "FI",
+     "nameKr": "핀란드",
+     "flag": "🇫🇮",
+     "cities": [
+      "헬싱키",
+      "투르쿠",
+      "로바니에미",
+      "탐페레"
+     ],
+     "operators": [
+      "DNA",
+      "Elisa",
+      "Telia"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "FRA",
+     "iso2": "FR",
+     "nameKr": "프랑스",
+     "flag": "🇫🇷",
+     "cities": [
+      "파리",
+      "니스",
+      "보르도",
+      "리옹",
+      "몽생미셸",
+      "스트라스부르"
+     ],
+     "operators": [
+      "Bouygues Telecom",
+      "Free",
+      "Orange"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "GBR",
+     "iso2": "GB",
+     "nameKr": "영국",
+     "flag": "🇬🇧",
+     "cities": [
+      "런던",
+      "맨체스터",
+      "에든버러"
+     ],
+     "operators": [
+      "EE",
+      "O2",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "GRC",
+     "iso2": "GR",
+     "nameKr": "그리스",
+     "flag": "🇬🇷",
+     "cities": [
+      "아테네",
+      "산토리니"
+     ],
+     "operators": [
+      "Cosmote",
+      "Nova",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "HRV",
+     "iso2": "HR",
+     "nameKr": "크로아티아",
+     "flag": "🇭🇷",
+     "cities": [
+      "자그레브",
+      "두브로브니크",
+      "스플리트",
+      "플리트비체"
+     ],
+     "operators": [
+      "A1",
+      "Hrvatski Telekom",
+      "Telemach"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "HUN",
+     "iso2": "HU",
+     "nameKr": "헝가리",
+     "flag": "🇭🇺",
+     "cities": [
+      "부다페스트",
+      "에게르",
+      "센텐드레",
+      "죄르"
+     ],
+     "operators": [
+      "One",
+      "Telekom",
+      "Yettel"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "IRL",
+     "iso2": "IE",
+     "nameKr": "아일랜드",
+     "flag": "🇮🇪",
+     "cities": [
+      "더블린",
+      "골웨이",
+      "코크"
+     ],
+     "operators": [
+      "eir",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "ITA",
+     "iso2": "IT",
+     "nameKr": "이탈리아",
+     "flag": "🇮🇹",
+     "cities": [
+      "로마",
+      "피렌체",
+      "베네치아",
+      "밀라노",
+      "나폴리"
+     ],
+     "operators": [
+      "Iliad",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "LIE",
+     "iso2": "LI",
+     "nameKr": "리히텐슈타인",
+     "flag": "🇱🇮",
+     "cities": [
+      "파두츠",
+      "말분"
+     ],
+     "operators": [
+      "FL1"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "LTU",
+     "iso2": "LT",
+     "nameKr": "리투아니아",
+     "flag": "🇱🇹",
+     "cities": [
+      "빌뉴스",
+      "카우나스"
+     ],
+     "operators": [
+      "Bitė",
+      "Tele2",
+      "Telia"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "LUX",
+     "iso2": "LU",
+     "nameKr": "룩셈부르크",
+     "flag": "🇱🇺",
+     "cities": [
+      "룩셈부르크",
+      "에히터나흐"
+     ],
+     "operators": [
+      "Orange",
+      "Tango"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "LVA",
+     "iso2": "LV",
+     "nameKr": "라트비아",
+     "flag": "🇱🇻",
+     "cities": [
+      "리가",
+      "유르말라",
+      "리예파야"
+     ],
+     "operators": [
+      "Bite",
+      "LMT",
+      "Tele2"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "MKD",
+     "iso2": "MK",
+     "nameKr": "북마케도니아",
+     "flag": "🇲🇰",
+     "cities": [
+      "스코페",
+      "오흐리드",
+      "비톨라"
+     ],
+     "operators": [
+      "A1",
+      "Telekom"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "MLT",
+     "iso2": "MT",
+     "nameKr": "몰타",
+     "flag": "🇲🇹",
+     "cities": [
+      "발레타",
+      "임디나",
+      "라바트"
+     ],
+     "operators": [
+      "Epic",
+      "Melita"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "NLD",
+     "iso2": "NL",
+     "nameKr": "네덜란드",
+     "flag": "🇳🇱",
+     "cities": [
+      "암스테르담",
+      "로테르담",
+      "헤이그",
+      "위트레흐트",
+      "잔세스칸스",
+      "큐켄호프"
+     ],
+     "operators": [
+      "KPN",
+      "Odido",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "NOR",
+     "iso2": "NO",
+     "nameKr": "노르웨이",
+     "flag": "🇳🇴",
+     "cities": [
+      "오슬로",
+      "베르겐",
+      "트롬쇠",
+      "플롬",
+      "스타방게르",
+      "로포텐"
+     ],
+     "operators": [
+      "ice",
+      "Telenor",
+      "Telia"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "POL",
+     "iso2": "PL",
+     "nameKr": "폴란드",
+     "flag": "🇵🇱",
+     "cities": [
+      "바르샤바",
+      "크라쿠프"
+     ],
+     "operators": [
+      "Plus"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "PRT",
+     "iso2": "PT",
+     "nameKr": "포르투갈",
+     "flag": "🇵🇹",
+     "cities": [
+      "리스본",
+      "포르투",
+      "신트라",
+      "코임브라",
+      "알가르브",
+      "파티마"
+     ],
+     "operators": [
+      "MEO",
+      "NOS",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "ROU",
+     "iso2": "RO",
+     "nameKr": "루마니아",
+     "flag": "🇷🇴",
+     "cities": [
+      "부쿠레슈티",
+      "시기쇼아라"
+     ],
+     "operators": [
+      "DIGI",
+      "Orange",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "SVK",
+     "iso2": "SK",
+     "nameKr": "슬로바키아",
+     "flag": "🇸🇰",
+     "cities": [
+      "브라티슬라바",
+      "코시체"
+     ],
+     "operators": [
+      "O2",
+      "Orange",
+      "Telekom"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "SVN",
+     "iso2": "SI",
+     "nameKr": "슬로베니아",
+     "flag": "🇸🇮",
+     "cities": [
+      "류블랴나",
+      "블레드",
+      "피란"
+     ],
+     "operators": [
+      "A1",
+      "Telemach"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "SWE",
+     "iso2": "SE",
+     "nameKr": "스웨덴",
+     "flag": "🇸🇪",
+     "cities": [
+      "스톡홀름",
+      "예테보리",
+      "말뫼"
+     ],
+     "operators": [
+      "Tele2",
+      "Telenor",
+      "Telia"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "TUR",
+     "iso2": "TR",
+     "nameKr": "튀르키예",
+     "flag": "🇹🇷",
+     "cities": [
+      "이스탄불",
+      "카파도키아"
+     ],
+     "operators": [
+      "Türk Telekom",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "ESP",
+     "iso2": "ES",
+     "nameKr": "스페인",
+     "flag": "🇪🇸",
+     "cities": [
+      "마드리드",
+      "바르셀로나",
+      "세비야",
+      "발렌시아",
+      "그라나다",
+      "말라가"
+     ],
+     "operators": [
+      "Movistar",
+      "Orange",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "ISL",
+     "iso2": "IS",
+     "nameKr": "아이슬란드",
+     "flag": "🇮🇸",
+     "cities": [
+      "레이캬비크",
+      "아퀴레이리",
+      "아쿠레이리",
+      "비크"
+     ],
+     "operators": [
+      "Síminn",
+      "Vodafone"
+     ],
+     "network": "4G/LTE · 5G"
+    }
+   ],
+   "map": {
+    "svg": "/catalog/maps/EU340.svg",
+    "pins": [
+     {
+      "name": "파리",
+      "x": 42.5,
+      "y": 57.5,
+      "size": "normal",
+      "labelDir": "left"
+     },
+     {
+      "name": "로마",
+      "x": 52.3,
+      "y": 70.5,
+      "size": "normal",
+      "labelDir": "left"
+     },
+     {
+      "name": "바르셀로나",
+      "x": 42.3,
+      "y": 71.4,
+      "size": "normal",
+      "labelDir": "right"
+     },
+     {
+      "name": "런던",
+      "x": 40.1,
+      "y": 52.6,
+      "size": "normal",
+      "labelDir": "right",
+      "labelShift": "down"
+     },
+     {
+      "name": "부다페스트",
+      "x": 58.6,
+      "y": 60.0,
+      "size": "normal",
+      "labelDir": "left"
+     },
+     {
+      "name": "리스본",
+      "x": 31.4,
+      "y": 76.4,
+      "size": "normal",
+      "labelDir": "left",
+      "labelShift": "down"
+     },
+     {
+      "name": "이스탄불",
+      "x": 68.2,
+      "y": 72.1,
+      "size": "normal",
+      "labelDir": "left"
+     },
+     {
+      "name": "오슬로",
+      "x": 50.6,
+      "y": 36.9,
+      "size": "normal",
+      "labelDir": "right"
+     },
+     {
+      "name": "코펜하겐",
+      "x": 52.3,
+      "y": 44.8,
+      "size": "normal",
+      "labelDir": "right"
+     },
+     {
+      "name": "스톡홀름",
+      "x": 57.6,
+      "y": 38.0,
+      "size": "normal",
+      "labelDir": "left",
+      "labelShift": "down"
+     },
+     {
+      "name": "헬싱키",
+      "x": 64.3,
+      "y": 36.5,
+      "size": "normal",
+      "labelDir": "left"
+     },
+     {
+      "name": "레이캬비크",
+      "x": 19.1,
+      "y": 29.1,
+      "size": "normal",
+      "labelDir": "left"
+     },
+     {
+      "name": "바르샤바",
+      "x": 60.5,
+      "y": 51.2,
+      "size": "normal",
+      "labelDir": "left"
+     },
+     {
+      "name": "더블린",
+      "x": 34.2,
+      "y": 49.2,
+      "size": "normal",
+      "labelDir": "right"
+     },
+     {
+      "name": "발레타",
+      "x": 54.2,
+      "y": 81.6,
+      "size": "normal",
+      "labelDir": "left"
+     },
+     {
+      "name": "리마솔",
+      "x": 72.1,
+      "y": 83.8,
+      "size": "normal",
+      "labelDir": "left"
+     }
+    ]
+   },
+   "products": [
+    {
+     "sku": "EU340U",
+     "kind": "U",
+     "channelProductNo": 13770888635,
+     "naverName": "유럽 34개국 eSIM 무제한 데이터",
+     "naverUrl": "https://smartstore.naver.com/esimmany/products/13770888635?nt_source=esimmany-web&nt_medium=detail&nt_detail=EU340U",
+     "saleStatus": "SALE",
+     "displayStatus": "ON",
+     "images": {
+      "thumb": "/catalog/thumbs/EU340U.webp"
+     },
+     "salePriceWon": 119900,
+     "immediateDiscountWon": 118600,
+     "options": [
+      {
+       "id": 60136983346,
+       "code": "EU340U01D01V2",
+       "cap": 1,
+       "days": 1,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 0,
+       "finalWon": 1300,
+       "usable": true
+      },
+      {
+       "id": 60136983347,
+       "code": "EU340U01D02V2",
+       "cap": 1,
+       "days": 2,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 700,
+       "finalWon": 2000,
+       "usable": true
+      },
+      {
+       "id": 60136983348,
+       "code": "EU340U01D03V2",
+       "cap": 1,
+       "days": 3,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 1300,
+       "finalWon": 2600,
+       "usable": true
+      },
+      {
+       "id": 60136983349,
+       "code": "EU340U01D04V2",
+       "cap": 1,
+       "days": 4,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 2200,
+       "finalWon": 3500,
+       "usable": true
+      },
+      {
+       "id": 60136983350,
+       "code": "EU340U01D05V2",
+       "cap": 1,
+       "days": 5,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 2800,
+       "finalWon": 4100,
+       "usable": true
+      },
+      {
+       "id": 60136983351,
+       "code": "EU340U01D06V2",
+       "cap": 1,
+       "days": 6,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 3600,
+       "finalWon": 4900,
+       "usable": true
+      },
+      {
+       "id": 60136983352,
+       "code": "EU340U01D07V2",
+       "cap": 1,
+       "days": 7,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 4300,
+       "finalWon": 5600,
+       "usable": true
+      },
+      {
+       "id": 60136983353,
+       "code": "EU340U01D08V2",
+       "cap": 1,
+       "days": 8,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 5200,
+       "finalWon": 6500,
+       "usable": true
+      },
+      {
+       "id": 60136983354,
+       "code": "EU340U01D09V2",
+       "cap": 1,
+       "days": 9,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 5900,
+       "finalWon": 7200,
+       "usable": true
+      },
+      {
+       "id": 60136983355,
+       "code": "EU340U01D10V2",
+       "cap": 1,
+       "days": 10,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 6400,
+       "finalWon": 7700,
+       "usable": true
+      },
+      {
+       "id": 60136983356,
+       "code": "EU340U01D11V2",
+       "cap": 1,
+       "days": 11,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 7300,
+       "finalWon": 8600,
+       "usable": true
+      },
+      {
+       "id": 60136983357,
+       "code": "EU340U01D12V2",
+       "cap": 1,
+       "days": 12,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 8200,
+       "finalWon": 9500,
+       "usable": true
+      },
+      {
+       "id": 60136983358,
+       "code": "EU340U01D13V2",
+       "cap": 1,
+       "days": 13,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 9000,
+       "finalWon": 10300,
+       "usable": true
+      },
+      {
+       "id": 60136983359,
+       "code": "EU340U01D14V2",
+       "cap": 1,
+       "days": 14,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 9500,
+       "finalWon": 10800,
+       "usable": true
+      },
+      {
+       "id": 60136983360,
+       "code": "EU340U01D15V2",
+       "cap": 1,
+       "days": 15,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 10200,
+       "finalWon": 11500,
+       "usable": true
+      },
+      {
+       "id": 60136983361,
+       "code": "EU340U01D16V2",
+       "cap": 1,
+       "days": 16,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 11100,
+       "finalWon": 12400,
+       "usable": true
+      },
+      {
+       "id": 60136983362,
+       "code": "EU340U01D17V2",
+       "cap": 1,
+       "days": 17,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 11800,
+       "finalWon": 13100,
+       "usable": true
+      },
+      {
+       "id": 60136983363,
+       "code": "EU340U01D18V2",
+       "cap": 1,
+       "days": 18,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 12600,
+       "finalWon": 13900,
+       "usable": true
+      },
+      {
+       "id": 60136983364,
+       "code": "EU340U01D19V2",
+       "cap": 1,
+       "days": 19,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 13500,
+       "finalWon": 14800,
+       "usable": true
+      },
+      {
+       "id": 60136983365,
+       "code": "EU340U01D20V2",
+       "cap": 1,
+       "days": 20,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 14000,
+       "finalWon": 15300,
+       "usable": true
+      },
+      {
+       "id": 60136983366,
+       "code": "EU340U01D21V2",
+       "cap": 1,
+       "days": 21,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 14900,
+       "finalWon": 16200,
+       "usable": true
+      },
+      {
+       "id": 60136983367,
+       "code": "EU340U01D22V2",
+       "cap": 1,
+       "days": 22,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 15800,
+       "finalWon": 17100,
+       "usable": true
+      },
+      {
+       "id": 60136983368,
+       "code": "EU340U01D23V2",
+       "cap": 1,
+       "days": 23,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 16700,
+       "finalWon": 18000,
+       "usable": true
+      },
+      {
+       "id": 60136983370,
+       "code": "EU340U01D24V2",
+       "cap": 1,
+       "days": 24,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 17500,
+       "finalWon": 18800,
+       "usable": true
+      },
+      {
+       "id": 60136983372,
+       "code": "EU340U01D25V2",
+       "cap": 1,
+       "days": 25,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 18300,
+       "finalWon": 19600,
+       "usable": true
+      },
+      {
+       "id": 60136983374,
+       "code": "EU340U01D26V2",
+       "cap": 1,
+       "days": 26,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 19000,
+       "finalWon": 20300,
+       "usable": true
+      },
+      {
+       "id": 60136983376,
+       "code": "EU340U01D27V2",
+       "cap": 1,
+       "days": 27,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 19800,
+       "finalWon": 21100,
+       "usable": true
+      },
+      {
+       "id": 60136983378,
+       "code": "EU340U01D28V2",
+       "cap": 1,
+       "days": 28,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 20500,
+       "finalWon": 21800,
+       "usable": true
+      },
+      {
+       "id": 60136983380,
+       "code": "EU340U01D29V2",
+       "cap": 1,
+       "days": 29,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 21300,
+       "finalWon": 22600,
+       "usable": true
+      },
+      {
+       "id": 60136983381,
+       "code": "EU340U01D30V2",
+       "cap": 1,
+       "days": 30,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 22100,
+       "finalWon": 23400,
+       "usable": true
+      },
+      {
+       "id": 60136983382,
+       "code": "EU340U01D60V2",
+       "cap": 1,
+       "days": 60,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 44300,
+       "finalWon": 45600,
+       "usable": true
+      },
+      {
+       "id": 60136983383,
+       "code": "EU340U01D90V2",
+       "cap": 1,
+       "days": 90,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 65300,
+       "finalWon": 66600,
+       "usable": true
+      },
+      {
+       "id": 60136983385,
+       "code": "EU340U02D01V2",
+       "cap": 2,
+       "days": 1,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 500,
+       "finalWon": 1800,
+       "usable": true
+      },
+      {
+       "id": 60136983387,
+       "code": "EU340U02D02V2",
+       "cap": 2,
+       "days": 2,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 1900,
+       "finalWon": 3200,
+       "usable": true
+      },
+      {
+       "id": 60136983389,
+       "code": "EU340U02D03V2",
+       "cap": 2,
+       "days": 3,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 2800,
+       "finalWon": 4100,
+       "usable": true
+      },
+      {
+       "id": 60136983391,
+       "code": "EU340U02D04V2",
+       "cap": 2,
+       "days": 4,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 4500,
+       "finalWon": 5800,
+       "usable": true
+      },
+      {
+       "id": 60136983393,
+       "code": "EU340U02D05V2",
+       "cap": 2,
+       "days": 5,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 5700,
+       "finalWon": 7000,
+       "usable": true
+      },
+      {
+       "id": 60136983395,
+       "code": "EU340U02D06V2",
+       "cap": 2,
+       "days": 6,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 7300,
+       "finalWon": 8600,
+       "usable": true
+      },
+      {
+       "id": 60136983397,
+       "code": "EU340U02D07V2",
+       "cap": 2,
+       "days": 7,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 8500,
+       "finalWon": 9800,
+       "usable": true
+      },
+      {
+       "id": 60136983399,
+       "code": "EU340U02D08V2",
+       "cap": 2,
+       "days": 8,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 10200,
+       "finalWon": 11500,
+       "usable": true
+      },
+      {
+       "id": 60136983401,
+       "code": "EU340U02D09V2",
+       "cap": 2,
+       "days": 9,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 11400,
+       "finalWon": 12700,
+       "usable": true
+      },
+      {
+       "id": 60136983403,
+       "code": "EU340U02D10V2",
+       "cap": 2,
+       "days": 10,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 12200,
+       "finalWon": 13500,
+       "usable": true
+      },
+      {
+       "id": 60136983406,
+       "code": "EU340U02D11V2",
+       "cap": 2,
+       "days": 11,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 14100,
+       "finalWon": 15400,
+       "usable": true
+      },
+      {
+       "id": 60136983409,
+       "code": "EU340U02D12V2",
+       "cap": 2,
+       "days": 12,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 15800,
+       "finalWon": 17100,
+       "usable": true
+      },
+      {
+       "id": 60136983412,
+       "code": "EU340U02D13V2",
+       "cap": 2,
+       "days": 13,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 17300,
+       "finalWon": 18600,
+       "usable": true
+      },
+      {
+       "id": 60136983415,
+       "code": "EU340U02D14V2",
+       "cap": 2,
+       "days": 14,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 18600,
+       "finalWon": 19900,
+       "usable": true
+      },
+      {
+       "id": 60136983417,
+       "code": "EU340U02D15V2",
+       "cap": 2,
+       "days": 15,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 19500,
+       "finalWon": 20800,
+       "usable": true
+      },
+      {
+       "id": 60136983419,
+       "code": "EU340U02D16V2",
+       "cap": 2,
+       "days": 16,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 21200,
+       "finalWon": 22500,
+       "usable": true
+      },
+      {
+       "id": 60136983421,
+       "code": "EU340U02D17V2",
+       "cap": 2,
+       "days": 17,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 22900,
+       "finalWon": 24200,
+       "usable": true
+      },
+      {
+       "id": 60136983423,
+       "code": "EU340U02D18V2",
+       "cap": 2,
+       "days": 18,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 24300,
+       "finalWon": 25600,
+       "usable": true
+      },
+      {
+       "id": 60136983425,
+       "code": "EU340U02D19V2",
+       "cap": 2,
+       "days": 19,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 25500,
+       "finalWon": 26800,
+       "usable": true
+      },
+      {
+       "id": 60136983427,
+       "code": "EU340U02D20V2",
+       "cap": 2,
+       "days": 20,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 26500,
+       "finalWon": 27800,
+       "usable": true
+      },
+      {
+       "id": 60136983429,
+       "code": "EU340U02D21V2",
+       "cap": 2,
+       "days": 21,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 28200,
+       "finalWon": 29500,
+       "usable": true
+      },
+      {
+       "id": 60136983431,
+       "code": "EU340U02D22V2",
+       "cap": 2,
+       "days": 22,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 29800,
+       "finalWon": 31100,
+       "usable": true
+      },
+      {
+       "id": 60136983433,
+       "code": "EU340U02D23V2",
+       "cap": 2,
+       "days": 23,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 31200,
+       "finalWon": 32500,
+       "usable": true
+      },
+      {
+       "id": 60136983435,
+       "code": "EU340U02D24V2",
+       "cap": 2,
+       "days": 24,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 32700,
+       "finalWon": 34000,
+       "usable": true
+      },
+      {
+       "id": 60136983437,
+       "code": "EU340U02D25V2",
+       "cap": 2,
+       "days": 25,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 34000,
+       "finalWon": 35300,
+       "usable": true
+      },
+      {
+       "id": 60136983439,
+       "code": "EU340U02D26V2",
+       "cap": 2,
+       "days": 26,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 35500,
+       "finalWon": 36800,
+       "usable": true
+      },
+      {
+       "id": 60136983440,
+       "code": "EU340U02D27V2",
+       "cap": 2,
+       "days": 27,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 36900,
+       "finalWon": 38200,
+       "usable": true
+      },
+      {
+       "id": 60136983442,
+       "code": "EU340U02D28V2",
+       "cap": 2,
+       "days": 28,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 38300,
+       "finalWon": 39600,
+       "usable": true
+      },
+      {
+       "id": 60136983444,
+       "code": "EU340U02D29V2",
+       "cap": 2,
+       "days": 29,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 39600,
+       "finalWon": 40900,
+       "usable": true
+      },
+      {
+       "id": 60136983446,
+       "code": "EU340U02D30V2",
+       "cap": 2,
+       "days": 30,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 40500,
+       "finalWon": 41800,
+       "usable": true
+      },
+      {
+       "id": 60136983448,
+       "code": "EU340U02D60V2",
+       "cap": 2,
+       "days": 60,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 80200,
+       "finalWon": 81500,
+       "usable": true
+      },
+      {
+       "id": 60136983450,
+       "code": "EU340U02D90V2",
+       "cap": 2,
+       "days": 90,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 117800,
+       "finalWon": 119100,
+       "usable": true
+      },
+      {
+       "id": 60136983452,
+       "code": "EU340U03D01V2",
+       "cap": 3,
+       "days": 1,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 1000,
+       "finalWon": 2300,
+       "usable": true
+      },
+      {
+       "id": 60136983454,
+       "code": "EU340U03D02V2",
+       "cap": 3,
+       "days": 2,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 3000,
+       "finalWon": 4300,
+       "usable": true
+      },
+      {
+       "id": 60136983456,
+       "code": "EU340U03D03V2",
+       "cap": 3,
+       "days": 3,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 4900,
+       "finalWon": 6200,
+       "usable": true
+      },
+      {
+       "id": 60136983458,
+       "code": "EU340U03D04V2",
+       "cap": 3,
+       "days": 4,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 6800,
+       "finalWon": 8100,
+       "usable": true
+      },
+      {
+       "id": 60136983460,
+       "code": "EU340U03D05V2",
+       "cap": 3,
+       "days": 5,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 8200,
+       "finalWon": 9500,
+       "usable": true
+      },
+      {
+       "id": 60136983462,
+       "code": "EU340U03D06V2",
+       "cap": 3,
+       "days": 6,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 10200,
+       "finalWon": 11500,
+       "usable": true
+      },
+      {
+       "id": 60136983463,
+       "code": "EU340U03D07V2",
+       "cap": 3,
+       "days": 7,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 12100,
+       "finalWon": 13400,
+       "usable": true
+      },
+      {
+       "id": 60136983465,
+       "code": "EU340U03D08V2",
+       "cap": 3,
+       "days": 8,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 14000,
+       "finalWon": 15300,
+       "usable": true
+      },
+      {
+       "id": 60136983466,
+       "code": "EU340U03D09V2",
+       "cap": 3,
+       "days": 9,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 15300,
+       "finalWon": 16600,
+       "usable": true
+      },
+      {
+       "id": 60136983468,
+       "code": "EU340U03D10V2",
+       "cap": 3,
+       "days": 10,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 15800,
+       "finalWon": 17100,
+       "usable": true
+      },
+      {
+       "id": 60136983470,
+       "code": "EU340U03D11V2",
+       "cap": 3,
+       "days": 11,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 17100,
+       "finalWon": 18400,
+       "usable": true
+      },
+      {
+       "id": 60136983472,
+       "code": "EU340U03D12V2",
+       "cap": 3,
+       "days": 12,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 18000,
+       "finalWon": 19300,
+       "usable": true
+      },
+      {
+       "id": 60136983474,
+       "code": "EU340U03D13V2",
+       "cap": 3,
+       "days": 13,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 20100,
+       "finalWon": 21400,
+       "usable": true
+      },
+      {
+       "id": 60136983475,
+       "code": "EU340U03D14V2",
+       "cap": 3,
+       "days": 14,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 22000,
+       "finalWon": 23300,
+       "usable": true
+      },
+      {
+       "id": 60136983477,
+       "code": "EU340U03D15V2",
+       "cap": 3,
+       "days": 15,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 23700,
+       "finalWon": 25000,
+       "usable": true
+      },
+      {
+       "id": 60136983478,
+       "code": "EU340U03D16V2",
+       "cap": 3,
+       "days": 16,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 25500,
+       "finalWon": 26800,
+       "usable": true
+      },
+      {
+       "id": 60136983479,
+       "code": "EU340U03D17V2",
+       "cap": 3,
+       "days": 17,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 29000,
+       "finalWon": 30300,
+       "usable": true
+      },
+      {
+       "id": 60136983481,
+       "code": "EU340U03D18V2",
+       "cap": 3,
+       "days": 18,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 31500,
+       "finalWon": 32800,
+       "usable": true
+      },
+      {
+       "id": 60136983482,
+       "code": "EU340U03D19V2",
+       "cap": 3,
+       "days": 19,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 33900,
+       "finalWon": 35200,
+       "usable": true
+      },
+      {
+       "id": 60136983483,
+       "code": "EU340U03D20V2",
+       "cap": 3,
+       "days": 20,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 36700,
+       "finalWon": 38000,
+       "usable": true
+      },
+      {
+       "id": 60136983484,
+       "code": "EU340U03D21V2",
+       "cap": 3,
+       "days": 21,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 39000,
+       "finalWon": 40300,
+       "usable": true
+      },
+      {
+       "id": 60136983486,
+       "code": "EU340U03D22V2",
+       "cap": 3,
+       "days": 22,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 41100,
+       "finalWon": 42400,
+       "usable": true
+      },
+      {
+       "id": 60136983488,
+       "code": "EU340U03D23V2",
+       "cap": 3,
+       "days": 23,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 43000,
+       "finalWon": 44300,
+       "usable": true
+      },
+      {
+       "id": 60136983490,
+       "code": "EU340U03D24V2",
+       "cap": 3,
+       "days": 24,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 45000,
+       "finalWon": 46300,
+       "usable": true
+      },
+      {
+       "id": 60136983492,
+       "code": "EU340U03D25V2",
+       "cap": 3,
+       "days": 25,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 46900,
+       "finalWon": 48200,
+       "usable": true
+      },
+      {
+       "id": 60136983494,
+       "code": "EU340U03D26V2",
+       "cap": 3,
+       "days": 26,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 48900,
+       "finalWon": 50200,
+       "usable": true
+      },
+      {
+       "id": 60136983495,
+       "code": "EU340U03D27V2",
+       "cap": 3,
+       "days": 27,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 50800,
+       "finalWon": 52100,
+       "usable": true
+      },
+      {
+       "id": 60136983498,
+       "code": "EU340U03D28V2",
+       "cap": 3,
+       "days": 28,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 52700,
+       "finalWon": 54000,
+       "usable": true
+      },
+      {
+       "id": 60136983499,
+       "code": "EU340U03D29V2",
+       "cap": 3,
+       "days": 29,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 54600,
+       "finalWon": 55900,
+       "usable": true
+      },
+      {
+       "id": 60136983501,
+       "code": "EU340U03D30V2",
+       "cap": 3,
+       "days": 30,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 56100,
+       "finalWon": 57400,
+       "usable": true
+      },
+      {
+       "id": 60136983503,
+       "code": "EU340U03D60V2",
+       "cap": 3,
+       "days": 60,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 110600,
+       "finalWon": 111900,
+       "usable": true
+      },
+      {
+       "id": 60136983504,
+       "code": "EU340U03D90V2",
+       "cap": 3,
+       "days": 90,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 162200,
+       "finalWon": 163500,
+       "usable": true
+      }
+     ]
+    },
+    {
+     "sku": "EU340L",
+     "kind": "L",
+     "channelProductNo": 13770891740,
+     "naverName": "유럽 34개국 eSIM 종량제 데이터",
+     "naverUrl": "https://smartstore.naver.com/esimmany/products/13770891740?nt_source=esimmany-web&nt_medium=detail&nt_detail=EU340L",
+     "saleStatus": "SALE",
+     "displayStatus": "ON",
+     "images": {
+      "thumb": "/catalog/thumbs/EU340L.webp"
+     },
+     "salePriceWon": 119900,
+     "immediateDiscountWon": 114700,
+     "options": [
+      {
+       "id": 60137025657,
+       "code": "EU340L01D30V2",
+       "cap": 1,
+       "days": 30,
+       "optionName1": "1기가",
+       "optionName2": "30일",
+       "optionPriceWon": 0,
+       "finalWon": 5200,
+       "usable": true
+      },
+      {
+       "id": 60137025658,
+       "code": "EU340L03D30V2",
+       "cap": 3,
+       "days": 30,
+       "optionName1": "3기가",
+       "optionName2": "30일",
+       "optionPriceWon": 4100,
+       "finalWon": 9300,
+       "usable": true
+      },
+      {
+       "id": 60137025663,
+       "code": "EU340L05D30V2",
+       "cap": 5,
+       "days": 30,
+       "optionName1": "5기가",
+       "optionName2": "30일",
+       "optionPriceWon": 7200,
+       "finalWon": 12400,
+       "usable": true
+      },
+      {
+       "id": 60137025666,
+       "code": "EU340L07D30V2",
+       "cap": 7,
+       "days": 30,
+       "optionName1": "7기가",
+       "optionName2": "30일",
+       "optionPriceWon": 11300,
+       "finalWon": 16500,
+       "usable": true
+      },
+      {
+       "id": 60137025669,
+       "code": "EU340L10D30V2",
+       "cap": 10,
+       "days": 30,
+       "optionName1": "10기가",
+       "optionName2": "30일",
+       "optionPriceWon": 17500,
+       "finalWon": 22700,
+       "usable": true
+      },
+      {
+       "id": 60137025671,
+       "code": "EU340L20D30V2",
+       "cap": 20,
+       "days": 30,
+       "optionName1": "20기가",
+       "optionName2": "30일",
+       "optionPriceWon": 33100,
+       "finalWon": 38300,
+       "usable": true
+      },
+      {
+       "id": 60137025673,
+       "code": "EU340L30D30V2",
+       "cap": 30,
+       "days": 30,
+       "optionName1": "30기가",
+       "optionName2": "30일",
+       "optionPriceWon": 49300,
+       "finalWon": 54500,
+       "usable": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "zone": "NA022",
+   "nameKr": "미국·캐나다",
+   "subtitle": "뉴욕·LA·밴쿠버·토론토 등 전지역",
+   "countries": [
+    {
+     "iso3": "USA",
+     "iso2": "US",
+     "nameKr": "미국",
+     "flag": "🇺🇸",
+     "cities": [
+      "뉴욕",
+      "LA",
+      "하와이"
+     ],
+     "operators": [
+      "AT&T",
+      "Verizon"
+     ],
+     "network": "4G/LTE · 5G"
+    },
+    {
+     "iso3": "CAN",
+     "iso2": "CA",
+     "nameKr": "캐나다",
+     "flag": "🇨🇦",
+     "cities": [
+      "밴쿠버",
+      "토론토",
+      "몬트리올"
+     ],
+     "operators": [
+      "Bell",
+      "Eastlink",
+      "Freedom Mobile",
+      "Telus"
+     ],
+     "network": "4G/LTE · 5G"
+    }
+   ],
+   "map": {
+    "svg": "/catalog/maps/NA022.svg",
+    "pins": [
+     {
+      "name": "뉴욕",
+      "x": 67.4,
+      "y": 62.6,
+      "size": "big",
+      "labelDir": "left"
+     },
+     {
+      "name": "밴쿠버",
+      "x": 30.0,
+      "y": 50.8,
+      "size": "big",
+      "labelDir": "left"
+     },
+     {
+      "name": "LA",
+      "x": 33.7,
+      "y": 71.7,
+      "size": "normal",
+      "labelDir": "left"
+     },
+     {
+      "name": "몬트리올",
+      "x": 67.7,
+      "y": 56.0,
+      "size": "normal",
+      "labelDir": "right"
+     }
+    ]
+   },
+   "products": [
+    {
+     "sku": "NA022U",
+     "kind": "U",
+     "channelProductNo": 13770889764,
+     "naverName": "미국 캐나다 eSIM 무제한 데이터",
+     "naverUrl": "https://smartstore.naver.com/esimmany/products/13770889764?nt_source=esimmany-web&nt_medium=detail&nt_detail=NA022U",
+     "saleStatus": "SALE",
+     "displayStatus": "ON",
+     "images": {
+      "thumb": "/catalog/thumbs/NA022U.webp"
+     },
+     "salePriceWon": 119900,
+     "immediateDiscountWon": 117400,
+     "options": [
+      {
+       "id": 60136999562,
+       "code": "NA022U01D01V2",
+       "cap": 1,
+       "days": 1,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 0,
+       "finalWon": 2500,
+       "usable": true
+      },
+      {
+       "id": 60136999565,
+       "code": "NA022U01D02V2",
+       "cap": 1,
+       "days": 2,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 1900,
+       "finalWon": 4400,
+       "usable": true
+      },
+      {
+       "id": 60136999568,
+       "code": "NA022U01D03V2",
+       "cap": 1,
+       "days": 3,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 3600,
+       "finalWon": 6100,
+       "usable": true
+      },
+      {
+       "id": 60136999571,
+       "code": "NA022U01D04V2",
+       "cap": 1,
+       "days": 4,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 5500,
+       "finalWon": 8000,
+       "usable": true
+      },
+      {
+       "id": 60136999574,
+       "code": "NA022U01D05V2",
+       "cap": 1,
+       "days": 5,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 7300,
+       "finalWon": 9800,
+       "usable": true
+      },
+      {
+       "id": 60136999577,
+       "code": "NA022U01D06V2",
+       "cap": 1,
+       "days": 6,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 9100,
+       "finalWon": 11600,
+       "usable": true
+      },
+      {
+       "id": 60136999579,
+       "code": "NA022U01D07V2",
+       "cap": 1,
+       "days": 7,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 10900,
+       "finalWon": 13400,
+       "usable": true
+      },
+      {
+       "id": 60136999582,
+       "code": "NA022U01D08V2",
+       "cap": 1,
+       "days": 8,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 11800,
+       "finalWon": 14300,
+       "usable": true
+      },
+      {
+       "id": 60136999585,
+       "code": "NA022U01D09V2",
+       "cap": 1,
+       "days": 9,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 12700,
+       "finalWon": 15200,
+       "usable": true
+      },
+      {
+       "id": 60136999588,
+       "code": "NA022U01D10V2",
+       "cap": 1,
+       "days": 10,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 14000,
+       "finalWon": 16500,
+       "usable": true
+      },
+      {
+       "id": 60136999590,
+       "code": "NA022U01D11V2",
+       "cap": 1,
+       "days": 11,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 15900,
+       "finalWon": 18400,
+       "usable": true
+      },
+      {
+       "id": 60136999593,
+       "code": "NA022U01D12V2",
+       "cap": 1,
+       "days": 12,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 17800,
+       "finalWon": 20300,
+       "usable": true
+      },
+      {
+       "id": 60136999596,
+       "code": "NA022U01D13V2",
+       "cap": 1,
+       "days": 13,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 19700,
+       "finalWon": 22200,
+       "usable": true
+      },
+      {
+       "id": 60136999599,
+       "code": "NA022U01D14V2",
+       "cap": 1,
+       "days": 14,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 21600,
+       "finalWon": 24100,
+       "usable": true
+      },
+      {
+       "id": 60136999602,
+       "code": "NA022U01D15V2",
+       "cap": 1,
+       "days": 15,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 23500,
+       "finalWon": 26000,
+       "usable": true
+      },
+      {
+       "id": 60136999605,
+       "code": "NA022U01D16V2",
+       "cap": 1,
+       "days": 16,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 24300,
+       "finalWon": 26800,
+       "usable": true
+      },
+      {
+       "id": 60136999608,
+       "code": "NA022U01D17V2",
+       "cap": 1,
+       "days": 17,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 26600,
+       "finalWon": 29100,
+       "usable": true
+      },
+      {
+       "id": 60136999611,
+       "code": "NA022U01D18V2",
+       "cap": 1,
+       "days": 18,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 27700,
+       "finalWon": 30200,
+       "usable": true
+      },
+      {
+       "id": 60136999614,
+       "code": "NA022U01D19V2",
+       "cap": 1,
+       "days": 19,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 30100,
+       "finalWon": 32600,
+       "usable": true
+      },
+      {
+       "id": 60136999617,
+       "code": "NA022U01D20V2",
+       "cap": 1,
+       "days": 20,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 31100,
+       "finalWon": 33600,
+       "usable": true
+      },
+      {
+       "id": 60136999620,
+       "code": "NA022U01D21V2",
+       "cap": 1,
+       "days": 21,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 32300,
+       "finalWon": 34800,
+       "usable": true
+      },
+      {
+       "id": 60136999623,
+       "code": "NA022U01D22V2",
+       "cap": 1,
+       "days": 22,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 34500,
+       "finalWon": 37000,
+       "usable": true
+      },
+      {
+       "id": 60136999627,
+       "code": "NA022U01D23V2",
+       "cap": 1,
+       "days": 23,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 35600,
+       "finalWon": 38100,
+       "usable": true
+      },
+      {
+       "id": 60136999630,
+       "code": "NA022U01D24V2",
+       "cap": 1,
+       "days": 24,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 37900,
+       "finalWon": 40400,
+       "usable": true
+      },
+      {
+       "id": 60136999634,
+       "code": "NA022U01D25V2",
+       "cap": 1,
+       "days": 25,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 39600,
+       "finalWon": 42100,
+       "usable": true
+      },
+      {
+       "id": 60136999637,
+       "code": "NA022U01D26V2",
+       "cap": 1,
+       "days": 26,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 42200,
+       "finalWon": 44700,
+       "usable": true
+      },
+      {
+       "id": 60136999640,
+       "code": "NA022U01D27V2",
+       "cap": 1,
+       "days": 27,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 44500,
+       "finalWon": 47000,
+       "usable": true
+      },
+      {
+       "id": 60136999643,
+       "code": "NA022U01D28V2",
+       "cap": 1,
+       "days": 28,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 47300,
+       "finalWon": 49800,
+       "usable": true
+      },
+      {
+       "id": 60136999646,
+       "code": "NA022U01D29V2",
+       "cap": 1,
+       "days": 29,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 49500,
+       "finalWon": 52000,
+       "usable": true
+      },
+      {
+       "id": 60136999649,
+       "code": "NA022U01D30V2",
+       "cap": 1,
+       "days": 30,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 52000,
+       "finalWon": 54500,
+       "usable": true
+      },
+      {
+       "id": 60136999652,
+       "code": "NA022U01D60V2",
+       "cap": 1,
+       "days": 60,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 101000,
+       "finalWon": 103500,
+       "usable": true
+      },
+      {
+       "id": 60136999656,
+       "code": "NA022U01D90V2",
+       "cap": 1,
+       "days": 90,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 147300,
+       "finalWon": 149800,
+       "usable": true
+      },
+      {
+       "id": 60136999658,
+       "code": "NA022U02D01V2",
+       "cap": 2,
+       "days": 1,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 700,
+       "finalWon": 3200,
+       "usable": true
+      },
+      {
+       "id": 60136999660,
+       "code": "NA022U02D02V2",
+       "cap": 2,
+       "days": 2,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 3300,
+       "finalWon": 5800,
+       "usable": true
+      },
+      {
+       "id": 60136999663,
+       "code": "NA022U02D03V2",
+       "cap": 2,
+       "days": 3,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 5600,
+       "finalWon": 8100,
+       "usable": true
+      },
+      {
+       "id": 60136999665,
+       "code": "NA022U02D04V2",
+       "cap": 2,
+       "days": 4,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 8200,
+       "finalWon": 10700,
+       "usable": true
+      },
+      {
+       "id": 60136999667,
+       "code": "NA022U02D05V2",
+       "cap": 2,
+       "days": 5,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 10700,
+       "finalWon": 13200,
+       "usable": true
+      },
+      {
+       "id": 60136999670,
+       "code": "NA022U02D06V2",
+       "cap": 2,
+       "days": 6,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 13300,
+       "finalWon": 15800,
+       "usable": true
+      },
+      {
+       "id": 60136999672,
+       "code": "NA022U02D07V2",
+       "cap": 2,
+       "days": 7,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 15600,
+       "finalWon": 18100,
+       "usable": true
+      },
+      {
+       "id": 60136999674,
+       "code": "NA022U02D08V2",
+       "cap": 2,
+       "days": 8,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 18100,
+       "finalWon": 20600,
+       "usable": true
+      },
+      {
+       "id": 60136999676,
+       "code": "NA022U02D09V2",
+       "cap": 2,
+       "days": 9,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 20600,
+       "finalWon": 23100,
+       "usable": true
+      },
+      {
+       "id": 60136999678,
+       "code": "NA022U02D10V2",
+       "cap": 2,
+       "days": 10,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 23100,
+       "finalWon": 25600,
+       "usable": true
+      },
+      {
+       "id": 60136999680,
+       "code": "NA022U02D11V2",
+       "cap": 2,
+       "days": 11,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 26000,
+       "finalWon": 28500,
+       "usable": true
+      },
+      {
+       "id": 60136999682,
+       "code": "NA022U02D12V2",
+       "cap": 2,
+       "days": 12,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 28900,
+       "finalWon": 31400,
+       "usable": true
+      },
+      {
+       "id": 60136999684,
+       "code": "NA022U02D13V2",
+       "cap": 2,
+       "days": 13,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 31300,
+       "finalWon": 33800,
+       "usable": true
+      },
+      {
+       "id": 60136999686,
+       "code": "NA022U02D14V2",
+       "cap": 2,
+       "days": 14,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 34700,
+       "finalWon": 37200,
+       "usable": true
+      },
+      {
+       "id": 60136999688,
+       "code": "NA022U02D15V2",
+       "cap": 2,
+       "days": 15,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 35900,
+       "finalWon": 38400,
+       "usable": true
+      },
+      {
+       "id": 60136999690,
+       "code": "NA022U02D16V2",
+       "cap": 2,
+       "days": 16,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 36800,
+       "finalWon": 39300,
+       "usable": true
+      },
+      {
+       "id": 60136999692,
+       "code": "NA022U02D17V2",
+       "cap": 2,
+       "days": 17,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 40400,
+       "finalWon": 42900,
+       "usable": true
+      },
+      {
+       "id": 60136999695,
+       "code": "NA022U02D18V2",
+       "cap": 2,
+       "days": 18,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 41600,
+       "finalWon": 44100,
+       "usable": true
+      },
+      {
+       "id": 60136999697,
+       "code": "NA022U02D19V2",
+       "cap": 2,
+       "days": 19,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 45200,
+       "finalWon": 47700,
+       "usable": true
+      },
+      {
+       "id": 60136999698,
+       "code": "NA022U02D20V2",
+       "cap": 2,
+       "days": 20,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 46400,
+       "finalWon": 48900,
+       "usable": true
+      },
+      {
+       "id": 60136999700,
+       "code": "NA022U02D21V2",
+       "cap": 2,
+       "days": 21,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 47500,
+       "finalWon": 50000,
+       "usable": true
+      },
+      {
+       "id": 60136999702,
+       "code": "NA022U02D22V2",
+       "cap": 2,
+       "days": 22,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 51000,
+       "finalWon": 53500,
+       "usable": true
+      },
+      {
+       "id": 60136999704,
+       "code": "NA022U02D23V2",
+       "cap": 2,
+       "days": 23,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 52100,
+       "finalWon": 54600,
+       "usable": true
+      },
+      {
+       "id": 60136999709,
+       "code": "NA022U02D24V2",
+       "cap": 2,
+       "days": 24,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 55700,
+       "finalWon": 58200,
+       "usable": true
+      },
+      {
+       "id": 60136999712,
+       "code": "NA022U02D25V2",
+       "cap": 2,
+       "days": 25,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 56700,
+       "finalWon": 59200,
+       "usable": true
+      },
+      {
+       "id": 60136999714,
+       "code": "NA022U02D26V2",
+       "cap": 2,
+       "days": 26,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 60000,
+       "finalWon": 62500,
+       "usable": true
+      },
+      {
+       "id": 60136999716,
+       "code": "NA022U02D27V2",
+       "cap": 2,
+       "days": 27,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 63600,
+       "finalWon": 66100,
+       "usable": true
+      },
+      {
+       "id": 60136999718,
+       "code": "NA022U02D28V2",
+       "cap": 2,
+       "days": 28,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 66800,
+       "finalWon": 69300,
+       "usable": true
+      },
+      {
+       "id": 60136999720,
+       "code": "NA022U02D29V2",
+       "cap": 2,
+       "days": 29,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 70400,
+       "finalWon": 72900,
+       "usable": true
+      },
+      {
+       "id": 60136999721,
+       "code": "NA022U02D30V2",
+       "cap": 2,
+       "days": 30,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 73700,
+       "finalWon": 76200,
+       "usable": true
+      },
+      {
+       "id": 60136999723,
+       "code": "NA022U02D60V2",
+       "cap": 2,
+       "days": 60,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 142200,
+       "finalWon": 144700,
+       "usable": true
+      },
+      {
+       "id": 60136999725,
+       "code": "NA022U02D90V2",
+       "cap": 2,
+       "days": 90,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 207000,
+       "finalWon": 209500,
+       "usable": true
+      },
+      {
+       "id": 60136999727,
+       "code": "NA022U03D01V2",
+       "cap": 3,
+       "days": 1,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 1300,
+       "finalWon": 3800,
+       "usable": true
+      },
+      {
+       "id": 60136999730,
+       "code": "NA022U03D02V2",
+       "cap": 3,
+       "days": 2,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 4700,
+       "finalWon": 7200,
+       "usable": true
+      },
+      {
+       "id": 60136999732,
+       "code": "NA022U03D03V2",
+       "cap": 3,
+       "days": 3,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 7500,
+       "finalWon": 10000,
+       "usable": true
+      },
+      {
+       "id": 60136999733,
+       "code": "NA022U03D04V2",
+       "cap": 3,
+       "days": 4,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 10900,
+       "finalWon": 13400,
+       "usable": true
+      },
+      {
+       "id": 60136999735,
+       "code": "NA022U03D05V2",
+       "cap": 3,
+       "days": 5,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 14000,
+       "finalWon": 16500,
+       "usable": true
+      },
+      {
+       "id": 60136999737,
+       "code": "NA022U03D06V2",
+       "cap": 3,
+       "days": 6,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 17200,
+       "finalWon": 19700,
+       "usable": true
+      },
+      {
+       "id": 60136999739,
+       "code": "NA022U03D07V2",
+       "cap": 3,
+       "days": 7,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 20500,
+       "finalWon": 23000,
+       "usable": true
+      },
+      {
+       "id": 60136999741,
+       "code": "NA022U03D08V2",
+       "cap": 3,
+       "days": 8,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 23800,
+       "finalWon": 26300,
+       "usable": true
+      },
+      {
+       "id": 60136999742,
+       "code": "NA022U03D09V2",
+       "cap": 3,
+       "days": 9,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 27100,
+       "finalWon": 29600,
+       "usable": true
+      },
+      {
+       "id": 60136999743,
+       "code": "NA022U03D10V2",
+       "cap": 3,
+       "days": 10,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 30400,
+       "finalWon": 32900,
+       "usable": true
+      },
+      {
+       "id": 60136999745,
+       "code": "NA022U03D11V2",
+       "cap": 3,
+       "days": 11,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 34200,
+       "finalWon": 36700,
+       "usable": true
+      },
+      {
+       "id": 60136999747,
+       "code": "NA022U03D12V2",
+       "cap": 3,
+       "days": 12,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 38000,
+       "finalWon": 40500,
+       "usable": true
+      },
+      {
+       "id": 60136999749,
+       "code": "NA022U03D13V2",
+       "cap": 3,
+       "days": 13,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 40100,
+       "finalWon": 42600,
+       "usable": true
+      },
+      {
+       "id": 60136999751,
+       "code": "NA022U03D14V2",
+       "cap": 3,
+       "days": 14,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 44600,
+       "finalWon": 47100,
+       "usable": true
+      },
+      {
+       "id": 60136999752,
+       "code": "NA022U03D15V2",
+       "cap": 3,
+       "days": 15,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 45700,
+       "finalWon": 48200,
+       "usable": true
+      },
+      {
+       "id": 60136999755,
+       "code": "NA022U03D16V2",
+       "cap": 3,
+       "days": 16,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 46800,
+       "finalWon": 49300,
+       "usable": true
+      },
+      {
+       "id": 60136999757,
+       "code": "NA022U03D17V2",
+       "cap": 3,
+       "days": 17,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 51300,
+       "finalWon": 53800,
+       "usable": true
+      },
+      {
+       "id": 60136999759,
+       "code": "NA022U03D18V2",
+       "cap": 3,
+       "days": 18,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 53000,
+       "finalWon": 55500,
+       "usable": true
+      },
+      {
+       "id": 60136999761,
+       "code": "NA022U03D19V2",
+       "cap": 3,
+       "days": 19,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 57700,
+       "finalWon": 60200,
+       "usable": true
+      },
+      {
+       "id": 60136999763,
+       "code": "NA022U03D20V2",
+       "cap": 3,
+       "days": 20,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 59300,
+       "finalWon": 61800,
+       "usable": true
+      },
+      {
+       "id": 60136999765,
+       "code": "NA022U03D21V2",
+       "cap": 3,
+       "days": 21,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 60700,
+       "finalWon": 63200,
+       "usable": true
+      },
+      {
+       "id": 60136999767,
+       "code": "NA022U03D22V2",
+       "cap": 3,
+       "days": 22,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 65300,
+       "finalWon": 67800,
+       "usable": true
+      },
+      {
+       "id": 60136999770,
+       "code": "NA022U03D23V2",
+       "cap": 3,
+       "days": 23,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 66600,
+       "finalWon": 69100,
+       "usable": true
+      },
+      {
+       "id": 60136999772,
+       "code": "NA022U03D24V2",
+       "cap": 3,
+       "days": 24,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 71100,
+       "finalWon": 73600,
+       "usable": true
+      },
+      {
+       "id": 60136999774,
+       "code": "NA022U03D25V2",
+       "cap": 3,
+       "days": 25,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 73800,
+       "finalWon": 76300,
+       "usable": true
+      },
+      {
+       "id": 60136999776,
+       "code": "NA022U03D26V2",
+       "cap": 3,
+       "days": 26,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 76700,
+       "finalWon": 79200,
+       "usable": true
+      },
+      {
+       "id": 60136999778,
+       "code": "NA022U03D27V2",
+       "cap": 3,
+       "days": 27,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 81300,
+       "finalWon": 83800,
+       "usable": true
+      },
+      {
+       "id": 60136999780,
+       "code": "NA022U03D28V2",
+       "cap": 3,
+       "days": 28,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 83400,
+       "finalWon": 85900,
+       "usable": true
+      },
+      {
+       "id": 60136999782,
+       "code": "NA022U03D29V2",
+       "cap": 3,
+       "days": 29,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 87900,
+       "finalWon": 90400,
+       "usable": true
+      },
+      {
+       "id": 60136999785,
+       "code": "NA022U03D30V2",
+       "cap": 3,
+       "days": 30,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 90000,
+       "finalWon": 92500,
+       "usable": true
+      },
+      {
+       "id": 60136999787,
+       "code": "NA022U03D60V2",
+       "cap": 3,
+       "days": 60,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 173200,
+       "finalWon": 175700,
+       "usable": true
+      },
+      {
+       "id": 60136999789,
+       "code": "NA022U03D90V2",
+       "cap": 3,
+       "days": 90,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 253500,
+       "finalWon": 256000,
+       "usable": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "zone": "THA00",
+   "nameKr": "태국",
+   "subtitle": "방콕·치앙마이·푸껫 등 전지역",
+   "countries": [
+    {
+     "iso3": "THA",
+     "iso2": "TH",
+     "nameKr": "태국",
+     "flag": "🇹🇭",
+     "cities": [
+      "방콕",
+      "치앙마이",
+      "푸껫"
+     ],
+     "operators": [
+      "AIS",
+      "dtac"
+     ],
+     "network": "4G/LTE · 5G"
+    }
+   ],
+   "map": {
+    "svg": "/catalog/maps/THA00.svg",
+    "pins": [
+     {
+      "name": "방콕",
+      "x": 46.2,
+      "y": 46.7,
+      "size": "big",
+      "labelDir": "left"
+     },
+     {
+      "name": "치앙마이",
+      "x": 40.3,
+      "y": 23.6,
+      "size": "normal",
+      "labelDir": "left"
+     },
+     {
+      "name": "푸껫",
+      "x": 38.1,
+      "y": 73.7,
+      "size": "normal",
+      "labelDir": "left"
+     }
+    ]
+   },
+   "products": [
+    {
+     "sku": "THA00U",
+     "kind": "U",
+     "channelProductNo": 13770888797,
+     "naverName": "태국 eSIM 무제한 데이터",
+     "naverUrl": "https://smartstore.naver.com/esimmany/products/13770888797?nt_source=esimmany-web&nt_medium=detail&nt_detail=THA00U",
+     "saleStatus": "SALE",
+     "displayStatus": "ON",
+     "images": {
+      "thumb": "/catalog/thumbs/THA00U.webp"
+     },
+     "salePriceWon": 119900,
+     "immediateDiscountWon": 119200,
+     "options": [
+      {
+       "id": 60136984952,
+       "code": "THA00U01D01V2",
+       "cap": 1,
+       "days": 1,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 0,
+       "finalWon": 700,
+       "usable": true
+      },
+      {
+       "id": 60136984954,
+       "code": "THA00U01D02V2",
+       "cap": 1,
+       "days": 2,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 700,
+       "finalWon": 1400,
+       "usable": true
+      },
+      {
+       "id": 60136984956,
+       "code": "THA00U01D03V2",
+       "cap": 1,
+       "days": 3,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 1300,
+       "finalWon": 2000,
+       "usable": true
+      },
+      {
+       "id": 60136984957,
+       "code": "THA00U01D04V2",
+       "cap": 1,
+       "days": 4,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 2000,
+       "finalWon": 2700,
+       "usable": true
+      },
+      {
+       "id": 60136984958,
+       "code": "THA00U01D05V2",
+       "cap": 1,
+       "days": 5,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 2700,
+       "finalWon": 3400,
+       "usable": true
+      },
+      {
+       "id": 60136984959,
+       "code": "THA00U01D06V2",
+       "cap": 1,
+       "days": 6,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 3400,
+       "finalWon": 4100,
+       "usable": true
+      },
+      {
+       "id": 60136984960,
+       "code": "THA00U01D07V2",
+       "cap": 1,
+       "days": 7,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 4100,
+       "finalWon": 4800,
+       "usable": true
+      },
+      {
+       "id": 60136984961,
+       "code": "THA00U01D08V2",
+       "cap": 1,
+       "days": 8,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 4600,
+       "finalWon": 5300,
+       "usable": true
+      },
+      {
+       "id": 60136984962,
+       "code": "THA00U01D09V2",
+       "cap": 1,
+       "days": 9,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 5300,
+       "finalWon": 6000,
+       "usable": true
+      },
+      {
+       "id": 60136984963,
+       "code": "THA00U01D10V2",
+       "cap": 1,
+       "days": 10,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 6800,
+       "finalWon": 7500,
+       "usable": true
+      },
+      {
+       "id": 60136984964,
+       "code": "THA00U01D11V2",
+       "cap": 1,
+       "days": 11,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 8600,
+       "finalWon": 9300,
+       "usable": true
+      },
+      {
+       "id": 60136984965,
+       "code": "THA00U01D12V2",
+       "cap": 1,
+       "days": 12,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 10300,
+       "finalWon": 11000,
+       "usable": true
+      },
+      {
+       "id": 60136984966,
+       "code": "THA00U01D13V2",
+       "cap": 1,
+       "days": 13,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 11600,
+       "finalWon": 12300,
+       "usable": true
+      },
+      {
+       "id": 60136984967,
+       "code": "THA00U01D14V2",
+       "cap": 1,
+       "days": 14,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 12500,
+       "finalWon": 13200,
+       "usable": true
+      },
+      {
+       "id": 60136984968,
+       "code": "THA00U01D15V2",
+       "cap": 1,
+       "days": 15,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 13500,
+       "finalWon": 14200,
+       "usable": true
+      },
+      {
+       "id": 60136984969,
+       "code": "THA00U01D16V2",
+       "cap": 1,
+       "days": 16,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 14400,
+       "finalWon": 15100,
+       "usable": true
+      },
+      {
+       "id": 60136984970,
+       "code": "THA00U01D17V2",
+       "cap": 1,
+       "days": 17,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 15300,
+       "finalWon": 16000,
+       "usable": true
+      },
+      {
+       "id": 60136984971,
+       "code": "THA00U01D18V2",
+       "cap": 1,
+       "days": 18,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 16300,
+       "finalWon": 17000,
+       "usable": true
+      },
+      {
+       "id": 60136984972,
+       "code": "THA00U01D19V2",
+       "cap": 1,
+       "days": 19,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 17200,
+       "finalWon": 17900,
+       "usable": true
+      },
+      {
+       "id": 60136984974,
+       "code": "THA00U01D20V2",
+       "cap": 1,
+       "days": 20,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 18200,
+       "finalWon": 18900,
+       "usable": true
+      },
+      {
+       "id": 60136984976,
+       "code": "THA00U01D21V2",
+       "cap": 1,
+       "days": 21,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 19100,
+       "finalWon": 19800,
+       "usable": true
+      },
+      {
+       "id": 60136984978,
+       "code": "THA00U01D22V2",
+       "cap": 1,
+       "days": 22,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 20000,
+       "finalWon": 20700,
+       "usable": true
+      },
+      {
+       "id": 60136984981,
+       "code": "THA00U01D23V2",
+       "cap": 1,
+       "days": 23,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 21000,
+       "finalWon": 21700,
+       "usable": true
+      },
+      {
+       "id": 60136984983,
+       "code": "THA00U01D24V2",
+       "cap": 1,
+       "days": 24,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 21900,
+       "finalWon": 22600,
+       "usable": true
+      },
+      {
+       "id": 60136984984,
+       "code": "THA00U01D25V2",
+       "cap": 1,
+       "days": 25,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 22900,
+       "finalWon": 23600,
+       "usable": true
+      },
+      {
+       "id": 60136984985,
+       "code": "THA00U01D26V2",
+       "cap": 1,
+       "days": 26,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 23800,
+       "finalWon": 24500,
+       "usable": true
+      },
+      {
+       "id": 60136984986,
+       "code": "THA00U01D27V2",
+       "cap": 1,
+       "days": 27,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 24800,
+       "finalWon": 25500,
+       "usable": true
+      },
+      {
+       "id": 60136984987,
+       "code": "THA00U01D28V2",
+       "cap": 1,
+       "days": 28,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 25700,
+       "finalWon": 26400,
+       "usable": true
+      },
+      {
+       "id": 60136984988,
+       "code": "THA00U01D29V2",
+       "cap": 1,
+       "days": 29,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 26600,
+       "finalWon": 27300,
+       "usable": true
+      },
+      {
+       "id": 60136984989,
+       "code": "THA00U01D30V2",
+       "cap": 1,
+       "days": 30,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 27600,
+       "finalWon": 28300,
+       "usable": true
+      },
+      {
+       "id": 60136984990,
+       "code": "THA00U01D60V2",
+       "cap": 1,
+       "days": 60,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 53000,
+       "finalWon": 53700,
+       "usable": true
+      },
+      {
+       "id": 60136984991,
+       "code": "THA00U01D90V2",
+       "cap": 1,
+       "days": 90,
+       "optionName1": "매일 1GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 77100,
+       "finalWon": 77800,
+       "usable": true
+      },
+      {
+       "id": 60136984992,
+       "code": "THA00U02D01V2",
+       "cap": 2,
+       "days": 1,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 600,
+       "finalWon": 1300,
+       "usable": true
+      },
+      {
+       "id": 60136984993,
+       "code": "THA00U02D02V2",
+       "cap": 2,
+       "days": 2,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 1900,
+       "finalWon": 2600,
+       "usable": true
+      },
+      {
+       "id": 60136984994,
+       "code": "THA00U02D03V2",
+       "cap": 2,
+       "days": 3,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 3100,
+       "finalWon": 3800,
+       "usable": true
+      },
+      {
+       "id": 60136984995,
+       "code": "THA00U02D04V2",
+       "cap": 2,
+       "days": 4,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 4200,
+       "finalWon": 4900,
+       "usable": true
+      },
+      {
+       "id": 60136984998,
+       "code": "THA00U02D05V2",
+       "cap": 2,
+       "days": 5,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 5500,
+       "finalWon": 6200,
+       "usable": true
+      },
+      {
+       "id": 60136985001,
+       "code": "THA00U02D06V2",
+       "cap": 2,
+       "days": 6,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 6700,
+       "finalWon": 7400,
+       "usable": true
+      },
+      {
+       "id": 60136985004,
+       "code": "THA00U02D07V2",
+       "cap": 2,
+       "days": 7,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 7900,
+       "finalWon": 8600,
+       "usable": true
+      },
+      {
+       "id": 60136985007,
+       "code": "THA00U02D08V2",
+       "cap": 2,
+       "days": 8,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 8700,
+       "finalWon": 9400,
+       "usable": true
+      },
+      {
+       "id": 60136985009,
+       "code": "THA00U02D09V2",
+       "cap": 2,
+       "days": 9,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 9400,
+       "finalWon": 10100,
+       "usable": true
+      },
+      {
+       "id": 60136985010,
+       "code": "THA00U02D10V2",
+       "cap": 2,
+       "days": 10,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 11200,
+       "finalWon": 11900,
+       "usable": true
+      },
+      {
+       "id": 60136985011,
+       "code": "THA00U02D11V2",
+       "cap": 2,
+       "days": 11,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 14200,
+       "finalWon": 14900,
+       "usable": true
+      },
+      {
+       "id": 60136985012,
+       "code": "THA00U02D12V2",
+       "cap": 2,
+       "days": 12,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 17200,
+       "finalWon": 17900,
+       "usable": true
+      },
+      {
+       "id": 60136985013,
+       "code": "THA00U02D13V2",
+       "cap": 2,
+       "days": 13,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 19100,
+       "finalWon": 19800,
+       "usable": true
+      },
+      {
+       "id": 60136985014,
+       "code": "THA00U02D14V2",
+       "cap": 2,
+       "days": 14,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 22400,
+       "finalWon": 23100,
+       "usable": true
+      },
+      {
+       "id": 60136985015,
+       "code": "THA00U02D15V2",
+       "cap": 2,
+       "days": 15,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 24000,
+       "finalWon": 24700,
+       "usable": true
+      },
+      {
+       "id": 60136985016,
+       "code": "THA00U02D16V2",
+       "cap": 2,
+       "days": 16,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 25700,
+       "finalWon": 26400,
+       "usable": true
+      },
+      {
+       "id": 60136985017,
+       "code": "THA00U02D17V2",
+       "cap": 2,
+       "days": 17,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 27300,
+       "finalWon": 28000,
+       "usable": true
+      },
+      {
+       "id": 60136985018,
+       "code": "THA00U02D18V2",
+       "cap": 2,
+       "days": 18,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 29000,
+       "finalWon": 29700,
+       "usable": true
+      },
+      {
+       "id": 60136985020,
+       "code": "THA00U02D19V2",
+       "cap": 2,
+       "days": 19,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 30600,
+       "finalWon": 31300,
+       "usable": true
+      },
+      {
+       "id": 60136985025,
+       "code": "THA00U02D20V2",
+       "cap": 2,
+       "days": 20,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 32300,
+       "finalWon": 33000,
+       "usable": true
+      },
+      {
+       "id": 60136985027,
+       "code": "THA00U02D21V2",
+       "cap": 2,
+       "days": 21,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 33900,
+       "finalWon": 34600,
+       "usable": true
+      },
+      {
+       "id": 60136985028,
+       "code": "THA00U02D22V2",
+       "cap": 2,
+       "days": 22,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 35600,
+       "finalWon": 36300,
+       "usable": true
+      },
+      {
+       "id": 60136985029,
+       "code": "THA00U02D23V2",
+       "cap": 2,
+       "days": 23,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 37200,
+       "finalWon": 37900,
+       "usable": true
+      },
+      {
+       "id": 60136985030,
+       "code": "THA00U02D24V2",
+       "cap": 2,
+       "days": 24,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 38900,
+       "finalWon": 39600,
+       "usable": true
+      },
+      {
+       "id": 60136985031,
+       "code": "THA00U02D25V2",
+       "cap": 2,
+       "days": 25,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 40500,
+       "finalWon": 41200,
+       "usable": true
+      },
+      {
+       "id": 60136985032,
+       "code": "THA00U02D26V2",
+       "cap": 2,
+       "days": 26,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 42200,
+       "finalWon": 42900,
+       "usable": true
+      },
+      {
+       "id": 60136985033,
+       "code": "THA00U02D27V2",
+       "cap": 2,
+       "days": 27,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 43800,
+       "finalWon": 44500,
+       "usable": true
+      },
+      {
+       "id": 60136985034,
+       "code": "THA00U02D28V2",
+       "cap": 2,
+       "days": 28,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 45400,
+       "finalWon": 46100,
+       "usable": true
+      },
+      {
+       "id": 60136985035,
+       "code": "THA00U02D29V2",
+       "cap": 2,
+       "days": 29,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 47100,
+       "finalWon": 47800,
+       "usable": true
+      },
+      {
+       "id": 60136985036,
+       "code": "THA00U02D30V2",
+       "cap": 2,
+       "days": 30,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 48700,
+       "finalWon": 49400,
+       "usable": true
+      },
+      {
+       "id": 60136985037,
+       "code": "THA00U02D60V2",
+       "cap": 2,
+       "days": 60,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 93100,
+       "finalWon": 93800,
+       "usable": true
+      },
+      {
+       "id": 60136985040,
+       "code": "THA00U02D90V2",
+       "cap": 2,
+       "days": 90,
+       "optionName1": "매일 2GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 135100,
+       "finalWon": 135800,
+       "usable": true
+      },
+      {
+       "id": 60136985043,
+       "code": "THA00U03D01V2",
+       "cap": 3,
+       "days": 1,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "1일",
+       "optionPriceWon": 1200,
+       "finalWon": 1900,
+       "usable": true
+      },
+      {
+       "id": 60136985045,
+       "code": "THA00U03D02V2",
+       "cap": 3,
+       "days": 2,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "2일",
+       "optionPriceWon": 2900,
+       "finalWon": 3600,
+       "usable": true
+      },
+      {
+       "id": 60136985046,
+       "code": "THA00U03D03V2",
+       "cap": 3,
+       "days": 3,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "3일",
+       "optionPriceWon": 4400,
+       "finalWon": 5100,
+       "usable": true
+      },
+      {
+       "id": 60136985047,
+       "code": "THA00U03D04V2",
+       "cap": 3,
+       "days": 4,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "4일",
+       "optionPriceWon": 6000,
+       "finalWon": 6700,
+       "usable": true
+      },
+      {
+       "id": 60136985048,
+       "code": "THA00U03D05V2",
+       "cap": 3,
+       "days": 5,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "5일",
+       "optionPriceWon": 7600,
+       "finalWon": 8300,
+       "usable": true
+      },
+      {
+       "id": 60136985049,
+       "code": "THA00U03D06V2",
+       "cap": 3,
+       "days": 6,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "6일",
+       "optionPriceWon": 9100,
+       "finalWon": 9800,
+       "usable": true
+      },
+      {
+       "id": 60136985050,
+       "code": "THA00U03D07V2",
+       "cap": 3,
+       "days": 7,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "7일",
+       "optionPriceWon": 10600,
+       "finalWon": 11300,
+       "usable": true
+      },
+      {
+       "id": 60136985051,
+       "code": "THA00U03D08V2",
+       "cap": 3,
+       "days": 8,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "8일",
+       "optionPriceWon": 11600,
+       "finalWon": 12300,
+       "usable": true
+      },
+      {
+       "id": 60136985052,
+       "code": "THA00U03D09V2",
+       "cap": 3,
+       "days": 9,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "9일",
+       "optionPriceWon": 13800,
+       "finalWon": 14500,
+       "usable": true
+      },
+      {
+       "id": 60136985053,
+       "code": "THA00U03D10V2",
+       "cap": 3,
+       "days": 10,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "10일",
+       "optionPriceWon": 16500,
+       "finalWon": 17200,
+       "usable": true
+      },
+      {
+       "id": 60136985054,
+       "code": "THA00U03D11V2",
+       "cap": 3,
+       "days": 11,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "11일",
+       "optionPriceWon": 18800,
+       "finalWon": 19500,
+       "usable": true
+      },
+      {
+       "id": 60136985055,
+       "code": "THA00U03D12V2",
+       "cap": 3,
+       "days": 12,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "12일",
+       "optionPriceWon": 22800,
+       "finalWon": 23500,
+       "usable": true
+      },
+      {
+       "id": 60136985056,
+       "code": "THA00U03D13V2",
+       "cap": 3,
+       "days": 13,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "13일",
+       "optionPriceWon": 25800,
+       "finalWon": 26500,
+       "usable": true
+      },
+      {
+       "id": 60136985057,
+       "code": "THA00U03D14V2",
+       "cap": 3,
+       "days": 14,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "14일",
+       "optionPriceWon": 29000,
+       "finalWon": 29700,
+       "usable": true
+      },
+      {
+       "id": 60136985058,
+       "code": "THA00U03D15V2",
+       "cap": 3,
+       "days": 15,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "15일",
+       "optionPriceWon": 31100,
+       "finalWon": 31800,
+       "usable": true
+      },
+      {
+       "id": 60136985059,
+       "code": "THA00U03D16V2",
+       "cap": 3,
+       "days": 16,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "16일",
+       "optionPriceWon": 33200,
+       "finalWon": 33900,
+       "usable": true
+      },
+      {
+       "id": 60136985060,
+       "code": "THA00U03D17V2",
+       "cap": 3,
+       "days": 17,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "17일",
+       "optionPriceWon": 35300,
+       "finalWon": 36000,
+       "usable": true
+      },
+      {
+       "id": 60136985063,
+       "code": "THA00U03D18V2",
+       "cap": 3,
+       "days": 18,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "18일",
+       "optionPriceWon": 37500,
+       "finalWon": 38200,
+       "usable": true
+      },
+      {
+       "id": 60136985065,
+       "code": "THA00U03D19V2",
+       "cap": 3,
+       "days": 19,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "19일",
+       "optionPriceWon": 39600,
+       "finalWon": 40300,
+       "usable": true
+      },
+      {
+       "id": 60136985067,
+       "code": "THA00U03D20V2",
+       "cap": 3,
+       "days": 20,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "20일",
+       "optionPriceWon": 41700,
+       "finalWon": 42400,
+       "usable": true
+      },
+      {
+       "id": 60136985068,
+       "code": "THA00U03D21V2",
+       "cap": 3,
+       "days": 21,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "21일",
+       "optionPriceWon": 43800,
+       "finalWon": 44500,
+       "usable": true
+      },
+      {
+       "id": 60136985070,
+       "code": "THA00U03D22V2",
+       "cap": 3,
+       "days": 22,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "22일",
+       "optionPriceWon": 45900,
+       "finalWon": 46600,
+       "usable": true
+      },
+      {
+       "id": 60136985072,
+       "code": "THA00U03D23V2",
+       "cap": 3,
+       "days": 23,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "23일",
+       "optionPriceWon": 48000,
+       "finalWon": 48700,
+       "usable": true
+      },
+      {
+       "id": 60136985074,
+       "code": "THA00U03D24V2",
+       "cap": 3,
+       "days": 24,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "24일",
+       "optionPriceWon": 50200,
+       "finalWon": 50900,
+       "usable": true
+      },
+      {
+       "id": 60136985076,
+       "code": "THA00U03D25V2",
+       "cap": 3,
+       "days": 25,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "25일",
+       "optionPriceWon": 52300,
+       "finalWon": 53000,
+       "usable": true
+      },
+      {
+       "id": 60136985079,
+       "code": "THA00U03D26V2",
+       "cap": 3,
+       "days": 26,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "26일",
+       "optionPriceWon": 54400,
+       "finalWon": 55100,
+       "usable": true
+      },
+      {
+       "id": 60136985081,
+       "code": "THA00U03D27V2",
+       "cap": 3,
+       "days": 27,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "27일",
+       "optionPriceWon": 56500,
+       "finalWon": 57200,
+       "usable": true
+      },
+      {
+       "id": 60136985084,
+       "code": "THA00U03D28V2",
+       "cap": 3,
+       "days": 28,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "28일",
+       "optionPriceWon": 58600,
+       "finalWon": 59300,
+       "usable": true
+      },
+      {
+       "id": 60136985086,
+       "code": "THA00U03D29V2",
+       "cap": 3,
+       "days": 29,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "29일",
+       "optionPriceWon": 60700,
+       "finalWon": 61400,
+       "usable": true
+      },
+      {
+       "id": 60136985088,
+       "code": "THA00U03D30V2",
+       "cap": 3,
+       "days": 30,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "30일",
+       "optionPriceWon": 62900,
+       "finalWon": 63600,
+       "usable": true
+      },
+      {
+       "id": 60136985089,
+       "code": "THA00U03D60V2",
+       "cap": 3,
+       "days": 60,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "60일",
+       "optionPriceWon": 120100,
+       "finalWon": 120800,
+       "usable": true
+      },
+      {
+       "id": 60136985090,
+       "code": "THA00U03D90V2",
+       "cap": 3,
+       "days": 90,
+       "optionName1": "매일 3GB + 소진후 512kbps 무제한",
+       "optionName2": "90일",
+       "optionPriceWon": 174200,
+       "finalWon": 174900,
+       "usable": true
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "policies": {
+  "byKind": {
+   "U": {
+    "capUnit": "perDay",
+    "afterCap": "512kbps 무제한",
+    "dayBoundary": "24h rolling"
+   },
+   "L": {
+    "capUnit": "total",
+    "periodDays": 30,
+    "afterCap": "종료"
+   }
+  },
+  "roaming": "auto"
+ }
+}

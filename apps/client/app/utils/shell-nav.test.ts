@@ -5,6 +5,8 @@ describe('activeTabOf', () => {
   it.each([
     ['/', 'home'],
     ['/search', 'home'],
+    ['/countries/fra', 'home'],
+    ['/products/cze00', 'home'],
     ['/my-esim', 'my-esim'],
     ['/guide', 'guide'],
     ['/guide/devices', 'guide'],
@@ -28,6 +30,8 @@ describe('activeTabOf', () => {
     '/business', // D-39 — 페이지 없음(404)
     '/myanmar',
     '/guidex',
+    '/productsx',
+    '/countriesx/fra',
   ])('%s → 활성 없음', (path) => {
     expect(activeTabOf(path)).toBeNull()
   })
@@ -95,6 +99,8 @@ describe('tabAriaCurrent (spec F-6)', () => {
 
   it('탭 주소와 같은 경로 → page (끝 / · 쿼리 · 해시 무시)', () => {
     expect(tabAriaCurrent('/', tab('home'))).toBe('page')
+    expect(tabAriaCurrent('/countries/fra', tab('home'))).toBe('true')
+    expect(tabAriaCurrent('/products/cze00', tab('home'))).toBe('true')
     expect(tabAriaCurrent('/my', tab('my'))).toBe('page')
     expect(tabAriaCurrent('/my/', tab('my'))).toBe('page')
     expect(tabAriaCurrent('/my#cs', tab('my'))).toBe('page')

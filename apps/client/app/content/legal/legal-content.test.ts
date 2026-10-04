@@ -245,6 +245,12 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
     expect(DOC_RULES.privacy.edits?.[0]).toEqual({ line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' })
     expect(BLOCK_RULES.business.edits).toEqual([{ line: 'f71a51520585665b3445cb4cd65f00ed0f47d05d9046ce297b748a7cf32934dc', from: '1950 호', to: '1950 호 (경기도 광주시)' }])
   })
+  it('규칙의 게시 수정 글자 = 생성물(규칙만 고치고 다시 가져오지 않으면 빨개진다)', () => {
+    const docs = { terms: TERMS_DOC.markdown, privacy: PRIVACY_DOC.markdown, refund: REFUND_DOC.markdown } as const
+    for (const [k, md] of Object.entries(docs))
+      for (const e of DOC_RULES[k as keyof typeof docs].edits ?? []) if (e.to) expect(md, `${k}: ${e.to}`).toContain(e.to)
+    for (const e of BLOCK_RULES.business.edits ?? []) expect(Object.values(BUSINESS_INFO).join('\n')).toContain(e.to)
+  })
 })
 
 describe('푸터 사업자정보(04 1절) — 법정 표시 항목(D-11) · `/business` 가 없으니(D-39) 푸터가 유일한 표시 · 통신판매업 신고기관 이름은 D-40', () => {
@@ -284,6 +290,9 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
   })
   it('사업자정보 생성물 머리 — 값 채움 1건(D-54 호스팅 AWS)', () => {
     expect(/^\/\/ 값 채움 (\d+)건 — /m.exec(read('./business.ts'))?.[1]).toBe('1')
+    // 블록 게시 수정도 머리줄에 드러난다 — 규칙의 수정 건수와 같다(D-40)
+    expect(/^\/\/ 게시 수정 (\d+)건 — /m.exec(read('./business.ts'))?.[1]).toBe(String(BLOCK_RULES.business.edits?.length))
+    expect(BLOCK_RULES.business.edits).toHaveLength(1)
   })
   it('사업자정보 7줄 — 순서 · 공정위 조회 링크 · 호스팅 = AWS(D-54 값 채움 · 값 자리 0)', () => {
     expect(Object.keys(BUSINESS_INFO)).toEqual([

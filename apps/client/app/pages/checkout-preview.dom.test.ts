@@ -7,14 +7,19 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { CHECKOUT_NOTICE } from '~/content/legal/checkout-notice'
-import { PREVIEW_ITEM, PREVIEW_ORDER_NAME } from '~/utils/checkout-preview'
+import { checkoutPreviewFromCatalog } from '#shared/catalog/preview'
+import { fixtureRaw } from '#shared/catalog/test-data'
+import { parseCatalog } from '#shared/catalog/validate'
 import Page from './checkout-preview.vue'
 
 const sdk = vi.hoisted(() => ({ requestPayment: vi.fn(async () => undefined) }))
 vi.mock('@portone/browser-sdk/v2', () => sdk)
 
 const portone = { storeId: 'store-test-only', testChannelKey: 'channel-key-test-only' }
+// 상품 = 빌드 모듈이 앱 설정에 넣는 값(catalog F-12) — 여기서는 카탈로그 픽스처로 같은 함수를 돌린다
+const PREVIEW_ITEM = checkoutPreviewFromCatalog(parseCatalog(fixtureRaw()))
 const navigateTo = vi.fn()
+const route: { query: Record<string, string> } = { query: {} }
 // Nuxt 자동 import 대신 — 페이지가 전역 이름으로 찾는다
 Object.assign(globalThis, {
   ref,
@@ -23,8 +28,9 @@ Object.assign(globalThis, {
   onBeforeUnmount,
   definePageMeta: () => {},
   useHead: () => {},
-  useRoute: () => ({ query: {} }),
+  useRoute: () => route,
   useRuntimeConfig: () => ({ public: { portone } }),
+  useAppConfig: () => ({ checkoutPreview: PREVIEW_ITEM }),
   navigateTo,
 })
 
@@ -32,6 +38,7 @@ enableAutoUnmount(afterEach)
 beforeEach(() => {
   sdk.requestPayment.mockClear()
   navigateTo.mockClear()
+  route.query = {}
   portone.storeId = 'store-test-only'
   portone.testChannelKey = 'channel-key-test-only'
 })
@@ -40,10 +47,11 @@ const settle = async () => {
   await flushPromises()
   await nextTick()
 }
+let current: ReturnType<typeof mount> | null = null
 const render = async () => {
-  const wrapper = mount(Page, { attachTo: document.body })
+  current = mount(Page, { attachTo: document.body })
   await settle()
-  return wrapper
+  return current
 }
 const checkbox = (label: string) => {
   const box = [...document.body.querySelectorAll<HTMLElement>('.n-checkbox')].find((l) =>
@@ -62,11 +70,14 @@ const payButton = () =>
   [...document.body.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
     b.textContent?.includes('결제하기'),
   )!
-/** 비활성 버튼을 «억지로» 누른다 — disabled 를 걷고 클릭해 핸들러의 조건 검사까지 본다(속성만 믿지 않는다) */
+/** «억지로» 결제를 부른다 — ① disabled 를 걷고 누른다(DS 버튼은 disabled prop 이면 click 을 내보내지 않는다 — 버튼이 막는지)
+ *  ② 페이지 결제 핸들러를 직접 부른다(버튼을 거치지 않는 길 — 핸들러 자신의 조건 검사가 막는지) */
 const forcePay = async () => {
   const b = payButton()
   b.removeAttribute('disabled')
   b.click()
+  await settle()
+  await (current!.vm as unknown as { onPay: () => Promise<void> }).onPay()
   await settle()
 }
 const visible = (el: Element) => (el.textContent ?? '').replace(/\s+/g, ' ').trim()
@@ -105,6 +116,59 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
     expect(sdk.requestPayment).not.toHaveBeenCalled()
     expect(payButton().disabled).toBe(true)
   })
+
+  it.each([
+    [{}],
+    [
+      {
+        paymentId: 'pv-1790105212345-abababababababababababab',
+        code: 'FAILURE_TYPE_PG',
+        message: '테스트',
+      },
+    ],
+    [{ retry: '1', pay: '1' }],
+  ])(
+    '동의 전 — 모든 요소에 여러 입력(click · pointer · mouse · touch · Enter) · 복귀 쿼리 %o · 타이머를 끝까지 돌려도 SDK 호출 0',
+    async (query) => {
+      route.query = query
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] })
+      try {
+        await render()
+        const stop = (e: Event) => e.preventDefault()
+        document.addEventListener('click', stop)
+        for (const el of document.body.querySelectorAll('*')) {
+          if (el.closest('.n-checkbox')) continue // 동의 자체 — 이 테스트는 동의 전 상태를 지킨다
+          for (const type of [
+            'click',
+            'pointerdown',
+            'pointerup',
+            'mousedown',
+            'mouseup',
+            'touchstart',
+            'touchend',
+          ])
+            el.dispatchEvent(new Event(type, { bubbles: true, cancelable: true }))
+          el.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+          )
+          el.dispatchEvent(
+            new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }),
+          )
+        }
+        document.removeEventListener('click', stop)
+        await vi.runAllTimersAsync()
+        await settle()
+        expect(
+          [...document.body.querySelectorAll('[role="checkbox"]')].map((b) =>
+            b.getAttribute('aria-checked'),
+          ),
+        ).toEqual(['false', 'false', 'false'])
+        expect(sdk.requestPayment).not.toHaveBeenCalled()
+      } finally {
+        vi.useRealTimers()
+      }
+    },
+  )
 
   it.each([
     ['약관만', [TERMS]],
@@ -146,7 +210,7 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
       expect.objectContaining({
         storeId: 'store-test-only',
         channelKey: 'channel-key-test-only',
-        orderName: PREVIEW_ORDER_NAME,
+        orderName: PREVIEW_ITEM.orderName,
         totalAmount: PREVIEW_ITEM.amount,
         currency: 'KRW',
         payMethod: 'CARD',
@@ -161,15 +225,61 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
     expect(sdk.requestPayment).toHaveBeenCalledTimes(1)
   })
 
-  it('키가 비면 필수 2개를 체크해도 비활성 · «결제 설정을 준비하고 있어요.» · 억지로 눌러도 SDK 호출 0', async () => {
-    portone.testChannelKey = ''
-    await render()
-    await toggle(TERMS)
-    await toggle(AGE)
-    expect(payButton().disabled).toBe(true)
-    expect(document.body.textContent).toContain('결제 설정을 준비하고 있어요.')
-    await forcePay()
-    expect(sdk.requestPayment).not.toHaveBeenCalled()
+  it.each([
+    ['채널키', 'testChannelKey'],
+    ['상점 ID', 'storeId'],
+  ] as const)(
+    '키가 비면(%s) 필수 2개를 체크해도 비활성 · «결제 설정을 준비하고 있어요.» · 억지로 불러도 SDK 호출 0',
+    async (_name, key) => {
+      portone[key] = ''
+      await render()
+      await toggle(TERMS)
+      await toggle(AGE)
+      expect(payButton().disabled).toBe(true)
+      expect(document.body.textContent).toContain('결제 설정을 준비하고 있어요.')
+      await forcePay()
+      expect(sdk.requestPayment).not.toHaveBeenCalled()
+    },
+  )
+})
+
+describe('테스트 체크아웃 — 바깥에서 들어오는 길(D-38 (b) · F-19)', () => {
+  it('읽는 쿼리 키 = 복귀 결과 5키뿐 · 전역 리스너 = pageshow 하나뿐(쿼리 · 포커스 · 메시지 · 키 입력으로 동의를 미리 채우거나 결제를 부르는 길 0)', async () => {
+    const readKeys = new Set<string>()
+    route.query = new Proxy({} as Record<string, string>, {
+      get: (t, k, r) => (typeof k === 'string' && readKeys.add(k), Reflect.get(t, k, r)),
+      has: (t, k) => (typeof k === 'string' && readKeys.add(k), Reflect.has(t, k)),
+      ownKeys: (t) => (readKeys.add('*'), Reflect.ownKeys(t)),
+    })
+    const added: string[] = []
+    const watch = (target: EventTarget, name: string) => {
+      const orig = target.addEventListener.bind(target)
+      return vi.spyOn(target, 'addEventListener').mockImplementation((type, ...rest) => {
+        added.push(`${name}:${type}`)
+        return orig(
+          type,
+          ...(rest as [EventListenerOrEventListenerObject, AddEventListenerOptions]),
+        )
+      })
+    }
+    const spies = [watch(window, 'window'), watch(document, 'document')]
+    try {
+      await render()
+      await toggle(TERMS)
+      await toggle(AGE)
+      payButton().click()
+      await settle()
+    } finally {
+      spies.forEach((s) => s.mockRestore())
+    }
+    expect(
+      [...readKeys].filter(
+        (k) =>
+          !k.startsWith('__v_') &&
+          !['paymentId', 'code', 'message', 'pgCode', 'pgMessage'].includes(k),
+      ),
+    ).toEqual([])
+    expect([...new Set(added)]).toEqual(['window:pageshow'])
   })
 })
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// 홈 shell (spec S-1) — 여행지 검색 자리(/search · 검색은 W1-3) · 주문번호 조회 카드 · 바로가기.
-// 국가 그리드 · 상품은 W1-3 에서 이 페이지에 얹는다.
+// 홈 (shell spec S-1 · catalog spec S-1) — 검색 진입 · «인기국가 · 다국가» 탭 격자(D-5 · 유심사 배치) ·
+// 주문번호 조회 카드(D-8 — 격자 아래) · 바로가기. 격자 목록은 app/content/popular.ts, 이름 · 국기는 카탈로그.
 import {
   BookOpenIcon,
   ChatBubbleLeftRightIcon,
@@ -8,7 +8,23 @@ import {
   DevicePhoneMobileIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/vue/24/outline'
+import { HOME_META } from '#shared/catalog/seo'
+import FlagIcon from '~/components/catalog/FlagIcon.vue'
+import UnderlineTabs from '~/components/catalog/UnderlineTabs.vue'
 import OrderLookupForm from '~/components/order/OrderLookupForm.vue'
+
+useCatalogSeo(HOME_META)
+const { data: home, error } = await useFetch('/api/catalog/home', { key: 'catalog-home' })
+// 데이터 라우트가 실패하면 빈 격자로 두지 않는다 — 페이지를 500 으로 던져 프리렌더(빌드)를 멈춘다(S-1).
+// useFetch 는 에러를 삼키고 페이지는 200 으로 굳기 때문에 여기서 다시 던져야 한다.
+if (error.value || !home.value)
+  throw createError({ statusCode: 500, statusMessage: 'Catalog home unavailable', fatal: true })
+const tabs = [
+  { key: 'popular', label: '인기국가' },
+  { key: 'multi', label: '다국가' },
+] as const
+const tab = ref<(typeof tabs)[number]['key']>('popular')
+const tiles = computed(() => (tab.value === 'popular' ? home.value!.popular : home.value!.multi))
 
 const shortcuts = [
   { to: '/guide', label: '설치 가이드', sub: '출발 전에 미리 설치해 두세요', icon: BookOpenIcon },
@@ -28,7 +44,29 @@ const shortcuts = [
       <h1 id="home-title" class="home__title">어느 나라로 떠나세요?</h1>
       <NuxtLink to="/search" class="home__search">
         <MagnifyingGlassIcon class="home__search-icon" aria-hidden="true" />
-        <span>국가 이름으로 찾기</span>
+        <span>나라나 도시 이름으로 찾기</span>
+      </NuxtLink>
+    </section>
+
+    <section class="home__catalog" aria-label="나라 고르기">
+      <UnderlineTabs v-model="tab" :tabs="[...tabs]" label="나라 목록" id-prefix="home" />
+      <div id="home-panel" class="home__grid" role="tabpanel" :aria-labelledby="`home-tab-${tab}`">
+        <NuxtLink v-for="t in tiles" :key="t.to" :to="t.to" class="home__tile">
+          <span class="home__tile-flags" :class="{ 'home__tile-flags--many': t.iso2s.length > 1 }">
+            <FlagIcon
+              v-for="iso2 in t.iso2s"
+              :key="iso2"
+              :iso2="iso2"
+              :size="t.iso2s.length > 1 ? 24 : 32"
+            />
+          </span>
+          <span class="home__tile-name">{{ t.label }}</span>
+          <span class="home__tile-badge">{{ t.badge }}</span>
+        </NuxtLink>
+      </div>
+      <NuxtLink to="/search" class="home__more">
+        전체 국가 보기
+        <ChevronRightIcon class="home__more-icon" aria-hidden="true" />
       </NuxtLink>
     </section>
 
@@ -101,6 +139,80 @@ const shortcuts = [
   width: 20px;
   height: 20px;
   color: var(--n-color-neutral-500, #737373);
+}
+
+.home__catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.home__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.home__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 6px 12px;
+  border: 1px solid var(--n-color-neutral-200, #e5e5e5);
+  border-radius: 14px;
+  color: inherit;
+  text-align: center;
+  text-decoration: none;
+}
+
+.home__tile:focus-visible {
+  outline: 2px solid var(--n-color-primary-500, #6239ff);
+  outline-offset: 2px;
+}
+
+.home__tile-flags {
+  display: flex;
+  justify-content: center;
+}
+
+.home__tile-flags--many > * + * {
+  margin-left: -6px;
+}
+
+.home__tile-name {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--n-color-neutral-900, #171717);
+}
+
+.home__tile-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--n-color-primary-50, #f1edff);
+  color: var(--n-color-primary-600, #5025e8);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.home__more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--n-color-neutral-50, #fafafa);
+  color: var(--n-color-neutral-600, #525252);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.home__more-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .home__card {
