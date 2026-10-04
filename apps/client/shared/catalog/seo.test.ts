@@ -20,9 +20,9 @@ import { parseCatalog } from './validate'
 const catalog = fixtureCatalog()
 
 describe('정적 페이지 목록 (spec S-6)', () => {
-  it('법정 4종 · 가이드 · 지원 기기 — spec 이 정한 여섯 경로', () => {
+  it('법정 3종 · 가이드 · 지원 기기 — spec 이 정한 다섯 경로(사업자정보 페이지는 없다 — client-shell D-39)', () => {
     expect([...STATIC_ROUTES].sort()).toEqual(
-      ['/business', '/guide', '/privacy', '/refund', '/supported-devices', '/terms'].sort(),
+      ['/guide', '/privacy', '/refund', '/supported-devices', '/terms'].sort(),
     )
   })
 })

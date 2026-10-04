@@ -48,7 +48,7 @@
 | `nomacomfe-write-plan`      | 코딩계획서 — T1 경량(재현→root cause→회귀 증거 서약) / T2+ 표준(AC↔검증 매핑·회귀 범위·수동 차터·200–400 LOC 분해). **테스트 인프라 제약 반영** |
 | `nomacomfe-qa-session`      | 머지 전 QA — ⑥ 적대적 리뷰 fresh subagent(spec+diff 만, blocker/major 0=통과, 재검은 새 subagent) + ⑦ acceptance walk(Orca 내장 브라우저)       |
 | `nomacomfe-finish-branch`   | **Step 0 Tier/QA 게이트**(집행 지점) → 빌드 검증 → 머지/PR 옵션 → 칸반 전환 → cleanup(승인 게이트)                                              |
-| `nomacomfe-worktree-setup`  | Orca 워크스페이스 부트스트랩 — **`--setup run` 전제**(hook 등록됨) · `.env.local` symlink · base=main · 칸반 in-progress                        |
+| `nomacomfe-worktree-setup`  | Orca 워크스페이스 부트스트랩 — **`--setup run` 전제**(hook 등록됨) · `.env.local` symlink · base=dev · 칸반 in-progress                        |
 | `nomacomfe-prod-push-check` | prod 배포 전 pre-flight (트리거 여부·마이그레이션·DS bump·UI 수동 검증)                                                                         |
 
 ### 범용 스킬

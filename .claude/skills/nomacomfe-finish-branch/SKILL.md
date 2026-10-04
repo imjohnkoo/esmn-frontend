@@ -27,7 +27,7 @@ Guide completion of worktree development. **Gate → Verify → options → exec
    - `0` → 계속
    - `1` → 확정 전 문안(`P9_4_PENDING`)이 커밋에 남아 있다. **Step 3 에서 옵션 1(로컬 머지)을 빼고, 옵션 2 는 `--draft` 로만** 연다 (prod 승격에 실려 나가는 것 차단 — client W1-2 spec D-17). CI `content-gate` job 도 빨간불이다
    - `2` → 검사 불가. 통과로 보지 않는다 — 원인을 고치고 다시
-   - spec DoD 에 **머지 선행조건**(예: client-shell 은 P6 #2 — 현재 main 의 prod 승격)이 적혀 있으면 그것도 여기서 확인한다. 미충족이면 게이트 `1` 과 같이 취급
+   - spec DoD 에 **머지 선행조건**(예: client-shell 은 P6 #2 — 현재 통합 브랜치(dev)의 prod 승격)이 적혀 있으면 그것도 여기서 확인한다. 미충족이면 게이트 `1` 과 같이 취급
 1. **Tier 확인** — spec/plan 헤더 pill 또는 핸드오프 브리프에서. 기록이 없으면 지금 판정해 plan 헤더에 기록.
    - T2 트리거: 신규 화면/플로우 · 외부연동(Maya·스마트스토어·Cafe24·PG) · Drizzle 스키마 · 과금/PII · 다중 파일 신규 기능 · mobile 신규 화면
    - 버그픽스는 **파일 수 무관 T1**
@@ -48,7 +48,8 @@ Guide completion of worktree development. **Gate → Verify → options → exec
 변경 파일을 보고 영향 앱만 빌드 (Turbo 가 incremental 처리):
 
 ```bash
-git diff --name-only $(git merge-base HEAD main)...HEAD
+git fetch origin --quiet || exit 1   # origin/dev 가 없거나 낡으면 merge-base 가 비어 «영향 앱 0» 으로 잘못 판정된다
+git diff --name-only $(git merge-base HEAD origin/dev)...HEAD
 ```
 
 영향 앱 판정 룰 (GitHub Actions paths-filter 와 동일):
@@ -74,17 +75,17 @@ yarn turbo run lint typecheck test build --filter=... || exit 1
 > - `test` — design-vue 129 + client 873(2026-09-23 W1-3) 건. admin 은 아직 0건(`passWithNoTests: true`)
 > - `lint` — 에러만 차단(경고는 통과). prettier 포맷은 PostToolUse 훅이 담당
 >
-> ✅ **INF-2(2026-09-02) 부터 PR·main push 에서 CI 가 같은 검사를 강제한다** (`.github/workflows/ci.yml`). 로컬에서 돌리는 것은 여전히 빠른 피드백을 위해서다 — CI 실패를 기다리지 말 것.
+> ✅ **INF-2(2026-09-02) 부터 PR·dev push 에서 CI 가 같은 검사를 강제한다** (`.github/workflows/ci.yml`). 로컬에서 돌리는 것은 여전히 빠른 피드백을 위해서다 — CI 실패를 기다리지 말 것.
 
 ### Step 2: Determine Base Branch
 
-**base 는 `main` 이 기본이다.** nomacom 은 `dev` 브랜치가 없고 `prod` 는 배포 트리거다.
+**base 는 `dev` 가 기본이다**(2026-10-04 `main` 에서 이름 변경 — `main` 브랜치는 없다). `prod` 는 배포 트리거다.
 
 ```bash
-git merge-base HEAD main   # 후보 확인
+git merge-base HEAD origin/dev   # 후보 확인
 ```
 
-사용자에게 확인: "Base branch로 `main` 을 사용할까요?" — `prod` 를 base 로 잡는 것은 **배포 의도가 명시된 경우만**이고, 그 경로는 `nomacomfe-prod-push-check` 를 먼저 지나야 한다.
+사용자에게 확인: "Base branch로 `dev` 를 사용할까요?" — `prod` 를 base 로 잡는 것은 **배포 의도가 명시된 경우만**이고, 그 경로는 `nomacomfe-prod-push-check` 를 먼저 지나야 한다.
 
 ### Step 3: Present Options
 
@@ -93,8 +94,8 @@ git merge-base HEAD main   # 후보 확인
 ```
 Implementation complete. What would you like to do?
 
-1. Merge locally to main
-2. Push and create PR to main
+1. Merge locally to dev
+2. Push and create PR to dev
 3. Push branch as-is (keep open, I'll handle manually)
 4. Discard this work
 
@@ -103,40 +104,40 @@ Which option?
 
 ### Step 4: Execute Choice
 
-#### Option 1: Merge Locally to `main`
+#### Option 1: Merge Locally to `dev`
 
 ```bash
 cd ~/dev/current-projects/nomacom-frontend    # 메인 클론으로 이동 (worktree 에서 base 체크아웃 불가)
 git fetch origin
-git checkout main && git pull --ff-only || exit 1   # 실패하면(다른 워크트리에 main · dirty) 게이트 · 머지가 엉뚱한 브랜치에 일어난다
+git checkout dev && git pull --ff-only || exit 1   # 실패하면(다른 워크트리에 dev · dirty) 게이트 · 머지가 엉뚱한 브랜치에 일어난다
 [ "${MERGE_PREREQ_OK:-}" = yes ] || exit 1   # spec 머지 선행조건(예: client-shell 은 P6 #2)을 확인하고 yes 로 둔 뒤에만
-# 게이트 스크립트 — main 에 아직 없으면(그 스크립트를 들여오는 첫 머지) 워크트리 것을 메인 클론 저장소에 대고 부른다
+# 게이트 스크립트 — dev 에 아직 없으면(그 스크립트를 들여오는 첫 머지) 워크트리 것을 메인 클론 저장소에 대고 부른다
 GATE=.github/scripts/content-pending-gate.sh
 [ -f "$GATE" ] || GATE="<worktree>/.github/scripts/content-pending-gate.sh"
 # 판정 대상 = 메인 클론(워크트리 HEAD 가 아니다) — CONTENT_GATE_ROOT 는 export 하지 말고 명령마다 앞에 붙인다(셸에 남으면 다른 저장소를 본다)
-# 머지 **전에** 양쪽 부모를 본다 — 둘 다 0 이어야 머지한다(머지 뒤 실패하면 로컬 main 에 커밋이 남는다)
+# 머지 **전에** 양쪽 부모를 본다 — 둘 다 0 이어야 머지한다(머지 뒤 실패하면 로컬 dev 에 커밋이 남는다)
 CONTENT_GATE_ROOT="$(pwd)" bash "$GATE" HEAD && CONTENT_GATE_ROOT="$(pwd)" bash "$GATE" <feature-branch> || exit 1
 git merge --no-ff <feature-branch> || exit 1   # 충돌이면 멈춘다 — 손으로 해결했다면 아래 게이트 재검사부터 다시
 yarn install && yarn turbo run build --filter=nomacom-admin --filter=nomacom-client || exit 1
 CONTENT_GATE_ROOT="$(pwd)" bash "$GATE" HEAD || exit 1   # 머지 결과를 다시(충돌 해결에서 들어온 경우)
-git push origin main
+git push origin dev
 ```
 
-> 머지 뒤 게이트가 실패하면 **push 하지 않고** 사용자에게 보고한다. 로컬 main 을 되돌리는 것(`git reset --keep origin/main`)도 사용자 승인 뒤에만 — 그 전에 prod-push-check 를 돌리면 안 된다(로컬 main 에 자리표시자 커밋이 있다).
+> 머지 뒤 게이트가 실패하면 **push 하지 않고** 사용자에게 보고한다. 로컬 dev 를 되돌리는 것(`git reset --keep origin/dev`)도 사용자 승인 뒤에만 — 그 전에 prod-push-check 를 돌리면 안 된다(로컬 dev 에 자리표시자 커밋이 있다).
 
-> `main` push 는 `packages/design-*` 변경이 포함되면 `design-system-publish.yml` 을 트리거한다 — **DS version bump 선행 여부**를 확인할 것.
+> `dev` push 는 `packages/design-*` 변경이 포함되면 `design-system-publish.yml` 을 트리거한다 — **DS version bump 선행 여부**를 확인할 것.
 
 #### Option 2: Push + PR
 
 ```bash
 cd <worktree>
 git push -u origin <feature-branch> || exit 1   # 실패하면 게이트가 본 HEAD 와 PR 의 원격 상태가 어긋난다
-# 기본은 draft — ready 로 열면 GitHub UI 에서 바로 머지된다(main 에 required check 없음).
+# 기본은 draft — ready 로 열면 GitHub UI 에서 바로 머지된다(dev 에 required check 없음).
 # ready 는 콘텐츠 게이트 0 **이고** spec 의 머지 선행조건(예: client-shell 은 P6 #2)을 확인해 MERGE_PREREQ_OK=yes 로 둔 때만
 DRAFT="--draft"
 if env -u CONTENT_GATE_ROOT bash .github/scripts/content-pending-gate.sh >/dev/null 2>&1 && [ "${MERGE_PREREQ_OK:-}" = yes ]; then DRAFT=""; fi
 # draft 를 ready 로 바꿀 때(`gh pr ready`)도 같은 두 조건을 **그때 다시** 확인한다 — PR 을 연 뒤 커밋이 늘었을 수 있다
-gh pr create --base main $DRAFT --title "<type>(<scope>): <title>" --body "$(cat <<'EOF'
+gh pr create --base dev $DRAFT --title "<type>(<scope>): <title>" --body "$(cat <<'EOF'
 ## Summary
 <2-3 bullets>
 
@@ -203,7 +204,7 @@ Type 'discard' to confirm.
 `prod` 로의 이동은 이 스킬이 자동으로 하지 않는다. **`nomacomfe-prod-push-check` 로 pre-flight 를 마치고 사용자 명시 승인** 후 진행한다.
 
 - `.claude/hooks/guard-prod-push.sh` 가 `git push ... prod` 와 `gh api ... refs/heads/prod` 쓰기를 **차단**한다 (2026-09-02 부터 실제 동작 — 그 전에는 문서에만 있었다)
-- nomacom 은 `dev` 브랜치가 없으므로 **prod↔dev sync 단계는 존재하지 않는다** (m8 규약을 복사하지 말 것)
+- 승격은 **dev → prod 한 방향**이다 — **prod↔dev sync 단계는 존재하지 않는다** (m8 규약을 복사하지 말 것)
 
 ### Step 4.7: 칸반 상태 전환 (Orca 워크트리인 경우)
 
@@ -238,7 +239,7 @@ Option 1, 4 에서만 정리한다. Option 2, 3 은 유지.
 
 | Option           | Step 0 게이트                    | Build | Base push | Keep worktree       |
 | ---------------- | -------------------------------- | ----- | --------- | ------------------- |
-| 1. Merge locally | ✓ (콘텐츠 게이트 0 일 때만 제시) | ✓     | ✓ (main)  | ✗ — **승인 후에만** |
+| 1. Merge locally | ✓ (콘텐츠 게이트 0 일 때만 제시) | ✓     | ✓ (dev)   | ✗ — **승인 후에만** |
 | 2. Push + PR     | ✓ (게이트 1 이면 `--draft`)      | ✓     | — (PR)    | ✓                   |
 | 3. Push as-is    | ✓                                | ✓     | ✗         | ✓                   |
 | 4. Discard       | —                                | ✗     | ✗         | ✗ — **승인 후에만** |
@@ -260,14 +261,14 @@ Option 1, 4 에서만 정리한다. Option 2, 3 은 유지.
 **반드시**:
 
 - Step 0 → Step 1 순서 유지 (게이트가 빌드보다 먼저)
-- Base branch 명시적 확인 (기본 `main`)
+- Base branch 명시적 확인 (기본 `dev`)
 - 영향 앱 파악: DS tokens/vue 변경은 admin+client 둘 다, design-mobile 은 mobile
 - Orca 워크스페이스면 **세션(터미널)도 함께 정리** — `git worktree remove` 만 하면 Orca 카드가 유령으로 남는다
 - DS 변경 시 외부 consumer 영향 + version bump 검토
 
 ## Gotchas
 
-- **Worktree 에서 `git checkout main` 금지**: main 이 메인 클론에서 이미 체크아웃돼 있으면 실패. Option 1 은 반드시 메인 클론으로 이동 후 진행
+- **Worktree 에서 `git checkout dev` 금지**: dev 가 메인 클론에서 이미 체크아웃돼 있으면 실패. Option 1 은 반드시 메인 클론으로 이동 후 진행
 - **`git worktree remove` 가 조용히 실패**: uncommitted 파일 또는 worktree 내 실행 중 프로세스(nuxt dev / expo)가 있으면 실패. `--force` 전에 원인 확인
 - **Orca 워크스페이스는 `git worktree remove` 로 반만 지워진다**: `~/orca/workspaces/...` 경로면 Orca 가 메타데이터·터미널·카드를 따로 들고 있다. `orca worktree rm --worktree id:<repoId>::<path>` 가 git + Orca 를 함께 정리
 - **`git worktree remove` 는 ask 규칙**: `.claude/settings.json` 의 `ask` 목록에 있어 승인 프롬프트가 뜬다. 정상이며 우회 대상이 아니다

@@ -1,14 +1,22 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { PREVIEW_OPTION_CODE, checkoutPreviewFromCatalog } from '#shared/catalog/preview'
 import { ACTIVE_CATALOG_FILE, activeRaw, fixtureRaw, setFinalWon } from '#shared/catalog/test-data'
 import { parseCatalog } from '#shared/catalog/validate'
 import {
   PAYMENT_ID_PATTERN,
+  BEFORE_NOTICE,
+  CONSENT_ITEMS,
+  PRIVACY_NOTICE,
   buildReturnQuery,
+  canPayWith,
   createPaymentId,
   formatWon,
+  initialConsent,
   readPaymentResult,
+  splitConsent,
+  useCheckoutConsent,
 } from './checkout-preview'
+import { CHECKOUT_NOTICE } from '../content/legal/checkout-notice'
 
 describe('createPaymentId', () => {
   it('pv-{ms}-{hex24} · 토스 규칙(6~64자 · [A-Za-z0-9_-]) 안', () => {
@@ -181,5 +189,137 @@ describe('buildReturnQuery (창 없이 끝난 응답 — spec F-19)', () => {
       paymentId: LOCAL,
       message: 'PG 사유',
     })
+  })
+})
+
+describe('splitConsent — 05-B 동의 · 안내 문구에서 링크 떼기(F-22)', () => {
+  it('라벨은 글자만 · 링크는 차례대로', () => {
+    expect(splitConsent('(필수) 이용약관에 동의합니다 [보기](/terms)')).toEqual({
+      label: '(필수) 이용약관에 동의합니다',
+      links: [{ text: '보기', href: '/terms' }],
+    })
+    expect(splitConsent('(필수) 만 14세 이상입니다')).toEqual({
+      label: '(필수) 만 14세 이상입니다',
+      links: [],
+    })
+  })
+})
+
+describe('05-B 동의 모델(F-22) — 화면이 그리는 것은 이것뿐', () => {
+  it('항목 3 — 순서 · 문구(정본 05 B절 그대로) · 필수 2 + 선택 1 · 링크 · 알릴 사항', () => {
+    expect(CONSENT_ITEMS.map((i) => [i.key, i.required, i.label])).toEqual([
+      ['terms', true, '(필수) 이용약관에 동의합니다'],
+      ['age', true, '(필수) 만 14세 이상입니다'],
+      ['marketing', false, '(선택) 혜택·이벤트 알림 수신 (카카오톡·이메일)'],
+    ])
+    expect(CONSENT_ITEMS.map((i) => i.links)).toEqual([[{ text: '보기', href: '/terms' }], [], []])
+    expect(CONSENT_ITEMS.map((i) => i.info)).toEqual([
+      null,
+      null,
+      '수집 항목: 이메일 주소, 휴대전화번호 · 목적: 신상품·혜택 안내 · 보유: 동의 철회 시까지 · 동의하지 않아도 구매할 수 있습니다',
+    ])
+  })
+
+  it('처음 값은 모두 해제(PG 심사 요건) · 부를 때마다 새 객체 · 저장소 · 쿠키를 읽지 않는다(값이 있어도)', () => {
+    expect(initialConsent()).toEqual({ terms: false, age: false, marketing: false })
+    const stored = { getItem: () => 'true', key: () => 'terms', length: 3 }
+    vi.stubGlobal('sessionStorage', stored)
+    vi.stubGlobal('localStorage', stored)
+    vi.stubGlobal('document', { cookie: 'terms=true; age=true; marketing=true' })
+    try {
+      expect(initialConsent()).toEqual({ terms: false, age: false, marketing: false })
+    } finally {
+      vi.unstubAllGlobals()
+    }
+    const a = initialConsent()
+    a.terms = true
+    expect(initialConsent().terms).toBe(false)
+  })
+
+  it('useCheckoutConsent — 처음엔 결제 불가 · 필수 2개를 체크해야 켜지고 · 선택은 무관 · 하나라도 풀면 다시 꺼진다 · 부를 때마다 새 상태', () => {
+    const c = useCheckoutConsent()
+    expect(c.items).toBe(CONSENT_ITEMS)
+    expect({ ...c.agreed }).toEqual({ terms: false, age: false, marketing: false })
+    expect(c.canPay.value).toBe(false)
+    c.agreed.marketing = true
+    expect(c.canPay.value).toBe(false)
+    c.agreed.terms = true
+    expect(c.canPay.value).toBe(false)
+    c.agreed.age = true
+    expect(c.canPay.value).toBe(true)
+    c.agreed.marketing = false
+    expect(c.canPay.value).toBe(true)
+    c.agreed.terms = false
+    expect(c.canPay.value).toBe(false)
+    const fresh = useCheckoutConsent()
+    expect({ ...fresh.agreed }).toEqual({ terms: false, age: false, marketing: false })
+    expect(fresh.canPay.value).toBe(false)
+  })
+
+  it('개인정보 안내 · 결제 전 안내도 얼어 있다 — 실행 중에 문구 · 링크 · 줄을 바꿀 수 없다', () => {
+    expect([
+      Object.isFrozen(PRIVACY_NOTICE),
+      Object.isFrozen(PRIVACY_NOTICE.links),
+      ...PRIVACY_NOTICE.links.map(Object.isFrozen),
+    ]).toEqual([true, true, true])
+    expect([Object.isFrozen(BEFORE_NOTICE), Object.isFrozen(BEFORE_NOTICE.lines)]).toEqual([
+      true,
+      true,
+    ])
+    expect(() => {
+      ;(BEFORE_NOTICE.lines as unknown as string[]).length = 1
+    }).toThrow(TypeError)
+    expect(BEFORE_NOTICE.lines).toHaveLength(3)
+  })
+
+  it('항목은 얼어 있다 — 실행 중에 필수 여부 · 문구 · 링크를 바꿀 수 없다', () => {
+    expect(Object.isFrozen(CONSENT_ITEMS)).toBe(true)
+    for (const item of CONSENT_ITEMS) {
+      expect(Object.isFrozen(item)).toBe(true)
+      expect(Object.isFrozen(item.links)).toBe(true)
+      for (const link of item.links) expect(Object.isFrozen(link)).toBe(true)
+    }
+    expect(() => {
+      ;(CONSENT_ITEMS[0] as { required: boolean }).required = false
+    }).toThrow(TypeError)
+    expect(CONSENT_ITEMS[0]!.required).toBe(true)
+  })
+
+  it('결제 조건 = 필수 2개 모두 · 선택은 무관(8가지 전부)', () => {
+    for (const terms of [false, true])
+      for (const age of [false, true])
+        for (const marketing of [false, true])
+          expect(
+            canPayWith({ terms, age, marketing }),
+            JSON.stringify({ terms, age, marketing }),
+          ).toBe(terms && age)
+  })
+
+  it('개인정보 «안내»(체크 없음) · 결제 전 안내 3줄', () => {
+    expect(PRIVACY_NOTICE).toEqual({
+      label: '개인정보 수집·이용 안내',
+      links: [{ text: '개인정보처리방침 보기', href: '/privacy' }],
+      info: CHECKOUT_NOTICE.privacyInfo,
+    })
+    expect(BEFORE_NOTICE.title).toBe('결제 전 안내')
+    expect(BEFORE_NOTICE.lines).toEqual([
+      CHECKOUT_NOTICE.beforeRefund,
+      CHECKOUT_NOTICE.beforeMinor,
+      CHECKOUT_NOTICE.beforeNotify,
+    ])
+  })
+
+  // 정본 → 생성물: 가져오기가 05 B절 코드 블록 줄을 전부 고르거나(pick) 해시로 건너뛴다(skip) — 줄이 늘면 가져오기가 멈춘다.
+  // 생성물 → 모델: 이 테스트 — 생성물에 키가 늘면 여기서 막힌다
+  it('05-B 생성물의 줄은 하나도 빠짐없이 모델에 있다', () => {
+    const shown = new Set<string>([
+      ...CONSENT_ITEMS.flatMap((i) => [i.label, i.info ?? '']),
+      PRIVACY_NOTICE.label,
+      PRIVACY_NOTICE.info,
+      BEFORE_NOTICE.title,
+      ...BEFORE_NOTICE.lines,
+    ])
+    for (const [key, line] of Object.entries(CHECKOUT_NOTICE))
+      expect(shown.has(line) || shown.has(splitConsent(line).label), key).toBe(true)
   })
 })

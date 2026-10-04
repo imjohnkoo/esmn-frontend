@@ -107,7 +107,7 @@ Tier: T2. nomacomfe-worktree-setup 절차(Orca 부트스트랩 모드)로 마무
 완료 정의: plan 테스트 계획 전항 green + 커밋 + nomacomfe-qa-session ⑥ 리뷰 blocker/major 0.
 DoD 도달 시: workspace-status in-review 전환 → nomacomfe-qa-session 진행 (⑥ 적대적 리뷰,
 해당 트랙이면 ⑦ acceptance walk) → QA 증거를 카드 코멘트에 기록 → nomacomfe-finish-branch.
-금칙: 테스트/검증 기준 완화 금지 · spec 범위 밖 확장 금지 · PR base 는 항상 main · prod 직접 push 금지.
+금칙: 테스트/검증 기준 완화 금지 · spec 범위 밖 확장 금지 · PR base 는 항상 dev · prod 직접 push 금지.
 ```
 
 - 긴 기획 세션이었다면 `handoff` 스킬 산출물을 브리프에 동봉 (Orca 핸드오프 = 전달 채널, handoff 스킬 = 전달 내용물)

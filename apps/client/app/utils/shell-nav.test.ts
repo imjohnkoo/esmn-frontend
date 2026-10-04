@@ -16,7 +16,6 @@ describe('activeTabOf', () => {
     ['/terms', 'my'],
     ['/privacy', 'my'],
     ['/refund', 'my'],
-    ['/business', 'my'],
     ['/my#cs', 'my'],
   ])('%s → %s', (path, tab) => {
     expect(activeTabOf(path)).toBe(tab)
@@ -28,6 +27,7 @@ describe('activeTabOf', () => {
     '/select-date/1',
     '/view/1',
     '/checkout-preview',
+    '/business', // D-39 — 페이지 없음(404)
     '/myanmar',
     '/guidex',
     '/productsx',
@@ -70,8 +70,7 @@ describe('shell 목록', () => {
         [
           ['이용약관', '/terms'],
           ['개인정보처리방침', '/privacy'],
-          ['환불정책', '/refund'],
-          ['사업자정보', '/business'],
+          ['취소·환불 정책', '/refund'],
         ],
       ],
     ])
@@ -83,15 +82,10 @@ describe('shell 목록', () => {
     }
   })
 
-  it('약관 및 정책 4종이 전체 메뉴에 그대로 들어 있다', () => {
+  it('약관 및 정책 3종이 전체 메뉴에 그대로 들어 있다 — 사업자정보 링크 없음(D-39)', () => {
     const legal = SHELL_MENU.find((group) => group.title === '약관 및 정책')
     expect(legal?.links).toEqual(LEGAL_LINKS)
-    expect(LEGAL_LINKS.map((link) => link.to)).toEqual([
-      '/terms',
-      '/privacy',
-      '/refund',
-      '/business',
-    ])
+    expect(LEGAL_LINKS.map((link) => link.to)).toEqual(['/terms', '/privacy', '/refund'])
   })
 
   it('전체 메뉴는 체크아웃 미리보기를 가리키지 않는다 (K9 — 링크 0)', () => {
@@ -116,7 +110,7 @@ describe('tabAriaCurrent (spec F-6)', () => {
 
   it('탭 구역의 다른 경로 → true (현재 페이지로 읽히지 않게)', () => {
     expect(tabAriaCurrent('/terms', tab('my'))).toBe('true')
-    expect(tabAriaCurrent('/business', tab('my'))).toBe('true')
+    expect(tabAriaCurrent('/refund', tab('my'))).toBe('true')
     expect(tabAriaCurrent('/search', tab('home'))).toBe('true')
     expect(tabAriaCurrent('/supported-devices', tab('guide'))).toBe('true')
   })

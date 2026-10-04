@@ -11,7 +11,7 @@ spec `nomacom-wiki wiki/frontend/specs/client/2026-09-23-client-shell.md` · pla
 - **레이아웃** — `default`(헤더 + 본문 + 푸터 + 하단 탭) · `flow`(헤더·탭 없음 + compact 푸터). 4-step 4페이지와 `/checkout-preview` 가 `flow`. 새 판매 페이지는 기본값(`default`).
 - **쌓임 순서** — 헤더 `--n-z-index-sticky`(1020) < 탭바 `--n-z-index-fixed`(1030) < DS 오버레이(body 포털 1040/1050). 탭바를 1040 이상으로 올리지 말 것.
 - **내비 정의 한 곳** — `app/utils/shell-nav.ts`(탭 4 · 전체 메뉴 · 약관 링크 · 활성 판정). 탭 활성 규칙을 바꾸면 `shell-nav.test.ts` 를 같이 고친다.
-- **사업자정보 · 고객센터 · 법정 문안** — `app/content/{business,support,legal}.ts`. 미확정 값은 `P9_4_PENDING`(화면 «(확정 전)»). ⛔ **main 머지 게이트**: `bash .github/scripts/content-pending-gate.sh` 가 0 — 머지할 **커밋** 기준(미커밋 수정은 통과가 아니다). 부르는 곳: finish-branch Step 0 첫 항목 · prod-push-check · CI `content-gate`(알림 — required check 없음). 환불정책에 «QR 발급 후 수수료 · 공제 · 청약철회 제한» 을 넣으면 `legal.test.ts` 가 막는다(A5).
+- **법정 문안 · 사업자정보 = 생성물** — `app/content/legal/*.ts`(약관 · 방침 · 환불 · 푸터 04 1절 줄 · 발급 팝업 05-A · 체크아웃 05-B — `/business` 페이지 · 04 2절 표는 없다, spec D-39). ⛔ **손으로 고치지 말 것** — legal-pages 정본을 고친 뒤 `yarn workspace nomacom-client legal:import --from <정본 폴더>`(규칙 `scripts/legal-posting.ts` — 처음 보는 태그 · 공개 금지어(공급사 명칭 · 자정 기준 등) · 조각 코드 블록에서 고르지도 건너뛰지도 않은 줄이 있으면 가져오기가 실패하고 아무것도 쓰지 않는다). 정본과 다르게 게시하기로 결정한 글자는 규칙의 **게시 수정**(`DocRules.edits` — 약관 8조② 자정 예시 괄호 D-33 · 환불 3항 전화번호 D-41 · 방침 4장 알림톡 수탁자 «솔라피(주)» D-54)과 **값 채움**(`fills` — 정본 값 자리 태그를 결정 글자로: 방침 4장 «AWS» · 솔라피 칸 · 04 1절 호스팅 «AWS» D-54)으로만 — 그 줄 · 글자 · 자리가 정확히 하나일 때만 적용되고 아니면 가져오기가 멈춘다(정본 rev 가 오면 규칙을 지운다 · 생성물 머리에 «게시 수정 N건» · «값 채움 N건»). **공제 문장(3,500원 폐기 비용 · 청약철회 제한)은 정본 그대로**(spec D-28 — 옛 A5 «발급 후 공제 금지» 는 해제됐다). `legal-content.test.ts` 가 핵심 줄을 고정한다. 고객센터 값만 손으로 적은 `app/content/support.ts` — `support.test.ts` 가 생성물 글자와 대조한다. 미확정 값은 `P9_4_PENDING`(화면 «(확정 전)») — 2026-10-03 D-54 로 지금은 0. ⛔ **main 머지 게이트**: `bash .github/scripts/content-pending-gate.sh` 가 0 — 머지할 **커밋** 기준(미커밋 수정은 통과가 아니다). 부르는 곳: finish-branch Step 0 첫 항목 · prod-push-check · CI `content-gate`(알림 — required check 없음). 법정 문서 화면 = `components/legal/LegalMarkdown.vue`(부분집합 렌더러 `utils/legal-render.ts` · v-html 없음).
 - **noindex 목록 한 곳** — `shared/utils/robots.ts` 가 meta(`app.vue`) · `X-Robots-Tag`(`nuxt.config` routeRules) · `/robots.txt`(`server/routes/robots.txt.ts`) 세 출력을 만든다. 4-step 은 `Cache-Control: no-store` 도. `public/robots.txt` 를 다시 만들지 말 것(라우트보다 먼저 잡힌다).
 - **CORS** — `server/utils/cors-origins.ts`. `esimmany.com` · `app.esimmany.com` 둘 다 있어야 각 호스트의 same-origin POST 가 403 을 피한다. `www` 는 없다.
 - **테스트 체크아웃** `/checkout-preview` — PG 심사 캡처 전용. 사이트 어디에서도 링크하지 않는다 · 주문 · 결제 서버 호출 · 저장 0 · 테스트 채널키만. 상품 값(금액 · 옵션명 = K1 두 칸)은 **빌드 때** `modules/catalog.ts` 가 K1 `FRA00U01D07V2` 에서 계산해 앱 설정(`checkoutPreview`)으로 넣는다 — 페이지는 데이터 라우트도 부르지 않는다(W1-3 F-12 · shell F-19). 그 옵션이 없으면 빌드 실패.
@@ -81,17 +81,17 @@ apps/client/
 │   ├── layouts/{default,flow}.vue     # 판매(헤더·탭·푸터) / 4-step·체크아웃(푸터만)
 │   ├── middleware/order-flow.ts       # 4-step 가드 (K8) — 흐름 쿠키 복원 + 판정표
 │   ├── components/shell/              # ShellHeader · ShellMenu · BottomTabBar · SiteFooter
-│   ├── components/{order,legal}/      # OrderLookupForm · LegalDocument
+│   ├── components/{order,legal}/      # OrderLookupForm · LegalMarkdown(법정 문서 렌더)
 │   ├── components/popup/              # ⚠️ legacy 9종 — 어느 페이지도 import 안 함 (아래 참고)
 │   ├── composables/useApi.ts          # verifyOrder / activateOrder ($fetch wrapper)
 │   ├── composables/useFlowSession.ts  # 흐름 쿠키 nomacom_flow
-│   ├── content/                       # 사업자정보 · 고객센터 · 법정 문안 (P9_4_PENDING = 확정 전)
+│   ├── content/                       # legal/*.ts = 법정 문안 생성물(손으로 고치지 말 것) · support.ts 고객센터 · pending.ts (P9_4_PENDING = 확정 전)
 │   ├── pages/
 │   │   ├── index.vue                  # 홈 — 검색 진입 · «인기국가 · 다국가» 탭 격자 · 주문번호 조회
 │   │   ├── countries/[iso3].vue       # 국가 페이지 — zone 카드 (W1-3)
 │   │   ├── products/[zone].vue        # 상품 상세 — 선택기 · 구매 시트 · 안내 6섹션 (W1-3)
 │   │   ├── my-esim.vue · my.vue       # 내 eSIM(주문번호 → 발급 호스트) · 마이(고객센터 · 약관)
-│   │   ├── terms · privacy · refund · business .vue   # 법정 4종
+│   │   ├── terms · privacy · refund .vue              # 법정 3종 (/business 없음 — D-39)
 │   │   ├── search.vue                 # 국가 검색(초성 · 영문 · 도시 · 별칭) — noindex
 │   │   ├── guide/index.vue            # 자리 (W1-4)
 │   │   ├── checkout-preview.vue       # PG 심사용 테스트 체크아웃 (링크 0 · noindex)
@@ -165,7 +165,7 @@ apps/client/
 | `SPARK_API_ENDPOINT` · `SPARK_API_TOKEN` · `SPARK_ACCOUNT_ID` · `SPARK_PROXY_ENDPOINT` · `SPARK_PROXY_SECRET` | Spark 발급 (프록시 = backend 화이트리스트 IP 경유)                                                                                            |
 | `ESIM_MANAGER_INTERNAL_ENDPOINT` · `ESIM_MANAGER_INTERNAL_SECRET`                                             | 취소철회 backend 위임                                                                                                                         |
 | `CORS_EXTRA_ORIGINS`                                                                                          | `/api/**` 허용 origin 추가(쉼표 구분 · `server/utils/cors-origins.ts`). 로컬 walk 는 봉투 스크립트가 `http://127.0.0.1:<port>` 한 값만 넣는다 |
-| `NUXT_PUBLIC_GUEST_APP_ORIGIN`                                                                                | runtimeConfig — 주문번호 조회가 보내는 발급 호스트. 기본 `https://app.esimmany.com`, 로컬은 `http://localhost:3000`                           |
+| `NUXT_PUBLIC_GUEST_APP_ORIGIN`                                                                                | runtimeConfig — 주문번호 조회가 보내는 발급 호스트. 기본 `https://app.esimmany.com`, 로컬 walk 는 봉투 스크립트가 `http://127.0.0.1:<port>`(자기 포트)로 넣는다 |
 | `NUXT_PUBLIC_PORTONE_STORE_ID` · `NUXT_PUBLIC_PORTONE_TEST_CHANNEL_KEY`                                       | runtimeConfig — `/checkout-preview` 전용 공개값. SSM `/nomacom/client/` 에 같은 이름(키 끝 토막 = env 이름). ⚠️ 테스트 채널키만               |
 
 서버 키는 `process.env` 직접 참조, `NUXT_PUBLIC_*` 는 runtimeConfig 런타임 덮어쓰기. prod 는 `/nomacom/shared/maya/*`, `/nomacom/shared/db/*`, `/nomacom/client/*` SSM 경로에서 `after_deploy.sh` 가 주입. 상세는 `.claude/rules/ssm-paths.md`.
@@ -185,7 +185,10 @@ yarn turbo run build --filter=nomacom-client
 # 봉투 밖 서버에 닿을 수 있다(그래서 포트가 어느 주소든 점유돼 있으면 기동 거부). 회귀: bash .claude/scripts/client-walk-server.test.sh
 bash .claude/scripts/client-walk-server.sh dev  3005                                             # shell · 비-DB 4-step
 bash .claude/scripts/client-walk-server.sh prod 3006                                             # 헤더 · noindex (DB 없음)
-# 합성 DB walk(E2E-3 · 4 · 7)는 아직 준비 명령이 없다 — 스키마 · 시드 명령 추가와 실행 모두 John 승인 대상.
+# 합성 DB walk(E2E-3 · 4 · 7) — .claude/scripts/client-walk-db.sh(spec D-24 · John 승인): 로컬 Docker postgres nomacom-walk-pg 만 ·
+# up → schema → seed(가짜 주문 2건 · 010-0000-xxxx) → 봉투 dev 서버에 그 URL → counts(E2E-7 행 수). 이 스크립트는 **어느 명령도 호스트 55432 에
+# 붙지 않는다** — schema 는 drizzle-kit export(DB 연결 없음) SQL 을 컨테이너 안 psql 로 · seed · counts 도 docker exec. 컨테이너는 127.0.0.1:55432 에만 ·
+# 원격 docker 거부. 호스트 포트로 붙는 것은 봉투 dev 서버뿐(55432 리스너 판정). 회귀: bash .claude/scripts/client-walk-db.test.sh
 # ⛔ drizzle-kit push / db:push 금지(drizzle.config 는 셸의 DATABASE_URL 을 쓴다). 실발급 성공 경로는 prod 승격 당일 operator AC.
 
 # Docker

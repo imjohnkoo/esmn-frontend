@@ -3,12 +3,13 @@
 // DS NMobileLayout 과 같은 수치지만 컴포넌트는 쓰지 않는다: content 래퍼의 overflow-y:auto 가 sticky 헤더를 깨뜨린다.
 // ⚠️ .app-bg · .app-frame 에 overflow · transform · contain 을 주지 말 것 — sticky 헤더 · fixed 탭바가 깨진다.
 import { isNoindexPath } from '#shared/utils/robots'
+import { pageTitle } from '~/utils/page-title'
 
 const route = useRoute()
 
 useHead(() => ({
   htmlAttrs: { lang: 'ko' },
-  titleTemplate: (title?: string) => (title ? `${title} · 이심마니` : '이심마니'),
+  titleTemplate: (title?: string) => pageTitle(title),
   // noindex 목록은 shared/utils/robots.ts 하나 — 레이아웃 · 페이지가 따로 넣지 않는다
   meta: isNoindexPath(route.path) ? [{ name: 'robots', content: 'noindex, nofollow' }] : [],
 }))

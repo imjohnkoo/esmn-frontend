@@ -82,6 +82,13 @@ const onSubmit = async () => {
 }
 // 게스트 발급 4-step 은 헤더 · 하단 탭 없는 flow 레이아웃 (spec D-2) · 가드는 order-flow 미들웨어 (K8)
 definePageMeta({ layout: 'flow', middleware: 'order-flow' })
+
+// 개인정보처리방침 · 이용약관 하단 시트(spec D-46 · John 2026-10-03) — 새 탭 대신(입력한 이름 · 전화를 잃지 않는다)
+import type { DocSheetKey } from '~/components/legal/DocSheet.vue'
+// 시트는 페이지와 함께 싣는다 — 따로 불러오면 배포 뒤 묶음 이름이 바뀐 화면에서 불러오기가 실패해 링크가 먹통이 된다(링크는 일반 클릭을 막는다 · QA ⑥ m2)
+import DocSheet from '~/components/legal/DocSheet.vue'
+
+const legalSheet = ref<DocSheetKey | null>(null)
 </script>
 
 <template>
@@ -145,6 +152,30 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
           입력한 정보는 안전하게 처리되며, 발급 외 다른 목적으로 사용하지 않아요.
         </NTrustNote>
       </div>
+
+      <!-- 법정 링크(client-shell spec F-20 · 개인정보 보호법 30조) — 방침은 굵게 · 색으로 구분. 입력을 잃지 않게 하단 시트로(D-46) — 화면 준비(하이드레이션) 전 · 보조키 클릭은 target 으로 새 탭 -->
+      <p class="verify-page__policy">
+        <a
+          class="verify-page__policy-link verify-page__policy-link--privacy"
+          href="/privacy"
+          target="_blank"
+          rel="noopener"
+          aria-haspopup="dialog"
+          @click.exact.prevent="legalSheet = 'privacy'"
+          >개인정보처리방침</a
+        >
+        <span class="verify-page__policy-sep" aria-hidden="true">·</span>
+        <a
+          class="verify-page__policy-link"
+          href="/terms"
+          target="_blank"
+          rel="noopener"
+          aria-haspopup="dialog"
+          @click.exact.prevent="legalSheet = 'terms'"
+          >이용약관</a
+        >
+      </p>
+      <DocSheet v-model="legalSheet" />
 
       <div class="verify-page__cta">
         <NButton type="submit" variant="primary" size="xl" full-width :disabled="isSubmitting">
@@ -264,6 +295,35 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 
 .verify-page__note {
   margin-top: 28px;
+}
+
+.verify-page__policy {
+  display: flex;
+  /* 크게 확대해 두 링크가 한 줄에 안 들어가면 다음 줄로(넘쳐 «개인정보처리방침» 앞 글자가 가려지지 않게) */
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 14px 0 0;
+  color: var(--n-color-neutral-500, #737373);
+  font-size: 13px;
+}
+
+.verify-page__policy-link {
+  /* 글자 확대에서도 «이용약/관» 처럼 갈리지 않게 */
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 2px;
+  color: var(--n-color-neutral-600, #525252);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.verify-page__policy-link--privacy {
+  color: var(--n-color-primary-600, #5025e8);
+  font-weight: 700;
 }
 
 .verify-page__cta {

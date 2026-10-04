@@ -31,7 +31,8 @@ const channels = supportRows()
             :target="channel.href.startsWith('http') ? '_blank' : undefined"
             :rel="channel.href.startsWith('http') ? 'noopener noreferrer' : undefined"
           >
-            {{ channel.text }}
+            {{ channel.text
+            }}<span v-if="channel.href.startsWith('http')" class="sr-only"> (새 창)</span>
           </a>
           <span v-else class="my-page__row-value">{{ channel.text }}</span>
         </li>

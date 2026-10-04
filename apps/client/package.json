@@ -16,6 +16,7 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "catalog:assets": "tsx scripts/catalog-assets.ts",
+    "legal:import": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/legal-import.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "bash ../../.github/scripts/typecheck-gate.sh client",
@@ -45,7 +46,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4",
-    "@vitejs/plugin-vue": "^5.2.0",
+    "@vitejs/plugin-vue": "^6.0.4",
     "@vue/compiler-sfc": "3.5.32",
     "@vue/test-utils": "^2.4.10",
     "drizzle-kit": "^0.31.8",

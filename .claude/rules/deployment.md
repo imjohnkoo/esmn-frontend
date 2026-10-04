@@ -1,7 +1,7 @@
 # 배포 흐름 (CodeDeploy + GitHub Actions)
 
 > **상태 (2026-09-02 갱신)**: 배포 자산은 **구축 완료**다 — `.github/workflows/{admin,client}-production.yml` · `appspec.yml` · `deploy/scripts/{before,after}_deploy.sh` · `apps/{admin,client}/Dockerfile` · `deploy/cloudfront/` 모두 실재한다. SSM 경로는 `.claude/rules/ssm-paths.md` 에서 확정됐다.
-> ⚠️ **남은 갭**: ① Dockerfile 안에 typecheck/test **게이트가 없다** — 이미지가 무조건 만들어지므로 배포 경로에 기계 검증이 0 이다. ② PR/main CI 도 없다. 그래서 `guard-prod-push.sh` 의 prod 차단과 `nomacomfe-prod-push-check` 가 유일한 사전 방어선이다 (Phase 3 인프라 트랙 후보).
+> ✅ **검증 3층(2026-09-02 · INF-1~3)**: 로컬 · PR/dev CI(`ci.yml` — pull_request + dev push) · Dockerfile typecheck 게이트. ⚠️ 단 게이트는 «타입» 만 본다 — 동작 검증은 `nomacomfe-prod-push-check` 의 UI 확인 몫이고, `guard-prod-push.sh` 의 prod 차단이 사람 승인을 강제한다(남은 갭: admin staging 부재 — INF-4).
 
 ```
 GitHub push (prod branch)
@@ -64,16 +64,29 @@ paths:
 - repo = `imjohnkoo/nomacom-frontend` · CodeDeploy `--deployment-group-name prod` · config `CodeDeployDefault.OneAtATime`
 - 구 레포(`nomacom-admin`, `nomacom-client-nuxt3`, `nomacom-design-system`) 는 2026-05-21 Archived
 
-## 브랜치 전략 — **(b) 확정 (2026-09-02)**
+## 도메인 — Route53 · CloudFront (2026-10-04 실측 · esimmany.com 공개)
+
+| 호스트 | Route53 (영역 `esimmany.com`) | CloudFront | 원본 |
+|---|---|---|---|
+| `esimmany.com` (판매 사이트) | A · AAAA 별칭 → `d3un5i1lmp1eem.cloudfront.net` (2026-10-04 추가) | `E23FZ69C60OK5G` (client) | `client-origin.esimmany.com:3000` (client EC2) |
+| `app.esimmany.com` (게스트 발급) | A 별칭 → 같은 배포 | `E23FZ69C60OK5G` (client) | 같은 원본 — 두 호스트가 같은 배포판(호스트 판정 0 · client-shell K3) |
+| `api.esimmany.com` (backend) | A 별칭 → `d1u4zdvngbxugs.cloudfront.net` | `EE9LJV44YHIYV` | `backend-origin.esimmany.com:80` |
+
+- 인증서(ACM us-east-1): client 배포 = `74765924…`(`esimmany.com` + `*.esimmany.com`, 2026-10-04 발급 · DNS 검증 CNAME `_5a1f0cff….esimmany.com` 은 옛 와일드카드 인증서와 공용). api · 옛 S3 배포(`E2ZZW9IA689E3C`, 연결 도메인 없음)는 `1742f1e2…`(`*.esimmany.com` 만 — apex 를 덮지 않는다).
+- `www.esimmany.com` 은 만들지 않는다(client-shell D6). 도메인 등록 = Amazon Registrar(자동 갱신 · 2027-09-22 만료) · DNSSEC 미서명 · CAA 없음.
+- 기록 사본: `deploy/cloudfront/client-distribution-config.json`(연결 도메인 · 인증서) — 실제 설정은 콘솔 · CLI 가 정본이니 바꾸면 이 표와 파일도 함께 고친다.
+
+## 브랜치 전략 — **(b) 확정 (2026-09-02) · 통합 브랜치 이름 `main` → `dev` (2026-10-04)**
 
 | 브랜치 | 역할 |
 |---|---|
-| `main` | **개발 기본 base** + DS publish 트리거 (`design-system-publish.yml`) |
+| `dev` | **개발 기본 base** + DS publish 트리거 (`design-system-publish.yml`) — GitHub 기본 브랜치 |
 | `prod` | **배포 트리거** — `admin-production.yml` / `client-production.yml` |
 
-- 1인 운영에 3분기(dev/prod/main)는 과잉이라 **(b) 단순화**를 채택했다. `dev` 브랜치는 만들지 않는다.
-- 따라서 **prod↔dev 동기화 단계는 존재하지 않는다** — m8-frontend 규약을 복사하지 말 것.
-- 모든 작업 브랜치/PR 의 base 는 **항상 `main`**.
+- 1인 운영에 3분기(dev/prod/main)는 과잉이라 **(b) 단순화**를 채택했다 — 브랜치는 둘(통합 · 배포)뿐이다.
+- **2026-10-04 John 결정**: 통합 브랜치 이름을 `main` → `dev` 로 바꿨다(GitHub branch rename — 이력 · PR 그대로, 기본 브랜치 = `dev`). backend(`dev` → `prod`)와 같은 어휘다. **`main` 브랜치는 없다** — 옛 문서 · 스크립트의 `main` · `origin/main` 은 `dev` · `origin/dev` 로 읽는다. 로컬 클론은 `git branch -m main dev && git fetch origin && git branch -u origin/dev dev && git remote set-head origin -a && git remote prune origin`.
+- 승격은 **dev → prod 한 방향**이다 — **prod↔dev 동기화 단계는 존재하지 않는다**(m8-frontend 의 sync 규약을 복사하지 말 것).
+- 모든 작업 브랜치/PR 의 base 는 **항상 `dev`**.
 
 ## prod push 정책
 

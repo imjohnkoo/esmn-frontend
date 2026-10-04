@@ -264,9 +264,28 @@ describe('가격 리터럴 0 (spec 불변식 2 · DoD 2)', () => {
     expect(at('app/assets/css/main.css').style.length).toBeGreaterThan(0)
   })
 
-  it('앱 소스에 금액 글자 · 가격 문맥의 숫자가 없다', () => {
-    const found = sources.flatMap((f) => offenders(join(APP_DIR, f)).map((o) => `${f}: ${o}`))
+  // 예외 하나(spec 불변식 2 · client-shell D-28): 법정 문서 생성물(legal-pages 정본)의 폐기 비용 «3,500원» — 상품 가격이 아니라 공제 문장.
+  // 그 파일에서도 다른 금액 글자는 잡는다(정본 rev 가 금액을 더 넣으면 여기서 멈춰 사람이 다시 정한다)
+  const LEGAL_GENERATED = /^app\/content\/legal\/[^/]+\.ts$/
+  const LEGAL_FEE = '문자열 «3,500원»'
+  it('앱 소스에 금액 글자 · 가격 문맥의 숫자가 없다(법정 생성물의 폐기 비용 «3,500원» 만 예외)', () => {
+    const found = sources.flatMap((f) =>
+      offenders(join(APP_DIR, f))
+        .filter((o) => !(LEGAL_GENERATED.test(f) && o === LEGAL_FEE))
+        .map((o) => `${f}: ${o}`),
+    )
     expect(found).toEqual([])
+  })
+  it('예외는 실제로 법정 생성물에만 · 폐기 비용 글자에만 걸린다(대조군)', () => {
+    const legal = sources.filter((f) => LEGAL_GENERATED.test(f))
+    expect(legal).toEqual(
+      expect.arrayContaining(['app/content/legal/refund.ts', 'app/content/legal/terms.ts']),
+    )
+    expect(legal.flatMap((f) => offenders(join(APP_DIR, f)))).toContain(LEGAL_FEE)
+    expect(
+      offendersOf('app/content/legal/x.ts', "export const A = { t: '폐기 비용 4,900원' }"),
+    ).toEqual(['문자열 «4,900원»'])
+    expect(LEGAL_GENERATED.test('app/content/product-detail.ts')).toBe(false)
   })
 
   describe('검사식이 실제로 잡는다(대조군)', () => {

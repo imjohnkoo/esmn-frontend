@@ -3,7 +3,7 @@ name: design-system-publish
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [dev]
     paths:
       - 'packages/design-tokens/**'
       - 'packages/design-vue/**'

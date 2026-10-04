@@ -31,7 +31,7 @@ description: QA stage for nomacom-frontend after implementation reaches DoD — 
 
 ### 1. 입력 준비
 
-- diff 범위 확정: `git diff main...HEAD` (base 는 항상 `main`). **400 LOC 초과면 plan 의 태스크 단위로 분할해 리뷰** — 초과분을 한 번에 넣으면 결함 검출률이 급락해 리뷰가 요식이 된다.
+- diff 범위 확정: `git diff origin/dev...HEAD` (base 는 항상 `dev`). **400 LOC 초과면 plan 의 태스크 단위로 분할해 리뷰** — 초과분을 한 번에 넣으면 결함 검출률이 급락해 리뷰가 요식이 된다.
 - 넘길 것은 **spec/plan 경로 + diff 뿐.** 구현 세션의 추론·요약을 브리프에 쓰지 않는다.
 - **리뷰어·walk 는 워크트리를 바꾸지 않는다**(브리프 「작업 위생」 — 변이는 스크래치패드의 리포 복사본에서). 그래서 분할 리뷰를 **병렬로** 보내도 된다. 대신 코딩 세션은 리뷰가 도는 동안 그 워크트리에서 편집·커밋하지 않는다(리뷰어가 보는 HEAD 가 바뀐다).
 - 실행 확인·⑦ walk 용 서버는 **코딩 세션이 봉투로** 띄운다 — `bash .claude/scripts/client-walk-server.sh dev|prod <port>`. 리뷰어·walk 는 서버를 띄우지 않는다. 브리프의 `<walk 서버 URL>` 에는 spec 절차가 요구하는 서버를 **전부** 용도와 함께 적는다 — 예: `http://127.0.0.1:3005(dev · E2E-1 · 2 · 6) · http://127.0.0.1:3006(prod 빌드 · E2E-5) · http://127.0.0.1:3007(합성 DB dev · E2E-3 · 4 · 7)`. localhost 금지(macOS 에서 `::1` 로 먼저 붙어 봉투 밖 서버에 닿는다).
@@ -61,7 +61,7 @@ Agent 툴(general-purpose, fresh context)로 아래 문안 그대로 (경로만 
 ```
 적대적 코드 리뷰. 입력은 문서와 diff 뿐이다 — 구현 과정 설명은 없다.
 - spec: <spec 절대경로> / plan: <plan 절대경로>  (T1 이면 plan 만)
-- diff: git -C <worktree 절대경로> diff main...HEAD -- <조각 파일들>  (필요한 파일은 직접 읽어라)
+- diff: git -C <worktree 절대경로> diff origin/dev...HEAD -- <조각 파일들>  (필요한 파일은 직접 읽어라)
 임무: spec/plan 대비 갭·버그·보안·회귀 위험을 **반증 시도** 관점으로 찾아라.
 스타일·네이밍 지적 금지.
 nomacom 고유 검사 항목 (해당 시 필수):
@@ -107,7 +107,8 @@ f) 보고 끝에 git status --porcelain 을 다시 찍어 a) 와 같은지 적�
   nuxt / npx nuxt <무엇이든> · typecheck-gate.sh · typecheck-gate.test.sh. 테스트 실행은 yarn workspace nomacom-client
   test(vitest 만 — 빌드 없음)와 절의 레시피만.
   .claude/scripts/client-walk-server.test.sh 는 리포 루트에 임시 .env 심링크를 만드므로 복사본에서만. git 쓰기 · gh 쓰기(PR ·
-  설정) 금지.
+  설정) 금지 — .git 에 object 를 남기는 «읽기» 도 쓰기다(git merge-tree --write-tree · git hash-object -w 등).
+  머지 커밋의 충돌 해소분은 git show --remerge-diff <sha>(임시 object 만 쓴다).
 출력: findings 를 blocker(머지 불가) / major(수정 필요) / minor(선택) 로 분류하고,
 각 항목에 파일:라인 + 구체 반증 시나리오(어떤 입력·상태에서 어떻게 틀리는가).
 findings 없으면 "0건" + 실제로 검토한 범위를 보고. 수정은 금지 — 보고만. + a)·f) 의 porcelain 두 값.
@@ -187,7 +188,8 @@ g) Orca 브라우저 명령은 전부 --page <browserPageId> 로 고정한다 �
   nuxt / npx nuxt <무엇이든> · typecheck-gate.sh · typecheck-gate.test.sh. 테스트 실행은 yarn workspace nomacom-client
   test(vitest 만 — 빌드 없음)와 절의 레시피만.
   .claude/scripts/client-walk-server.test.sh 는 리포 루트에 임시 .env 심링크를 만드므로 복사본에서만. git 쓰기 · gh 쓰기(PR ·
-  설정) 금지.
+  설정) 금지 — .git 에 object 를 남기는 «읽기» 도 쓰기다(git merge-tree --write-tree · git hash-object -w 등).
+  머지 커밋의 충돌 해소분은 git show --remerge-diff <sha>(임시 object 만 쓴다).
 출력: DoD 체크리스트 항목별 pass/fail + 발견 이슈(blocker/major/minor) +
 걸은 시나리오 중 회귀 스위트 편입 가치가 있는 것 + 스크린샷 경로(전용 폴더 절대경로) + a)·f) 의 porcelain 두 값.
 ```

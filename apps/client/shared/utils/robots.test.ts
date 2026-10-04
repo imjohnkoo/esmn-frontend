@@ -32,7 +32,6 @@ describe('isNoindexPath', () => {
     '/terms',
     '/privacy',
     '/refund',
-    '/business',
     '/guide',
     '/supported-devices',
     '/countries/fra',
