@@ -23,6 +23,11 @@ Guide completion of worktree development. **Gate → Verify → options → exec
 
 ### Step 0: Tier / QA 게이트 확인 — 머지 옵션을 열기 전 검사 ⭐
 
+0. **콘텐츠 자리표시자 게이트 — 모든 Tier(T0 포함) 먼저** — `env -u CONTENT_GATE_ROOT bash .github/scripts/content-pending-gate.sh` (머지할 **커밋** HEAD 를 본다 — 디스크 파일이 아니다. 미커밋 변경은 게이트 스크립트 포함 먼저 커밋할 것 — 판정 규칙은 디스크의 스크립트에서 읽는다)
+   - `0` → 계속
+   - `1` → 확정 전 문안(`P9_4_PENDING`)이 커밋에 남아 있다. **Step 3 에서 옵션 1(로컬 머지)을 빼고, 옵션 2 는 `--draft` 로만** 연다 (prod 승격에 실려 나가는 것 차단 — client W1-2 spec D-17). CI `content-gate` job 도 빨간불이다
+   - `2` → 검사 불가. 통과로 보지 않는다 — 원인을 고치고 다시
+   - spec DoD 에 **머지 선행조건**(예: client-shell 은 P6 #2 — 현재 통합 브랜치(dev)의 prod 승격)이 적혀 있으면 그것도 여기서 확인한다. 미충족이면 게이트 `1` 과 같이 취급
 1. **Tier 확인** — spec/plan 헤더 pill 또는 핸드오프 브리프에서. 기록이 없으면 지금 판정해 plan 헤더에 기록.
    - T2 트리거: 신규 화면/플로우 · 외부연동(Maya·스마트스토어·Cafe24·PG) · Drizzle 스키마 · 과금/PII · 다중 파일 신규 기능 · mobile 신규 화면
    - 버그픽스는 **파일 수 무관 T1**
@@ -36,7 +41,7 @@ Guide completion of worktree development. **Gate → Verify → options → exec
    - `apps/admin` 은 아직 테스트 0건 — 검증 증거로 대체하되 로직이 들어오는 트랙부터는 테스트 동봉
    - 둘 다 없으면 plan 에 불가 사유 1줄이 있는지 확인. 그것도 없으면 중단하고 확인 요청
 4. **D 트랙** (`design/` 캔버스) — 오너 승인 여부 + **슬라이더 런타임 값이 아니라 소스 기본값에 반영됐는지** 확인
-5. **T0** — 검사 없음, Step 1 로
+5. **T0** — 0번(콘텐츠 게이트) 외 검사 없음, Step 1 로
 
 ### Step 1: Verify Build + Affected Apps
 
@@ -66,8 +71,8 @@ yarn turbo run lint typecheck test build --filter=... || exit 1
 > ✅ **2026-09-02 (INF-1) 부터 `typecheck`·`test`·`lint` 가 실제로 돈다.** 이전에는 admin/client 에
 > script 가 없어 no-op 이었다. 현재 실체:
 >
-> - `typecheck` — `.github/scripts/typecheck-gate.sh` 가 **baseline 초과분만 차단** (admin 0 / client 7건 기준선). 신규 타입 에러는 실패한다
-> - `test` — design-vue 129 + client 28 = **157건**. admin 은 아직 0건(`passWithNoTests: true`)
+> - `typecheck` — `.github/scripts/typecheck-gate.sh` 가 **baseline 초과분만 차단** (admin 0 / client 4건 기준선 — 2026-09-23 7 → 4). 신규 타입 에러는 실패한다
+> - `test` — design-vue 137 + client 1363(2026-10-04 W1-2 · W1-3 머지) 건. admin 은 아직 0건(`passWithNoTests: true`)
 > - `lint` — 에러만 차단(경고는 통과). prettier 포맷은 PostToolUse 훅이 담당
 >
 > ✅ **INF-2(2026-09-02) 부터 PR·dev push 에서 CI 가 같은 검사를 강제한다** (`.github/workflows/ci.yml`). 로컬에서 돌리는 것은 여전히 빠른 피드백을 위해서다 — CI 실패를 기다리지 말 것.
@@ -83,6 +88,8 @@ git merge-base HEAD origin/dev   # 후보 확인
 사용자에게 확인: "Base branch로 `dev` 를 사용할까요?" — `prod` 를 base 로 잡는 것은 **배포 의도가 명시된 경우만**이고, 그 경로는 `nomacomfe-prod-push-check` 를 먼저 지나야 한다.
 
 ### Step 3: Present Options
+
+> Step 0-0 콘텐츠 게이트가 `1` 이면 아래에서 **1 을 빼고**, 2 는 «draft PR» 로 제시한다.
 
 ```
 Implementation complete. What would you like to do?
@@ -102,11 +109,21 @@ Which option?
 ```bash
 cd ~/dev/current-projects/nomacom-frontend    # 메인 클론으로 이동 (worktree 에서 base 체크아웃 불가)
 git fetch origin
-git checkout dev && git pull --ff-only
-git merge --no-ff <feature-branch>
-yarn install && yarn turbo run build --filter=nomacom-admin --filter=nomacom-client
+git checkout dev && git pull --ff-only || exit 1   # 실패하면(다른 워크트리에 dev · dirty) 게이트 · 머지가 엉뚱한 브랜치에 일어난다
+[ "${MERGE_PREREQ_OK:-}" = yes ] || exit 1   # spec 머지 선행조건(예: client-shell 은 P6 #2)을 확인하고 yes 로 둔 뒤에만
+# 게이트 스크립트 — dev 에 아직 없으면(그 스크립트를 들여오는 첫 머지) 워크트리 것을 메인 클론 저장소에 대고 부른다
+GATE=.github/scripts/content-pending-gate.sh
+[ -f "$GATE" ] || GATE="<worktree>/.github/scripts/content-pending-gate.sh"
+# 판정 대상 = 메인 클론(워크트리 HEAD 가 아니다) — CONTENT_GATE_ROOT 는 export 하지 말고 명령마다 앞에 붙인다(셸에 남으면 다른 저장소를 본다)
+# 머지 **전에** 양쪽 부모를 본다 — 둘 다 0 이어야 머지한다(머지 뒤 실패하면 로컬 dev 에 커밋이 남는다)
+CONTENT_GATE_ROOT="$(pwd)" bash "$GATE" HEAD && CONTENT_GATE_ROOT="$(pwd)" bash "$GATE" <feature-branch> || exit 1
+git merge --no-ff <feature-branch> || exit 1   # 충돌이면 멈춘다 — 손으로 해결했다면 아래 게이트 재검사부터 다시
+yarn install && yarn turbo run build --filter=nomacom-admin --filter=nomacom-client || exit 1
+CONTENT_GATE_ROOT="$(pwd)" bash "$GATE" HEAD || exit 1   # 머지 결과를 다시(충돌 해결에서 들어온 경우)
 git push origin dev
 ```
+
+> 머지 뒤 게이트가 실패하면 **push 하지 않고** 사용자에게 보고한다. 로컬 dev 를 되돌리는 것(`git reset --keep origin/dev`)도 사용자 승인 뒤에만 — 그 전에 prod-push-check 를 돌리면 안 된다(로컬 dev 에 자리표시자 커밋이 있다).
 
 > `dev` push 는 `packages/design-*` 변경이 포함되면 `design-system-publish.yml` 을 트리거한다 — **DS version bump 선행 여부**를 확인할 것.
 
@@ -114,8 +131,13 @@ git push origin dev
 
 ```bash
 cd <worktree>
-git push -u origin <feature-branch>
-gh pr create --base dev --title "<type>(<scope>): <title>" --body "$(cat <<'EOF'
+git push -u origin <feature-branch> || exit 1   # 실패하면 게이트가 본 HEAD 와 PR 의 원격 상태가 어긋난다
+# 기본은 draft — ready 로 열면 GitHub UI 에서 바로 머지된다(dev 에 required check 없음).
+# ready 는 콘텐츠 게이트 0 **이고** spec 의 머지 선행조건(예: client-shell 은 P6 #2)을 확인해 MERGE_PREREQ_OK=yes 로 둔 때만
+DRAFT="--draft"
+if env -u CONTENT_GATE_ROOT bash .github/scripts/content-pending-gate.sh >/dev/null 2>&1 && [ "${MERGE_PREREQ_OK:-}" = yes ]; then DRAFT=""; fi
+# draft 를 ready 로 바꿀 때(`gh pr ready`)도 같은 두 조건을 **그때 다시** 확인한다 — PR 을 연 뒤 커밋이 늘었을 수 있다
+gh pr create --base dev $DRAFT --title "<type>(<scope>): <title>" --body "$(cat <<'EOF'
 ## Summary
 <2-3 bullets>
 
@@ -215,12 +237,12 @@ Option 1, 4 에서만 정리한다. Option 2, 3 은 유지.
 
 ## Decision Table
 
-| Option           | Step 0 게이트 | Build | Base push | Keep worktree       |
-| ---------------- | ------------- | ----- | --------- | ------------------- |
-| 1. Merge locally | ✓             | ✓     | ✓ (dev)   | ✗ — **승인 후에만** |
-| 2. Push + PR     | ✓             | ✓     | — (PR)    | ✓                   |
-| 3. Push as-is    | ✓             | ✓     | ✗         | ✓                   |
-| 4. Discard       | —             | ✗     | ✗         | ✗ — **승인 후에만** |
+| Option           | Step 0 게이트                    | Build | Base push | Keep worktree       |
+| ---------------- | -------------------------------- | ----- | --------- | ------------------- |
+| 1. Merge locally | ✓ (콘텐츠 게이트 0 일 때만 제시) | ✓     | ✓ (dev)   | ✗ — **승인 후에만** |
+| 2. Push + PR     | ✓ (게이트 1 이면 `--draft`)      | ✓     | — (PR)    | ✓                   |
+| 3. Push as-is    | ✓                                | ✓     | ✗         | ✓                   |
+| 4. Discard       | —                                | ✗     | ✗         | ✗ — **승인 후에만** |
 
 ## Red Flags
 

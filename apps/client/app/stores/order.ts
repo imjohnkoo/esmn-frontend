@@ -21,6 +21,11 @@ export const useOrderStore = defineStore('order', {
     hasSingleOrder: (state) => state.singleOrder !== null,
     orderCount: (state) => state.orders?.length ?? 0,
     hasEsims: (state) => (state.singleOrder?.esims?.length ?? 0) > 0,
+    /** 이 주문번호의 목록을 들고 있는가 — order-flow 미들웨어가 복원 여부를 판정할 때 쓴다 */
+    hasOrdersFor: (state) => (orderId: number) =>
+      !!state.orders &&
+      state.orders.length > 0 &&
+      state.orders.every((order) => order.orderId === orderId),
   },
 
   actions: {

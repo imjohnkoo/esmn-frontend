@@ -1,5 +1,5 @@
 /**
- * 법정 문서 블록 → VNode(client-shell spec F-12 · F-20 · D-36). LegalMarkdown.vue · IssuerBusinessInfo.vue 가 부르고,
+ * 법정 문서 블록 → VNode(client-shell spec F-12 · F-20 · F-21 · F-22). LegalMarkdown.vue · SiteFooter · 발급 팝업 · 체크아웃이 부르고,
  * 테스트는 vue/server-renderer 로 실문서를 그려 본다. HTML 해석 없음(innerHTML · v-html 금지) — 글자는 전부 텍스트 노드.
  * 확정 전 값은 pending.ts 의 표기(displayValue).
  * ⚠️ 이 파일에 자리표시자 이름 · 화면 표기를 직접 쓰지 않는다(콘텐츠 게이트 D-17).
@@ -29,8 +29,8 @@ function merge(xs: Child[]): Child[] {
 }
 
 /** 어절이 «·» · 괄호 · 낫표 · 줄표에서 갈리지 않게 — 공백 없는 짧은 덩어리(18자 이하)는 한 줄에 둔다
- * («이름·휴대전화번호», «(esimmany.com)는», «704-24-01747», «09:00–18:00,») */
-const KEEP = /[·「」()\-–]/
+ * («이름·휴대전화번호», «(esimmany.com)는», «704-24-01747», «09:00–18:00,», «@이심마니») */
+const KEEP = /[·「」()\-–@]/
 function renderText(text: string): Child[] {
   return text
     .split(/(\s+)/)
@@ -40,7 +40,7 @@ function renderText(text: string): Child[] {
     )
 }
 
-// legal-md__sr = 법정 문서 스타일 · sr-only = Tailwind(LegalMarkdown 스타일이 실리지 않는 화면에서도 숨김)
+// legal-md__sr = 법정 문서 스타일 · sr-only = Tailwind(푸터처럼 LegalMarkdown 스타일이 실리지 않는 화면에서도 숨김)
 const newTabNote = () => h('span', { class: 'legal-md__sr sr-only' }, ' (새 창)')
 
 /** newTab = 사이트 안 경로도 새 창(발급 팝업처럼 입력 · 상태를 잃으면 안 되는 자리)
@@ -169,20 +169,19 @@ export function renderDoc(doc: LegalMarkdownDoc): VNode {
   ])
 }
 
-/** 발급기 사업자정보 블록(D-36 — 04 1절 줄 그대로 + 방침 · 약관 링크). 방침은 굵게 · 색으로 구분(처리방침 작성지침) */
-export function renderBusinessInfo(lines: readonly string[]): VNode {
-  return h('section', { class: 'issuer-biz', 'aria-label': '사업자정보' }, [
-    ...lines.map((l) => h('p', { class: 'issuer-biz__line' }, renderInlines(parseInline(l)))),
-    h('p', { class: 'issuer-biz__links' }, [
-      h(
-        'a',
-        { href: '/privacy', class: 'issuer-biz__link issuer-biz__link--privacy' },
-        '개인정보처리방침',
-      ),
-      h('span', { 'aria-hidden': 'true' }, ' · '),
-      h('a', { href: '/terms', class: 'issuer-biz__link' }, '이용약관'),
-    ]),
-  ])
+/** 푸터 조각(F-7) — 04 1절 줄을 사업자정보 줄(차례 그대로) · 링크 줄(화면은 shell-nav LEGAL_LINKS 로 그린다) · © 줄로 나눈다 */
+export function footerParts<T extends { copyright: string; legalLinks: string }>(info: T) {
+  const { copyright, legalLinks, ...rest } = info
+  return { lines: Object.values(rest) as string[], legalLinks, copyright }
+}
+
+/** 사업자정보 줄(F-7 푸터 — 04 1절 줄 그대로 · «사업자정보확인» 은 공정위 조회 새 창) */
+export function renderBusinessLines(lines: readonly string[]): VNode {
+  return h(
+    'div',
+    { class: 'site-footer__info' },
+    lines.map((l) => h('p', { class: 'site-footer__line' }, renderInlines(parseInline(l)))),
+  )
 }
 
 /** 발급 화면 고지 목록(05-A — F-21) — 줄마다 한 항목 · 링크는 모두 새 창 · strongAt = 굵게 둘 줄(설치 전 3,500원 환불 — 약관 12조③ «미리 표시») */

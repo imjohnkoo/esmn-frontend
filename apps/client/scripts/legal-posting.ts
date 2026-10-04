@@ -12,7 +12,7 @@
 import { createHash } from 'node:crypto'
 
 export type DocKey = 'terms' | 'privacy' | 'refund'
-export type BlockKey = 'business' | 'issue-notice'
+export type BlockKey = 'business' | 'issue-notice' | 'checkout-notice'
 
 export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex')
 
@@ -76,7 +76,21 @@ export const DOC_RULES: Record<DocKey, DocRules> = {
     // 값 채움 · 게시 수정(spec D-54 — John 2026-10-03 «AWS는 AWS로 표기, 알림톡 솔라피는 솔라피(주)로 변경»):
     // AWS 행 = «AWS (Amazon Web Services 서울 리전)» · 알림톡 행 수탁자 칸 전체 = «솔라피(주)»(정본 rev 가 오면 지운다)
     fills: { 0: 'AWS', 1: '' },
-    edits: [{ line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' }],
+    edits: [
+      { line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' },
+      // 게시 수정(spec D-31 — John 2026-10-04 «게시 수정으로 지금 맞춤»): 흐름 쿠키 `nomacom_flow`(F-15)를 적는다 — 1장 발급 행 · 9장①.
+      // 호스트 이름을 쓰지 않는다(두 호스트에서 생긴다). 정본 rev 가 오면 지운다
+      {
+        line: '357c59c7a3e6de6021f376c2b7fb02291d79a54f1c67e1a3335eb395aec8bc7a',
+        from: '주문 정보와 대조해 본인을 확인하는 데에만 쓰고 저장하지 않음',
+        to: '주문 정보와 대조해 본인을 확인하는 데에만 쓰고 회사 서버에 저장하지 않음 — 발급 단계를 이어 가도록 이용자 브라우저 쿠키에 마지막 이용 후 1시간 보관, 9장',
+      },
+      {
+        line: '6fa32529429fd9304adf05649670af702b36f2ebea2b2e146dd449bc3521802c',
+        from: 'eSIM 발급 화면(app.esimmany.com)은 쿠키를 사용하지 않습니다.',
+        to: 'eSIM 발급 화면은 본인 확인을 마친 뒤 발급 단계를 이어 가기 위해 이용자의 브라우저에 쿠키 1개를 저장합니다. 이 쿠키에는 주문번호·상품주문번호와 이용자가 입력한 이름·휴대전화번호가 담기며, 마지막 이용 후 1시간이 지나면 자동으로 삭제되고 회사 서버에는 저장되지 않습니다.',
+      },
+    ],
   },
   // 03 — «결정 기록» 절은 걷는다(DECISION) · 4항의 확인 메모(발급 후 설치 기한 — 값은 상품 상세 몫, D-29)
   refund: {
@@ -153,6 +167,9 @@ export interface BlockRules extends TagRules {
   /** 고르지 않는 코드 블록 줄 — 줄 글자(앞뒤 공백 제거)의 sha256 + 이유. 고르지도 건너뛰지도 않는 줄이 있거나,
    *  건너뛸 줄이 정본에서 바뀌면 가져오기가 멈춘다(정본에 줄이 늘거나 바뀐 것을 조용히 버리지 않는다) */
   skip?: readonly { sha256: string; why: string }[]
+  /** 게시 수정(spec D-40) — 고른 줄(링크 뒤 · 값 채움 전)의 sha256 · 바꿀 글자. 문서 규칙의 edits 와 같은 규칙(정확히 한 줄 · 한 번 · 검사 전에 적용).
+   *  ⚠️ 값 자리가 있는 줄은 내부 표식 상태로 해시된다(PostingEdit 주석과 같다) — 지금은 값 자리 없는 줄만 고친다 */
+  edits?: readonly PostingEdit[]
 }
 
 export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
@@ -169,17 +186,17 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
       { key: 'contact', startsWith: '전화:' },
       { key: 'privacyOfficer', startsWith: '개인정보보호책임자:' },
       { key: 'hosting', startsWith: '호스팅 서비스:' },
+      // 링크 줄 — 푸터는 shell-nav LEGAL_LINKS 로 그린다(라벨 · 차례 = 이 줄 — legal-content.test.ts 가 대조)
+      { key: 'legalLinks', startsWith: '이용약관 |' },
+      { key: 'copyright', startsWith: '©' },
     ],
     links: { '[사업자정보확인]': 'https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7042401747' },
-    // 발급기(main) `/` 임시 블록(D-36)은 7줄만 — 링크 줄 · © 줄은 쓰지 않는다(W1-2 푸터가 쓴다 — W1-2 판 규칙은 둘을 고른다)
-    skip: [
-      { sha256: '01f57a50acbafbcbf35affe7bd0ce06ef2ede5c66fdb9023d6bff5fa0612ff6a', why: '04 1절 링크 줄(이용약관 | 개인정보처리방침 | 취소·환불 정책 | 사업자정보)' },
-      { sha256: '74133260a13d744eed3c9b78c3568084f84d0926001a58d38178e99133499192', why: '04 1절 © 줄' },
-    ],
     notes: [],
     placeholders: ['fbb49b2998f2c4650e47969848dd7c006c102bd6a8ca18e6b429bd40e7a92b69'],
     // 값 채움(spec D-54 — John 2026-10-03 «AWS는 AWS로 표기»): 호스팅 서비스 = AWS(정본 rev 가 오면 지운다)
     fills: { 0: 'AWS' },
+    // 게시 수정(spec D-40 — John 2026-10-04 «신고기관 붙임»): 통신판매업 줄에 신고기관(전자상거래법 13조①3호 · 정본 04 2절 표의 값)(정본 rev 가 오면 지운다)
+    edits: [{ line: 'f71a51520585665b3445cb4cd65f00ed0f47d05d9046ce297b748a7cf32934dc', from: '1950 호', to: '1950 호 (경기도 광주시)' }],
   },
   // 05-A — 발급 화면 고지(제목 · 안내 5줄 — F-21) · 환불 안내(14행 · D-32) · 동의 체크 문구(19행 · D-35)
   'issue-notice': {
@@ -207,6 +224,31 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
     notes: [],
     placeholders: [],
   },
+  // 05-B — 체크아웃 동의(F-22): 필수 2(약관 · 만 14세) · 선택 1(마케팅 + 알릴 사항) · 개인정보 수집 · 이용 «안내»(체크 없음) · 결제 전 안내 3줄
+  'checkout-notice': {
+    file: '05_고지문구-동의체크-FAQ.md',
+    exportName: 'CHECKOUT_NOTICE',
+    section: '## B.',
+    pick: [
+      { key: 'terms', startsWith: '☐ (필수) 이용약관에 동의합니다', strip: '☐ ' },
+      { key: 'age', startsWith: '☐ (필수) 만 14세', strip: '☐ ' },
+      { key: 'marketing', startsWith: '☐ (선택)', strip: '☐ ' },
+      { key: 'marketingInfo', startsWith: '   수집 항목: 이메일 주소' },
+      { key: 'privacyTitle', startsWith: '개인정보 수집·이용 안내' },
+      { key: 'privacyInfo', startsWith: '   수집 항목: 이름' },
+      { key: 'beforeTitle', startsWith: '결제 전 안내' },
+      { key: 'beforeRefund', startsWith: '• 결제 후 발급 전에는', strip: '• ' },
+      { key: 'beforeMinor', startsWith: '• 만 19세 미만', strip: '• ' },
+      { key: 'beforeNotify', startsWith: '• 결제 완료 사실은', strip: '• ' },
+    ],
+    links: {
+      '[보기]': '/terms',
+      '[개인정보처리방침 보기]': '/privacy',
+      '[취소·환불 정책]': '/refund',
+    },
+    notes: [],
+    placeholders: [],
+  },
 }
 
 /** 값 자리 표시 — 모듈 생성 때 자리표시자 상수로 바뀐다 */
@@ -217,6 +259,9 @@ const fillMark = (i: number) => `\u0000FILL${i}\u0000`
 
 /** 채운 자리마다 게시 본문에 남았는지(걷어 내는 줄 · 인용 블록 · 결정 기록 안에만 있었으면 멈춘다) 본 뒤 표식을 지운다 */
 function takeFills(body: string, rules: TagRules): string {
+  // 값 채움 글자는 한 줄 안 — 줄바꿈이 섞이면 조각의 줄 고르기가 밀려 뒤 글자가 조용히 빠진다(게시 수정과 같은 규칙)
+  for (const [k, v] of Object.entries(rules.fills ?? {}))
+    if (/[\r\n\u2028\u2029]/.test(v)) throw new Error(`값 채움 ${Number(k) + 1} 의 글자에 줄바꿈이 있다(한 줄 안에서만 채운다)`)
   for (const k of Object.keys(rules.fills ?? {}))
     if (!(Number(k) >= 0 && Number(k) < rules.placeholders.length))
       throw new Error(`값 채움 순번 ${k} 에 해당하는 값 자리가 없다(값 자리 ${rules.placeholders.length}개)`)
@@ -429,6 +474,8 @@ export function applyEdits(body: string, edits: readonly PostingEdit[] = []): st
     const line = lines[at[0]!]!
     if (!edit.from || line.split(edit.from).length !== 2)
       throw new Error(`게시 수정 ${i + 1}: 바꿀 글자가 그 줄에 정확히 한 번 있어야 한다(정본이 바뀌었다)`)
+    // 한 줄 안에서만 바꾼다 — 줄바꿈이 들어오면 뒤 줄이 밀린다(블록은 줄 차례가 키)
+    if (/[\r\n\u2028\u2029]/.test(edit.to)) throw new Error(`게시 수정 ${i + 1}: 바꿀 글자에 줄바꿈이 있다(한 줄 안에서만 바꾼다)`)
     lines[at[0]!] = line.replace(edit.from, () => edit.to)
   })
   return lines.join('\n')
@@ -484,8 +531,17 @@ export function toBlock(source: string, rules: BlockRules): BlockPosting {
   })
   for (const s of skip)
     if (!skipped.has(s.sha256)) throw new Error(`건너뛸 줄을 정본에서 찾지 못했다(정본이 바뀌었다): ${s.why}`)
-  const { body, pendingCount } = finish(takeFills(Object.values(picked).join('\n') + '\n', rules), rules)
+  // 게시 수정은 고른 줄(링크 뒤)에 — 문서 경로처럼 검사(값 채움 · 남은 태그 · 자리표시자 수) 전에 적용한다
+  const keys = rules.pick.map((p) => p.key)
+  if (new Set(keys).size !== keys.length) throw new Error(`고를 줄의 키가 겹친다: ${keys.join(', ')}`)
+  // 줄 차례 = pick 차례(Object.values 는 정수 꼴 키를 앞으로 올린다)
+  const edited = applyEdits(rules.pick.map((p) => picked[p.key]!).join('\n'), rules.edits)
+  const { body, pendingCount } = finish(takeFills(edited + '\n', rules), rules)
   const out = body.trimEnd().split('\n')
+  if (out.length !== rules.pick.length) throw new Error(`고른 줄 ${rules.pick.length}개가 ${out.length}줄이 됐다(줄 차례가 키 — 정본이 바뀌었다)`)
+  out.forEach((l, i) => {
+    if (!l.trim()) throw new Error(`«${rules.pick[i]!.startsWith}» 줄이 비었다(게시 수정 · 값 채움이 줄을 통째로 지웠다)`)
+  })
   return {
     lines: Object.fromEntries(rules.pick.map((p, i) => [p.key, out[i]!])),
     pendingCount,
@@ -632,7 +688,9 @@ export function blockModuleSource(
 ): string {
   const rules = BLOCK_RULES[key]
   const imports = posting.pendingCount ? `import { ${pendingIdent} } from '../pending'\n\n` : ''
-  const note = fillsNote(rules)
+  const note =
+    fillsNote(rules) +
+    (rules.edits?.length ? `// 게시 수정 ${rules.edits.length}건 — 정본과 다른 글자(규칙 scripts/legal-posting.ts 의 edits · spec 결정)\n` : '')
   const entries = Object.entries(posting.lines)
     .map(([k, v]) => `  ${k}: ${v.includes(PENDING_MARK) ? tpl(v, pendingIdent) : q(v)},`)
     .join('\n')

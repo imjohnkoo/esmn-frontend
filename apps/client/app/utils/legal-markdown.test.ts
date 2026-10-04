@@ -27,7 +27,7 @@ describe('parseInline — 굵게 · 링크 · 자리표시자만', () => {
   })
 
   it('굵게 · 링크 안의 자리표시자도 가른다 — 화면에 원래 토큰이 새지 않는다', () => {
-    const xs = parseInline(`**AWS ${P9_4_PENDING} 법인** [회사 ${P9_4_PENDING}](/business)`)
+    const xs = parseInline(`**AWS ${P9_4_PENDING} 법인** [회사 ${P9_4_PENDING}](/refund)`)
     expect(inlineText(xs)).toBe('AWS (확정 전) 법인 회사 (확정 전)')
     expect(JSON.stringify(xs)).not.toContain('"text":"P9_4_PENDING')
   })

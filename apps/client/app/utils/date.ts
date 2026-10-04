@@ -1,15 +1,24 @@
 import { format, addDays } from 'date-fns';
 
 /**
- * Format date to Korean format (2024년 1월 15일)
+ * Format date to Korean format (2024년 1월 15일) — 한국 시간(Asia/Seoul) 고정.
+ * 실행 환경 시간대를 따르면 SSR(prod 컨테이너 = UTC)과 브라우저(KST)가 15:00~23:59 UTC 주문에서 다른 날짜를 그려
+ * hydration mismatch 가 난다(4-step SSR 복원 도입 뒤 details 에서 드러남 — QA ⑥).
  */
-export function formatDateString(date: Date | string): string {
-  const dateObj = new Date(date);
-  const year = dateObj.getFullYear();
-  const month = dateObj.getMonth() + 1;
-  const day = dateObj.getDate();
+const KST_DATE = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'Asia/Seoul',
+  year: 'numeric',
+  month: 'numeric',
+  day: 'numeric',
+});
 
-  return `${year}년 ${month}월 ${day}일`;
+export function formatDateString(date: Date | string): string {
+  const value = new Date(date);
+  // 해석할 수 없는 값이면 빈 글자 — formatToParts 가 RangeError 를 던져 SSR 페이지 전체가 500 이 되지 않게
+  if (Number.isNaN(value.getTime())) return '';
+  const parts = KST_DATE.formatToParts(value);
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
+  return `${get('year')}년 ${get('month')}월 ${get('day')}일`;
 }
 
 /**

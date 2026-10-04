@@ -18,6 +18,7 @@ import { addDays, format } from 'date-fns'
 import { useOrderStore } from '~/stores/order'
 import { useApi } from '~/composables/useApi'
 import type { Order } from '~/types/order'
+import { findProductOrder } from '~/utils/flow-guard'
 
 const route = useRoute()
 const router = useRouter()
@@ -163,11 +164,15 @@ const onConfirm = async () => {
     const { verified, cancelled } = verifyResponse
 
     if (verified && !cancelled) {
+      // 요청한 상품주문번호를 먼저 잡는다 — 발급을 기다리는 동안 다른 상품을 고르면 store 가 바뀐다
+      const requestedProductOrderId = orderStore.singleOrder?.productOrderId
       const activateResponse = await api.activateOrder(orderStore.singleOrder!)
       const { verified: activateVerified, details } = activateResponse
-      if (activateVerified && details) {
+      // 발급한 상품주문을 productOrderId 로 찾는다(D-14 — 위치로 집지 않는다 · flow-guard 순수함수)
+      const issued = findProductOrder(details, requestedProductOrderId)
+      if (activateVerified && issued) {
         isIssueQrCodesVisible.value = false
-        orderStore.setSingleOrder(details[0])
+        orderStore.setSingleOrder(issued)
 
         const updatedOrders = await api.verifyOrder({
           orderId: orderId.value,
@@ -215,22 +220,18 @@ const onConfirm = async () => {
   }
 }
 
-onMounted(() => {
-  if (!order.value) {
-    isNoOrderAlertVisible.value = true
-    setTimeout(() => {
-      isNoOrderAlertVisible.value = false
-      router.push(`/verify/${orderId.value}`)
-    }, 3000)
-  } else if ((order.value.esims?.length ?? 0) >= (order.value.quantity || 1)) {
-    // 전량 발급 완료된 주문만 차단 — 부분 발급 (resume) 은 재진입 허용
-    router.push(`/details/${orderId.value}`)
-  }
-})
+// 진입 가드는 order-flow 미들웨어 — 선택 없음 · 취소 · 전량 발급이면 주문 목록으로, 부분 발급(이어서 발급)은 통과 (K8 · spec S-8)
+// 게스트 발급 4-step 은 헤더 · 하단 탭 없는 flow 레이아웃 (spec D-2)
+definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 
 // 발급 화면 고지 문구(client-shell spec D-32 · D-35 — 05-A) — 스크립트 끝에 둔다(typecheck 기준선 줄 번호 불변)
 import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
 import { confirmScrollFit } from '~/utils/confirm-fit'
+import { renderNoticeList } from '~/utils/legal-render'
+import IssueConsentLabel from '~/components/legal/IssueConsentLabel.vue'
+
+// 05-A 안내 중 «지원 기기 확인» 1줄만(spec D-43 · D-49 · John 2026-10-03)
+const NOTICE_LINES = [ISSUE_NOTICE.device]
 
 // 발급 확인 팝업 — 안내 · 요약만 스크롤하고 동의 체크 · 버튼은 화면 안. 높이는 열릴 때 실제 크기로(utils/confirm-fit)
 const confirmScrollEl = ref<HTMLElement | null>(null)
@@ -275,25 +276,22 @@ watch(isConfirmOrderVisible, async (open) => {
 onMounted(() => window.addEventListener('resize', fitConfirm))
 onBeforeUnmount(() => window.removeEventListener('resize', fitConfirm))
 
-// 발급 확인 팝업 — 안내 · 동의 · 하단 시트(client-shell spec D-43 · D-44 · D-45 · D-48 · D-49 · D-50 — W1-2 와 같은 배치). 스크립트 끝에 둔다(typecheck 기준선 줄 번호 불변)
-import { renderNoticeList } from '~/utils/legal-render'
-import IssueConsentLabel from '~/components/legal/IssueConsentLabel.vue'
+// 약관 · 환불 정책 하단 시트(spec D-45 · John 2026-10-03) — 새 탭 대신. 열린 문서 하나 · 시트를 닫아도 확인 팝업 · 체크는 그대로
 import type { DocSheetKey } from '~/components/legal/DocSheet.vue'
 // 시트는 페이지와 함께 싣는다 — 따로 불러오면 배포 뒤 묶음 이름이 바뀐 화면에서 불러오기가 실패해 링크가 먹통이 된다(링크는 일반 클릭을 막는다 · QA ⑥ m2)
 import DocSheet from '~/components/legal/DocSheet.vue'
 
-// 05-A 안내 중 «지원 기기 확인» 1줄만(D-43 · D-49)
-const NOTICE_LINES = [ISSUE_NOTICE.device]
 const legalSheet = ref<DocSheetKey | null>(null)
 const openLegalSheet = (doc: DocSheetKey) => {
   legalSheet.value = doc
 }
-// 안내 줄의 «지원 기기 확인» 도 새 탭 대신 하단 시트(D-48) — 다른 주소는 렌더러 기본(새 탭)
-const noticeSheet = (href: string) => (href === '/supported-devices' ? () => openLegalSheet('devices') : undefined)
-// 확인 팝업을 닫으면(뒤로 · 발급) 시트도 닫는다
+// 확인 팝업을 닫으면(뒤로 · 발급) 시트도 닫는다 — 다음에 팝업을 열 때 시트가 먼저 떠 있지 않게
 watch(isConfirmOrderVisible, (open) => {
   if (!open) legalSheet.value = null
 })
+
+// 안내 줄의 «지원 기기 확인» 도 새 탭 대신 하단 시트(spec D-48 · John 2026-10-03) — 다른 주소는 렌더러 기본(새 탭)
+const noticeSheet = (href: string) => (href === '/supported-devices' ? () => openLegalSheet('devices') : undefined)
 </script>
 
 <template>
@@ -523,7 +521,7 @@ watch(isConfirmOrderVisible, (open) => {
               <span>수량</span><b>{{ order.quantity }}개</b>
             </div>
           </div>
-          <!-- 고지(05-A 14행 · 약관 12조③ 의 «미리 표시») — 주문 요약 바로 아래(client-shell spec D-42 · John 2026-10-02) -->
+          <!-- 고지(05-A 원문 · 약관 12조③ 의 «미리 표시») — 주문 요약 바로 아래(client-shell spec D-42 · John 2026-10-02) -->
           <div class="select-date-page__confirm-policy">
             <svg
               class="select-date-page__confirm-policy-icon"
@@ -562,10 +560,10 @@ watch(isConfirmOrderVisible, (open) => {
         v-if="!confirmCompact"
         class="select-date-page__confirm-agree"
       >
-        <!-- 필수 동의(D-44 · D-51) — 문구 안 «이용약관» · «취소·환불 정책» 링크(하단 시트) · 서버 기록은 W1-6 -->
+        <!-- 필수 동의(D-44 · John 2026-10-03) — 문구 안 «이용약관» · «취소·환불 정책» 링크(하단 시트 — D-45) · 따로 있던 링크 줄은 없앴다 · 서버 기록은 W1-6 -->
         <NCheckbox v-model="isPolicyAgreed"><IssueConsentLabel @open="openLegalSheet" /></NCheckbox>
       </div>
-      <!-- 약관 · 환불 정책 · 지원 기기 본문(D-45 · D-48) — 하단 시트 · 팝업 안에 둔다(중첩 레이어 — 바깥 누름 · X · Esc 는 시트만 닫는다) -->
+      <!-- 약관 · 환불 정책 본문(D-45) — 하단 시트 · 팝업 안에 둔다(중첩 레이어 — 바깥 누름 · X · Esc 는 시트만 닫는다) -->
       <DocSheet v-model="legalSheet" />
       <template #actions>
         <div class="select-date-page__confirm-actions">
@@ -575,7 +573,7 @@ watch(isConfirmOrderVisible, (open) => {
             :disabled="isSubmitting || !isPolicyAgreed"
             @click="onConfirm"
           >
-            발급하기
+            eSIM 발급하기
           </NButton>
         </div>
       </template>
@@ -766,27 +764,6 @@ watch(isConfirmOrderVisible, (open) => {
   overscroll-behavior: contain;
 }
 
-.select-date-page__confirm-notice-title {
-  margin: 0 0 6px;
-  color: #111827;
-  font-weight: 700;
-}
-.select-date-page__confirm-policy :deep(.issue-notice__list) {
-  /* 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03 화면 피드백) */
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.select-date-page__confirm-policy :deep(.issue-notice__list li) {
-  margin: 0 0 4px;
-}
-.select-date-page__confirm-policy :deep(.legal-md__link) {
-  /* 안내 줄의 «지원 기기 확인» — 렌더러가 그린 링크라 scoped 밖(W1-2 와 같은 모양) */
-  font-weight: 600;
-  color: #6239ff;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
 .select-date-page__confirm-policy {
   margin-top: 10px;
   word-break: keep-all;
@@ -818,6 +795,36 @@ watch(isConfirmOrderVisible, (open) => {
   text-underline-offset: 2px;
 }
 
+.select-date-page__confirm-notice-title {
+  margin: 0 0 6px;
+  color: #111827;
+  font-weight: 700;
+}
+
+.select-date-page__confirm-policy :deep(.issue-notice__list) {
+  /* 글머리 점 · 들여쓰기 없이 제목과 같은 폭으로 한 줄씩(John 2026-10-03 화면 피드백) */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.select-date-page__confirm-policy :deep(.issue-notice__list li) {
+  margin: 0 0 4px;
+}
+
+.select-date-page__confirm-policy :deep(.issue-notice__list strong) {
+  /* 분홍 바탕(#fef2f2) 위 12px — 대비 4.5:1 이상(약관 12조③ 의 표시 문장) */
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.select-date-page__confirm-policy :deep(.legal-md__link) {
+  font-weight: 600;
+  color: #6239ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .select-date-page__confirm-policy b {
   display: block;
   margin-bottom: 6px;
@@ -832,6 +839,8 @@ watch(isConfirmOrderVisible, (open) => {
   width: 100%;
   margin-top: 10px;
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: flex-start;
   text-align: left;
   font-size: 13px;

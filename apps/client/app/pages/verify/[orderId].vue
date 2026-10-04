@@ -11,14 +11,19 @@ import {
 } from '@imjohnkoo/design-vue'
 import { useOrderStore } from '~/stores/order'
 import { useApi } from '~/composables/useApi'
+import { useFlowSession } from '~/composables/useFlowSession'
 import { formatPhoneNumber, isValidPhoneNumber } from '~/utils/formatter'
 
 const route = useRoute()
 const router = useRouter()
 const orderStore = useOrderStore()
 const api = useApi()
+const flowSession = useFlowSession()
 
 const orderId = computed(() => Number(route.params.orderId))
+
+// order-flow 미들웨어가 복원에 실패해 돌려보낸 경우 (쿠키 없음 · 만료 · 다른 주문)
+const isReverify = computed(() => route.query.reason === 'reverify')
 
 const fullName = ref('')
 const phoneNumber = ref('')
@@ -50,14 +55,18 @@ const onSubmit = async () => {
   isSubmitting.value = true
   await new Promise((resolve) => setTimeout(resolve, 1200))
   try {
-    const response = await api.verifyOrder({
+    // 보낸 body 를 그대로 쿠키에 쓴다 — 요청 중 입력칸이 바뀌어도 검증받지 않은 값이 들어가지 않게 (spec F-15)
+    const credentials = {
       fullName: fullName.value,
       phoneNumber: phoneNumber.value,
       orderId: orderId.value,
-    })
+    }
+    const response = await api.verifyOrder(credentials)
     const { verified, cancelled, details } = response
     if (verified && !cancelled) {
       orderStore.setOrders(details || [])
+      // 새로고침 · 탭 복원 뒤 이어가기용 — 입력해 통과한 값만 1시간 (K8)
+      flowSession.start(credentials)
       router.push(`/details/${orderId.value}`)
     } else if (verified && cancelled) {
       isCancelledOrderVisible.value = true
@@ -71,8 +80,10 @@ const onSubmit = async () => {
     isSubmitting.value = false
   }
 }
+// 게스트 발급 4-step 은 헤더 · 하단 탭 없는 flow 레이아웃 (spec D-2) · 가드는 order-flow 미들웨어 (K8)
+definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 
-// 개인정보처리방침 · 이용약관 하단 시트(client-shell spec D-46 · D-50) — 새 탭 대신(입력한 이름 · 전화를 잃지 않는다). 스크립트 끝(typecheck 기준선 줄 번호 불변)
+// 개인정보처리방침 · 이용약관 하단 시트(spec D-46 · John 2026-10-03) — 새 탭 대신(입력한 이름 · 전화를 잃지 않는다)
 import type { DocSheetKey } from '~/components/legal/DocSheet.vue'
 // 시트는 페이지와 함께 싣는다 — 따로 불러오면 배포 뒤 묶음 이름이 바뀐 화면에서 불러오기가 실패해 링크가 먹통이 된다(링크는 일반 클릭을 막는다 · QA ⑥ m2)
 import DocSheet from '~/components/legal/DocSheet.vue'
@@ -114,6 +125,10 @@ const legalSheet = ref<DocSheetKey | null>(null)
       </NInfoChip>
     </div>
 
+    <p v-if="isReverify" class="verify-page__reverify" role="status">
+      이어서 보려면 본인 확인을 다시 해 주세요.
+    </p>
+
     <form class="verify-page__form" @submit.prevent="onSubmit">
       <div class="verify-page__field">
         <NInput v-model="fullName" variant="underline" label="이름" :error="!!errors.fullName" />
@@ -138,7 +153,7 @@ const legalSheet = ref<DocSheetKey | null>(null)
         </NTrustNote>
       </div>
 
-      <!-- 법정 링크(client-shell spec F-20 · 개인정보 보호법 30조) — 방침은 굵게 · 색으로 구분. 입력을 잃지 않게 하단 시트로(D-46 · D-50) — 화면 준비(하이드레이션) 전 · 보조키 클릭은 target 으로 새 탭 -->
+      <!-- 법정 링크(client-shell spec F-20 · 개인정보 보호법 30조) — 방침은 굵게 · 색으로 구분. 입력을 잃지 않게 하단 시트로(D-46) — 화면 준비(하이드레이션) 전 · 보조키 클릭은 target 으로 새 탭 -->
       <p class="verify-page__policy">
         <a
           class="verify-page__policy-link verify-page__policy-link--privacy"
@@ -244,6 +259,17 @@ const legalSheet = ref<DocSheetKey | null>(null)
 
 .verify-page__chip {
   margin-top: 18px;
+}
+
+.verify-page__reverify {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--n-color-primary-50, #f1edff);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--n-color-primary-800, #2f1499);
+  word-break: keep-all;
 }
 
 .verify-page__form {

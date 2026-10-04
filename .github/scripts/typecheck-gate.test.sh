@@ -14,6 +14,8 @@ PROBE="$ROOT/apps/$APP/server/utils/__typecheck_gate_probe__.ts"
 BASELINE="$ROOT/.github/typecheck-baseline/$APP.txt"
 
 pass=0; fail=0
+# 시작 시점 기준선 — 테스트가 끝난 뒤 같아야 한다(건수를 박아 두면 기준선이 정당하게 줄 때마다 깨진다)
+BASELINE_BEFORE="$(cksum <"$BASELINE" 2>/dev/null)"
 cleanup() { rm -f "$PROBE"; }
 trap cleanup EXIT
 
@@ -53,8 +55,8 @@ rm -f "$PROBE"
 check "주입 제거 후 통과" 0 $?
 
 # 5) 기준선이 훼손되지 않았다
-if [[ "$(grep -c . "$BASELINE")" == "7" ]]; then
-  pass=$((pass+1)); echo "  ✔ 기준선 7건 유지 (테스트가 기준선을 오염시키지 않음)"
+if [[ -f "$BASELINE" && "$(cksum <"$BASELINE")" == "$BASELINE_BEFORE" ]]; then
+  pass=$((pass+1)); echo "  ✔ 기준선 $(grep -c . "$BASELINE")건 그대로 (테스트가 기준선을 오염시키지 않음)"
 else
   fail=$((fail+1)); echo "  ⛔ 기준선이 변했다 ($(grep -c . "$BASELINE")건)"
 fi

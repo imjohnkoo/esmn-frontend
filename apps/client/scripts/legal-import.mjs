@@ -4,7 +4,7 @@
  * `app/content/legal/<이름>.ts` 를 만든다. 정본은 읽기만 한다. 변환 규칙은 scripts/legal-posting.ts(테스트가 같이 쓴다).
  *
  *   yarn workspace nomacom-client legal:import --from <legal-pages 의 사업운영/2026-09-23_client-법정페이지-초안>
- *   (기본: 규칙의 전부 — 문서 terms · privacy · refund + 조각 business · issue-notice.
+ *   (기본: 규칙의 전부 — 문서 terms · privacy · refund + 조각 business · issue-notice · checkout-notice.
  *    04 2절(`/business` 표)은 게시하지 않는다 — spec D-39.
  *    `--docs terms,business` 로 고른다)
  *   약관 8조② 의 «자정» 예시 괄호는 게시 수정으로 뺀다(spec D-33 — 규칙 DOC_RULES.terms.edits). 정본이 바뀌어 그 줄을 못 찾으면 멈춘다

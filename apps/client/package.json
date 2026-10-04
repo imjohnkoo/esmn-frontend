@@ -15,6 +15,7 @@
     "postinstall": "nuxt prepare",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "catalog:assets": "tsx scripts/catalog-assets.ts",
     "legal:import": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/legal-import.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -29,6 +30,7 @@
     "@imjohnkoo/design-tokens": "workspace:*",
     "@imjohnkoo/design-vue": "workspace:*",
     "@pinia/nuxt": "^0.11.3",
+    "@portone/browser-sdk": "^0.1.11",
     "@vueuse/nuxt": "^14.1.0",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
@@ -45,10 +47,14 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4",
     "@vitejs/plugin-vue": "^6.0.4",
+    "@vue/compiler-sfc": "3.5.32",
     "@vue/test-utils": "^2.4.10",
     "drizzle-kit": "^0.31.8",
+    "flag-icons": "^7.5.0",
     "happy-dom": "^20.9.0",
+    "sharp": "^0.35.4",
     "tailwindcss": "^4",
+    "tsx": "^4.19.0",
     "vitest": "^4.1.6",
     "vue-tsc": "^2.2.0"
   }

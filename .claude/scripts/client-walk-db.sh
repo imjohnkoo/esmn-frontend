@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+# client-walk-db.sh — QA ⑦ 합성 DB walk 준비 (spec client-shell E2E-0 ③ · D-24). prod DB 에 닿지 않는다.
+#
+# John 지시(2026-09-23): 로컬 walk 에서 prod DB 의 데이터를 수정하지 않는다 · 실제 전화번호로 메시지가 가지 않는다.
+#  - **어느 명령도 호스트의 55432 에 붙지 않는다** — schema · seed · counts 는 전부 컨테이너 안(docker exec … psql). 55432 에
+#    ssh · SSM 터널(prod RDS)이 떠 있어도 이 스크립트는 그쪽에 연결하지 않는다(2026-10-02 — 그런 터널이 떠 있던 적이 있다).
+#    호스트 포트로 붙는 것은 봉투 dev 서버뿐이고, 그쪽은 client-walk-server.sh 가 55432 리스너를 따로 판정한다.
+#  - schema = drizzle-kit export(스키마 파일 → SQL · DB 연결 없음 · env -i) → 허용 문장(CREATE TABLE · INDEX · TYPE · SEQUENCE ·
+#    ALTER TABLE … ADD CONSTRAINT — 이름은 "x" 또는 "public"."x")만인지 확인 → 표가 없으면 컨테이너 안 psql 로(한 트랜잭션).
+#    표가 있으면 같은 표 이름 집합일 때만 건너뛰고, 다르면 거부한다(덮어쓰지 · 지우지 않는다)
+#  - 컨테이너 nomacom-walk-pg 의 5432 는 127.0.0.1:55432 하나에만 묶인다 — 다르면(모든 인터페이스 · 다른 포트) 거부
+#  - docker 는 이 기계의 데몬만 — DOCKER_HOST · 현재 컨텍스트가 unix 소켓이 아니면(원격 데몬) 거부
+#  - 가짜 주문만: 이름 «테스트고객» · 전화 010-0000-xxxx(할당되지 않는 대역) · activationCode 는 LPA 모양의 가짜 값
+#  - 아무것도 지우지 않는다 — 컨테이너 · 볼륨 제거 명령은 없다. seed 는 ON CONFLICT DO NOTHING(이미 있는 행은 그대로 — 바뀐 행을 되돌리지 않는다)
+#
+# 사용:  bash .claude/scripts/client-walk-db.sh up        # 컨테이너 기동(없으면 만들고, 멈춰 있으면 start)
+#        bash .claude/scripts/client-walk-db.sh schema    # 표 만들기(apps/client/server/db/schema.ts — 컨테이너 안)
+#        bash .claude/scripts/client-walk-db.sh seed      # 가짜 주문 ① 발급 완료 · ② 미발급
+#        bash .claude/scripts/client-walk-db.sh counts    # E2E-7 — esim · plan · esim_issuance 행 수(주문별)
+# 그다음: bash .claude/scripts/client-walk-server.sh dev <port> "$(bash .claude/scripts/client-walk-db.sh url)"
+# 회귀: bash .claude/scripts/client-walk-db.test.sh
+set -euo pipefail
+
+refuse() {
+  echo "⛔ $1 — 중단" >&2
+  exit 2
+}
+
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+NAME=nomacom-walk-pg
+IMAGE=postgres:15.12-alpine
+BIND=127.0.0.1:55432
+DB_URL="postgres://walk:walk@127.0.0.1:55432/walk"
+[[ "$DB_URL" =~ ^postgres(ql)?://[A-Za-z0-9_]+:[A-Za-z0-9_]+@127\.0\.0\.1:55432/[A-Za-z0-9_]+$ ]] || refuse "URL 형식"
+
+# 컨테이너 안 psql — 컨테이너 env(PGHOST · PGHOSTADDR · PGSERVICE 등)를 버리고(env -i) 컨테이너 자기 소켓으로만 · psqlrc 안 읽음(-X)
+psql_in() {
+  docker exec -i "$NAME" env -i PATH=/usr/local/bin:/usr/bin:/bin \
+    psql -X -h /var/run/postgresql -v ON_ERROR_STOP=1 -U walk -d walk "$@"
+}
+# 준비 판정 — 컨테이너 env 를 버리고 컨테이너 안 루프백 TCP 로(첫 기동의 임시 init 서버는 TCP 를 열지 않는다 — listen_addresses='')
+isready_in() { docker exec "$NAME" env -i PATH=/usr/local/bin:/usr/bin:/bin pg_isready -h 127.0.0.1 -p 5432 -U walk -d walk; }
+NODE="$(command -v node || true)"
+
+# docker 대상 = 이 기계의 데몬(unix 소켓)만 — 원격 데몬이면 컨테이너 · 가짜 행이 남의 기계에 생긴다
+check_docker() {
+  [[ -z "${DOCKER_HOST:-}" || "$DOCKER_HOST" == unix://* ]] || refuse "DOCKER_HOST 가 원격이다($DOCKER_HOST) — 로컬 데몬만"
+  local endpoint
+  endpoint="$(docker context inspect --format '{{.Endpoints.docker.Host}}' 2>/dev/null)" || refuse "docker 컨텍스트를 확인할 수 없다"
+  [[ "$endpoint" == unix://* ]] || refuse "docker 컨텍스트가 원격이다($endpoint) — 로컬 데몬만"
+}
+
+# 컨테이너의 5432 가 127.0.0.1:55432 하나에만 — 모든 인터페이스(0.0.0.0)면 walk:walk 슈퍼유저 DB 가 LAN 에 열린다
+check_bind() {
+  local ports
+  ports="$(docker port "$NAME" 5432/tcp 2>/dev/null)" || refuse "$NAME 의 포트를 확인할 수 없다 — up 부터"
+  [[ "$ports" == "$BIND" ]] || refuse "$NAME 의 5432 가 $BIND 하나에만 묶여 있지 않다($(tr '\n' ' ' <<<"$ports")) — 컨테이너를 사람이 확인"
+}
+
+case "${1:-}" in
+  up | schema | seed | counts) check_docker ;;
+esac
+
+case "${1:-}" in
+  url)
+    echo "$DB_URL"
+    ;;
+  up)
+    if docker inspect "$NAME" >/dev/null 2>&1; then
+      [[ "$(docker inspect -f '{{.Config.Image}}' "$NAME")" == "$IMAGE" ]] || refuse "$NAME 이 다른 이미지다"
+      # start 전에 네트워크 · 묶임 설정부터 — 0.0.0.0 · host 네트워크로 만든 옛 컨테이너를 띄우는 순간 DB 가 LAN 에 열린다
+      [[ "$(docker inspect -f '{{.HostConfig.NetworkMode}}' "$NAME")" =~ ^(default|bridge)$ ]] ||
+        refuse "$NAME 의 네트워크가 기본(bridge)이 아니다 — 띄우지 않는다(컨테이너를 사람이 확인)"
+      [[ "$(docker inspect -f '{{json .HostConfig.PortBindings}}' "$NAME")" == "{\"5432/tcp\":[{\"HostIp\":\"${BIND%:*}\",\"HostPort\":\"${BIND##*:}\"}]}" ]] ||
+        refuse "$NAME 의 포트 설정이 $BIND 하나가 아니다 — 띄우지 않는다(컨테이너를 사람이 확인)"
+      docker start "$NAME" >/dev/null
+    else
+      docker run -d --name "$NAME" -p "$BIND:5432" \
+        -e POSTGRES_USER=walk -e POSTGRES_PASSWORD=walk -e POSTGRES_DB=walk "$IMAGE" >/dev/null
+    fi
+    check_bind
+    for _ in $(seq 1 30); do isready_in >/dev/null 2>&1 && break; sleep 1; done
+    isready_in >/dev/null || refuse "postgres 가 준비되지 않았다"
+    echo "✔ $NAME 준비 — $DB_URL"
+    ;;
+  schema)
+    check_bind
+    [[ -n "$NODE" ]] || refuse "node 가 없다"
+    # 스키마 파일 → SQL(DB 연결 없음 — 설정 파일 · DATABASE_URL 을 넘기지 않는다)
+    sql="$(cd "$ROOT/apps/client" && env -i "PATH=/usr/bin:/bin:$(dirname "$NODE")" "HOME=$HOME" \
+      "$NODE" "$ROOT/node_modules/drizzle-kit/bin.cjs" export --dialect postgresql --schema ./server/db/schema.ts)" ||
+      refuse "스키마 SQL 을 만들지 못했다"
+    # 주석을 먼저 걷고(주석 안의 «;» 로 문장 경계를 속이지 못하게) — 검사하는 글자 = 넣는 글자
+    sql="$(sed -E 's/--.*$//' <<<"$sql")"
+    [[ "$sql" == *'CREATE TABLE'* ]] || refuse "스키마 SQL 에 CREATE TABLE 이 없다"
+    ! grep -qE '^[[:space:]]*\\' <<<"$sql" || refuse "스키마 SQL 에 psql 메타 명령(\\ 줄)이 있다"
+    # 문장(; 로 나눔)마다 허용 머리로 시작해야 한다 — 들여쓴 DROP · 쪼개진 조각도 거부. ⚠️ 보장은 «문장 머리» 까지(머리 뒤 내용은 보지 않는다) —
+    # 그래도 확장 · 외부 연결 문장(EXTENSION · SERVER · SUBSCRIPTION · COPY · DO · FUNCTION)은 머리에서 막히고, 표가 0 일 때 컨테이너 안에서만 돈다
+    bad="$(awk 'BEGIN { RS = ";" } {
+      gsub(/^[ \t\n]+|[ \t\n]+$/, "")
+      if ($0 != "" && $0 !~ /^(CREATE TABLE "[^"]+"(\."[^"]+")? \(|CREATE (UNIQUE )?INDEX "[^"]+" ON "[^"]+"(\."[^"]+")? |CREATE TYPE "[^"]+"(\."[^"]+")? AS ENUM\(|CREATE SEQUENCE "[^"]+"(\."[^"]+")?|ALTER TABLE "[^"]+"(\."[^"]+")? ADD CONSTRAINT "[^"]+" )/) print substr($0, 1, 60)
+    }' <<<"$sql")"
+    [[ -z "$bad" ]] || refuse "스키마 SQL 에 허용하지 않는 문장이 있다: $(head -1 <<<"$bad")"
+    want="$(grep -oE '^CREATE TABLE "[^"]+"' <<<"$sql" | sed -E 's/^CREATE TABLE "([^"]+)"$/\1/' | sort)"
+    have="$(psql_in -At -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY 1")" ||
+      refuse "표 목록을 읽지 못했다"
+    have="$(sort <<<"$have")"
+    if [[ -n "$have" ]]; then
+      # 이미 있으면 같은 표 이름 집합일 때만 «있음» — 반쯤 만든 스키마 · 표가 늘거나 준 스키마는 거부(지우는 명령은 없다 — 사람이 정리).
+      # ⚠️ 열 구성까지는 대조하지 않는다 — schema.ts 가 기존 표의 열을 바꾸면 컨테이너를 새로 만들어야 한다
+      [[ "$have" == "$want" ]] || refuse "컨테이너의 표 이름 집합이 스키마와 다르다(반쯤 만들었거나 표가 늘거나 줄었다) — 사람이 확인"
+      echo "✔ 스키마가 이미 있다(표 $(wc -l <<<"$have" | tr -d ' ') 개 · 같은 집합) — 건너뜀"
+      exit 0
+    fi
+    # -c 한 번 = 한 트랜잭션(중간 실패면 아무 표도 남지 않는다) · -c 는 psql 메타 명령을 해석하지 않는다
+    psql_in -q -c "$sql" >/dev/null
+    echo "✔ 스키마 — 컨테이너 $NAME 안에 표를 만들었다"
+    ;;
+  seed)
+    check_bind
+    psql_in <<'SQL'
+INSERT INTO "plan-type" ("planTypeId", "planNameKr", "planDataTypeKr", "planDataLimitKr", "planDataDuration",
+  "planCountriesKr", "planCountriesEng", "planCountriesIso", "timeZones")
+VALUES ('WALK-FRA-7D', '프랑스 eSIM', '매일 1GB', '1GB', 7, ARRAY['프랑스'], ARRAY['France'], ARRAY['FRA'], ARRAY['Europe/Paris'])
+ON CONFLICT ("planTypeId") DO NOTHING;
+
+INSERT INTO "order" ("productOrderId", "orderId", "productOrderStatus", "productName", "productOption", "placeOrderDate",
+  "quantity", "totalPaymentAmount", "optionManageCode", "customerName", "customerPhoneNumber", "receiverName", "receiverPhoneNumber")
+VALUES
+  (2026092300000102, 2026092300000101, 'PAYED', '프랑스 eSIM 무제한', '매일 1GB · 7일', now(), 1, 4900, 'WALK-FRA-7D',
+   '테스트고객', '010-0000-0001', '테스트고객', '010-0000-0001'),
+  (2026092300000202, 2026092300000201, 'PAYED', '프랑스 eSIM 무제한', '매일 1GB · 7일', now(), 1, 4900, 'WALK-FRA-7D',
+   '테스트고객', '010-0000-0002', '테스트고객', '010-0000-0002')
+ON CONFLICT ("productOrderId") DO NOTHING;
+
+INSERT INTO "esim" ("esimId", "apn", "manualCode", "smdpAddress", "networkStatus", "serviceStatus", "activationCode", "orderProductOrderId")
+VALUES ('WALK-ESIM-0001', 'walk.apn', 'WALK-MANUAL-0001', 'smdp.walk.invalid', 'NOT_ACTIVE', 'ACTIVE',
+  'LPA:1$smdp.walk.invalid$WALK-MANUAL-0001', 2026092300000102)
+ON CONFLICT ("esimId") DO NOTHING;
+SQL
+    echo "✔ 가짜 주문 — ① 2026092300000101(발급 완료 1) · ② 2026092300000201(미발급) · 테스트고객 / 010-0000-0001 · 0002"
+    ;;
+  counts)
+    psql_in -At <<'SQL'
+SELECT 'esim ①', count(*) FROM "esim" WHERE "orderProductOrderId" = 2026092300000102
+UNION ALL SELECT 'esim ②', count(*) FROM "esim" WHERE "orderProductOrderId" = 2026092300000202
+UNION ALL SELECT 'plan', count(*) FROM "plan"
+UNION ALL SELECT 'esim_issuance', count(*) FROM "esim_issuance"
+UNION ALL SELECT 'esim 전체', count(*) FROM "esim";
+SQL
+    ;;
+  *)
+    echo "사용: $0 up | schema | seed | counts | url" >&2
+    exit 2
+    ;;
+esac

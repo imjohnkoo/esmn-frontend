@@ -34,6 +34,21 @@ Prevent broken/unsafe prod deployments by running a structured pre-flight check.
 ### Phase 1 — Working Tree Hygiene
 
 ```bash
+# 1.0 올릴 SHA 를 먼저 하나로 정하고, **그 SHA 가 체크아웃된 상태에서** 모든 Phase 를 돈다 (W1-2 D-17 · QA ⑥).
+#     build · UI · paths-filter · 시크릿 검사는 HEAD 를, 게이트 · push 는 PROMOTE_SHA 를 보므로 둘이 같아야 한다.
+#     fetch 가 실패하면 멈춘다(오래된 ref 로 판정하지 않는다). client 를 올리면 PROMOTE_SHA = origin/dev 끝뿐이다 — Phase 4 렌더 확인이
+#     HEAD = origin/dev 를 요구한다(승격에서 RC_REF 를 주지 않는다). dev 의 더 앞 SHA 로 바꿔 올리는 것은 client workflow 가 트리거되지 않는 승격
+#     (Phase 2 표 — apps/client · packages/design-* · 루트 package.json · yarn.lock · deploy/scripts · appspec.yml ·
+#     .github/workflows/client-production.yml 변경 0 — 실제 판정은 그 workflow 의 paths 필터)일 때만.
+#     ⚠️ 점검 중에 dev 가 앞서 나가면(다른 세션의 머지) 고쳐 쓰지 말고 **Phase 1.0 부터** 새 끝으로 다시 — 앞 Phase(시크릿 · 게이트 · 테스트)가 새 커밋을 보지 않았다.
+git fetch origin --quiet || exit 1
+PROMOTE_SHA="$(git rev-parse origin/dev)"
+git merge-base --is-ancestor "$PROMOTE_SHA" origin/dev || { echo "⛔ origin/dev 에 없는 SHA — prod 는 dev 의 한 SHA"; exit 1; }
+[ "$(git rev-parse HEAD)" = "$PROMOTE_SHA" ] || { echo "⛔ HEAD ≠ PROMOTE_SHA — git checkout --detach $PROMOTE_SHA 뒤 다시"; exit 1; }
+echo "PROMOTE_SHA=$PROMOTE_SHA"   # 보고 템플릿에 적어 두고, 뒤 Phase 의 셸마다 이 값으로 다시 둔다(셸 변수는 이어지지 않는다)
+```
+
+```bash
 # 1.1 Clean?
 git status --porcelain
 ```
@@ -97,7 +112,26 @@ yarn turbo run build --filter=nomacom-admin --filter=nomacom-client || exit 1
 
 **Fail이면 stop**. 빌드 안 되는 코드 prod 금지.
 
-> ✅ **INF-1(2026-09-02) 이후 `yarn turbo run typecheck` 는 실제로 돈다.** admin/client 는 `.github/scripts/typecheck-gate.sh` 를 거쳐 **기준선 초과분만** 실패한다(admin 0 / client 7건). 신규 타입 에러가 있으면 여기서 걸린다 — 반드시 돌릴 것.
+```bash
+# client 확정 전 문안(P9_4_PENDING) 0 — Phase 1.0 의 PROMOTE_SHA 를 본다 (W1-2 D-17).
+PROMOTE_SHA=<Phase 1.0 값>
+[ "$(git rev-parse HEAD)" = "$PROMOTE_SHA" ] || exit 1
+# 게이트 스크립트가 없는 SHA(도입 전 통합 브랜치)는 «해당 없음» — 단 스크립트만 빠진 경우를 막으려 자리표시자 글자를 직접 찾는다
+if [ -f .github/scripts/content-pending-gate.sh ]; then
+  env -u CONTENT_GATE_ROOT bash .github/scripts/content-pending-gate.sh "$PROMOTE_SHA" || exit 1
+else
+  git grep -q -F -e P9_4_PENDING -e PENDING_LABEL -e '(확정' -e '（확정' "$PROMOTE_SHA" -- apps/client ':(exclude)*.md' ':(exclude)*.test.ts' ':(exclude)apps/client/app/content/pending.ts'
+  case $? in
+    1) echo "content gate: 해당 없음(게이트 도입 전 SHA · 자리표시자 0)" ;;
+    0) echo "⛔ 게이트 스크립트가 없는데 자리표시자가 있다 — 중단"; exit 1 ;;
+    *) echo "⛔ git grep 오류 — 검사 불가, 중단"; exit 1 ;;
+  esac
+fi
+bash .github/scripts/typecheck-gate.sh admin || exit 1
+bash .github/scripts/typecheck-gate.sh client || exit 1
+```
+
+> ✅ **INF-1(2026-09-02) 이후 `yarn turbo run typecheck` 는 실제로 돈다.** admin/client 는 `.github/scripts/typecheck-gate.sh` 를 거쳐 **기준선 초과분만** 실패한다(admin 0 / client 4건 — 2026-09-23 7 → 4). 신규 타입 에러가 있으면 여기서 걸린다 — 반드시 돌릴 것.
 
 ### Phase 4 — 영향 앱 테스트 + UI 검증
 
@@ -105,20 +139,21 @@ Phase 2에서 판정된 앱만 테스트:
 
 ```bash
 yarn workspace @imjohnkoo/design-vue run test --run   # DS 변경 시 (137 tests — 2026-10-03)
-yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A 줄 고정 · 동의 문구 · 하단 시트 마운트 포함(전부 통과해야 한다 — 2026-10-03 기준 488 tests)
+yarn workspace nomacom-client run test                # client 변경 시 — 법정 문서 · 05-A · 05-B · 동의 문구 · 하단 시트 · 테스트 체크아웃 마운트 포함(전부 통과해야 한다 — 2026-10-04 W1-2 · W1-3 머지 기준 1363 tests)
 yarn workspace nomacom-mobile run typecheck           # mobile 변경 시
 ```
 
-> ⚠️ client 테스트는 순수 유닛 + 시트 마운트(happy-dom)뿐, admin 은 아직 0건이다. 테스트가 커버하지 못하는 화면 동작이 많으므로 **UI 수동 검증은 여전히 필수**다 — 생략 금지.
+> ⚠️ client 테스트는 순수 유닛 + 마운트(happy-dom — 하단 시트 · 테스트 체크아웃 동작 · 카탈로그 컴포넌트)뿐, admin 은 아직 0건이다. 테스트가 커버하지 못하는 화면 동작이 많으므로 **UI 수동 검증은 여전히 필수**다 — 생략 금지.
 
 `verification-before-completion` 의 iron law 적용 — 결과를 직접 확인.
 
 **UI 변경이 포함된 경우** 추가로:
 
-- 영향 앱 dev 서버 띄워서 (`yarn workspace nomacom-admin run dev`) golden path 수동 검증
+- 영향 앱 dev 서버 띄워서 golden path 수동 검증 — admin 은 `yarn workspace nomacom-admin run dev`. **client 는 로컬 walk 안전 봉투로만**(`bash .claude/scripts/client-walk-server.sh dev <port>` → `http://127.0.0.1:<port>` — prod DB · 벤더 키 없이. John 지시 2026-09-23 · client-shell spec D-18). 실발급 · 실주문 경로는 로컬에서 걷지 않고 승격 당일 operator AC 로
+
 - 자동 테스트는 feature correctness 가 아닌 code correctness 만 검증함
 
-**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남는다(D-47). D-30 이 예외로 둔 3자리(방침 4장 AWS · Solapi 행 · `/` 임시 블록(D-36)의 호스팅 줄)는 **D-54(2026-10-03)로 채워졌다** — dev 는 값 자리 0 으로 나간다. 아래 `chk` 의 셋째 인자부터는 «있어도 되는 예외 자리» 인데 지금은 하나도 없다(새 예외는 spec 결정 뒤에만 넣는다). **값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 올릴 커밋(`origin/dev`)을 체크아웃한 저장소 루트에서 그대로 돌린다(블록이 그 자리에서 빌드한다 — turbo 캐시가 맞으면 몇 초). **Phase 7 에서 prod 로 올리는 sha 는 끝 줄에 찍힌 커밋과 같아야 한다**:
+**client 가 승격 대상이면 — 미확정 값 렌더 확인(client-shell spec D-47 · D-30)**. 법정 문서 본문의 값 자리는 글자 없이 `data-pending` 표식만 남는다(D-47). D-30 이 예외로 둔 3자리(방침 4장 AWS · Solapi 행 · 옛 `/` 임시 블록(D-36)의 호스팅 줄)는 **D-54(2026-10-03)로 채워졌다** — dev 는 값 자리 0 으로 나간다. W1-2 머지(2026-10-04) 뒤로는 **모든 페이지에 푸터(사업자등록번호)** 가 있고, 카탈로그(W1-3)의 `/countries/{iso3}` · `/products/{zone}` 은 프리렌더 HTML 하나씩을 본다 · 4-step 의 details · select-date · view 는 세션 없이 들어오면 서버 가드가 `/verify/{id}?reason=reverify` 로 302 를 돌려준다(client-shell K8 — 그 응답 자체를 본다) · `/business` 는 404(D-39). 아래 `chk` 의 셋째 인자부터는 «있어도 되는 예외 자리» 인데 지금은 하나도 없다(새 예외는 spec 결정 뒤에만 넣는다). **값 자리 · «(확정 전)»(속성 · head 포함) · 자리표시자 이름이 하나라도 있거나, 응답이 이 빌드 · 이 커밋의 것이 아니거나, 본문이 비었거나, 검사하지 않는 페이지가 있으면 중단**하고 John 에게 보고한다(값이 왔으면 `legal:import` 부터). 올릴 커밋(`origin/dev`)을 체크아웃한 저장소 루트에서 그대로 돌린다(블록이 그 자리에서 빌드한다 — turbo 캐시가 맞으면 몇 초). **Phase 7 에서 prod 로 올리는 sha 는 끝 줄에 찍힌 커밋과 같아야 한다**:
 
 ```bash
 # 블록이 그 자리에서 빌드한 .output 을 루프백에 · DB · 벤더 env 없이(env -i — DATABASE_URL 이 없으면 서버는 DB 에 붙지 않는다) — 화면 HTML 만 본다
@@ -129,7 +164,7 @@ cd apps/client || exit 1
 RC_REF="${RC_REF:-origin/dev}"
 case "$RC_REF" in origin/*) git fetch -q origin "${RC_REF#origin/}" || { echo "⛔ $RC_REF 받아 오기 실패"; exit 1; } ;; esac
 head="$(git rev-parse HEAD)" || { echo "⛔ git 체크아웃이 아니다"; exit 1; }
-[ "$head" = "$(git rev-parse "$RC_REF^{commit}")" ] || { echo "⛔ HEAD($head) ≠ $RC_REF — 올릴 커밋을 체크아웃하고 다시"; exit 1; }
+[ "$head" = "$(git rev-parse "$RC_REF^{commit}")" ] || { echo "⛔ HEAD($head) ≠ $RC_REF — dev 가 앞서 나갔다면 Phase 1.0 부터 새 끝으로 다시(PROMOTE_SHA 를 고쳐 쓰지 않는다)"; exit 1; }
 # .output = 이 커밋의 빌드 — 저장소 전체 미커밋 · 추적 안 된 파일 0 에서 여기서 빌드한다(빌드 시각으로 판정하지 않는다).
 # turbo 는 입력 파일 해시로 캐시를 고르므로 캐시가 맞아도 같은 소스의 산출물이다
 st="$(git -C ../.. status --porcelain)" || exit 1
@@ -161,7 +196,9 @@ left=0; seen=""
 chk() {
   local p=$1 m s k ok_p=0 ok_d=0; local -a must; IFS=';' read -ra must <<<"$2"; shift 2
   get "$p" || exit 1
-  seen="$seen${p//$O/:id}"$'\n'
+  local q=${p//$O/:id}; q=${q/#\/countries\/$C/\/countries\/:id}; q=${q/#\/products\/$Z/\/products\/:id}   # 동적 경로는 :id 로 센다
+  seen="$seen$q"$'\n'
+  must+=('704-24-01747')   # 모든 페이지에 푸터 사업자정보(W1-2 F-7)
   for m in "${must[@]}"; do [ "$(n "$body" "$m")" -ge 1 ] || { echo "⛔ $p 본문에 «$m» 이 없다(양성 대조 실패 — 빈 · 오류 화면이 0건으로 통과하지 않게)"; exit 1; }; done
   for s in "$@"; do
     k=$(n "$body" "$s"); [ "$k" -le 1 ] || { echo "⛔ $p 예외 자리 «$s» 가 ${k}번 — 자리마다 많아야 1(D-30 은 3자리뿐)"; exit 1; }
@@ -176,15 +213,31 @@ chk() {
   done
 }
 O=2026092300000101   # 아무 주문번호 — DB 가 없어 화면 틀만 그린다
-chk / '704-24-01747;eSIM 발급은;호스팅 서비스: AWS'
-chk /privacy '개인정보의 처리 목적;AWS (Amazon Web Services 서울 리전);솔라피(주)'
+C=fra; Z=fra00       # 프리렌더된 아무 나라 · 상품(W1-3 catalog F-9 — 카탈로그에서 라우트 목록을 만든다)
+chk / '어느 나라로 떠나세요?;이미 구매하셨나요?;호스팅 서비스: AWS;1950 호 (경기도 광주시)'
+chk /privacy '개인정보의 처리 목적;AWS (Amazon Web Services 서울 리전);솔라피(주);쿠키 1개를 저장합니다'
 chk /terms '제1장 총칙'
 chk /refund '한눈에 보기'
 chk /supported-devices '지원하는지 확인해 주세요;갤럭시 (국내판)'
-chk /verify/$O '주문하신 분이 맞는지 확인할게요'
-chk /details/$O '발행할 이심을 선택해 주세요'
-chk /select-date/$O '사용 시작 날짜를 선택해 주세요'
-chk /view/$O 'eSIM 발급이 완료됐어요'
+chk /my '로그인은 준비 중이에요;고객센터;약관 및 정책'
+chk /my-esim 'eSIM 을 찾아요'
+chk /guide '설치 가이드'
+chk /search '국가 검색'
+chk /checkout-preview '구매 전 확인;(필수) 만 14세 이상입니다;결제 전 안내'
+chk /verify/$O '맞는지 확인할게요'
+chk /countries/$C '프랑스 eSIM;프랑스만 가요'
+chk /products/$Z '프랑스 eSIM;사용일수는 이렇게 계산해요;구매하기'
+# 4-step 가드(K8) — 세션 없이 오면 서버가 verify 로 302(본문 없음). 다른 코드 · 다른 곳으로 가면 중단
+guard() {
+  local r; r="$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$B$1")"
+  [ "$r" = "302 $B/verify/$O?reason=reverify" ] || { echo "⛔ $1 → «$r» — 302 $B/verify/$O?reason=reverify 여야 한다(4-step 가드)"; exit 1; }
+  seen="$seen${1//$O/:id}"$'\n'
+}
+guard /details/$O
+guard /select-date/$O
+guard /view/$O
+r="$(curl -s -o /dev/null -w '%{http_code}' "$B/business")"   # D-39 — 페이지가 없어야 한다(되살아나거나 3xx 로 돌리면 중단)
+[ "$r" = 404 ] || { echo "⛔ /business 응답 $r — 404 여야 한다(D-39)"; exit 1; }
 # 검사하지 않은 페이지가 없는가 — app/pages 의 페이지 파일(Nuxt 규칙: .vue · .js · .jsx · .mjs · .ts · .tsx · 링크 따라감 · 제외는 *.{spec,test}.{js,cts,mts,ts,jsx,tsx} 만)과 위 목록이 같아야 한다(새 페이지는 chk 줄을 먼저 넣는다)
 pages="$(cd app/pages && find -L . -type f \( -name '*.vue' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.ts' -o -name '*.tsx' \) ! \( \( -name '*.test.*' -o -name '*.spec.*' \) \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' -o -name '*.mts' -o -name '*.cts' \) \) | sed -E -e 's#^\./##' -e 's#\.(vue|m?jsx?|tsx?)$##' -e 's#^index$##' -e 's#/index$##' -e 's#\[[^]]*\]#:id#g' -e 's#^#/#' | sort)"
 [ "$pages" = "$(printf '%s' "$seen" | sort)" ] || { echo "⛔ 검사 목록과 app/pages 가 다르다 — 빠진 페이지에 chk 줄을 넣는다:"; diff <(printf '%s\n' "$pages") <(printf '%s' "$seen" | sort); exit 1; }
@@ -246,11 +299,13 @@ git diff origin/prod...HEAD \
 확인할 것은 **prod 가 dev 의 조상인가** — 즉 이 push 가 fast-forward 인가다.
 
 ```bash
-git fetch origin --quiet
+git fetch origin --quiet || exit 1
+PROMOTE_SHA=<Phase 1.0 값>          # 다시 구하지 않는다 — 게이트가 본 SHA 그대로
 git log --oneline --graph origin/dev origin/prod | head -20
-git merge-base --is-ancestor origin/prod origin/dev && echo "✔ fast-forward 가능" || echo "⛔ prod 가 dev 에 없는 커밋을 갖고 있다 — 되감기 위험, 중단"
-# client 승격이면 — Phase 4 렌더 확인 끝 줄의 sha(RC=<그 sha>)가 지금 origin/dev 와 같아야 한다(그 사이 머지되면 확인 안 된 커밋이 나간다)
-[ "$(git rev-parse origin/dev)" = "$RC" ] || echo "⛔ origin/dev 가 렌더 확인한 커밋($RC)과 다르다 — Phase 4 부터 다시"
+git merge-base --is-ancestor origin/prod "$PROMOTE_SHA" && echo "✔ fast-forward 가능" || echo "⛔ prod 가 승격 SHA 에 없는 커밋을 갖고 있다 — 되감기 위험, 중단"
+# client 승격이면 — Phase 4 렌더 확인 끝 줄의 커밋이 올릴 SHA 와 같아야 한다(다른 커밋을 확인했으면 Phase 4 부터 다시)
+RC=<Phase 4 끝 줄의 커밋>
+[ "$RC" = "$PROMOTE_SHA" ] || echo "⛔ 렌더 확인한 커밋($RC) ≠ PROMOTE_SHA — Phase 1.0 부터 새 dev 끝으로 다시(PROMOTE_SHA 를 고쳐 쓰지 않는다)"
 ```
 
 올릴 것은 **그 sha** 다(`origin/dev` 이름이 아니라 — 사용자 승인 뒤 `<RC sha>:prod`). **prod 에만 있는 커밋이 있으면 중단하고 사용자에게 보고한다.** ref 되감기는 남의 배포를 되돌리고 커밋을 소실시킨다 — `guard-prod-push.sh` 가 force 이동을 차단하는 이유다.
@@ -283,8 +338,10 @@ Paths-filter impact:
   - DS publish: ✗ (prod 브랜치 — publish 는 dev 에서만)
 
 Build:        ✓ yarn turbo run build (admin, client) pass
-Typecheck:    — n/a (admin/client 에 script 없음 — 인프라 갭)
-Tests:        ✓ design-vue 129 pass  /  — admin·client n/a
+Promote SHA:  <PROMOTE_SHA> (origin/dev 에 있음 — push 는 `git push origin <PROMOTE_SHA>:prod`, 훅이 막으므로 사용자가)
+Content gate: ✓ content-pending-gate.sh <PROMOTE_SHA> exit 0 (client 확정 전 문안 0)
+Typecheck:    ✓ typecheck-gate.sh (admin 0 / client 4 기준선 초과 0)
+Tests:        ✓ design-vue 129 · client <n> pass  /  — admin 0건
 UI manual:    ✓ admin/client golden path 검증 완료 (유일한 기능 검증)
 Render check: ✓ <sha> = origin/dev · 예외 자리 0 (client 승격 시 — 올릴 sha 와 같아야)
 Migrations:   ✗ none
@@ -305,6 +362,7 @@ READY to push. Proceed?
 - Working tree dirty
 - Secrets/env 파일 variations committed (`.env.local`, `.env.production` 등)
 - Build / Typecheck fail
+- 콘텐츠 자리표시자 게이트 fail (`content-pending-gate.sh` exit 1 · 2 — 확정 전 사업자정보 · 약관 문안이 prod 에 나간다)
 - Test fail
 - UI 변경인데 수동 검증 미완료
 - Migration 있는데 backend / DB 소유자와 합의/적용 계획 없음

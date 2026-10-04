@@ -16,7 +16,7 @@
 | `/nomacom/shared/naver/` | 네이버 SmartStore Commerce API (admin OAuth 갱신 흐름 도입 시) | `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`, `NAVER_SOLUTION_ID` | admin `/api/esim/naver-oauth.get.ts` 는 현재 토큰 조회만 — 갱신 도입 시 필요. 보류 가능 |
 | `/nomacom/shared/kakao/` | 카카오 알림톡 (벤더 미정) | TBD | 알림톡 도입 시 채움 (Infobip / LGCNS / NHN Toast 등) |
 | `/nomacom/admin/` | **admin 전용** | `ADMIN_DATABASE_URL` (운영자 계정 DB), `NOMACOM_ADMIN_SESSION_SECRET` (인증 도입 시 — 보류), `APP_URL` | Dual DB 의 admin-only side. eSIM 메인은 `/nomacom/shared/db/DATABASE_URL` |
-| `/nomacom/client/` | **client 전용** | `APP_URL`, `AUTH_TOKEN_MAX_AGE`, `NUXT_PUBLIC_*` mapping 대상 (A-4 에서 결정) | m8 client 패턴 alias 처리는 `after_deploy.sh` 의 client case 에 들어감 (현재 stub) |
+| `/nomacom/client/` | **client 전용** | `APP_URL`, `AUTH_TOKEN_MAX_AGE`, `NUXT_PUBLIC_*` mapping 대상 (A-4 에서 결정) · `NUXT_PUBLIC_PORTONE_STORE_ID` · `NUXT_PUBLIC_PORTONE_TEST_CHANNEL_KEY`(String — 공개값, `/checkout-preview` 전용 · W1-2 2026-09-23 · **미등록** — P9-7 에서 John 이 등록. 등록 전에 봉투 서버로 로컬 E2E-6 통과 + PortOne 콘솔에서 채널 테스트 모드 확인) | `after_deploy.sh` 는 SSM 키 이름 끝 토막을 그대로 env 이름으로 쓴다 → `NUXT_PUBLIC_` 로 시작하는 키는 별도 alias 없이 Nuxt runtimeConfig 를 런타임에 덮는다. ⚠️ `TEST_CHANNEL_KEY` 에는 테스트 채널키만(실채널키는 Phase 2 에서 다른 이름) |
 | `/nomacom/mobile/` | **mobile 전용** (참고) | Expo EAS Secrets 채널 별도 — SSM 미사용 가능 | mobile 은 CodeDeploy 경로가 아님 |
 
 ## 공존 키 — nomacom-backend (NestJS) vs nomacom-frontend (Nuxt admin/client)

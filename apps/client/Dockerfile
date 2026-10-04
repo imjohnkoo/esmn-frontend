@@ -38,7 +38,7 @@ ENV NODE_OPTIONS=--max-old-space-size=4096
 # 실패 시 이미지가 안 만들어지므로 push 도 CodeDeploy 도 실행되지 않는다.
 #
 # CI·로컬과 **같은 스크립트·같은 기준선**을 쓴다. 세 곳의 판정이 갈리면
-# "CI 는 통과했는데 배포에서 깨졌다" 가 생긴다. 기준선: admin 0 / client 7.
+# "CI 는 통과했는데 배포에서 깨졌다" 가 생긴다. 기준선: admin 0 / client 4(2026-09-23 7 → 4).
 # test 는 넣지 않는다 — ci.yml 이 이미 돌리고, 여기서 실패하면 prod ref 가
 # 이미 옮겨진 뒤라 드리프트만 남는다.
 COPY .github/typecheck-baseline/client.txt ./.github/typecheck-baseline/

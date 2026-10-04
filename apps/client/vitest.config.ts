@@ -9,13 +9,23 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   // .vue 컴포넌트 마운트 테스트(`*.dom.test.ts` — 파일 머리 `@vitest-environment happy-dom`)용. 나머지 테스트는 node 환경 그대로
   plugins: [vue()],
-  // app/ 코드의 `~/…` import (Nuxt srcDir alias) — 컴포넌트 마운트 테스트가 쓴다
-  resolve: { alias: { '~': fileURLToPath(new URL('./app', import.meta.url)) } },
+  // app/ 코드의 `~/…` import (Nuxt srcDir alias) — 미들웨어 테스트가 쓴다
+  // `#shared/…` — Nuxt 4 의 shared/ 별칭(app 코드 · 콘텐츠 테스트가 쓴다)
+  resolve: {
+    alias: {
+      '~': fileURLToPath(new URL('./app', import.meta.url)),
+      '#shared': fileURLToPath(new URL('./shared', import.meta.url)),
+    },
+  },
   test: {
     environment: 'node',
-    include: ['server/**/*.{test,spec}.ts', 'app/**/*.{test,spec}.ts'],
+    include: [
+      'server/**/*.{test,spec}.ts',
+      'app/**/*.{test,spec}.ts',
+      'shared/**/*.{test,spec}.ts',
+    ],
     exclude: ['**/node_modules/**', '**/.nuxt/**', '**/.output/**'],
-    // client 는 spark-mapping / verification 28건이 이미 있다.
+    // client 는 server · app · shared 순수 로직 테스트가 있다(2026-09-23 W1-3 873건 — 컴포넌트 8종 · 파일 9 포함).
     // 0건이 되면 «테스트가 사라진 것» 이므로 실패시킨다.
     passWithNoTests: false,
   },

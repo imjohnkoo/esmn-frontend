@@ -437,6 +437,33 @@ describe('toBlock — 정본 한 절의 코드 블록에서 줄 고르기', () =
       toBlock('## 1.\n```\n상호: 노마컴\n```', { ...one, skip: [{ sha256: sha256('새 줄'), why: '예시 줄' }] }),
     ).toThrow(/건너뛸 줄을 정본에서 찾지 못했다\(정본이 바뀌었다\): 예시 줄/)
   })
+  it('게시 수정(edits · D-40)은 고른 줄의 최종 글자에 — 줄 · 글자가 정확히 하나일 때만 · 다른 줄 그대로', () => {
+    const src = '## 1.\n```\n상호: 노마컴\n신고: 제 1950 호\n```'
+    const two = { ...block, pick: [{ key: 'name', startsWith: '상호:' }, { key: 'mail', startsWith: '신고:' }], placeholders: [] }
+    const edit = { line: sha256('신고: 제 1950 호'), from: '1950 호', to: '1950 호 (광주시)' }
+    expect(toBlock(src, { ...two, edits: [edit] }).lines).toEqual({ name: '상호: 노마컴', mail: '신고: 제 1950 호 (광주시)' })
+    expect(toBlock(src, two).lines.mail).toBe('신고: 제 1950 호')
+    expect(() => toBlock(src.replace('1950', '1951'), { ...two, edits: [edit] })).toThrow(/고칠 줄이 0개/)
+    expect(() => toBlock(src, { ...two, edits: [{ ...edit, from: '없는 글자' }] })).toThrow(/정확히 한 번/)
+    // 검사 전에 적용된다 — 수정 글자에 남은 태그 · 줄바꿈이 있으면 문서 경로처럼 멈춘다(조용히 게시되지 않게)
+    expect(() => toBlock(src, { ...two, edits: [{ ...edit, to: '1950 호 [검토 메모]' }] })).toThrow()
+    expect(() => toBlock(src, { ...two, edits: [{ ...edit, to: '1950 호\n주소: 다른 줄' }] })).toThrow(/줄바꿈/)
+    expect(() => applyEdits('가나\n', [{ line: sha256('가나'), from: '나', to: '나\n다' }])).toThrow(/줄바꿈/)
+    expect(() => applyEdits('가나\n', [{ line: sha256('가나'), from: '나', to: '나\u2028다' }])).toThrow(/줄바꿈/)
+    // 값 채움 글자도 한 줄 안 — 줄바꿈이 섞이면 줄 고르기가 밀려 뒤 글자(«나 호»)가 조용히 빠진다 → 멈춘다
+    const slotted = { ...two, placeholders: [sha256('[{{값}}]')], fills: { 0: '가\n나' } }
+    const withSlot = src.replace('제 1950 호', '제 [{{값}}] 호')
+    expect(() => toBlock(withSlot, slotted)).toThrow(/줄바꿈/)
+    expect(toBlock(withSlot, { ...slotted, fills: { 0: '가' } }).lines.mail).toBe('신고: 제 가 호')
+    // 줄 차례는 pick 차례 — 정수 꼴 키도 섞이지 않는다
+    const numeric = { ...two, pick: [{ key: 'b', startsWith: '상호:' }, { key: '1', startsWith: '신고:' }] }
+    expect(toBlock(src, numeric).lines).toEqual({ b: '상호: 노마컴', 1: '신고: 제 1950 호' })
+    // 같은 키를 두 번 고르면 멈춘다(한 줄이 소리 없이 덮이지 않게)
+    expect(() => toBlock(src, { ...two, pick: [{ key: 'a', startsWith: '상호:' }, { key: 'a', startsWith: '신고:' }] })).toThrow(/키가 겹친다/)
+    // 수정이 줄을 통째로 비우면 멈춘다(가운데 줄이어도)
+    const three = { ...two, pick: [{ key: 'mail', startsWith: '신고:' }, { key: 'name', startsWith: '상호:' }] }
+    expect(() => toBlock(src, { ...three, edits: [{ line: sha256('신고: 제 1950 호'), from: '신고: 제 1950 호', to: '' }] })).toThrow(/비었다/)
+  })
   it('절의 코드 블록은 정확히 1개 — 둘째 블록(새 동의 · 새 고지)을 조용히 버리지 않는다 · 닫히지 않은 블록도 멈춘다', () => {
     const one = { ...block, pick: [{ key: 'name', startsWith: '상호:' }], placeholders: [] }
     // 목록 아래 4칸 들여쓴 펜스 · 인용 안 펜스도 블록으로 센다
@@ -647,12 +674,17 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
     for (const r of all)
       for (const h of [...r.notes, ...r.placeholders]) expect(h).toMatch(/^[0-9a-f]{64}$/)
   })
-  it('게시 수정 줄은 sha256 · 수정은 결정된 문서에만(terms 1건 D-33 · privacy 1건 D-54 솔라피 · refund 1건 D-41)', () => {
-    for (const r of Object.values(DOC_RULES)) for (const e of r.edits ?? []) expect(e.line).toMatch(/^[0-9a-f]{64}$/)
+  it('게시 수정 줄은 sha256 · 수정은 결정된 문서 · 조각에만(terms 1건 D-33 · privacy 3건 D-54 솔라피 + D-31 흐름 쿠키 2줄 · refund 1건 D-41 · business 1건 D-40)', () => {
+    for (const r of all) for (const e of r.edits ?? []) expect(e.line).toMatch(/^[0-9a-f]{64}$/)
     expect(Object.fromEntries(Object.entries(DOC_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
       terms: 1,
-      privacy: 1,
+      privacy: 3,
       refund: 1,
+    })
+    expect(Object.fromEntries(Object.entries(BLOCK_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
+      business: 1,
+      'issue-notice': 0,
+      'checkout-notice': 0,
     })
   })
   it('값 채움은 결정된 자리에만(D-54 — privacy AWS · 솔라피 칸 · business 호스팅 AWS) · 다른 문서 · 조각 0', () => {
@@ -665,6 +697,7 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
     expect(Object.fromEntries(Object.entries(BLOCK_RULES).map(([k, r]) => [k, fills(r)]))).toEqual({
       business: { 0: 'AWS' },
       'issue-notice': {},
+      'checkout-notice': {},
     })
   })
   it.each(['../../scripts/legal-posting.ts', '../../scripts/legal-import.mjs'])(
@@ -679,6 +712,7 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
       TERMS_DOC: '01_이용약관.md',
       PRIVACY_DOC: '02_개인정보처리방침.md',
       REFUND_DOC: '03_취소환불정책.md',
+      CHECKOUT_NOTICE: '05_고지문구-동의체크-FAQ.md',
       BUSINESS_INFO: '04_사업자정보-고객센터.md',
       ISSUE_NOTICE: '05_고지문구-동의체크-FAQ.md',
     })
@@ -706,10 +740,12 @@ describe('moduleSource · blockModuleSource — 생성 모듈', () => {
     expect(refund).not.toMatch(/값 채움/)
     const privacy = moduleSource('privacy', posting, '02_x.md · legal-pages @abc1234', 'P')
     expect(privacy).toMatch(/^\/\/ 값 채움 2건 — /m)
-    expect(privacy).toMatch(/^\/\/ 게시 수정 1건 — /m)
+    expect(privacy).toMatch(/^\/\/ 게시 수정 3건 — /m)
     const block = { lines: { a: 'x' }, pendingCount: 0 }
-    expect(blockModuleSource('business', block, '04_x.md ## 1. · legal-pages @abc1234', 'P')).toMatch(/^\/\/ 값 채움 1건 — /m)
-    expect(blockModuleSource('issue-notice', block, '05_x.md ## A. · legal-pages @abc1234', 'P')).not.toMatch(/값 채움/)
+    const business = blockModuleSource('business', block, '04_x.md ## 1. · legal-pages @abc1234', 'P')
+    expect(business).toMatch(/^\/\/ 값 채움 1건 — /m)
+    expect(business).toMatch(/^\/\/ 게시 수정 1건 — /m)
+    expect(blockModuleSource('issue-notice', block, '05_x.md ## A. · legal-pages @abc1234', 'P')).not.toMatch(/값 채움|게시 수정/)
   })
   it('본문의 백슬래시는 템플릿 문자열에서 그대로 살아남는다', () => {
     const src = moduleSource(

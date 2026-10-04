@@ -7,7 +7,7 @@ import { REFUND_DOC } from '../content/legal/refund'
 import { TERMS_DOC } from '../content/legal/terms'
 import { P9_4_PENDING } from '../content/pending'
 import { parseLegalMarkdown } from './legal-markdown'
-import { renderBlocks, renderNoticeList, renderBusinessInfo, renderDoc } from './legal-render'
+import { footerParts, renderBlocks, renderBusinessLines, renderDoc, renderNoticeList } from './legal-render'
 
 /** client-shell spec F-12 · F-20 · D-36 — 블록 · 실문서를 실제 HTML 로 그려 본다(서버 렌더 — 브라우저 없이) */
 const ssr = (node: () => VNode | VNode[]) =>
@@ -148,6 +148,7 @@ describe('renderBlocks — 그린 HTML', () => {
     const nums = await render('번호: 704-24-01747 (평일 09:00–18:00, 휴무)')
     expect(nums).toContain('<span class="legal-md__nb">704-24-01747</span>')
     expect(nums).toContain('<span class="legal-md__nb">09:00–18:00,</span>')
+    expect(await render('카카오톡 채널 @이심마니 문의')).toContain('<span class="legal-md__nb">@이심마니</span>')
     expect(html).not.toContain('<span class="legal-md__nb">아주긴덩어리')
   })
 
@@ -165,7 +166,7 @@ describe('renderBlocks — 그린 HTML', () => {
 })
 
 describe.each([TERMS_DOC, PRIVACY_DOC, REFUND_DOC])('renderDoc($slug) — 실문서를 그대로 그린다', (doc) => {
-  /** 게시용 마크다운 → 화면에 보여야 할 글자(꾸밈 기호 · 번호 · 구분행 · 표 칸 경계 제거, 자리표시자 → 표기) — 공백은 비교하지 않는다 */
+  /** 게시용 마크다운 → 화면에 보여야 할 글자(꾸밈 기호 · 번호 · 구분행 · 표 칸 경계 제거, 자리표시자 → 글자 없음 · D-47) — 공백은 비교하지 않는다 */
   const expected = doc.markdown
     .split('\n')
     .filter((l) => !/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(l))
@@ -227,33 +228,32 @@ describe.each([TERMS_DOC, PRIVACY_DOC, REFUND_DOC])('renderDoc($slug) — 실문
   })
 })
 
-describe('renderBusinessInfo — 발급기 사업자정보 블록(D-36)', () => {
-  it('04 1절 7줄 차례 · 공정위 조회 새 탭 · 호스팅 AWS(D-54) · 방침(굵게 · 색 클래스) · 약관 링크', async () => {
-    const html = await ssr(() => renderBusinessInfo(Object.values(BUSINESS_INFO)))
-    const lines = [...html.matchAll(/<p class="issuer-biz__line">(.*?)<\/p>/g)].map((m) =>
+describe('renderBusinessLines — 푸터 사업자정보 줄(F-7)', () => {
+  it('04 1절 7줄 차례 · 공정위 조회 새 탭(낭독기 «(새 창)») · 호스팅 AWS(D-54) · © 는 따로(푸터가 그린다)', async () => {
+    const { lines: info, copyright, legalLinks } = footerParts(BUSINESS_INFO)
+    expect(copyright).toBe('© 2026 노마컴. All rights reserved.')
+    expect(legalLinks).toBe('이용약관 | 개인정보처리방침 | 취소·환불 정책 | 사업자정보')
+    const html = await ssr(() => renderBusinessLines(info))
+    const lines = [...html.matchAll(/<p class="site-footer__line">(.*?)<\/p>/g)].map((m) =>
       visible(m[1]!),
     )
     expect(lines).toEqual([
       '이심마니 | 상호: 노마컴 | 대표: 구장회',
       '사업자등록번호: 704-24-01747 사업자정보확인',
-      '통신판매업신고: 제 2023-경기광주-1950 호',
+      '통신판매업신고: 제 2023-경기광주-1950 호 (경기도 광주시)',
       '주소: 제주특별자치도 제주시 신대로 145, 멘써빌딩 2층 (1-27호)(연동)',
       '전화: 070-8064-5232 (평일 09:00–18:00, 주말·공휴일 휴무) | 이메일: esimmany@naver.com',
       '개인정보보호책임자: 구장회',
       '호스팅 서비스: AWS',
     ])
     expect(html).toContain(
-      '<a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7042401747" class="legal-md__link" target="_blank" rel="noopener">사업자정보확인',
+      '<a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7042401747" class="legal-md__link" target="_blank" rel="noopener">사업자정보확인<span class="legal-md__sr sr-only"> (새 창)</span></a>',
     )
-    expect(html).toMatch(
-      /<a href="\/privacy" class="issuer-biz__link issuer-biz__link--privacy">개인정보처리방침<\/a>/,
-    )
-    expect(html).toMatch(/<a href="\/terms" class="issuer-biz__link">이용약관<\/a>/)
-    expect(html).toContain('aria-label="사업자정보"')
+    expect(copyright).toBe('© 2026 노마컴. All rights reserved.')
     expect(html).not.toContain(P9_4_PENDING)
   })
   it('값 자리가 있는 줄은 «(확정 전)» 표식으로 그린다(값이 다시 비는 경우 — 자리표시자 이름은 새지 않는다)', async () => {
-    const html = await ssr(() => renderBusinessInfo(['상호: 노마컴', `호스팅 서비스: ${P9_4_PENDING}`]))
+    const html = await ssr(() => renderBusinessLines(['상호: 노마컴', `호스팅 서비스: ${P9_4_PENDING}`]))
     expect(visible(html)).toContain('호스팅 서비스: (확정 전)')
     expect(html).toContain('data-pending')
     expect(html).not.toContain(P9_4_PENDING)
@@ -294,3 +294,4 @@ describe('renderNoticeList — 발급 화면 고지 목록(05-A · F-21)', () =>
     }
   })
 })
+

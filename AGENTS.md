@@ -146,8 +146,8 @@ spec-driven + maker-checker QA + 관문 접합. **정본은 `.claude/rules/dev-p
 | 통합 | `nomacomfe-finish-branch` — **Step 0 이 Tier·QA 증거를 검사하는 집행 지점**     |
 | 배포 | `nomacomfe-prod-push-check`                                                     |
 
-> ✅ **INF-1(2026-09-02)**: `yarn turbo run lint typecheck test` 가 실제로 돈다 — typecheck 는 `.github/scripts/typecheck-gate.sh` 의 **baseline 초과분만 차단**(admin 0 / client 7), test 는 **157건**(design-vue 129 + client 28), lint 는 에러만 차단.
-> ✅ **INF-2(2026-09-02)**: `.github/workflows/ci.yml` 이 **PR + dev push** 에서 lint·test·typecheck(+ 게이트/훅 회귀 테스트)를 강제한다.
+> ✅ **INF-1(2026-09-02)**: `yarn turbo run lint typecheck test` 가 실제로 돈다 — typecheck 는 `.github/scripts/typecheck-gate.sh` 의 **baseline 초과분만 차단**(admin 0 / client 4 — 2026-09-23 W1-2 에서 7 → 4), test 는 design-vue 137 + client 1363(2026-10-04 W1-2 · W1-3 머지 — INF-1 당시 client 28), lint 는 에러만 차단.
+> ✅ **INF-2(2026-09-02)**: `.github/workflows/ci.yml` 이 **PR + dev push** 에서 lint·test·typecheck(+ 게이트/훅 회귀 테스트)를 돌린다 — ⚠️ dev 에 required check 가 없어 빨간불이어도 UI 머지 버튼은 막히지 않는다(2026-09-23 확인).
 > ✅ **INF-3(2026-09-02)**: `apps/{admin,client}/Dockerfile` 이 `nuxt build` 직전에 typecheck 게이트를 돌린다 — **어떤 경로로 배포하든** 타입 에러면 이미지가 만들어지지 않는다(검증: 에러 주입 시 build exit 1).
 > ⚠️ 남은 갭: admin staging 부재(INF-4) · `design-storybook-mobile` 빌드 파손(INF-5). 게이트가 «타입» 만 보므로 동작 검증은 여전히 `nomacomfe-prod-push-check` 의 UI 수동 확인 몫이다.
 

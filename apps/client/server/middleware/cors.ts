@@ -3,7 +3,8 @@
  *
  * 정책:
  *  - `/api/**` 만 CORS 적용 (SSR 페이지는 same-origin 이라 불필요)
- *  - 화이트리스트 origin: localhost dev(웹 Nuxt + Expo dev) + prod CloudFront + 런타임 ENV 추가
+ *  - 화이트리스트 origin: localhost dev(웹 Nuxt + Expo dev) + prod CloudFront · esimmany.com · app.esimmany.com
+ *    + 런타임 ENV 추가 — 목록과 판정은 `server/utils/cors-origins.ts`
  *  - 허용 헤더: Authorization, Content-Type, X-Client-Platform, X-Requested-With
  *  - expose 헤더: X-Client-Platform (mobile 측 디버깅용)
  *  - credentials: false — 본 PR 은 Bearer + cookie 둘 다 받지만, mobile 채널은 cookie 무관 / 웹은 same-origin 이라 cross-origin credentials 불필요
@@ -11,31 +12,7 @@
  */
 
 import { handleCors } from 'h3'
-
-const STATIC_ORIGINS = [
-  // 웹 Nuxt dev
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  // Expo dev server (web)
-  'http://localhost:8081',
-  'http://localhost:19006',
-  // prod (CloudFront — A-4 결과)
-  'https://d3un5i1lmp1eem.cloudfront.net',
-  // prod 커스텀 도메인 (app.esimmany.com 전환 대비 — same-origin fetch 도 Origin 헤더가 붙음)
-  'https://app.esimmany.com',
-]
-
-/** Expo 네이티브 dev 의 origin 패턴 — exp:// 또는 http://192.168.x.x:8081 등 LAN IP */
-const ORIGIN_PATTERNS: RegExp[] = [
-  /^exp:\/\//,
-  /^http:\/\/(?:\d{1,3}\.){3}\d{1,3}:(?:8081|19006|19000)$/,
-]
-
-function isOriginAllowed(origin: string, extraOrigins: string[]): boolean {
-  if (STATIC_ORIGINS.includes(origin)) return true
-  if (extraOrigins.includes(origin)) return true
-  return ORIGIN_PATTERNS.some((re) => re.test(origin))
-}
+import { isOriginAllowed, parseExtraOrigins } from '../utils/cors-origins'
 
 export default defineEventHandler((event) => {
   const url = event.node.req.url ?? ''
@@ -60,10 +37,7 @@ export default defineEventHandler((event) => {
     return
   }
 
-  const extra = (process.env.CORS_EXTRA_ORIGINS ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
+  const extra = parseExtraOrigins(process.env.CORS_EXTRA_ORIGINS)
 
   if (!isOriginAllowed(requestOrigin, extra)) {
     // 비허용 origin — 403. preflight 든 본 요청이든 동일하게 차단

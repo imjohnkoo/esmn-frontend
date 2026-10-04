@@ -1,6 +1,3 @@
-app/pages/details/[orderId].vue(145,33): error TS2345
-app/pages/details/[orderId].vue(147,25): error TS2345
-app/pages/select-date/[orderId].vue(170,35): error TS2345
 server/utils/spark-error-codes.ts(32,37): error TS2322
 server/utils/spark-issuance.ts(140,18): error TS2532
 server/utils/spark-issuance.ts(283,31): error TS2532

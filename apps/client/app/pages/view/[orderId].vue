@@ -38,11 +38,9 @@ const downloadQR = (index: number) => {
   document.body.removeChild(downloadLink)
 }
 
-onMounted(() => {
-  if (!order.value) {
-    router.push(`/verify/${orderId.value}`)
-  }
-})
+// 진입 가드는 order-flow 미들웨어 — 주문 없음 → 본인 확인, 선택 없음 · 발급 0 → 주문 목록 (K8 · spec S-8)
+// 게스트 발급 4-step 은 헤더 · 하단 탭 없는 flow 레이아웃 (spec D-2)
+definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 </script>
 
 <template>
@@ -326,7 +324,10 @@ onMounted(() => {
     </div>
 
     <div class="view-page__back">
-      <NButton variant="ghost" size="md" full-width @click="router.push('/')"> 처음으로 </NButton>
+      <!-- 홈이 판매 사이트가 되어 «처음으로» 의 뜻이 흐려졌다 — 같은 주문의 목록으로 (spec D-5) -->
+      <NButton variant="ghost" size="md" full-width @click="router.push(`/details/${orderId}`)">
+        주문 목록으로
+      </NButton>
     </div>
   </div>
 </template>
