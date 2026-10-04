@@ -32,7 +32,7 @@ RUN yarn workspace nomacom-client run postinstall
 ENV NODE_OPTIONS=--max-old-space-size=4096
 # ⭐ typecheck 게이트 — 배포 경로의 최종 방어선 (INF-3, 2026-09-02).
 #
-# `prod` 브랜치에는 ci.yml 이 붙어 있지 않다(`branches: [main]`). 즉 main 을 거치지 않고
+# `prod` 브랜치에는 ci.yml 이 붙어 있지 않다(`branches: [dev]`). 즉 dev 를 거치지 않고
 # prod 로 올리거나 CI 실패를 무시하고 머지하면, 그때까지 아무 기계 검증도 없이
 # 이미지가 만들어져 EC2 까지 간다. 여기서 막으면 **어떤 경로로 배포하든** 판정된다 —
 # 실패 시 이미지가 안 만들어지므로 push 도 CodeDeploy 도 실행되지 않는다.

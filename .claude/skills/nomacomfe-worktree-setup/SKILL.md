@@ -16,7 +16,7 @@ Create an isolated worktree for parallel-session work on nomacom-frontend.
 | 표준 위치        | **`~/orca/workspaces/nomacom-frontend/<name>/`** (Orca 관리 — 실사용 규약)                  |
 | 대체 위치        | `~/dev/worktrees/nomacom-frontend/<name>/` (Orca 밖에서 수동 생성할 때만)                   |
 | Main clone       | `~/dev/current-projects/nomacom-frontend/` — 통합/기획/리뷰. 동시 세션이면 worktree 로 격리 |
-| Base branch      | **`main`** (nomacom 은 `dev` 브랜치가 없다. `prod` 는 배포 트리거이지 개발 base 가 아니다)  |
+| Base branch      | **`dev`** (2026-10-04 `main` 에서 이름 변경 — `main` 은 없다. `prod` 는 배포 트리거이지 개발 base 가 아니다)  |
 | Branch naming    | `imjohnkoo/<topic>` 또는 `<type>/<topic>` (`feat/`·`fix/`·`refactor/`·`chore/`)             |
 | Package manager  | **yarn** (Yarn 4.5.3, `nodeLinker: node-modules`)                                           |
 | Baseline         | `yarn install` — DS 는 Turbo `^build` 가 빌드 시 처리(별도 build:shared 없음)               |
@@ -38,7 +38,7 @@ hookSettings.scripts.setup = "yarn install"   ·   setupRunPolicy = "run-by-defa
 1. Step 2~3 (worktree 생성) **skip** — 이미 존재한다
 2. Step 5 (`yarn install`) **skip** — setup hook 이 이미 돌았다. 확인만: `[ -d node_modules ] || yarn install`
 3. **Step 4 (symlink) 는 반드시 수행** — Orca setup hook 은 `.env.local` 을 만들지 않는다
-4. base 확인: `git merge-base --is-ancestor origin/main HEAD || echo "⚠️ base 가 origin/main 이 아님 — 확인 필요"`
+4. base 확인: `git merge-base --is-ancestor origin/dev HEAD || echo "⚠️ base 가 origin/dev 가 아님 — 확인 필요"`
 5. Step 6 보고 후 **칸반 상태 전환**: `orca worktree set --worktree current --workspace-status in-progress --json`
 
 ## Process (수동 생성 시)
@@ -59,7 +59,7 @@ git -C "$MAIN" worktree list   # 같은 브랜치가 다른 worktree 에 체크�
 
 ```bash
 mkdir -p ~/dev/worktrees/nomacom-frontend
-git -C "$MAIN" worktree add "$WT" -b "<type>/<topic>" origin/main
+git -C "$MAIN" worktree add "$WT" -b "<type>/<topic>" origin/dev
 cd "$WT"
 ```
 
@@ -88,7 +88,7 @@ cd "$WT" && yarn install
 ```
 Worktree ready:
   Path:   <경로>
-  Branch: <branch>   (base: origin/main)
+  Branch: <branch>   (base: origin/dev)
   Status: yarn install ✓ (또는 Orca setup hook 수행 / skip: doc-only)
   Env:    admin, client symlinked
 
@@ -106,7 +106,7 @@ orca worktree set --worktree current --workspace-status in-progress --json
 - **❌ 메인 클론에서 직접 작업** — 동시 세션이면 worktree 로 격리. 메인 클론엔 기획 문서 작업이 상주할 수 있다
 - **❌ `--setup skip` 사용** — nomacom 은 hook 이 등록돼 있어 skip 하면 의존성이 없다 (m8 규약을 복사한 실수)
 - **❌ `.env.local` 복사** — 시크릿 로테이션 시 수동 업데이트 필요 → symlink
-- **❌ base 를 `prod` 로** — prod 는 배포 트리거다. 개발 base 는 항상 `main`
+- **❌ base 를 `prod` 로** — prod 는 배포 트리거다. 개발 base 는 항상 `dev`
 - **❌ doc/.claude only 인데 `yarn install`** — 불필요한 시간 낭비
 
 ## Gotchas — 이 리포에서 실제로 일어난 일

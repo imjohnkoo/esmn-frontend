@@ -30,7 +30,7 @@ description: QA stage for nomacom-frontend after implementation reaches DoD — 
 
 ### 1. 입력 준비
 
-- diff 범위 확정: `git diff main...HEAD` (base 는 항상 `main`). **400 LOC 초과면 plan 의 태스크 단위로 분할해 리뷰** — 초과분을 한 번에 넣으면 결함 검출률이 급락해 리뷰가 요식이 된다.
+- diff 범위 확정: `git diff origin/dev...HEAD` (base 는 항상 `dev`). **400 LOC 초과면 plan 의 태스크 단위로 분할해 리뷰** — 초과분을 한 번에 넣으면 결함 검출률이 급락해 리뷰가 요식이 된다.
 - 넘길 것은 **spec/plan 경로 + diff 뿐.** 구현 세션의 추론·요약을 브리프에 쓰지 않는다.
 
 ### 2. 서브에이전트 디스패치 — 고정 브리프
@@ -40,7 +40,7 @@ Agent 툴(general-purpose, fresh context)로 아래 문안 그대로 (경로만 
 ```
 적대적 코드 리뷰. 입력은 문서와 diff 뿐이다 — 구현 과정 설명은 없다.
 - spec: <spec 절대경로> / plan: <plan 절대경로>  (T1 이면 plan 만)
-- diff: git -C <worktree 절대경로> diff main...HEAD  (필요한 파일은 직접 읽어라)
+- diff: git -C <worktree 절대경로> diff origin/dev...HEAD  (필요한 파일은 직접 읽어라)
 임무: spec/plan 대비 갭·버그·보안·회귀 위험을 **반증 시도** 관점으로 찾아라.
 스타일·네이밍 지적 금지.
 nomacom 고유 검사 항목 (해당 시 필수):
