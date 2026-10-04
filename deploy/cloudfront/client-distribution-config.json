@@ -48,7 +48,10 @@
   },
   "DefaultRootObject": "",
   "ViewerCertificate": {
-    "CloudFrontDefaultCertificate": true
+    "CloudFrontDefaultCertificate": false,
+    "ACMCertificateArn": "arn:aws:acm:us-east-1:059265294529:certificate/74765924-97b4-4613-8366-326c273214c4",
+    "SSLSupportMethod": "sni-only",
+    "MinimumProtocolVersion": "TLSv1.2_2021"
   },
   "Restrictions": {
     "GeoRestriction": {
@@ -58,6 +61,7 @@
   },
   "WebACLId": "",
   "Aliases": {
-    "Quantity": 0
+    "Quantity": 2,
+    "Items": ["app.esimmany.com", "esimmany.com"]
   }
 }

@@ -64,6 +64,18 @@ paths:
 - repo = `imjohnkoo/nomacom-frontend` · CodeDeploy `--deployment-group-name prod` · config `CodeDeployDefault.OneAtATime`
 - 구 레포(`nomacom-admin`, `nomacom-client-nuxt3`, `nomacom-design-system`) 는 2026-05-21 Archived
 
+## 도메인 — Route53 · CloudFront (2026-10-04 실측 · esimmany.com 공개)
+
+| 호스트 | Route53 (영역 `esimmany.com`) | CloudFront | 원본 |
+|---|---|---|---|
+| `esimmany.com` (판매 사이트) | A · AAAA 별칭 → `d3un5i1lmp1eem.cloudfront.net` (2026-10-04 추가) | `E23FZ69C60OK5G` (client) | `client-origin.esimmany.com:3000` (client EC2) |
+| `app.esimmany.com` (게스트 발급) | A 별칭 → 같은 배포 | `E23FZ69C60OK5G` (client) | 같은 원본 — 두 호스트가 같은 배포판(호스트 판정 0 · client-shell K3) |
+| `api.esimmany.com` (backend) | A 별칭 → `d1u4zdvngbxugs.cloudfront.net` | `EE9LJV44YHIYV` | `backend-origin.esimmany.com:80` |
+
+- 인증서(ACM us-east-1): client 배포 = `74765924…`(`esimmany.com` + `*.esimmany.com`, 2026-10-04 발급 · DNS 검증 CNAME `_5a1f0cff….esimmany.com` 은 옛 와일드카드 인증서와 공용). api · 옛 S3 배포(`E2ZZW9IA689E3C`, 연결 도메인 없음)는 `1742f1e2…`(`*.esimmany.com` 만 — apex 를 덮지 않는다).
+- `www.esimmany.com` 은 만들지 않는다(client-shell D6). 도메인 등록 = Amazon Registrar(자동 갱신 · 2027-09-22 만료) · DNSSEC 미서명 · CAA 없음.
+- 기록 사본: `deploy/cloudfront/client-distribution-config.json`(연결 도메인 · 인증서) — 실제 설정은 콘솔 · CLI 가 정본이니 바꾸면 이 표와 파일도 함께 고친다.
+
 ## 브랜치 전략 — **(b) 확정 (2026-09-02) · 통합 브랜치 이름 `main` → `dev` (2026-10-04)**
 
 | 브랜치 | 역할 |
