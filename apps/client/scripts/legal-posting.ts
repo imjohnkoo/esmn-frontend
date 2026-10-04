@@ -470,6 +470,8 @@ export function applyEdits(body: string, edits: readonly PostingEdit[] = []): st
     const line = lines[at[0]!]!
     if (!edit.from || line.split(edit.from).length !== 2)
       throw new Error(`게시 수정 ${i + 1}: 바꿀 글자가 그 줄에 정확히 한 번 있어야 한다(정본이 바뀌었다)`)
+    // 한 줄 안에서만 바꾼다 — 줄바꿈이 들어오면 뒤 줄이 밀린다(블록은 줄 차례가 키)
+    if (/[\r\n]/.test(edit.to)) throw new Error(`게시 수정 ${i + 1}: 바꿀 글자에 줄바꿈이 있다(한 줄 안에서만 바꾼다)`)
     lines[at[0]!] = line.replace(edit.from, () => edit.to)
   })
   return lines.join('\n')
@@ -525,9 +527,11 @@ export function toBlock(source: string, rules: BlockRules): BlockPosting {
   })
   for (const s of skip)
     if (!skipped.has(s.sha256)) throw new Error(`건너뛸 줄을 정본에서 찾지 못했다(정본이 바뀌었다): ${s.why}`)
-  const { body, pendingCount } = finish(takeFills(Object.values(picked).join('\n') + '\n', rules), rules)
-  // 게시 수정은 고른 줄의 최종 글자에 — 줄 수는 그대로(한 줄 안에서만 바꾼다)
-  const out = applyEdits(body.trimEnd(), rules.edits).split('\n')
+  // 게시 수정은 고른 줄(링크 뒤)에 — 문서 경로처럼 검사(값 채움 · 남은 태그 · 자리표시자 수) 전에 적용한다
+  const edited = applyEdits(Object.values(picked).join('\n'), rules.edits)
+  const { body, pendingCount } = finish(takeFills(edited + '\n', rules), rules)
+  const out = body.trimEnd().split('\n')
+  if (out.length !== rules.pick.length) throw new Error(`고른 줄 ${rules.pick.length}개가 ${out.length}줄이 됐다(줄 차례가 키 — 정본이 바뀌었다)`)
   return {
     lines: Object.fromEntries(rules.pick.map((p, i) => [p.key, out[i]!])),
     pendingCount,

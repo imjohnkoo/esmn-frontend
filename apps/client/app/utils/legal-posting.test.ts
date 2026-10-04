@@ -445,6 +445,10 @@ describe('toBlock — 정본 한 절의 코드 블록에서 줄 고르기', () =
     expect(toBlock(src, two).lines.mail).toBe('신고: 제 1950 호')
     expect(() => toBlock(src.replace('1950', '1951'), { ...two, edits: [edit] })).toThrow(/고칠 줄이 0개/)
     expect(() => toBlock(src, { ...two, edits: [{ ...edit, from: '없는 글자' }] })).toThrow(/정확히 한 번/)
+    // 검사 전에 적용된다 — 수정 글자에 남은 태그 · 줄바꿈이 있으면 문서 경로처럼 멈춘다(조용히 게시되지 않게)
+    expect(() => toBlock(src, { ...two, edits: [{ ...edit, to: '1950 호 [검토 메모]' }] })).toThrow()
+    expect(() => toBlock(src, { ...two, edits: [{ ...edit, to: '1950 호\n주소: 다른 줄' }] })).toThrow(/줄바꿈/)
+    expect(() => applyEdits('가나\n', [{ line: sha256('가나'), from: '나', to: '나\n다' }])).toThrow(/줄바꿈/)
   })
   it('절의 코드 블록은 정확히 1개 — 둘째 블록(새 동의 · 새 고지)을 조용히 버리지 않는다 · 닫히지 않은 블록도 멈춘다', () => {
     const one = { ...block, pick: [{ key: 'name', startsWith: '상호:' }], placeholders: [] }

@@ -5,7 +5,9 @@ import { describe, expect, it } from 'vitest'
 import ts from 'typescript'
 import { parse } from 'vue/compiler-sfc'
 import { PRIVACY_DOC } from '../content/legal/privacy'
-import { FLOW_COOKIE_MAX_AGE, buildFlowSession } from '../utils/flow-session'
+import { FLOW_COOKIE, FLOW_COOKIE_MAX_AGE, buildFlowSession } from '../utils/flow-session'
+import { useFlowSession } from '../composables/useFlowSession'
+import { ref } from 'vue'
 
 /**
  * client-shell spec F-20 · D-32 · D-35 · D-36 — 발급기 화면의 법정 링크 · 고지 문구(개인정보 보호법 30조 · 약관 3조① · 6조④ · 12조③).
@@ -616,8 +618,38 @@ describe('방침 9장① · 1장 발급 행 = 흐름 쿠키 실제(D-31)', () =>
     const s = buildFlowSession({ orderId: 1, fullName: '가', phoneNumber: '01000000000', productOrderId: 2, extra: 'x' } as never)
     expect(Object.keys(s!).sort()).toEqual(['fullName', 'orderId', 'phoneNumber', 'productOrderId', 'v'])
   })
-  it('쿠키를 만드는 길은 흐름 쿠키 하나 — 앱 · 서버 코드의 useCookie · document.cookie · setCookie · Set-Cookie 는 useFlowSession 에만', () => {
-    const makers = [...code(APP), ...code(SERVER)].filter((f) =>
+  it('실제로 거는 쿠키(useFlowSession) = 방침 문장 — 이름 nomacom_flow · 1시간 · 쓸 때마다 갱신 · 경로 / · 호스트 한정(domain 없음) · 담는 키', () => {
+    const calls: { name: string; opts: Record<string, unknown> }[] = []
+    const jar = ref<unknown>(null)
+    const g = globalThis as Record<string, unknown>
+    const before = g.useCookie
+    g.useCookie = (name: string, opts: Record<string, unknown>) => (calls.push({ name, opts }), jar)
+    try {
+      const flow = useFlowSession()
+      expect(calls).toHaveLength(1)
+      expect(calls[0]!.name).toBe(FLOW_COOKIE)
+      expect(FLOW_COOKIE).toBe('nomacom_flow')
+      expect(calls[0]!.opts).toEqual({
+        maxAge: 60 * 60,
+        sameSite: 'lax',
+        secure: true,
+        path: '/',
+        refresh: true,
+        default: expect.any(Function),
+      })
+      flow.start({ orderId: 1, fullName: '가', phoneNumber: '01000000000' })
+      expect(Object.keys(jar.value as object).sort()).toEqual(['fullName', 'orderId', 'phoneNumber', 'v'])
+      flow.select(1, 2)
+      expect(Object.keys(jar.value as object).sort()).toEqual(['fullName', 'orderId', 'phoneNumber', 'productOrderId', 'v'])
+    } finally {
+      g.useCookie = before
+    }
+  })
+  it('쿠키를 만드는 길은 흐름 쿠키 하나 — 앱 · 서버 · shared 코드(.vue · .ts · .js · .mjs) · nuxt.config 의 useCookie · document.cookie · setCookie · Set-Cookie 는 useFlowSession 에만', () => {
+    const SHARED = fileURLToPath(new URL('../../shared', import.meta.url))
+    const CONFIG = fileURLToPath(new URL('../../nuxt.config.ts', import.meta.url))
+    const scripts = (dir: string) => walk(dir).filter((f) => /\.(vue|ts|js|mjs)$/.test(f) && !/\.test\.ts$/.test(f))
+    const makers = [...scripts(APP), ...scripts(SERVER), ...scripts(SHARED), CONFIG].filter((f) =>
       /useCookie|document\.cookie|setCookie\(|set-cookie/i.test(codeOnly(readFileSync(f, 'utf8'))),
     )
     expect(makers.map((f) => f.slice(APP.length))).toEqual(['composables/useFlowSession.ts'])

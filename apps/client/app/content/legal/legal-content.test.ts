@@ -284,6 +284,9 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
   })
   it('사업자정보 생성물 머리 — 값 채움 1건(D-54 호스팅 AWS)', () => {
     expect(/^\/\/ 값 채움 (\d+)건 — /m.exec(read('./business.ts'))?.[1]).toBe('1')
+    // 블록 게시 수정도 머리줄에 드러난다 — 규칙의 수정 건수와 같다(D-40)
+    expect(/^\/\/ 게시 수정 (\d+)건 — /m.exec(read('./business.ts'))?.[1]).toBe(String(BLOCK_RULES.business.edits?.length))
+    expect(BLOCK_RULES.business.edits).toHaveLength(1)
   })
   it('사업자정보 7줄 — 순서 · 공정위 조회 링크 · 호스팅 = AWS(D-54 값 채움 · 값 자리 0)', () => {
     expect(Object.keys(BUSINESS_INFO)).toEqual([

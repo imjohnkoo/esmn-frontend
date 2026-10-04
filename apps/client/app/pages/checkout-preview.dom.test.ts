@@ -45,10 +45,11 @@ const settle = async () => {
   await flushPromises()
   await nextTick()
 }
+let current: ReturnType<typeof mount> | null = null
 const render = async () => {
-  const wrapper = mount(Page, { attachTo: document.body })
+  current = mount(Page, { attachTo: document.body })
   await settle()
-  return wrapper
+  return current
 }
 const checkbox = (label: string) => {
   const box = [...document.body.querySelectorAll<HTMLElement>('.n-checkbox')].find((l) =>
@@ -67,11 +68,14 @@ const payButton = () =>
   [...document.body.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
     b.textContent?.includes('결제하기'),
   )!
-/** 비활성 버튼을 «억지로» 누른다 — disabled 를 걷고 클릭해 핸들러의 조건 검사까지 본다(속성만 믿지 않는다) */
+/** «억지로» 결제를 부른다 — ① disabled 를 걷고 누른다(DS 버튼은 disabled prop 이면 click 을 내보내지 않는다 — 버튼이 막는지)
+ *  ② 페이지 결제 핸들러를 직접 부른다(버튼을 거치지 않는 길 — 핸들러 자신의 조건 검사가 막는지) */
 const forcePay = async () => {
   const b = payButton()
   b.removeAttribute('disabled')
   b.click()
+  await settle()
+  await (current!.vm as unknown as { onPay: () => Promise<void> }).onPay()
   await settle()
 }
 const visible = (el: Element) => (el.textContent ?? '').replace(/\s+/g, ' ').trim()
@@ -166,16 +170,22 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
     expect(sdk.requestPayment).toHaveBeenCalledTimes(1)
   })
 
-  it('키가 비면 필수 2개를 체크해도 비활성 · «결제 설정을 준비하고 있어요.» · 억지로 눌러도 SDK 호출 0', async () => {
-    portone.testChannelKey = ''
-    await render()
-    await toggle(TERMS)
-    await toggle(AGE)
-    expect(payButton().disabled).toBe(true)
-    expect(document.body.textContent).toContain('결제 설정을 준비하고 있어요.')
-    await forcePay()
-    expect(sdk.requestPayment).not.toHaveBeenCalled()
-  })
+  it.each([
+    ['채널키', 'testChannelKey'],
+    ['상점 ID', 'storeId'],
+  ] as const)(
+    '키가 비면(%s) 필수 2개를 체크해도 비활성 · «결제 설정을 준비하고 있어요.» · 억지로 불러도 SDK 호출 0',
+    async (_name, key) => {
+      portone[key] = ''
+      await render()
+      await toggle(TERMS)
+      await toggle(AGE)
+      expect(payButton().disabled).toBe(true)
+      expect(document.body.textContent).toContain('결제 설정을 준비하고 있어요.')
+      await forcePay()
+      expect(sdk.requestPayment).not.toHaveBeenCalled()
+    },
+  )
 })
 
 describe('테스트 체크아웃 — 렌더된 동의 블록 글자 = 05-B(생성물) 그대로', () => {
