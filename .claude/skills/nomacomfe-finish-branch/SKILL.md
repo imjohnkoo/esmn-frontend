@@ -43,6 +43,7 @@ Guide completion of worktree development. **Gate → Verify → options → exec
 변경 파일을 보고 영향 앱만 빌드 (Turbo 가 incremental 처리):
 
 ```bash
+git fetch origin --quiet || exit 1   # origin/dev 가 없거나 낡으면 merge-base 가 비어 «영향 앱 0» 으로 잘못 판정된다
 git diff --name-only $(git merge-base HEAD origin/dev)...HEAD
 ```
 
