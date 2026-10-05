@@ -7,12 +7,12 @@
     </p>
     <nav class="g-os" aria-label="기기 종류"><a class="g-os__tab" href="/guide/ios">아이폰</a><a class="g-os__tab g-os__tab--on" aria-current="page" href="/guide/android">안드로이드</a></nav>
     <ol class="g-flow g-hero__flow">
-      <li class="g-flow__item"><span class="g-flow__step">STEP 1</span><span class="g-flow__title">집에서 설치</span><span class="g-flow__meta">출국 전 <span class="g-flow__nw">· 5분</span></span></li>
-      <li class="g-flow__item"><span class="g-flow__step">STEP 2</span><span class="g-flow__title">회선 설정</span><span class="g-flow__meta">설치 직후 <span class="g-flow__nw">· 1분</span></span></li>
-      <li class="g-flow__item"><span class="g-flow__step">STEP 3</span><span class="g-flow__title">현지에서 켜기</span><span class="g-flow__meta">도착 후 <span class="g-flow__nw">· 1분</span></span></li>
+      <li class="g-flow__item"><span class="g-flow__step">STEP 1</span><span class="g-flow__title">집에서 설치</span><!-- «·» 는 앞 토막 끝에 붙인다(줄이 갈려도 «· 5분» 이 줄 첫머리에 오지 않게) · 사이 공백은 글자로(템플릿 공백 압축이 지운다) --><span class="g-flow__meta"><span class="g-flow__nw">출국 전 ·</span> <span class="g-flow__nw">5분</span></span></li>
+      <li class="g-flow__item"><span class="g-flow__step">STEP 2</span><span class="g-flow__title">회선 설정</span><!-- «·» 는 앞 토막 끝에 붙인다(줄이 갈려도 «· 5분» 이 줄 첫머리에 오지 않게) · 사이 공백은 글자로(템플릿 공백 압축이 지운다) --><span class="g-flow__meta"><span class="g-flow__nw">설치 직후 ·</span> <span class="g-flow__nw">1분</span></span></li>
+      <li class="g-flow__item"><span class="g-flow__step">STEP 3</span><span class="g-flow__title">현지에서 켜기</span><!-- «·» 는 앞 토막 끝에 붙인다(줄이 갈려도 «· 5분» 이 줄 첫머리에 오지 않게) · 사이 공백은 글자로(템플릿 공백 압축이 지운다) --><span class="g-flow__meta"><span class="g-flow__nw">도착 후 ·</span> <span class="g-flow__nw">1분</span></span></li>
     </ol>
     <nav class="g-jump" aria-label="이 페이지 안에서 이동"><a href="#check" class="g-jump__chip">설치 전 확인</a><a href="#step1" class="g-jump__chip">STEP 1 설치</a><a href="#step2" class="g-jump__chip">STEP 2 설정</a><a href="#step3" class="g-jump__chip">STEP 3 현지</a><a href="#help" class="g-jump__chip">문제 해결</a></nav>
-    <p class="g-hero__hint">화면의 빨간 테두리가 누를 곳이에요.</p>
+    <p class="g-hero__hint">화면의 빨간 테두리는 설명이 가리키는 곳이에요. 켜고 끄는 건 설명을 따라 주세요.</p>
   </header><!-- 설치 전 확인 -->
   <section id="check" class="g-sec" aria-labelledby="check-title">
     <h2 id="check-title" class="g-sec__title">설치 전에 확인해 주세요</h2>
@@ -33,7 +33,7 @@
       <li class="g-check"><span class="g-check__tile" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-check__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"></path></svg></span>
         <div>
           <h3 class="g-check__h">지원 기기</h3>
-          <p class="g-check__body">갤럭시는 S23부터 eSIM을 지원해요. 통신사 잠금(컨트리락)도 풀려 있어야 해요.</p>
+          <p class="g-check__body">국내판 갤럭시는 S23 · <span class="g-nw">Z 플립4</span> · <span class="g-nw">Z 폴드4</span> 이후 모델과 일부 <span class="g-nw">A 시리즈</span>가 eSIM을 지원해요. 통신사 잠금(컨트리락)도 풀려 있어야 해요.</p>
         </div>
       </li>
       <li class="g-check"><span class="g-check__tile" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-check__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"></path></svg></span>
@@ -100,7 +100,7 @@
       <ol class="g-steps g-method__steps" role="list">
         <li class="g-step">
           <div class="g-step__text"><span class="g-step__num">1<span class="g-step__sr">번.</span></span>
-            <p class="g-step__p">발급 화면에서 <span class="g-nw"><span class="g-ui">QR 코드 다운로드</span>를</span> 눌러 갤러리에 저장해요.<span class="g-step__sub">저장이 안 되면 화면을 캡처해도 돼요. 한 주문에 eSIM 이 여러 개면 버튼 이름이 ‘QR 다운로드’예요.</span></p>
+            <p class="g-step__p">발급 화면에서 <span class="g-nw"><span class="g-ui">QR 코드 다운로드</span>를</span> 눌러 갤러리에 저장해요.<span class="g-step__sub">저장이 안 되면 화면을 캡처해도 돼요. 한 주문에 eSIM이 여러 개면 버튼 이름이 ‘QR 다운로드’예요.</span></p>
           </div>
           <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/web-qr-aos-download.v1.png" alt="발급 완료 화면 — QR 코드 다운로드 버튼 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
         </li>

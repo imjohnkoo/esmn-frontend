@@ -208,6 +208,22 @@ describe.each(Object.entries(GUIDES))('%s 가이드 콘텐츠', (os, g) => {
     )
   })
 
+  it('안드로이드 «지원 기기» 문장 = 사이트 지원 기기 페이지(국내판 첫 지원 S23 · Z 플립4 · Z 폴드4 — D-4 · QA ⑦)', () => {
+    const card = ANDROID_GUIDE.checks.items.find((c) => c.title === '지원 기기')
+    expect(guidePlainText(card!.body)).toBe(
+      '국내판 갤럭시는 S23 · Z 플립4 · Z 폴드4 이후 모델과 일부 A 시리즈가 eSIM을 지원해요. 통신사 잠금(컨트리락)도 풀려 있어야 해요.',
+    )
+    // 지원 기기 페이지가 바뀌면(첫 지원 모델 · 비지원 목록) 이 문장도 같이 본다
+    const dev = read('app/components/devices/SupportedDevicesContent.vue')
+    expect(dev).toContain("'S23 · S24 · S25 · S26 전 모델'")
+    expect(dev).toContain("'Z 플립 4 · 5 · 6 · 7 · 8'")
+    expect(dev).toContain("'Z 폴드 4 · 5 · 6 · 7 · 8 · 8 울트라'")
+    expect(dev).toMatch(/'A35 · A36'/)
+    expect(dev).toContain(
+      'S22 · S21 · S20 시리즈, Note 20, Z 플립3 이전, Z 폴드3 이전 모델은 eSIM 하드웨어가 없어요.',
+    )
+  })
+
   it('제품명 표기 «아이폰»(client-shell D-52) — 본문에 «iPhone» 0', () => {
     const all = strings(g).map(guidePlainText).join('\n')
     expect(all).not.toContain('iPhone')
@@ -294,6 +310,35 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
     }
   })
 
+  it('구운 기록에 구운 브라우저 판이 있다(다른 판으로 다시 구우면 바이트가 바뀐다 — 대조 근거)', () => {
+    expect((lockJson as { browser?: string }).browser).toMatch(/^chromium \d+\./)
+  })
+
+  it('웹 화면 PNG 글자 = 지금 발급 화면 글자(발급 화면을 고치면 템플릿도 고쳐 다시 굽는다 — 앱 CLAUDE.md)', () => {
+    const view = read('app/pages/view/[orderId].vue')
+    const screens = read('scripts/guide-screens/screens.js')
+    for (const t of [
+      '아이폰 수동 설치',
+      '안드로이드 수동 설치',
+      'LPA 전체',
+      'SM-DP+ 주소',
+      '활성화 코드',
+      'QR 코드 다운로드',
+      '발급 완료',
+      '다운로드가 안 되면 스크린샷으로 저장해 주세요.',
+    ]) {
+      expect(view, `발급 화면 «${t}»`).toContain(t)
+      expect(screens, `웹 화면 템플릿 «${t}»`).toContain(t)
+    }
+  })
+
+  it('이미지 템플릿 안 주소 조각 0 — LPA · SM-DP+ 값은 가린 글자(••••)만 · URL 은 가린 예시 하나(불변식 · D-4)', () => {
+    const screens = read('scripts/guide-screens/screens.js')
+    expect(screens).not.toMatch(/LPA:1\$[^$•…\s]*[A-Za-z0-9-]\.[A-Za-z]{2,}/)
+    expect(screens.match(/https?:\/\/[^\s"'<`]*/g) ?? []).toEqual(['https://••••'])
+    expect(screens).not.toMatch(/operator|sm-dp\.|smdp\./i)
+  })
+
   it('src 는 /guide-screens/<키>.<버전>.png (CloudFront 캐시 무효화가 필요 없게 버전 접미 — Proposal K4)', () => {
     expect(figureSrc('ios-done')).toBe(`/guide-screens/ios-done.${FIGURE_VERSION}.png`)
   })
@@ -325,6 +370,23 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
       )
     }
     expect(view).not.toMatch(/Universal Link 자동 설치|Galaxy · Pixel · QR 등록/)
+  })
+
+  it('발급 화면 카드 설명 — 명암비 4.5:1(#737373) · 13px · 어절 줄바꿈 · 줄간격 1.6(spec ⑤ · QA ⑦)', () => {
+    const css = read('app/pages/view/[orderId].vue').split('<style scoped>')[1] ?? ''
+    const rule = css.match(/\.view-page__guides :deep\(\.n-link-card__sub\) \{([^}]*)\}/)?.[1] ?? ''
+    expect(rule).toMatch(/color: var\(--n-color-neutral-500, #737373\);/)
+    expect(rule).toMatch(/font-size: 13px;/)
+    expect(rule).toMatch(/line-height: 1\.6;/)
+    expect(rule).toMatch(/word-break: keep-all;/)
+  })
+
+  it('바로가기 착지 — 기본 레이아웃이 헤더 높이만큼 scroll-padding-top 을 준다(앵커 머리가 헤더에 가리지 않게 · E2E-4)', () => {
+    const layout = read('app/layouts/default.vue')
+    expect(layout).toContain("useHead({ htmlAttrs: { class: 'has-shell-chrome' } })")
+    expect(layout).toMatch(
+      /html\.has-shell-chrome \{[^}]*scroll-padding-top: calc\(var\(--shell-header-height, 56px\) \+ 8px\);/,
+    )
   })
 
   it('가이드 화면 글자 크기 하한 — 모든 글 13px 이상 · 본문 칸 15px 이상(spec ⑤ — 장식 로고 글자 제외)', () => {

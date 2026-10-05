@@ -24,10 +24,17 @@ const PAGES = {
   './android.vue': () => import('./android.vue'),
 } as const
 
+// 페이지 설명은 spec 글자로 고정한다(아이폰 설명을 안드로이드 페이지에 붙여도 통과하지 않게)
+const DESC = {
+  ios: '아이폰 eSIM 설치 가이드 — QR 코드로 집에서 설치하고, 이어서 나오는 화면과 현지에서 여행용 eSIM 을 켜는 법을 화면과 함께 안내해요.',
+  android:
+    '안드로이드(갤럭시) eSIM 설치 가이드 — SIM 관리자에서 QR 코드로 설치하고, 현지에서 모바일 데이터와 데이터 로밍을 켜는 법을 화면과 함께 안내해요.',
+} as const
+
 describe.each([
   ['ios', './ios.vue', '아이폰 eSIM 설치 가이드', 24, '/guide/ios', '아이폰'],
   ['android', './android.vue', '안드로이드 eSIM 설치 가이드', 17, '/guide/android', '안드로이드'],
-] as const)('%s 페이지', (_os, file, h1, shots, path, word) => {
+] as const)('%s 페이지', (os, file, h1, shots, path, word) => {
   it(`제목 «${h1}» · 화면 ${shots}장 · OS 탭 · SEO 제목과 설명(${path})`, async () => {
     const Page = (await PAGES[file]()).default
     const w = mount(Page, { global: { stubs: { NuxtLink } } })
@@ -38,6 +45,6 @@ describe.each([
     const meta = seo.mock.calls[0]![0] as { title: string; description: string }
     expect(meta.title).toBe(h1)
     expect(meta.description).toContain(word)
-    expect(meta.description).toContain('설치 가이드')
+    expect(meta.description).toBe(DESC[os])
   })
 })

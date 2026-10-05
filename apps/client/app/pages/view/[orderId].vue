@@ -524,10 +524,12 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
   gap: 8px;
 }
 
-/* 가이드 카드 설명은 설치 방법 목록 — DS 기본(#a3a3a3)은 명암비 2.5:1 이라 한 단계 진하게(client-guide QA) */
+/* 가이드 카드 설명은 설치 방법 목록 — DS 기본(#a3a3a3)은 명암비 2.5:1 이라 한 단계 진하게 · 어절 줄바꿈(«코/드 입력» 0) · 줄간격 1.6(client-guide QA) */
 .view-page__guides :deep(.n-link-card__sub) {
   color: var(--n-color-neutral-500, #737373);
   font-size: 13px;
+  line-height: 1.6;
+  word-break: keep-all;
 }
 
 .view-page__codes {

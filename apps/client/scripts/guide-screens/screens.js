@@ -359,7 +359,7 @@
       build:
         () => `${aStatus()}<div class="a-flow">${I.aSim}<h3 class="a-flow__t">활성화 코드 입력</h3>
         <div class="a-input" data-k="input">LPA:1$…</div>
-        <div class="a-hint">코드는 다음과 같이 표시됩니다.<br />• LPA:1$operator.com$ABCDE-12345<br />• https://operator-sm-dp.com</div>
+        <div class="a-hint">코드는 다음과 같이 표시됩니다.<br />• LPA:1$••••$••••<br />• https://••••</div>
         <span class="a-pill hl-round" data-k="done">완료</span></div>`,
     },
 

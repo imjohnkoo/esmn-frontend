@@ -82,9 +82,16 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
 }
 
 /* DS 카드 설명(#a3a3a3 · 11px)은 명암비 2.5:1 — 설치 방법 목록이라 읽혀야 한다(4.5:1 이상) */
+/* 카드 이름은 본문 크기(DS 기본 13px 은 설명 글자와 같다) · 설명은 명암비 4.5:1 · 두 줄이면 줄간격 1.6 */
+.guide-page__cards :deep(.n-link-card__label) {
+  font-size: 15px;
+}
+
 .guide-page__cards :deep(.n-link-card__sub) {
   color: var(--n-color-neutral-500, #737373);
   font-size: 13px;
+  line-height: 1.6;
+  word-break: keep-all;
 }
 
 .guide-page__h2 {

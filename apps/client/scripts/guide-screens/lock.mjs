@@ -5,10 +5,11 @@ import { join } from 'node:path'
 
 export const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 
-/** 템플릿 · 하네스 · 글꼴 — 이것이 바뀌면 모든 창을 다시 굽는다 */
+/** 템플릿 · 하네스 · 생성기 · 글꼴 — 이것이 바뀌면 모든 창을 다시 굽는다 */
 export function guideInputsHash(dir, fontPath) {
   const h = createHash('sha256')
-  for (const f of ['harness.html', 'screens.js', 'ui.css']) h.update(f).update(readFileSync(join(dir, f)))
+  for (const f of ['harness.html', 'screens.js', 'ui.css', 'render.mjs', 'lock.mjs'])
+    h.update(f).update(readFileSync(join(dir, f)))
   h.update('font').update(readFileSync(fontPath))
   return h.digest('hex')
 }

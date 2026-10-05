@@ -8,9 +8,10 @@ import { GUIDE_FLOW } from '~/content/guide/common'
     <li v-for="item in GUIDE_FLOW" :key="item.step" class="g-flow__item">
       <span class="g-flow__step">{{ item.step }}</span>
       <span class="g-flow__title">{{ item.title }}</span>
+      <!-- «·» 는 앞 토막 끝에 붙인다(줄이 갈려도 «· 5분» 이 줄 첫머리에 오지 않게) · 사이 공백은 글자로(템플릿 공백 압축이 지운다) -->
       <span class="g-flow__meta"
-        >{{ item.meta.split(' · ')[0] }}
-        <span class="g-flow__nw">· {{ item.meta.split(' · ')[1] }}</span></span
+        ><span class="g-flow__nw">{{ item.meta.split(' · ')[0] }} ·</span>{{ ' '
+        }}<span class="g-flow__nw">{{ item.meta.split(' · ')[1] }}</span></span
       >
     </li>
   </ol>
@@ -57,6 +58,7 @@ import { GUIDE_FLOW } from '~/content/guide/common'
 
 .g-flow__meta {
   font-size: 13px;
+  line-height: 1.6;
   color: var(--n-color-neutral-500, #737373);
 }
 </style>

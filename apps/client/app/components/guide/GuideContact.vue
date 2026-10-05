@@ -119,6 +119,7 @@ const rows = supportRows().filter((r) => r.key === 'kakao' || r.key === 'naver')
 .g-cs__handle {
   font-size: 16px;
   font-weight: 800;
+  line-height: 1.6;
 }
 
 .g-cs__sr {

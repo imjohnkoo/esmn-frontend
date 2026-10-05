@@ -264,8 +264,12 @@ describe.each([
     ).toEqual(['wifi', 'net'])
   })
 
-  it('머리 안내 줄(빨간 테두리 = 누를 곳) · 단계 번호 화면낭독 글자 «N번.» · 새 창 링크 안내', () => {
-    expect(w.find('.g-hero__hint').text()).toBe('화면의 빨간 테두리가 누를 곳이에요.')
+  it('머리 안내 줄(빨간 테두리 = 설명이 가리키는 곳 — «누를 곳» 이 아니다, D-10) · 단계 번호 화면낭독 글자 «N번.» · 새 창 링크 안내', () => {
+    // «꺼 두세요» 단계도 스위치를 강조한다 — «누를 곳» 으로 읽히면 로밍 요금 위험(QA ⑥ R5)
+    expect(w.find('.g-hero__hint').text()).toBe(
+      '화면의 빨간 테두리는 설명이 가리키는 곳이에요. 켜고 끄는 건 설명을 따라 주세요.',
+    )
+    expect(w.find('.g-hero__hint').text()).not.toMatch(/누를 곳|누르세요/)
     const first = w.find('ol.g-steps .g-step__num')
     expect(first.text()).toBe('1번.')
     expect(first.find('.g-step__sr').text()).toBe('번.')
@@ -313,7 +317,8 @@ describe('GuideText — 글자는 원문 그대로, 이름 · 경로 뒤 조사�
 
 describe('화면 스타일 고정(spec ⑤ · D-6 — happy-dom 은 컴포넌트 CSS 를 적용하지 않아 소스로 본다)', () => {
   const css = (f: string) =>
-    readFileSync(`${process.cwd()}/app/components/guide/${f}`, 'utf8').split('<style scoped>')[1] ?? ''
+    readFileSync(`${process.cwd()}/app/components/guide/${f}`, 'utf8').split('<style scoped>')[1] ??
+    ''
   const rule = (f: string, sel: string) =>
     css(f).match(
       new RegExp(`(^|\\n)${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`),
@@ -376,7 +381,14 @@ describe('화면 골든 — 본문 DOM · 가이드 스타일', () => {
       'app/pages/guide/index.vue',
     ]
     const css = files
-      .map((f) => `/* ${f} */\n` + (readFileSync(`${process.cwd()}/${f}`, 'utf8').split('<style scoped>')[1] ?? '').replace(/<\/style>\s*$/, ''))
+      .map(
+        (f) =>
+          `/* ${f} */\n` +
+          (readFileSync(`${process.cwd()}/${f}`, 'utf8').split('<style scoped>')[1] ?? '').replace(
+            /<\/style>\s*$/,
+            '',
+          ),
+      )
       .join('\n')
     check('styles.css', css)
   })

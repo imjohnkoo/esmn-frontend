@@ -19,7 +19,8 @@ export const GUIDE_SECTIONS = [
   { id: 'help', label: '문제 해결' },
 ] as const
 
-export const GUIDE_HL_HINT = '화면의 빨간 테두리가 누를 곳이에요.'
+export const GUIDE_HL_HINT =
+  '화면의 빨간 테두리는 설명이 가리키는 곳이에요. 켜고 끄는 건 설명을 따라 주세요.'
 
 export const GUIDE_PAGES: Record<
   GuideOs,
