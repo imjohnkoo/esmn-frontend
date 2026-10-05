@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { mount } from '@vue/test-utils'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { GUIDE_CONTACT, GUIDE_FLOW, GUIDE_HUB } from '~/content/guide/common'
@@ -50,5 +51,11 @@ describe('/guide 허브', () => {
     expect(w.find('#guide-cs-title').text()).toBe(GUIDE_CONTACT.hubTitle)
     expect(seo).toHaveBeenCalledWith(expect.objectContaining({ title: '설치 가이드' }))
     expect(w.text()).not.toMatch(/super\.site/)
+    // 허브 DOM 골든(구조 · 순서 · 글자 · 속성) — WRITE_GUIDE_GOLDEN=1 로 다시 쓴다
+    const f = `${process.cwd()}/app/components/guide/__golden__/hub.html`
+    const now = w.html().replace(/\sdata-v-[\w-]+(="[^"]*")?/g, '') + '\n'
+    if (process.env.WRITE_GUIDE_GOLDEN === '1') writeFileSync(f, now)
+    expect(existsSync(f)).toBe(true)
+    expect(now).toBe(readFileSync(f, 'utf8'))
   })
 })

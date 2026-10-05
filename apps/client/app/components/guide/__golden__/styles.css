@@ -1,0 +1,860 @@
+/* app/components/guide/GuideArticle.vue */
+
+.g-article {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  color: var(--n-color-neutral-900, #171717);
+}
+
+/* 가운데 정렬 제목 · 설명은 줄 길이를 고르게, 본문 문단은 마지막 줄 외톨이 글자 방지 */
+.g-article :is(h1, h2, .g-hero__lede, .g-sec__lede, .g-method__title, .g-method__desc) {
+  text-wrap: balance;
+}
+
+.g-article p {
+  text-wrap: pretty;
+}
+
+/* ----- 머리 ----- */
+.g-hero {
+  padding: 28px 16px 24px;
+  background: linear-gradient(180deg, var(--n-color-primary-50, #f1edff) 0%, #fff 100%);
+  text-align: center;
+}
+
+.g-hero__eyebrow {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--n-color-primary-600, #5025e8);
+}
+
+.g-hero__title {
+  margin: 0 0 10px;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.g-hero__lede {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--n-color-neutral-600, #525252);
+}
+
+.g-os {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 20px 0 0;
+  padding: 4px;
+  border-radius: var(--n-radius-full, 9999px);
+  background: var(--n-color-neutral-100, #f5f5f5);
+}
+
+.g-os__tab {
+  padding: 9px 0;
+  border-radius: var(--n-radius-full, 9999px);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--n-color-neutral-600, #525252);
+  text-decoration: none;
+}
+
+.g-os__tab--on {
+  background: #fff;
+  color: var(--n-color-primary-600, #5025e8);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+.g-hero__flow {
+  margin-top: 16px;
+  text-align: left;
+}
+
+.g-jump {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.g-jump__chip {
+  padding: 7px 12px;
+  border: 1px solid var(--n-color-neutral-200, #e5e5e5);
+  border-radius: var(--n-radius-full, 9999px);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--n-color-neutral-700, #404040);
+  text-decoration: none;
+}
+
+.g-hero__hint {
+  margin: 14px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #c62828;
+}
+
+/* ----- 구간 ----- */
+.g-sec {
+  padding: 32px 16px;
+}
+
+.g-sec--alt {
+  background: var(--n-color-neutral-50, #fafafa);
+}
+
+.g-badge {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 14px;
+  padding: 6px 16px;
+  border-radius: var(--n-radius-full, 9999px);
+  background: var(--n-color-primary-500, #6239ff);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.g-sec__title {
+  margin: 0 0 8px;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.g-sec__lede {
+  margin: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--n-color-neutral-600, #525252);
+  text-align: center;
+}
+
+.g-sec__steps {
+  margin-top: 4px;
+}
+
+/* ----- 설치 전 확인 ----- */
+.g-checks {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.g-check,
+.g-alert {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 16px;
+  border: 1px solid var(--n-color-neutral-200, #e5e5e5);
+  border-radius: var(--n-radius-2xl, 16px);
+  background: #fff;
+}
+
+.g-check__tile,
+.g-alert__tile {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--n-radius-lg, 10px);
+  background: var(--n-color-primary-50, #f1edff);
+}
+
+.g-check__icon {
+  width: 22px;
+  height: 22px;
+  color: var(--n-color-primary-600, #5025e8);
+}
+
+.g-check__h,
+.g-alert__h {
+  margin: 1px 0 4px;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.g-check__body,
+.g-alert__body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--n-color-neutral-600, #525252);
+}
+
+.g-alert {
+  margin-top: 12px;
+  border: 1.5px solid var(--n-color-error-300, #fca5a5);
+  background: var(--n-color-error-50, #fef2f2);
+}
+
+.g-alert__tile {
+  background: #fff;
+}
+
+.g-alert__icon {
+  width: 22px;
+  height: 22px;
+  color: var(--n-color-error-600, #dc2626);
+}
+
+.g-alert__h {
+  color: var(--n-color-error-700, #b91c1c);
+}
+
+.g-alert__body {
+  color: var(--n-color-neutral-700, #404040);
+}
+
+/* ----- 방법 카드 ----- 옆 여백을 작게 — 화면 이미지가 휴대폰 폭에서 최대한 크게 보이게(spec D-3) */
+.g-method {
+  padding: 20px 10px 22px;
+  border: 1px solid var(--n-color-neutral-200, #e5e5e5);
+  border-radius: 20px;
+  background: #fff;
+}
+
+.g-method + .g-method {
+  margin-top: 16px;
+}
+
+.g-method__tags {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.g-pill {
+  padding: 4px 12px;
+  border-radius: var(--n-radius-full, 9999px);
+  background: var(--n-color-primary-500, #6239ff);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.g-pill--soft {
+  background: var(--n-color-primary-50, #f1edff);
+  color: var(--n-color-primary-700, #4a1fd6);
+}
+
+.g-method__title {
+  margin: 0 6px 4px;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.g-method__desc {
+  margin: 0 6px 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--n-color-neutral-600, #525252);
+  text-align: center;
+}
+
+/* ----- 문제 해결 ----- */
+.g-method :deep(.g-step__text),
+.g-method :deep(.g-note) {
+  margin-left: 6px;
+  margin-right: 6px;
+}
+
+.g-faqs {
+  display: grid;
+  gap: 12px;
+}
+
+.g-faq {
+  padding: 18px 12px;
+  border: 1px solid var(--n-color-neutral-200, #e5e5e5);
+  border-radius: 20px;
+  background: #fff;
+}
+
+.g-faq__q {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  align-items: start;
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.g-faq__n {
+  display: grid;
+  place-items: center;
+  height: 26px;
+  border-radius: var(--n-radius-md, 8px);
+  background: var(--n-color-primary-500, #6239ff);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.g-faq__a {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--n-color-neutral-700, #404040);
+}
+
+.g-faq__a p {
+  margin: 0;
+}
+
+.g-faq__a p + p {
+  margin-top: 8px;
+}
+
+.g-faq__link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--n-color-primary-600, #5025e8);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.g-faq__shot {
+  margin-top: 14px;
+}
+
+/* app/components/guide/GuideContact.vue */
+
+.g-cs {
+  margin-top: 36px;
+  padding: 28px 20px;
+  border-radius: var(--n-radius-2xl, 16px);
+  background: var(--n-color-neutral-900, #171717);
+  color: #fff;
+  text-align: center;
+}
+
+.g-cs__title {
+  margin: 0 0 6px;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.g-cs__lede {
+  margin: 0 0 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--n-color-neutral-300, #d4d4d4);
+}
+
+.g-cs__cards {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.g-cs__card {
+  display: grid;
+  grid-template-columns: 44px 1fr 18px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--n-radius-xl, 12px);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  text-align: left;
+  text-decoration: none;
+}
+
+.g-cs__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.g-cs__icon--kakao {
+  background: #fee500;
+  color: #191919;
+  font-size: 11px;
+}
+
+.g-cs__icon--naver {
+  background: #03c75a;
+  color: #fff;
+  font-size: 20px;
+}
+
+.g-cs__text {
+  display: grid;
+  gap: 2px;
+}
+
+.g-cs__name {
+  font-size: 13px;
+  color: var(--n-color-neutral-400, #a3a3a3);
+}
+
+.g-cs__handle {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.g-cs__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.g-cs__chev {
+  width: 18px;
+  height: 18px;
+  color: var(--n-color-neutral-400, #a3a3a3);
+}
+
+.g-cs__more {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* app/components/guide/GuideFlow.vue */
+
+.g-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.g-flow__item {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: 12px 10px;
+  border: 1px solid var(--n-color-primary-100, #e3dbff);
+  border-radius: var(--n-radius-xl, 12px);
+  background: #fff;
+  box-shadow: 0 6px 18px -12px rgba(98, 57, 255, 0.35);
+}
+
+.g-flow__step {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--n-color-primary-500, #6239ff);
+}
+
+.g-flow__title {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--n-color-neutral-900, #171717);
+}
+
+.g-flow__nw {
+  white-space: nowrap;
+}
+
+.g-flow__meta {
+  font-size: 13px;
+  color: var(--n-color-neutral-500, #737373);
+}
+
+/* app/components/guide/GuideNote.vue */
+
+.g-note {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  align-items: start;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--n-color-neutral-200, #e5e5e5);
+  border-radius: var(--n-radius-xl, 12px);
+  background: var(--n-color-neutral-50, #fafafa);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--n-color-neutral-700, #404040);
+}
+
+.g-note__icon {
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  color: var(--n-color-neutral-500, #737373);
+}
+
+.g-note__body p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.g-note__body p + p {
+  margin-top: 6px;
+}
+
+.g-note--warn {
+  border-color: var(--n-color-error-200, #fecaca);
+  background: var(--n-color-error-50, #fef2f2);
+}
+
+.g-note--warn .g-note__icon {
+  color: var(--n-color-error-600, #dc2626);
+}
+
+.g-note--warn :deep(.g-b) {
+  color: var(--n-color-error-700, #b91c1c);
+}
+
+.g-note--tip {
+  border-color: var(--n-color-primary-100, #e3dbff);
+  background: var(--n-color-primary-50, #f1edff);
+}
+
+.g-note--tip .g-note__icon,
+.g-note--tip :deep(.g-b) {
+  color: var(--n-color-primary-700, #4a1fd6);
+}
+
+.g-note--home .g-note__icon {
+  color: var(--n-color-primary-500, #6239ff);
+}
+
+/* app/components/guide/GuideShot.vue */
+
+.g-shot {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(368px + 10px);
+  margin: 12px auto 0;
+  overflow: hidden;
+  border: 5px solid #1d1d1f;
+  border-radius: 26px;
+  background: #f2f2f7;
+  box-shadow: 0 14px 30px -18px rgba(17, 17, 17, 0.45);
+}
+
+.g-shot__img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* app/components/guide/GuideStatusBar.vue */
+
+.g-status {
+  box-sizing: border-box;
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  width: 100%;
+  max-width: calc(368px + 10px);
+  margin: 12px auto 0;
+  padding: 22px 18px;
+  border: 5px solid #1d1d1f;
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 14px 30px -18px rgba(17, 17, 17, 0.45);
+}
+
+.g-status__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 16px;
+  border-radius: var(--n-radius-full, 9999px);
+  background: var(--n-color-neutral-100, #f5f5f5);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.g-status__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 아이폰 듀얼 회선 신호 — 아래 칸 네모 4개, 위 칸은 오른쪽으로 갈수록 높아진다 */
+.g-dual {
+  display: flex;
+  align-items: flex-end;
+  gap: 2.4px;
+  height: 18px;
+}
+
+.g-dual b {
+  display: grid;
+  grid-template-rows: auto 5px;
+  row-gap: 2px;
+  width: 5px;
+}
+
+.g-dual b::before,
+.g-dual b::after {
+  content: '';
+  border-radius: 1.6px;
+  background: var(--n-color-neutral-900, #171717);
+}
+
+.g-dual b::before {
+  height: var(--h);
+}
+
+.g-dual b:nth-child(1),
+.g-dual b:nth-child(2) {
+  --h: 5px;
+}
+
+.g-dual b:nth-child(3) {
+  --h: 7.5px;
+}
+
+.g-dual b:nth-child(4) {
+  --h: 11px;
+}
+
+.g-sig {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 16px;
+}
+
+.g-sig b {
+  width: 4px;
+  border-radius: 1.5px;
+  background: var(--n-color-neutral-900, #171717);
+}
+
+.g-sig b:nth-child(1) {
+  height: 5px;
+}
+
+.g-sig b:nth-child(2) {
+  height: 8px;
+}
+
+.g-sig b:nth-child(3) {
+  height: 12px;
+}
+
+.g-sig b:nth-child(4) {
+  height: 16px;
+}
+
+.g-status__net {
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--n-color-primary-500, #6239ff);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.g-status__bat {
+  position: relative;
+  width: 28px;
+  height: 13px;
+  border: 2px solid var(--n-color-neutral-900, #171717);
+  border-radius: 4px;
+}
+
+.g-status__bat::after {
+  content: '';
+  position: absolute;
+  inset: 2px 6px 2px 2px;
+  border-radius: 1px;
+  background: var(--n-color-neutral-900, #171717);
+}
+
+.g-status__cap {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--n-color-neutral-600, #525252);
+  text-align: center;
+}
+
+.g-status__cap b {
+  color: var(--n-color-primary-600, #5025e8);
+}
+
+/* app/components/guide/GuideSteps.vue */
+
+.g-steps {
+  display: grid;
+  gap: 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.g-step__text {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.g-step__num {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--n-color-primary-500, #6239ff);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.g-step__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.g-step__p {
+  margin: 0;
+  text-wrap: pretty;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--n-color-neutral-800, #262626);
+}
+
+.g-step__sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--n-color-neutral-500, #737373);
+}
+
+/* app/components/guide/GuideText.vue */
+
+.g-nw {
+  white-space: nowrap;
+}
+
+/* 누를 버튼 · 메뉴 이름 — 배경 칩이면 뒤 조사가 떨어져 보여서 형광 밑줄로(2609 guide.css) */
+.g-ui {
+  font-weight: 700;
+  color: var(--n-color-primary-700, #4a1fd6);
+  background: linear-gradient(transparent 58%, var(--n-color-primary-100, #e3dbff) 58%);
+  padding: 0 1px;
+}
+
+.g-path {
+  font-weight: 700;
+}
+
+/* « › » 앞뒤 공백에서만 줄이 바뀐다 — 메뉴 이름 토막은 .g-nw */
+.g-path__sep {
+  font-weight: 400;
+  color: var(--n-color-neutral-500, #737373);
+}
+
+.g-path__p {
+  font-weight: 400;
+}
+
+.g-b {
+  font-weight: 700;
+  color: var(--n-color-neutral-900, #171717);
+}
+
+/* app/pages/guide/index.vue */
+
+.guide-page {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px 32px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.guide-page__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--n-color-neutral-900, #171717);
+}
+
+.guide-page__desc {
+  margin: 6px 0 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--n-color-neutral-600, #525252);
+}
+
+.guide-page__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* DS 카드 설명(#a3a3a3 · 11px)은 명암비 2.5:1 — 설치 방법 목록이라 읽혀야 한다(4.5:1 이상) */
+.guide-page__cards :deep(.n-link-card__sub) {
+  color: var(--n-color-neutral-500, #737373);
+  font-size: 13px;
+}
+
+.guide-page__h2 {
+  margin: 28px 0 10px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--n-color-neutral-900, #171717);
+}
+
+.guide-page__note {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--n-color-neutral-600, #525252);
+}
+
+.guide-page__link {
+  align-self: flex-start;
+  margin-top: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--n-color-primary-600, #5025e8);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

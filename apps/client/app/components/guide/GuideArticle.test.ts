@@ -19,7 +19,7 @@ import {
   PowerIcon,
   WifiIcon,
 } from '@heroicons/vue/24/outline'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import GuideArticle from './GuideArticle.vue'
 import GuideText from './GuideText.vue'
 
@@ -339,5 +339,45 @@ describe('화면 스타일 고정(spec ⑤ · D-6 — happy-dom 은 컴포넌트
         /display:\s*none|visibility:\s*hidden|max-height|height:\s*0[^.\d]/,
       )
     }
+  })
+})
+
+/**
+ * 화면 골든(client-guide spec S-2 · S-3 · ⑤) — 렌더된 본문 구조(태그 · 클래스 · 속성 · 글자 · 순서)와 가이드 스타일 전체.
+ * 단계 ↔ 이미지 짝 · 보조 문장 칸 · 문단 경계 · 화면낭독 속성 · 줄간격 · 줄바꿈 규칙 · 색 · 테두리를 한 번에 고정한다.
+ * 고정한 상태 = QA ⑥ 8회차 실측(폭 320–440 · 원본 대조 · 명암비)으로 확인한 화면. 일부러 바꾸면 spec 을 먼저 고치고
+ * WRITE_GUIDE_GOLDEN=1 로 다시 쓴다.
+ */
+describe('화면 골든 — 본문 DOM · 가이드 스타일', () => {
+  const dir = `${process.cwd()}/app/components/guide/__golden__`
+  const check = (name: string, now: string) => {
+    const f = `${dir}/${name}`
+    if (process.env.WRITE_GUIDE_GOLDEN === '1') writeFileSync(f, now)
+    expect(existsSync(f), `${name} 없음 — WRITE_GUIDE_GOLDEN=1 로 쓴다`).toBe(true)
+    expect(now).toBe(readFileSync(f, 'utf8'))
+  }
+  const dom = (html: string) => html.replace(/\sdata-v-[\w-]+(="[^"]*")?/g, '') + '\n'
+  it.each([
+    ['ios', IOS_GUIDE],
+    ['android', ANDROID_GUIDE],
+  ] as const)('%s 본문 DOM', (os, content) => {
+    check(`article.${os}.html`, dom(render(content).html()))
+  })
+  it('가이드 컴포넌트 · 허브 스타일(줄간격 · keep-all · 색 · 테두리 · 폭)', () => {
+    const files = [
+      'app/components/guide/GuideArticle.vue',
+      'app/components/guide/GuideContact.vue',
+      'app/components/guide/GuideFlow.vue',
+      'app/components/guide/GuideNote.vue',
+      'app/components/guide/GuideShot.vue',
+      'app/components/guide/GuideStatusBar.vue',
+      'app/components/guide/GuideSteps.vue',
+      'app/components/guide/GuideText.vue',
+      'app/pages/guide/index.vue',
+    ]
+    const css = files
+      .map((f) => `/* ${f} */\n` + (readFileSync(`${process.cwd()}/${f}`, 'utf8').split('<style scoped>')[1] ?? '').replace(/<\/style>\s*$/, ''))
+      .join('\n')
+    check('styles.css', css)
   })
 })
