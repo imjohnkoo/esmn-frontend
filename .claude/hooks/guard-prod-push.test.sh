@@ -175,6 +175,11 @@ printf '#!/bin/sh\n"%s" "$@"\nexit 2\n' "$(command -v awk)" > "$FC/lateawk/awk" 
 mkdir -p "$FC/badjq"
 for t in bash cat tr sed awk grep printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/badjq/$t"; done
 printf '#!/bin/sh\nexit 134\n' > "$FC/badjq/jq" && chmod +x "$FC/badjq/jq"
+# 스캐너 awk 만 · heredoc 처리기 awk 만 죽어도 막는다(프로그램 글에 든 함수 이름으로 가려 실패시킨다 — 11회차 M1)
+mkdir -p "$FC/scanfail" "$FC/hsfail"
+for t in bash cat tr sed grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/scanfail/$t" && ln -sf "$p" "$FC/hsfail/$t"; done
+printf '#!/bin/sh\ncase "$*" in *matchparen*) exit 2 ;; esac\nexec "%s" "$@"\n' "$(command -v awk)" > "$FC/scanfail/awk" && chmod +x "$FC/scanfail/awk"
+printf '#!/bin/sh\ncase "$*" in *kindof*) exit 2 ;; esac\nexec "%s" "$@"\n' "$(command -v awk)" > "$FC/hsfail/awk" && chmod +x "$FC/hsfail/awk"
 # awk 가 아무것도 내지 않고 0 으로 끝나도(빈 글) 통과시키지 않는다
 mkdir -p "$FC/emptyawk"
 for t in bash cat tr sed grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/emptyawk/$t"; done
@@ -186,13 +191,15 @@ fc() { # fc <이름> <PATH> — 정상 명령(git status)도 막혀야 한다
   local o; o=$(printf '%s' '{"tool_input":{"command":"git status"}}' | PATH="$2" "$BASH" "$HOOK" 2>/dev/null)
   if [[ "$o" == *'"deny"'* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); printf '  ⛔ fail-closed 아님: %s\n' "$1"; fi
 }
-echo "== fail-closed (jq 없음 · jq 실패 · awk 실패 · awk · sed 출력 뒤 실패 · awk 빈 출력) =="
+echo "== fail-closed (jq 없음 · jq 실패 · awk 실패 · awk · sed 출력 뒤 실패 · awk 빈 출력 · 스캐너 · heredoc 처리기만 실패) =="
 fc "jq 없음" "$FC/nojq"
 fc "awk 실패" "$FC/badawk"
 fc "awk 출력 뒤 실패" "$FC/lateawk"
 fc "sed 출력 뒤 실패(pipefail)" "$FC/latesed"
 fc "awk 빈 출력(종료 0)" "$FC/emptyawk"
 fc "jq 실패(종료 134)" "$FC/badjq"
+fc "스캐너 awk 만 실패" "$FC/scanfail"
+fc "heredoc 처리기 awk 만 실패" "$FC/hsfail"
 
 echo
 printf 'pass=%d fail=%d\n' "$pass" "$fail"

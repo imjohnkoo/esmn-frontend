@@ -71,6 +71,13 @@
 #    판정 없이 통과하지 않게) · enablePullRequestAutoMerge · git config set remote.*.push · 따옴표 없는 별칭 git -c alias.p=push.
 #    더 못 보는 길(dev 판도 놓친다): printf > f 로 쓴 스크립트 · echo … | bash · for 목록 · exec 3<<EOF; bash <&3 · heredoc 을 변수로 읽어 eval ·
 #    echo "$(cat <<EOF)" | bash · $(cat <<EOF) 를 명령 자리에 · push-option 안 이스케이프 & · 낱말 중간 줄 이음(pro\ ⏎ d).
+# ⭐ 11회차(QA ⑥ blocker 3 · major 1 · minor 5): $(…) 안 heredoc 의 바깥은 그 단순 명령 전체의 셸 낱말로(if … then · timeout 600 · sudo -u x ·
+#    docker exec c sh -c) — 따옴표 친 낱말은 QWQ 표식으로 받는 명령 판정에만 쓰고 바깥 판정에서는 뺀다(--title "ssh" 오탐) · 써서 실행하는
+#    스크립트는 파일 이름으로 대조($S/f · ${D}/f · cd 뒤 f) · $BASH -c · su -c · at now <<EOF · git push origin :(matching push) · --forc ·
+#    따옴표 친 256자 옵션 · aws ssm send-command · $( · 백틱 64겹 넘게는 판정 불가(fail-closed — 1만 겹이 685초로 판정 없이 통과하던 것) ·
+#    Monitor 도구도 이 훅을 지난다(settings matcher Bash|Monitor — 같은 tool_input.command). 테스트: 스캐너 · heredoc 처리기 awk 만 실패 ·
+#    접두 건너뛰기 · 파일 | bash · 깊은 중첩. 알고 두는 오탐: orca terminal send --text 로 보내는 프롬프트 안 명령 글자(다른 터미널에 쳐 넣는 글).
+#    성능(11회차 실측): 따옴표 인자 한 줄 960KB 약 28초 · node 한 줄 JSON 1MB 약 40초 · $( 1만 겹 14초(차단).
 set +e
 # 파이프라인 어느 단계가 실패해도 실패로(awk 가 일부만 내고 죽으면 통과시키지 않는다 — fail-closed)
 set -o pipefail
@@ -121,7 +128,9 @@ heredoc_split() {
   #   접두를 건너뛴 첫 낱말)이 데이터 소비자(git · gh · cat · tee · jq …)면 데이터 ③ 받는 명령이 셸 · 인터프리터면 그것 ④ 그 밖에는 논리 줄
   #   어디든 셸 낱말이 있으면 셸 본문(dev 판과 같은 넓이 — dev 보다 덜 막는 경우가 없게)
   # 셸 낱말 — 앞뒤가 이름 글자(영숫자 _ . -)가 아니면(bash) · bash; · (bash · bash> · /bin/bash — 9회차 B1). run.sh · push · ssh 안의 sh 는 아니다
-  function isshell(t) { return t ~ /(^|[^A-Za-z0-9_.-])(bash|sh|zsh|dash|ksh|fish|ssh|eval|source|trap|watch|send-keys|\$SHELL|\$\{SHELL[^}]*\}|--text)([^A-Za-z0-9_.-]|$)/ }
+  function isshell(t) { return t ~ /(^|[^A-Za-z0-9_.-])(bash|sh|zsh|dash|ksh|fish|ssh|su|eval|source|trap|watch|send-keys|\$SHELL|\$\{SHELL[^}]*\}|\$BASH|\$\{BASH\}|--text)([^A-Za-z0-9_.-]|$)/ }
+  # 따옴표 친 낱말(QWQ 표식)까지 셸 낱말로 보는 판 — "bash" · "/bin/bash" 를 받는 쪽으로 볼 때
+  function isshellq(t) { gsub(/QWQ/, " ", t); return isshell(t) }
   function isinterp(t) { return t ~ /(^|[^A-Za-z0-9_.-])(python[0-9.]*|node|nodejs|deno|bun|ruby|perl|php|osascript)([^A-Za-z0-9_.-]|$)/ }
   # 인터프리터 종류 — 2 백틱이 셸 명령인 언어(ruby · perl · php) · 4 그 밖(python · node … — 백틱은 글자)
   function ik(t) { return (t ~ /(^|[^A-Za-z0-9_.-])(ruby|perl|php)([^A-Za-z0-9_.-]|$)/) ? 2 : 4 }
@@ -153,7 +162,7 @@ heredoc_split() {
     while (k <= n) {
       w = a[k]
       if (w == "" || w == "!" || w ~ /^[A-Za-z_][A-Za-z0-9_]*=/) { k++; continue }
-      sub(/^\\/, "", w); sub(/^.*\//, "", w)
+      sub(/^QWQ/, "", w); sub(/^\\/, "", w); sub(/^.*\//, "", w)
       if (w ~ /^(sudo|doas|env|command|time|nice|nohup|exec)$/) { k++; while (k <= n && a[k] ~ /^-/) k++; continue }
       return w
     }
@@ -166,7 +175,7 @@ heredoc_split() {
       if (substr(p, RSTART + 1, 1) == "|") { p = substr(p, RSTART + 2); continue }
       p = substr(p, RSTART + 1); sub(/^&/, "", p)
       if (p !~ /[^ \t]/) return 0
-      if (isshell(p) || p ~ /(^|[^A-Za-z0-9_.-])(parallel|at|batch)([^A-Za-z0-9_.-]|$)/) return 0   # | parallel · | at now 도 줄을 명령으로 실행한다
+      if (isshellq(p) || p ~ /(^|[^A-Za-z0-9_.-])(parallel|at|batch)([^A-Za-z0-9_.-]|$)/) return 0   # | parallel · | at now 도 줄을 명령으로 실행한다
       if (isinterp(p)) return ik(p)
       return -1
     }
@@ -178,7 +187,7 @@ heredoc_split() {
     pre = nrm(pre); post = nrm(post); outer = nrm(outer)
     all = outer " " pre " " post
     k = pipek(post); if (k >= 0) return k
-    if (all ~ /PSUB/ && isshell(all)) return 0                   # 프로세스 치환 >(bash) · =(…)
+    if (all ~ /PSUB/ && isshellq(all)) return 0                   # 프로세스 치환 >(bash) · =(…)
     p1 = post; if (match(p1, /[;&|()]/)) p1 = substr(p1, 1, RSTART - 1)
     seg = lastseg(pre) " " p1
     # 묶음({ …; } <<EOF · ( … ) <<EOF)이 받으면 표준 입력은 묶음의 첫 명령이 먹는다 — 그 명령으로(10회차 N03)
@@ -187,13 +196,15 @@ heredoc_split() {
     }
     w = recv(seg)
     if (w ~ /^(git|gh|cat|tee|jq|yq|psql|mysql|sqlite3|wc|grep|egrep|head|tail|sort|uniq|base64|xxd|pbcopy|diff|tr|cut|column|curl|openssl|gpg)$/) {
-      if (outer != "") { k = recv(lastseg(outer)); if (k == "." || isshell(k) || lastseg(outer) ~ /(^|[^A-Za-z0-9_.-])(--text|send-keys)([^A-Za-z0-9_.=-]|=|$)/) return 0 }   # 바깥 명령 낱말 · 다른 터미널에 쳐 넣는 것(orca --text · tmux send-keys)
+      # 바깥 명령(그 단순 명령 전체 — if · then · timeout 600 · sudo -u x · docker exec c sh -c)에 따옴표 밖 셸 낱말이 있으면 셸(11회차 B1).
+      #   따옴표 친 낱말(--title "ssh")은 보지 않는다(10회차 오탐)
+      if (outer != "" && isshell(lastseg(outer))) return 0
       if (w == "gh" && seg ~ /(codespace|cs)[ \t]+ssh/) return 0   # gh codespace ssh = 원격 셸
       return pq ? 1 : 3
     }
-    if (w == "." || isshell(w)) return 0
+    if (w == "." || w == "at" || w == "batch" || isshell(w)) return 0   # at now <<EOF 도 본문을 명령으로 실행한다
     if (isinterp(w)) return iarg(seg, w) ? (pq ? 1 : 3) : ik(w)
-    if (isshell(all)) return 0
+    if (isshellq(all)) return 0
     if (isinterp(all)) return ik(all)
     return pq ? 1 : 3
   }
@@ -244,7 +255,7 @@ heredoc_split() {
   function qclose(j,   m) {
     if (qn[sp + 1] != NR || st[sp] == "D" || st[sp] == "Q" || st[sp] == "A") return
     m = substr(line, qb[sp + 1], j - qb[sp + 1])
-    if (m != "" && length(m) <= 64 && (m ~ /^[A-Za-z0-9_.\/$@%+:=,-]+$/ || m ~ /^\$\{[A-Za-z_][A-Za-z0-9_]*\}$/)) addu(" " m " ")   # 셸 구분 글자가 든 것은 넣지 않는다(10회차 B3)
+    if (m != "" && length(m) <= 64 && (m ~ /^[A-Za-z0-9_.\/$@%+:=,-]+$/ || m ~ /^\$\{[A-Za-z_][A-Za-z0-9_]*\}$/)) addu(" QWQ" m " ")   # 셸 구분 글자가 든 것은 넣지 않는다(10회차 B3)
   }
   function out(x) { if (mode == "text") printf "%s", x }
   function chunk(x) { gsub(/[\001\004]/, " ", x); printf "%s\n", x }
@@ -448,7 +459,7 @@ scan_shell() {
     # 문자열을 명령으로 받는 것 — bash/sh/fish -c(앞에 -o pipefail · -O extglob · --login · 묶음 옵션, 뒤에 -x · -- 가 껴도) · eval · trap ·
     #   watch · flock/su/npx/script … -c · env -S · tmux · ssh <호스트> · git rebase -x/--exec · git submodule foreach ·
     #   orca … --text(다른 터미널에 쳐 넣는다). 따로 뽑아 다시 본다(5단까지)
-    if (depth < 6 && buf ~ /[[:space:]]/ && tail ~ /(^|[[:space:];&|(!{\/])((bash|sh|zsh|dash|ksh|fish|SUBST|\$SHELL|\$\{SHELL[^}]*\})([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-[[:alnum:]]*c[[:alnum:]]*([[:space:]]+-[^[:space:];&|]*)*|eval|trap|watch([[:space:]]+[^[:space:];&|]+)*|(flock|su|npx|npm|script)([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-c|env([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-S|tmux([[:space:]]+[^[:space:];&|]+)*|parallel([[:space:]]+[^[:space:];&|]+)*|ssh([[:space:]]+[^[:space:];&|]+)+|git([[:space:]]+[^[:space:];&|]+)*[[:space:]]+(-x|--exec|foreach)|orca([[:space:]]+[^[:space:];&|]+)*[[:space:]]+--text=?|(bash|sh|zsh|dash|ksh)([[:space:]]+[^[:space:];&|]+)*[[:space:]]*<<<)[[:space:]]*$/) {
+    if (depth < 6 && buf ~ /[[:space:]]/ && tail ~ /(^|[[:space:];&|(!{\/])((bash|sh|zsh|dash|ksh|fish|SUBST|\$SHELL|\$\{SHELL[^}]*\}|\$BASH|\$\{BASH\})([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-[[:alnum:]]*c[[:alnum:]]*([[:space:]]+-[^[:space:];&|]*)*|eval|trap|watch([[:space:]]+[^[:space:];&|]+)*|(flock|su|npx|npm|script)([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-c|env([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-S|tmux([[:space:]]+[^[:space:];&|]+)*|parallel([[:space:]]+[^[:space:];&|]+)*|ssh([[:space:]]+[^[:space:];&|]+)+|git([[:space:]]+[^[:space:];&|]+)*[[:space:]]+(-x|--exec|foreach)|orca([[:space:]]+[^[:space:];&|]+)*[[:space:]]+--text=?|(bash|sh|zsh|dash|ksh)([[:space:]]+[^[:space:];&|]+)*[[:space:]]*<<<)[[:space:]]*$/) {
       r = scan(buf, depth + 1); INNERS = INNERS "\n" r
       return " SUBST "
     }
@@ -471,13 +482,14 @@ scan_shell() {
     if (buf !~ /[[:space:]()<>;&|`]/ && length(buf) <= 1024) {
       if (buf !~ /^-/) return (gm == "" ? buf : buf gm " ")
       # «-» 로 시작하는 한 단어 = 따옴표 친 옵션일 수도 값일 수도(--body "-Bprod") — «Q» 를 붙여 남긴다(git push · gh pr 판정이 따로 본다)
-      if (!mid && length(buf) <= 64) return "Q" buf gm " "
+      if (!mid && length(buf) <= 256) return "Q" buf gm " "
     }
     # 단어 중간의 따옴표(core.sshCommand="ssh -i k" · user.name="John Koo")는 공백 없이 — 한 단어로 남아야 옵션 값으로 걷힌다
     t = (mid ? "Q" : " Q") gm
     return (mid && gm == "") ? t : t " "
   }
   function scan(s, depth,   out, op, i, n, c, j, k, buf, bp, inner, r, closed, p) {
+    if (depth > 64) { DEEP = 1; return "" }       # $( · 백틱 64겹 넘게 — 판정 불가(END 에서 실패 코드 → fail-closed)
     out = ""; op = ""; n = length(s); i = 1
     while (i <= n) {
       if (length(op) > 8192) { out = out op; op = "" }
@@ -581,7 +593,7 @@ scan_shell() {
     RE_SQS = SQ "([^" SQ "\\\\]|\\\\.)*" SQ
   }
   { ALL = ALL (NR > 1 ? RS : "") $0 }
-  END { INNERS = ""; RES = scan(ALL, 0); gsub(/\001/, " ", RES); gsub(/\001/, " ", INNERS); printf "%s\n%s\n", RES, INNERS }
+  END { INNERS = ""; DEEP = 0; RES = scan(ALL, 0); if (DEEP) exit 3; gsub(/\001/, " ", RES); gsub(/\001/, " ", INNERS); printf "%s\n%s\n", RES, INNERS }
   '
 }
 
@@ -594,7 +606,7 @@ check_git_push() { # $1 = «git push» 뒤 인자(스캐너가 정리한 글)
   while [[ "$args" =~ $re_po ]]; do args="${args/"${BASH_REMATCH[0]}"/ }"; done
   # 따옴표 친 옵션은 스캐너가 «Q-…» 로 남긴다(git push "--force" · '-f')
   case "$args" in
-    *" --force"*|*" -f "*|*" Q--force"*|*" Q-f "*)
+    *" --force"*|*" -f "*|*" Q--force"*|*" Q-f "*|*" --fo "*|*" --for "*|*" --forc "*|*" Q--fo "*|*" Q--for "*|*" Q--forc "*)   # git 은 긴 옵션의 고유 접두를 받는다(--forc)
       block "force push 차단. 진짜 필요하면 사용자에게 명시적 확인 받고 hook 우회하세요." ;;
   esac
   # 짧은 옵션 묶음(-fu · -uf) 안의 f 도 force 다
@@ -610,6 +622,10 @@ check_git_push() { # $1 = «git push» 뒤 인자(스캐너가 정리한 글)
   local re_many='[[:space:]]Q?--(m|mi|mir|mirr|mirro|mirror|al|all|b|br|bra|bran|branc|branch|branche|branches)([[:space:]=]|$)'
   if [[ "$args" =~ $re_many ]]; then
     block "git push --mirror / --all 차단 — prod 를 포함한 여러 ref 를 한꺼번에 밉니다. 필요한 브랜치만 이름으로 push 하세요."
+  fi
+  # «:» 하나(matching push) — 원격과 이름이 같은 로컬 브랜치를 전부 민다(로컬 prod 가 있으면 함께 — 11회차 minor)
+  if [[ "$args" =~ [[:space:]]Q?:([[:space:]]|$) ]]; then
+    block "git push origin : (matching push) 차단 — 같은 이름 브랜치를 전부 밀어 prod 도 함께 갈 수 있습니다. 브랜치를 이름으로 적어 push 하세요."
   fi
   # 자리표시 목적지({} · {1} — xargs -I · parallel · find -exec)는 판정할 수 없다(8회차 M1)
   if [[ "$args" == *"{}"* || "$args" =~ \{[0-9]+\} ]]; then
@@ -777,7 +793,7 @@ check_segment() { # $1 = 세그먼트(정리한 글)
   local re_reset='(^|[[:space:]/!{])git[[:space:]]+reset([[:space:]].*)?[[:space:]]Q?--(ha|har|hard)([[:space:]]|$)'
   local re_ssm='(^|[[:space:]/!{])aws[[:space:]](.*[[:space:]])?ssm[[:space:]]+(put-parameter|delete-parameter|delete-parameters)([[:space:]]|$)'
   # CodeDeploy 직접 배포 — prod 브랜치 push 와 같은 일(8회차 minor 7)
-  local re_deploy='(^|[[:space:]/!{])aws[[:space:]](.*[[:space:]])?deploy[[:space:]]+create-deployment([[:space:]]|$)'
+  local re_deploy='(^|[[:space:]/!{])aws[[:space:]](.*[[:space:]])?(deploy[[:space:]]+create-deployment|ssm[[:space:]]+send-command)([[:space:]]|$)'
   if [[ "$s" =~ $re_docker || "$s" =~ $re_buildx || "$s" =~ $re_compose1 || "$s" =~ $re_imgtools ]]; then
     block "수동 docker push 금지. 배포는 GitHub Actions(prod 브랜치 push)로 트리거 — nomacom-admin / nomacom-client 이미지는 .github/workflows/*-production.yml 이 빌드."
   fi
@@ -788,7 +804,7 @@ check_segment() { # $1 = 세그먼트(정리한 글)
     block "SSM 변경 차단. 시크릿 변경은 콘솔 또는 사용자 명시 승인 필요 (.claude/rules/ssm-paths.md)."
   fi
   if [[ "$s" =~ $re_deploy ]]; then
-    block "CodeDeploy 직접 배포 차단 — prod 브랜치 push 와 같은 배포입니다. nomacomfe-prod-push-check 뒤 사용자 명시 승인으로."
+    block "CodeDeploy 직접 배포 · SSM 원격 명령(send-command) 차단 — prod 서버를 바로 바꾸는 일입니다. nomacomfe-prod-push-check 뒤 사용자 명시 승인으로."
   fi
 }
 
@@ -836,21 +852,23 @@ judge_text() {
 ran_file() {
   local f="${1#./}" e re1 re2 re3 re4 re5 re6 nl=$'\n'
   [[ -n "$f" ]] || return 1
-  e=$(printf '%s' "$f" | sed 's#[][\.*^$+?(){}|]#\\&#g') || block "$FAIL_MSG"
+  # 경로가 아니라 이름으로 — 앞의 디렉터리는 어떤 글자든(변수 · cd 뒤 상대 경로). 같은 이름의 다른 파일이면 안전 쪽 오탐
+  e=$(printf '%s' "${f##*/}" | sed 's#[][\.*^$+?(){}|]#\\&#g') || block "$FAIL_MSG"
+  e="([^[:space:];&|()<>]*/)?${e}"
   # 옵션은 n 이 없는 짧은 옵션 · 긴 옵션만(bash -n = 문법 검사 — 실행하지 않는다)
   #   셸 이름 앞 경로(/bin/bash) · "$BASH" · 값을 받는 옵션(-o pipefail · -O extglob · -euo pipefail) · 리다이렉트(2>&1) · 파일 앞 $PWD/ · $(pwd)/ ·
   #   파일 바로 뒤 «>»(10회차 B1)
-  re1="(^|[[:space:];&|(!{])([^[:space:];&|()]*/)?(bash|sh|zsh|dash|ksh|source|\\\$BASH|\\\$\\{BASH\\})([[:space:]]+(-[a-mo-zA-Z]*[oO]([[:space:]]+[a-z]+)?|-[a-mo-zA-Z]+|--[a-z-]+|--|[0-9]*>&[0-9]+|&?>[^[:space:]]+))*[[:space:]]+(<[[:space:]]*)?(\\./|\\\$PWD/|\\\$\\{PWD\\}/|SUBST/)?${e}([[:space:];&|)<>]|\$)"
+  re1="(^|[[:space:];&|(!{])([^[:space:];&|()]*/)?(bash|sh|zsh|dash|ksh|source|\\\$BASH|\\\$\\{BASH\\})([[:space:]]+(-[a-mo-zA-Z]*[oO]([[:space:]]+[a-z]+)?|-[a-mo-zA-Z]+|--[a-z-]+|--|[0-9]*>&[0-9]+|&?>[^[:space:]]+))*[[:space:]]+(<[[:space:]]*)?${e}([[:space:];&|)<>]|\$)"
   # eval "$(cat f)" · bash -c "$(cat f)" — 그 파일을 읽어 셸로 돌린다
-  re6="(^|[[:space:]])cat[[:space:]]+(\\./)?${e}([[:space:];&|)]|\$)"
-  re5="(^|[;&|(!{${nl}])[[:space:]]*\\.[[:space:]]+(\\./)?${e}([[:space:];&|)]|\$)"
-  re2="(^|[[:space:];&|(!{])\\./${e}([[:space:];&|)]|\$)"
-  re3="(^|[;&|(!{${nl}])[[:space:]]*((then|do|else|exec|sudo|nohup|time|command|env|timeout|nice)([[:space:]]+[^[:space:]/;&|]+)*[[:space:]]+)*${e}([[:space:];&|)]|\$)"
+  re6="(^|[[:space:]])cat[[:space:]]+${e}([[:space:];&|)]|\$)"
+  re5="(^|[;&|(!${nl}]|\\{[[:space:]])[[:space:]]*\\.[[:space:]]+${e}([[:space:];&|)]|\$)"
+  re2="(^|[;&|(!${nl}]|\\{[[:space:]])[[:space:]]*((then|do|else|exec|sudo|nohup|time|command|env|timeout|nice)([[:space:]]+[^[:space:]/;&|]+)*[[:space:]]+)*([^[:space:];&|()<>]*/)${e#*\?}([[:space:];&|)<>]|\$)"
+  re3="(^|[;&|(!${nl}]|\\{[[:space:]])[[:space:]]*((then|do|else|exec|sudo|nohup|time|command|env|timeout|nice)([[:space:]]+[^[:space:]/;&|]+)*[[:space:]]+)*${e}([[:space:];&|)]|\$)"
   # 파일 | bash — bash 뒤에 스크립트 인자가 없을 때만(파일 | bash x.sh 의 표준 입력은 데이터 — 9회차 m1)
-  re4="(^|[[:space:]])(\\./)?${e}[[:space:]]*\\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh|zsh|dash|ksh)([[:space:]]+-[^[:space:]]+)*[[:space:]]*([;&|)${nl}]|\$)"
+  re4="(^|[[:space:]])${e}[[:space:]]*\\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh|zsh|dash|ksh)([[:space:]]+-[^[:space:]]+)*[[:space:]]*([;&|)${nl}]|\$)"
   [[ "$CLEAN" =~ $re1 || "$CLEAN" =~ $re2 || "$CLEAN" =~ $re4 || "$CLEAN" =~ $re5 ]] && return 0
   [[ "$CLEAN" =~ $re6 && "$CLEAN" =~ (^|[[:space:]])(eval|-[a-zA-Z]*c)[[:space:]]+SUBST ]] && return 0
-  [[ "$f" == */* && "$CLEAN" =~ $re3 ]]
+  [[ "$CLEAN" =~ $re3 ]]
 }
 
 # 명령 원문 하나를 판정한다 — 밖 글(데이터 heredoc 본문은 걷는다) · 셸 본문 · 인터프리터 본문 · 실행하는 파일의 본문을 각각 따로

@@ -119,8 +119,8 @@ m8-frontend 에서 미포팅: `notion-workflow.md` (nomacom 개발 워크플로�
 
 - `.claude/settings.json` — committed 권한 화이트리스트 + hook 등록. **`.claude/` 는 git 추적** (2026-09-02 전환 — `settings.local.json` 만 제외)
   - **PostToolUse (Edit|Write|MultiEdit)**: prettier 자동 포맷 (.vue/.ts/.tsx/.css 등)
-  - **PreToolUse (Bash)**: **prod push** / `gh api` prod ref 쓰기 / ref force 되감기 / force push / production workflow 실행(dispatch · `gh workflow run` — ci · design-system-publish 외) / `gh run rerun` / prod base PR / `aws deploy create-deployment` / `docker push` / hard reset / `aws ssm put|delete` 차단
-  - ⚠️ 훅 수정 시 **회귀 테스트 필수**: `.claude/hooks/guard-prod-push.test.sh` (2367판정 — 2026-10-05 구멍 · 오탐 수정 · 케이스 파일 guard-prod-push.cases.txt · fail-closed 6)
+  - **PreToolUse (Bash · Monitor)**: **prod push** / `gh api` prod ref 쓰기 / ref force 되감기 / force push / production workflow 실행(dispatch · `gh workflow run` — ci · design-system-publish 외) / `gh run rerun` / prod base PR / `aws deploy create-deployment` / `docker push` / hard reset / `aws ssm put|delete` 차단
+  - ⚠️ 훅 수정 시 **회귀 테스트 필수**: `.claude/hooks/guard-prod-push.test.sh` (2597판정 — 2026-10-05 구멍 · 오탐 수정 · 케이스 파일 guard-prod-push.cases.txt · fail-closed 8)
   - ⚠️ 알려진 오탐: 인터프리터 heredoc(`python3 - <<PY`) 본문은 «실행» 으로 본다 — 짝이 맞는 문자열 안 글자는 통과하지만(python · node 의 백틱 문자열도 글자 — 백틱이 명령인 것은 ruby · perl · php), 짝 없는 따옴표가 든 줄 · 따옴표 밖에 차단 대상 명령 글자를 쓰면 막힌다. 따옴표 없는 구분자(`<<PY`)면 `$(…)` · 백틱은 밖 셸이 실행하므로 명령이다(dev 판 훅은 더 넓게 막는다). 문서 편집은 Edit/Write 도구로, 긴 패치 스크립트는 파일로 써서 실행.
 - 차단된 명령은 `.claude/hooks/guard-prod-push.sh` 참조. 우회 필요 시 사용자 명시 승인 받기.
 
