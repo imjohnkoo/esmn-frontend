@@ -171,14 +171,18 @@ printf '#!/bin/sh\nexit 2\n' > "$FC/badawk/awk" && chmod +x "$FC/badawk/awk"
 mkdir -p "$FC/lateawk"
 for t in bash cat tr sed grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/lateawk/$t"; done
 printf '#!/bin/sh\n"%s" "$@"\nexit 2\n' "$(command -v awk)" > "$FC/lateawk/awk" && chmod +x "$FC/lateawk/awk"
+mkdir -p "$FC/latesed"
+for t in bash cat tr awk grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/latesed/$t"; done
+printf '#!/bin/sh\n"%s" "$@"\nexit 2\n' "$(command -v sed)" > "$FC/latesed/sed" && chmod +x "$FC/latesed/sed"
 fc() { # fc <이름> <PATH> — 정상 명령(git status)도 막혀야 한다
   local o; o=$(printf '%s' '{"tool_input":{"command":"git status"}}' | PATH="$2" "$BASH" "$HOOK" 2>/dev/null)
   if [[ "$o" == *'"deny"'* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); printf '  ⛔ fail-closed 아님: %s\n' "$1"; fi
 }
-echo "== fail-closed (jq 없음 · awk 실패 · awk 출력 뒤 실패) =="
+echo "== fail-closed (jq 없음 · awk 실패 · awk · sed 출력 뒤 실패) =="
 fc "jq 없음" "$FC/nojq"
 fc "awk 실패" "$FC/badawk"
 fc "awk 출력 뒤 실패" "$FC/lateawk"
+fc "sed 출력 뒤 실패(pipefail)" "$FC/latesed"
 
 echo
 printf 'pass=%d fail=%d\n' "$pass" "$fail"

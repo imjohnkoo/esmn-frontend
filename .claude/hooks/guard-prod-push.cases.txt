@@ -1,5 +1,3 @@
-# guard-prod-push.sh 판정 케이스 — guard-prod-push.test.sh 가 읽는다(2026-10-05 QA ⑥ 적대적 리뷰가 만든 케이스 · 누락 · 오탐 · 따옴표 회귀 · 입력 깨짐).
-# 형식: «=== <allow|block> <라벨>» 줄 다음 줄부터 다음 «===» 전까지가 명령(여러 줄 가능). 이 머리 주석은 첫 «===» 앞이라 버려진다 — 케이스 사이에 주석을 넣지 말 것(앞 명령에 붙는다).
 === block B01 @:prod
 git push origin @:prod
 === block B02 HEAD:heads/prod (git resolves heads/prod -> refs/heads/prod)
@@ -1083,8 +1081,6 @@ bash -c -x 'git push origin HEAD:prod'
 gh api graphql -f query='mutation { createCommitOnBranch(input: {branch: {repositoryNameWithOwner: "o/r", branchName: "prod"}, message: {headline: "x"}, expectedHeadOid: "abc", fileChanges: {additions: []}}) { commit { oid } } }'
 === block R5-c1-H12 REST rerun of run
 gh api -X POST repos/o/r/actions/runs/123/rerun
-=== block R5-c1-H13 git push --mirr abbreviated
-git push --mirr origin
 === block R5-c1-H14 git push origin "prod" with -- separator quoted
 git push origin -- "prod"
 === block R5-c1-H15 git push --repo origin prod (공백 꼴)
@@ -1157,8 +1153,6 @@ echo '{"sha": "abc"}' | gh api -X PATCH repos/o/r/git/refs/heads/prod --input -
 echo '{"base": "prod"}' | gh api -X PATCH repos/o/r/pulls/12 --input -
 === block R5-c2-J7 double-quoted pretty JSON
 echo "{\"ref\": \"refs/heads/prod\", \"sha\": \"abc\"}" | gh api repos/o/r/git/refs --input -
-=== block R5-c2-J8 dev force via pretty JSON (control: JSONFORCE)
-echo '{"sha": "abc", "force": true}' | gh api -X PATCH repos/o/r/git/refs/heads/dev --input -
 === block R5-c2-J9 rename branch dev -> prod via --input pretty
 echo '{"new_name": "prod"}' | gh api repos/o/r/branches/dev/rename --input -
 === block R5-c2-J10 contents PUT to prod via --input pretty
@@ -1272,10 +1266,6 @@ gh api repos/o/r/issues/12/comments --input - <<'EOF'
 EOF
 === allow R5-c4-N21 docker build with label push
 docker build -t nomacom-client:local --label stage=push-test .
-=== allow R5-c4-N22 docker exec git push dev in container
-docker exec -it web git push origin imjohnkoo/x
-=== allow R5-c4-N23 git push -o value prod quoted single
-git push origin imjohnkoo/x -o 'prod'
 === allow R5-c4-N24 git push with redirect file named prod.log
 git push origin imjohnkoo/x > prod.log 2>&1
 === allow R5-c4-N25 git push feature and echo glob in same segment via &&? no — via -o
@@ -1507,7 +1497,7 @@ git reset "--hard" HEAD~1
 git -C ../x push origin HEAD:prod
 === block R6-p1-P02 push prod with --no-verify after
 git push origin HEAD:prod --no-verify
-=== block R6-p1-P03 push with -u (변수 목적지는 못 본다 — 머리 주석)
+=== block R6-p1-P03 push with -u 와 리터럴 목적지
 git push -u origin HEAD:prod
 === block R6-p1-P04 git push --force-if-includes
 git push --force-if-includes origin dev
@@ -1537,8 +1527,6 @@ git push origin prod 2>/dev/null
 git push origin prod|tee log
 === block R6-p1-P17 git push origin prod&&echo
 git push origin prod&&echo ok
-=== block R6-p1-P18 git push origin HEAD:prod)
-(git push origin HEAD:prod)
 === block R6-p1-P19 git push origin "refs/heads/prod"
 git push origin "refs/heads/prod"
 === block R6-p1-P20 git push origin dev:refs/heads/prod with -q
@@ -1651,40 +1639,21 @@ ssh-keygen -l -f ~/.ssh/id_ed25519.pub && git commit -m "docs: git push origin p
 bash .claude/hooks/guard-prod-push.test.sh
 jq -c '.' x.json
 grep -c "docker push imjohnkoo/nomacom-client:prod" .claude/hooks/guard-prod-push.cases.txt
-=== allow R6-p2-W10 gh run watch then echo summary
-gh run watch 123 --exit-status
-echo "다음: gh workflow run client-production.yml 은 막힌다"
-=== block R6-p2-X01 docker build --push (buildx default builder)
-docker build --push -t imjohnkoo/nomacom-client:prod -f apps/client/Dockerfile .
 === block R6-p2-X02 docker image build --push
 docker image build --push -t imjohnkoo/nomacom-client:prod .
 === block R6-p2-X03 docker builder build --push
 docker builder build --push -t imjohnkoo/nomacom-client:prod .
 === block R6-p2-X04 docker build -o type=registry
 docker build -o type=registry -t imjohnkoo/nomacom-client:prod .
-=== allow R6-p2-X05 docker compose exec drizzle-kit push (not docker push)
-docker compose exec admin npx drizzle-kit push
 === allow R6-p2-X06 docker compose run git push feature (not docker push)
 docker compose run --rm tools git push origin imjohnkoo/x
-=== allow R6-p2-X07 gh workflow run --ref x ci.yml
-gh workflow run --ref imjohnkoo/x ci.yml
 === allow R6-p2-X08 gh workflow run --repo r ci.yml
 gh workflow run --repo imjohnkoo/nomacom-frontend ci.yml
-=== block R6-p2-X10 heredoc-written script run with bash -x relative
-cat > promote.sh <<'EOF'
-git push origin origin/dev:prod
-EOF
-bash -x promote.sh
 === block R6-p2-X11 heredoc-written script run with sh -e relative
 cat > promote.sh <<'EOF'
 git push origin origin/dev:prod
 EOF
 sh -e promote.sh
-=== block R6-p2-X12 cat heredoc pipe at line end then bash on next line
-cat <<'EOF' |
-git push origin HEAD:prod
-EOF
-bash
 === block R6-p2-X13 ssh heredoc remote push
 ssh build <<'EOF'
 cd repo && git push origin HEAD:prod
@@ -1806,9 +1775,6 @@ EOF
 gh pr view 12 --json number
 === allow R6-p3-Y40 gh api graphql query with variables -F and query file? (read) inline
 gh api graphql -F owner=o -F name=r -f query='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){defaultBranchRef{name}}}'
-=== block R6-p4-H01 gh run watch then promote with quoted refspec
-gh run watch 33599247862 --exit-status
-git push origin "origin/dev:prod"
 === block R6-p4-H02 ssh earlier line then quoted HEAD:prod
 ssh admin-ec2 'docker ps --format "{{.Names}}"'
 git push origin "HEAD:prod"
@@ -1853,14 +1819,9 @@ echo '{"ref": "refs/heads/prod", "sha": "abc"}' | gh api repos/o/r/git/refs --in
 === block R6-p4-H16 watch then gh api -X PATCH ref dev with quoted force JSON-ish field
 gh run watch 1
 gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc -F 'force=true'
-=== block R6-p5-I01 gh pr checks --watch then promote quoted (repo-normal checks command)
-gh pr checks 12 --watch --interval 30
-git push origin "origin/dev:prod"
 === block R6-p5-I02 vitest --watch word then quoted refspec
 yarn vitest run --watch
 git push origin "HEAD:prod"
-=== block R6-p5-I03 single line watch wrapper with unquoted git + quoted refspec
-watch -n 60 git push origin "HEAD:prod"
 === block R6-p5-I04 gh run watch then git commit then push quoted (3 lines)
 gh run watch 33599247862 --exit-status
 git commit --allow-empty -m "chore: retrigger"
@@ -1869,9 +1830,6 @@ git push origin "HEAD:prod"
 gh run watch 33599247862 --exit-status
 echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 git push origin "HEAD:prod"
-=== block R6-p5-I06 ssh post-deploy check then quoted delete prod
-ssh admin-ec2 'sudo docker ps'
-git push origin --delete "prod"
 === block R6-p5-I07 gh run watch then docker push quoted image
 gh run watch 1
 docker push "imjohnkoo/nomacom-client:prod"
@@ -1884,8 +1842,6 @@ aws ssm put-parameter --name "/nomacom/client/X" --value "y z" --overwrite
 === block R6-p5-I10 gh run watch then gh workflow run quoted production
 gh run watch 1
 gh workflow run "client-production.yml"
-=== block R6-p6-Z01 git reset quoted --hard
-git reset "--hard" HEAD~1
 === block R6-p6-Z02 git reset single-quoted --hard
 git reset '--hard'
 === block R6-p6-Z03 gh api quoted -f field on prod ref (implicit POST)
@@ -1896,8 +1852,6 @@ docker "push" imjohnkoo/nomacom-client:prod
 git -C "$WT" "push" origin "HEAD:prod"
 === block R6-p6-Z06 gh api quoted --method value
 gh api --method "PATCH" repos/o/r/git/refs/heads/prod -f sha=abc
-=== allow R6-p6-Z07 gh pr checks --watch alone
-gh pr checks 12 --watch --interval 30
 === allow R6-p6-Z08 gh run watch then git push feature quoted
 gh run watch 1 --exit-status
 git push -u origin "imjohnkoo/x"
@@ -2108,7 +2062,7 @@ echo a\
 === allow R7-m09b 줄 이음 앞이 공백이면 주석이다
 echo a \
 # git push origin HEAD:prod
-=== block R7-Y39 알고 두는 오탐(안전 쪽) — 데이터 heredoc 의 refs/heads/prod 글자 + 다른 gh api --input
+=== allow R7-Y39 데이터 heredoc 의 refs/heads/prod 글자 + 이슈 댓글 gh api --input(ref 엔드포인트가 아니다 — 8회차에 오탐 해소)
 git commit -F - <<'EOF'
 docs: refs/heads/prod 는 John 만 민다
 EOF
@@ -2117,3 +2071,357 @@ gh api repos/o/r/issues/1/comments --input comment.json
 git push --repo=origin prod
 === block R7-X21 gh api --method PATCH prod ref -F
 gh api --method PATCH repos/o/r/git/refs/heads/prod -F sha=abc
+=== block R8-P1-01 $'..\'..' commit msg, then PR heredoc body w/ apostrophe, then prod push, then later sq
+git commit -m $'fix(hook): don\'t swallow lines\n\nQA round 8'
+gh pr create --base dev --title "fix(hook)" --body-file - <<'EOF'
+## Summary
+- it's fixed
+EOF
+git push origin HEAD:prod
+gh pr view --json url -q '.url'
+=== block R8-P1-02 same, minimal
+echo $'it\'s'
+cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P1-03 $'..\'..' then reset --hard hidden
+echo $'it\'s'
+cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git reset --hard origin/dev
+echo 'done'
+=== block R8-P1-04 $'..\'..' then gh pr create --base prod hidden
+printf '%s\n' $'won\'t'
+git commit -F - <<'EOF'
+fix: can't
+EOF
+gh pr create --base prod --fill
+gh pr view --json url -q '.url'
+=== block R8-P1-06 while read eval loop fed by heredoc
+while read -r c; do eval "$c"; done <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P1-07 brace group piped to bash
+{ cat <<'EOF'; } | bash
+git push origin HEAD:prod
+EOF
+=== block R8-P1-08 subshell piped to bash
+(cat <<'EOF') | bash
+git push origin HEAD:prod
+EOF
+=== block R8-P1-09 backslash bash heredoc receiver
+\bash <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P1-10 quoted "$SHELL" heredoc receiver
+"$SHELL" -s <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P1-11 dot-source stdin
+. /dev/stdin <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P1-12 cat heredoc 2>&1 | bash
+cat <<'EOF' 2>&1 | bash
+git push origin HEAD:prod
+EOF
+=== block R8-P1-13 orca --text heredoc in $()
+orca terminal send --text "$(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)"
+=== block R8-P1-14 tmux send-keys heredoc in $()
+tmux send-keys -t main "$(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)" Enter
+=== block R8-P1-15 curl dispatch production workflow
+curl -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/nomacom-frontend/actions/workflows/client-production.yml/dispatches -d '{"ref":"dev"}'
+=== block R8-P1-16 gh api dispatch by workflow id
+gh api repos/imjohnkoo/nomacom-frontend/actions/workflows/123456789/dispatches -f ref=dev
+=== block R8-P1-17 curl rerun run
+curl -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/o/r/actions/runs/123/rerun
+=== block R8-P1-19 $SHELL -c reset --hard (dev blocks)
+$SHELL -c 'git reset --hard origin/dev'
+=== block R8-P1-20 parallel push (dev blocks)
+parallel 'git push origin {}' ::: prod
+=== block R8-P1-23 aws deploy create-deployment (direct prod deploy)
+aws deploy create-deployment --application-name nomacom-client --deployment-group-name prod --github-location repository=imjohnkoo/nomacom-frontend,commitId=abc
+=== allow R8-P1-24 node quoted heredoc template literal log mentioning docker push
+node - <<'JS'
+const img = "imjohnkoo/nomacom-client:prod";
+console.log(`next: docker push ${img} is done by CI`);
+JS
+=== allow R8-P1-25 gh api comment via -F body=@- heredoc mentioning database: prod
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments -F body=@- <<'EOF'
+배포 확인 — database: prod 연결 정상
+EOF
+=== allow R8-P1-26 gh api comment via -F body=@- heredoc mentioning refs/heads/prod
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments -F body=@- <<'EOF'
+dev → refs/heads/prod fast-forward 는 사용자 승인 뒤
+EOF
+=== allow R8-P1-27 git add . then commit heredoc
+git add . scripts/x.sh && git commit -F - <<'EOF'
+fix: x
+EOF
+=== allow R8-P1-28 write file then git add . file path
+cat > scripts/x.sh <<'EOF'
+git push origin prod
+EOF
+git add . scripts/x.sh
+=== block R8-P2-C1 control: no $'' line
+cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C2 $'' line, no later sq
+echo $'it\'s'
+cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+=== block R8-P2-C3 $'' line, body w/o apostrophe, later sq
+echo $'it\'s'
+cat > /tmp/n.md <<'EOF'
+hello
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C4 idiom 'it'$'\''s' then heredoc w/ apostrophe
+echo 'it'$'\''s ok'
+git commit -F - <<'EOF'
+fix: don't break
+EOF
+git push origin HEAD:prod
+gh pr view --json url -q '.url'
+=== block R8-P2-C5 commit $'..\n..' with apostrophe, PR heredoc, promote
+git commit -m $'fix(client): it\'s done\n\n- detail'
+git push -u origin imjohnkoo/x
+gh pr create --base dev --title "fix(client)" --body "$(cat <<'EOF'
+## Summary
+- the guide's images
+EOF
+)"
+git push origin imjohnkoo/x:prod
+echo 'ok'
+=== block R8-P2-C6 dq string with nested dq in ${//} then heredoc
+echo "${x//"/}"
+cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C7 heredoc delim with colon
+cat > /tmp/n.md <<'EOF:1'
+don't
+EOF:1
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C8 heredoc delim with bang
+cat > /tmp/n.md <<'END!'
+don't
+END!
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C9 $'' in same line before heredoc
+git commit -m $'fix: it\'s' -F - <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C10 $'' with \' in heredoc start line of different cmd
+printf $'a\'b\n' > /tmp/x; cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P3-01 bash -s 2>&1 before heredoc
+bash -s 2>&1 <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P3-02 ssh 2>&1 before heredoc (remote shell)
+ssh -T ec2-prod 2>&1 <<'EOF'
+cd /app/nomacom-frontend && git push origin HEAD:prod
+EOF
+=== block R8-P3-03 bash &> log before heredoc
+bash &>/tmp/qa.log <<'EOF'
+git reset --hard origin/dev
+EOF
+=== block R8-P3-04 bash > log 2>&1 before heredoc, then tail
+bash -x > /tmp/qa.log 2>&1 <<'EOF'
+docker push imjohnkoo/nomacom-client:prod
+EOF
+tail -5 /tmp/qa.log
+=== block R8-P3-05 control: bash heredoc then redirect after
+bash -s <<'EOF' > /tmp/qa.log 2>&1
+git push origin HEAD:prod
+EOF
+=== block R8-P3-06 sudo bash 2>&1
+sudo bash 2>&1 <<'EOF'
+aws ssm put-parameter --name /nomacom/client/X --value y --overwrite
+EOF
+=== block R8-P3-07 python 2>&1 heredoc with os.system unbalanced-free (documented gap?) control for interp kind lost
+python3 2>&1 - <<'PY'
+import os
+PY
+git push origin HEAD:prod
+=== block R8-P3-08 trap heredoc in $()
+trap "$(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)" EXIT
+=== block R8-P3-09 watch heredoc in $()
+watch -n 60 "$(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)"
+=== allow R8-P3-10 bash -n syntax check of written script (not executed)
+cat > /tmp/qa/promote.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -n /tmp/qa/promote.sh && echo syntax-ok
+=== block R8-P3-11 알고 두는 오탐(안전 쪽) — | ssh 뒤 따옴표 원격 명령은 읽지 못해 셸 본문으로 본다
+cat <<'EOF' | ssh ec2 'cat > /tmp/notes.md'
+배포 메모: git push origin HEAD:prod 는 사용자 승인 뒤
+EOF
+=== allow R8-P3-12 gh workflow run path form of ci
+gh workflow run .github/workflows/ci.yml --ref imjohnkoo/x
+=== block R8-P4-01 bash -s -- ${BR} heredoc (brace var after receiver)
+bash -s -- ${BR} <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P4-02 ssh ${HOST} heredoc
+ssh ${EC2_HOST} <<'EOF'
+cd /app/nomacom-frontend && git reset --hard origin/prod
+EOF
+=== block R8-P4-03 ssh -i ${KEY} user@${IP} 'bash -s' heredoc
+ssh -i ${KEY} ec2-user@${IP} 'bash -s' <<'EOF'
+docker push imjohnkoo/nomacom-client:prod
+EOF
+=== block R8-P4-04 control ssh "$HOST" heredoc
+ssh "${EC2_HOST}" <<'EOF'
+cd /app/nomacom-frontend && git reset --hard origin/prod
+EOF
+=== block R8-P4-05 bash with brace-expansion arg then heredoc
+bash -s {a,b} <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P4-06 python ${X} interp heredoc whose body has shell backtick (cmd executed by shell? no — quoted delim) -> control
+sh -s ${X} <<EOF
+$(git push origin HEAD:prod)
+EOF
+=== block R8-P5-01 ssh with long options (>256 chars before string) remote reset --hard
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -i ~/.ssh/nomacom-prod-admin.pem ec2-user@ec2-3-34-123-45.ap-northeast-2.compute.amazonaws.com 'cd /app/nomacom-frontend && git reset --hard origin/prod'
+=== block R8-P5-02 docker run long options then sh -c docker push (string > 256 after docker? no, sh -c is adjacent) control
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD":/w -w /w -e DOCKER_CONFIG=/w/.docker -e A=1 -e B=2 -e C=3 -e D=4 -e E=5 -e F=6 docker:27-cli sh -c 'docker push imjohnkoo/nomacom-client:prod'
+=== block R8-P5-03 bash -c with long option list before -c (> 256)
+bash --norc --noprofile -o pipefail -o errexit -o nounset -O extglob -O globstar -O nullglob -O dotglob -O failglob -O lastpipe -O inherit_errexit -O checkwinsize -O cdspell -O dirspell -O direxpand -O histappend -O cmdhist -O lithist -c 'git push origin HEAD:prod'
+=== block R8-P5-04 long line prefix before ssh on same line (window is tail of line)
+echo "$(date) ................................................................................................................................................................................................................................................." ; ssh ec2 'git push origin HEAD:prod'
+=== block R8-P5-05 kubectl exec long then sh -c
+kubectl --context arn:aws:eks:ap-northeast-2:059265294529:cluster/nomacom-prod-cluster-2026 --namespace nomacom-production-workloads exec -it deploy/nomacom-client-frontend-deployment-v2 --container nomacom-client-frontend -- sh -c 'git push origin HEAD:prod'
+=== block R8-P5b-01 ssh with long options (>256 chars before string) remote reset --hard
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o LogLevel=ERROR -o IdentitiesOnly=yes -i ~/.ssh/nomacom-prod-admin.pem ec2-user@ec2-3-34-123-45.ap-northeast-2.compute.amazonaws.com 'cd /app/nomacom-frontend && git reset --hard origin/prod'
+=== block R8-P5b-02 ssh long options then docker push remote
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o LogLevel=ERROR -o IdentitiesOnly=yes -i ~/.ssh/nomacom-prod-admin.pem ec2-user@ec2-3-34-123-45.ap-northeast-2.compute.amazonaws.com 'docker tag a b && docker push imjohnkoo/nomacom-client:prod'
+=== block R8-P6-01 ruby body: escaped apostrophe line before backtick command (intra-body neut)
+ruby <<'RB'
+puts 'it\'s'
+puts `git push origin HEAD:prod`
+puts 'x'
+RB
+=== block R8-P6-02 unquoted python heredoc: $(...) on a shell-unbalanced line (bash executes it while building the body)
+python3 - <<PY
+print('it\'s', "$(git push origin HEAD:prod)")
+PY
+=== block R8-P6-03 ssh with 120-char options then quoted command (wrapper window between 32 and 256)
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/nomacom-prod.pem ec2-user@ec2-3-34-1-2.compute.amazonaws.com 'git reset --hard origin/prod'
+=== allow R8-D01 wiki commit flow with heredoc msg mentioning prod push
+W="${NOMACOM_WIKI:-$HOME/dev/current-projects/nomacom-wiki}"
+git -C "$W" pull --rebase -q
+git -C "$W" add wiki/frontend/plans/2026-10-05-hook.md
+git -C "$W" commit -q -F - <<'EOF'
+docs(frontend): hook plan — git push origin HEAD:prod · gh workflow run client-production.yml 차단 정리
+
+it's the 8th QA round; don't merge before ack.
+EOF
+git -C "$W" push -q
+=== allow R8-D02 python patch of markdown with Korean + apostrophes + command text in strings
+python3 - <<'PY'
+from pathlib import Path
+p = Path("docs/x.md")
+s = p.read_text()
+s = s.replace("git push origin prod", "git push origin dev")  # don't touch others
+s = s.replace('it\'s', "it is")
+p.write_text(s)
+print("ok — 'prod' 언급 정리")
+PY
+=== allow R8-D03 PR create with heredoc body full of blocked-command text then view url
+gh pr create --base dev --title "fix(hook): QA ⑥ 8회차" --body "$(cat <<'EOF'
+## Summary
+- `git push origin HEAD:prod` · `git reset --hard` · `docker push x:prod` · `aws ssm put-parameter` 를 막는다
+- it's a hook; don't bypass
+
+## Test plan
+- [x] bash .claude/hooks/guard-prod-push.test.sh
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+gh pr view --json url -q '.url'
+=== allow R8-D04 ssh multi-line read-only check
+ssh -i ~/.ssh/nomacom.pem ec2-user@client-origin.esimmany.com "
+docker ps --format '{{.Names}} {{.Image}}'
+docker logs --tail 50 nomacom-client 2>&1 | grep -c ERROR
+"
+=== block R8-D05 ssh multi-line dq with reset --hard
+ssh ec2 "
+cd /app/nomacom-frontend
+git reset --hard origin/prod
+"
+=== allow R8-D06 weekly notify with message mentioning prod
+python3 "$NOMACOM_MANAGER/scripts/weekly-notify.py" --event wiki --msg "frontend: guard hook 8회차 — prod push 차단 유지"
+=== allow R8-D07 orca terminal send yarn dev
+orca terminal send --terminal client-dev --text "yarn workspace nomacom-client dev" --enter
+=== allow R8-D08 cat heredoc to file w/ unquoted delim containing $VAR and escaped backticks
+cat > /tmp/qa/note.md <<EOF
+# $USER 메모
+- \`git push origin HEAD:prod\` 는 사용자 승인 뒤
+EOF
+=== allow R8-D09 gh api PR review comment reply inline -f body with prod mention
+gh api repos/imjohnkoo/nomacom-frontend/pulls/12/comments/123/replies -f body="dev → prod 승격은 사용자 승인 뒤 — git push origin dev:prod 는 훅이 막는다"
+=== allow R8-D10 gh api comment via --input JSON file built by jq with body mentioning base: prod
+jq -n --arg b "PR base: prod 금지 — base 는 dev" '{body: $b}' > /tmp/qa/c.json
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments --input /tmp/qa/c.json
+=== allow R8-D11 node heredoc writing html with template literal and $(
+node - <<'JS'
+const fs = require('fs');
+const html = `<script>$(function(){ $('#a').text("it's ok"); });</script>`;
+fs.writeFileSync('/tmp/qa/a.html', html);
+JS
+=== allow R8-D12 git log grep and diff prod..dev summary
+git fetch -q origin && git log --oneline origin/prod..origin/dev | head -20 && git diff --stat origin/prod origin/dev -- apps/client | tail -3
+=== allow R8-D13 docker compose local db + psql
+docker compose -f docker-compose.local.yml up -d db && docker compose -f docker-compose.local.yml exec -T db psql -U postgres -c "select now()"
+=== allow R8-D14 gh run watch then gh run view log
+gh run watch 33599247862 --exit-status || gh run view 33599247862 --log-failed | tail -50
+=== allow R8-D15 finish-branch: push feature + PR + checks watch
+git push -u origin imjohnkoo/hook-prod-refspec 2>&1 | tail -3
+gh pr checks 12 --watch --fail-fast
+gh pr view 12 --json mergeable,mergeStateStatus -q '.mergeable + " " + .mergeStateStatus'
+=== block R8-M2a ruby 본문 — 이스케이프 따옴표 줄(짝 없음) 뒤 백틱 push(본문 정리를 빼면 다음 따옴표까지 삼켜진다)
+ruby <<'RB'
+puts 'it\'s'
+puts `git push origin HEAD:prod`
+puts 'x'
+RB
+=== block R8-M2b ruby 본문 — 따옴표 개수는 짝수 · 셸 기준 짝 없음(이스케이프 판정을 빼면 샌다)
+ruby <<'RB'
+x = 'a\'b\'c'
+puts `git push origin HEAD:prod`
+puts 'y'
+RB

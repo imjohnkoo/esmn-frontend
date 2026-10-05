@@ -118,7 +118,7 @@ jobs:
         run: bash .github/scripts/typecheck-gate.test.sh
 
       # 훅은 로컬 개발 안전장치라 CI 가 강제하지는 않지만, 판정 로직이 깨지면
-      # prod 차단이 조용히 사라지므로 여기서 함께 지킨다 (인라인 + 케이스 파일을 LF · CRLF 로 + fail-closed — 1704판정, 2026-10-05).
+      # prod 차단이 조용히 사라지므로 여기서 함께 지킨다 (인라인 + 케이스 파일을 LF · CRLF 로 + fail-closed — 1829판정, 2026-10-05).
       - name: guard 훅 회귀 테스트
         run: bash .claude/hooks/guard-prod-push.test.sh
 

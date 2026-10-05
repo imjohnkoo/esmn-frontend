@@ -44,6 +44,17 @@
 #    성능(macOS bash 5): 일상형 230–420KB 1–3.5초 · 따옴표 친 heredoc 2MB 0.5초 안 · 따옴표 없는 heredoc 의 한 줄 JSON 1.7MB 약 4초 ·
 #    $(…) 안 따옴표 없는 heredoc 1.9MB 약 8초 · python heredoc 1MB 약 18초 · 꾸민 입력(닫히지 않은 $( 3000개 27KB) 약 11초.
 #    기본 훅 제한(600초) 안이지만, 넘치면 Claude Code 는 판정 없이 진행한다(fail-open) — 큰 글은 파일로.
+# ⭐ 8회차(QA ⑥ blocker 2 · major 2 · minor 7): heredoc 받는 쪽 판정을 다시 넓혔다 — 7회차의 «<<» 앞 명령만 보던 판정이 2>&1 · &> · ${VAR} ·
+#    중괄호에서 셸 본문을 데이터로 놓친 퇴행. 지금: 같은 파이프라인 뒤가 셸이면 셸 · 받는 명령이 데이터 소비자(git · gh · cat · tee · jq …)면 데이터 ·
+#    받는 명령이 셸 · 인터프리터면 그것 · 그 밖에는 논리 줄 어디든 셸 낱말이면 셸(dev 판 넓이 — 본문은 따로 판정하니 따옴표가 새지 않는다).
+#    heredoc 처리기도 ANSI-C 문자열($ + 작은따옴표 · 안의 \' — 스캐너와 같게) · \bash · "$SHELL" · trap · watch · send-keys · --text 받는 쪽을 안다.
+#    따옴표 없는 구분자의 인터프리터 본문은 밖 셸이 $(…) · 백틱을 실행하니 명령으로도 본다 · python · node 본문의 백틱은 글자(ruby · perl · php 만 명령) ·
+#    따옴표 친 구분자는 따옴표 안 글자 전부(EOF:1 · END!). 래퍼 앞 글 창 1KB(긴 ssh 옵션) · $SHELL -c · parallel · push 목적지 자리표시({}) ·
+#    workflow dispatch 는 ci · design-system-publish 밖 전부(숫자 ID · curl 포함) · curl 의 dispatch · rerun · aws deploy create-deployment ·
+#    --input 판정은 ref · 머지 · PR · contents · graphql 엔드포인트만(이슈 댓글 본문 오탐) · «base» 왼쪽 경계(database:) · bash -n 은 실행 아님 ·
+#    «.» 실행은 명령 자리만(git add .) · 경로로 적은 workflow 이름. 테스트: sed 출력 뒤 실패(pipefail) · 인터프리터 본문 짝 맞추기 변이 지킴 · 중복 17건 정리.
+#    알고 두는 것: | ssh 뒤 따옴표 원격 명령('cat > f')은 읽지 못해 셸 본문으로(안전 쪽 오탐) · bash 5 만 받는 «EOF)» 닫는 줄(이 환경 zsh · bash 3.2 는
+#    문법 오류로 거부) · python -c · subprocess 문자열 안 명령(못 보는 길 — 위 5회차).
 set +e
 # 파이프라인 어느 단계가 실패해도 실패로(awk 가 일부만 내고 죽으면 통과시키지 않는다 — fail-closed)
 set -o pipefail
@@ -86,23 +97,57 @@ block() {
 #        written(쓰는 파일 \001 데이터 본문 \004)
 heredoc_split() {
   awk -v mode="$1" '
-  # 받는 쪽 — heredoc 을 먹는 명령만 본다: «<<» 앞 마지막 명령 경계 뒤 글 + 같은 명령의 뒤쪽(<<EOF bash -s) + 같은 파이프라인의 뒤 명령(| bash)
-  function isshell(t) { return t ~ /(^|[ \t\/!{])(bash|sh|zsh|dash|ksh|fish|ssh|eval|source)([ \t<]|$)/ }
+  # 받는 쪽 판정(8회차 — 좁게 보던 7회차 판정이 2>&1 · ${VAR} · 중괄호에서 셸 본문을 데이터로 놓쳤다): 본문은 이제 밖 글과 따로 판정하므로
+  #   넓게 봐도 따옴표가 새지 않는다. ① 같은 파이프라인 뒤가 셸 · 인터프리터면 그것 ② 받는 명령(리다이렉트 · ${…} · 중괄호를 걷고 sudo · env
+  #   접두를 건너뛴 첫 낱말)이 데이터 소비자(git · gh · cat · tee · jq …)면 데이터 ③ 받는 명령이 셸 · 인터프리터면 그것 ④ 그 밖에는 논리 줄
+  #   어디든 셸 낱말이 있으면 셸 본문(dev 판과 같은 넓이 — dev 보다 덜 막는 경우가 없게)
+  function isshell(t) { return t ~ /(^|[ \t\/!{])(bash|sh|zsh|dash|ksh|fish|ssh|eval|source|trap|watch|send-keys|\$SHELL|\$\{SHELL\}|--text)([ \t<=]|$)/ }
   function isinterp(t) { return t ~ /(^|[ \t\/!{])(python[0-9.]*|node|nodejs|deno|bun|ruby|perl|php|osascript)([ \t<]|$)/ }
-  function lastseg(t) { while (match(t, /[;&|(){}]/)) t = substr(t, RSTART + 1); return t }
-  # 0 셸 본문 · 1 데이터(따옴표 친 구분자) · 2 인터프리터 본문 · 3 데이터(따옴표 없는 구분자 — 안의 $(…) · 백틱은 밖 셸이 실행한다)
-  function kindof(pre, post, pq,   seg, p) {
-    seg = lastseg(pre); p = post
-    if (match(p, /[;&|()]/)) { seg = seg " " substr(p, 1, RSTART - 1); p = substr(p, RSTART) } else { seg = seg " " p; p = "" }
-    if (isshell(seg)) return 0
-    if (isinterp(seg)) return 2
-    while (substr(p, 1, 1) == "|" && substr(p, 2, 1) != "|") {
-      p = substr(p, 2)
-      if (match(p, /[;&|()]/)) { seg = substr(p, 1, RSTART - 1); p = substr(p, RSTART) } else { seg = p; p = "" }
-      if (seg !~ /[^ \t]/ && p == "") return 0     # 줄 끝 «|» — 받는 쪽이 본문 뒤 줄이라 알 수 없다(명령으로 본다)
-      if (isshell(seg)) return 0
-      if (isinterp(seg)) return 2
+  # 인터프리터 종류 — 2 백틱이 셸 명령인 언어(ruby · perl · php) · 4 그 밖(python · node … — 백틱은 글자)
+  function ik(t) { return (t ~ /(^|[ \t\/!{])(ruby|perl|php)([ \t<]|$)/) ? 2 : 4 }
+  # 리다이렉트(2>&1 · &> · >&2) · ${…} 는 명령 경계가 아니다
+  function nrm(t) { gsub(/[0-9]*>&[0-9]*-?|&>>?|<&[0-9]*-?/, " R ", t); gsub(/\$\{[^}]*\}/, " V ", t); return t }
+  function lastseg(t) {
+    gsub(/(^|[ \t])[{}]([ \t]|$)/, " ; ", t)      # 낱말로 선 중괄호만 묶음 경계({ cmd; }) — {a,b} 확장은 아니다
+    while (match(t, /[;&|()]/)) t = substr(t, RSTART + 1)
+    return t
+  }
+  # 받는 명령의 첫 낱말 — 대입 · ! · sudo/env/command/time/nice/nohup/exec 접두(그 옵션까지)는 건너뛴다 · 경로 · 앞 «\» 는 뗀다
+  function recv(seg,   a, n, k, w) {
+    n = split(seg, a, /[ \t]+/); k = 1
+    while (k <= n) {
+      w = a[k]
+      if (w == "" || w == "!" || w ~ /^[A-Za-z_][A-Za-z0-9_]*=/) { k++; continue }
+      sub(/^\\/, "", w); sub(/^.*\//, "", w)
+      if (w ~ /^(sudo|doas|env|command|time|nice|nohup|exec)$/) { k++; while (k <= n && a[k] ~ /^-/) k++; continue }
+      return w
     }
+    return ""
+  }
+  # 같은 파이프라인의 뒤 명령(| bash · } | bash · ) | bash · 2>&1 | bash) — 셸 0 · 인터프리터 2/4 · 없으면 -1. 줄 끝 «|» 는 셸로 본다(받는 쪽이 본문 뒤 줄)
+  function pipek(p,   q) {
+    while (match(p, /\|/)) {
+      if (substr(p, RSTART + 1, 1) == "|") { p = substr(p, RSTART + 2); continue }
+      p = substr(p, RSTART + 1); sub(/^&/, "", p)
+      q = p; if (match(q, /[;&|]/)) q = substr(q, 1, RSTART - 1)
+      if (q !~ /[^ \t]/ && p !~ /[;&|]/) return 0
+      if (isshell(q)) return 0
+      if (isinterp(q)) return ik(q)
+    }
+    return -1
+  }
+  # 0 셸 본문 · 1 데이터(따옴표 친 구분자) · 2 · 4 인터프리터 본문 · 3 데이터(따옴표 없는 구분자 — 안의 $(…) · 백틱은 밖 셸이 실행한다)
+  function kindof(pre, post, pq,   k, p1, w, all) {
+    pre = nrm(pre); post = nrm(post)
+    k = pipek(post); if (k >= 0) return k
+    p1 = post; if (match(p1, /[;&|()]/)) p1 = substr(p1, 1, RSTART - 1)
+    w = recv(lastseg(pre) " " p1)
+    if (w ~ /^(git|gh|cat|tee|jq|yq|psql|mysql|sqlite3|wc|grep|egrep|head|tail|sort|uniq|base64|xxd|pbcopy|diff|tr|cut|column|curl|openssl|gpg)$/) return pq ? 1 : 3
+    if (w == "." || isshell(w)) return 0
+    if (isinterp(w)) return ik(w)
+    all = pre " " post
+    if (isshell(all)) return 0
+    if (isinterp(all)) return ik(all)
     return pq ? 1 : 3
   }
   # heredoc 으로 쓰는 파일(cat > f <<EOF · cat <<EOF > f · tee f <<EOF) — 시작 줄의 «<<» 가 든 명령에서(따옴표는 벗긴다)
@@ -136,7 +181,8 @@ heredoc_split() {
     return q
   }
   # 인터프리터 본문 한 줄 — 셸 기준으로 짝이 안 맞으면 문자열을 Q 로 걷고 남은 따옴표 · 백틱을 지운다(글자는 남는다)
-  function neut(l) {
+  function neut(l, kd) {
+    if (kd == 4) gsub(/`[^`]*`/, " Q ", l)
     if ((index(l, SQ) || index(l, "\"") || index(l, "`")) && shopen(l)) {
       gsub(RE_DQS, " Q ", l); gsub(RE_SQS, " Q ", l); gsub(/["\047`]/, "", l)
     }
@@ -167,7 +213,7 @@ heredoc_split() {
   function dqline(l) { gsub(/"/, SQ, l); return l }
   function openq() { indoc = 1; kind = qk[hq]; delim = qd[hq]; dstrip = qs[hq]; nb = 0 }
   function closeq(   k, x) {
-    if (kind == 3 && mode == "text") { out("\""); for (k = 1; k <= nb; k++) out(dqline(rawl[k]) "\n"); out("\"\n") }
+    if ((kind == 3 || ((kind == 2 || kind == 4) && !qq[hq])) && mode == "text") { out("\""); for (k = 1; k <= nb; k++) out(dqline(rawl[k]) "\n"); out("\"\n") }
     if (kind == 1 || kind == 3) {
       if (mode == "bodies") for (k = 1; k <= nb; k++) printf "%s\n", rawl[k]
       if (mode == "written" && qf[hq] != "") {
@@ -177,7 +223,7 @@ heredoc_split() {
       }
     }
     if (kind == 0 && mode == "shell") { for (k = 1; k <= nb; k++) chunk(rawl[k]); printf "\004" }
-    if (kind == 2 && mode == "interp") { for (k = 1; k <= nb; k++) chunk(neut(rawl[k])); printf "\004" }
+    if ((kind == 2 || kind == 4) && mode == "interp") { for (k = 1; k <= nb; k++) chunk(neut(rawl[k], kind)); printf "\004" }
     nb = 0; hq++
     if (hq <= np) openq(); else { indoc = 0; np = 0; pv = "" }
   }
@@ -203,6 +249,12 @@ heredoc_split() {
     while (i <= n) {
       t = st[sp]
       if (t == "Q") { j = findch(line, i, n, "\047"); if (j == 0) { i = n + 1; break } if (sp > 1) sp--; i = j + 1; continue }
+      # ANSI-C 문자열($ + 작은따옴표) — 안의 백슬래시는 다음 글자를 이스케이프한다(스캐너와 같게 — 8회차 B1)
+      if (t == "A") {
+        j = findre(line, i, n, "[\\\\\047]"); if (j == 0) { i = n + 1; break }
+        if (substr(line, j, 1) == "\\") { i = j + 2; continue }
+        if (sp > 1) sp--; i = j + 1; continue
+      }
       if (t == "D") {
         j = findre(line, i, n, "[\\\\\"$`]"); if (j == 0) { i = n + 1; break }
         i = j; c = substr(line, i, 1)
@@ -216,9 +268,15 @@ heredoc_split() {
       if (j == 0) { addu(substr(line, i, 4096)); break }
       if (j > i) { addu(substr(line, i, j - i)); i = j }
       c = substr(line, i, 1)
-      if (c == "\\") { if (i == n) { cont = 1; addu(" "); i++; continue } addu(substr(line, i, 2)); i += 2; continue }
+      if (c == "\\") {
+        if (i == n) { cont = 1; addu(" "); i++; continue }
+        x = substr(line, i + 1, 1); addu(x ~ /[[:alnum:]_]/ ? x : substr(line, i, 2)); i += 2; continue   # \bash = bash
+      }
       if (c == "\047") { st[++sp] = "Q"; i++; continue }
-      if (c == "\"") { st[++sp] = "D"; i++; continue }
+      if (c == "\"") {
+        if (substr(line, i, 8) == "\"$SHELL\"" || substr(line, i, 10) == "\"${SHELL}\"") addu(" $SHELL ")   # "$SHELL" -s <<EOF
+        st[++sp] = "D"; i++; continue
+      }
       if (c == "`") { if (t == "B") { if (sp > 1) sp-- } else st[++sp] = "B"; addu(" "); i++; continue }
       if (c == "#") {
         p = (i == 1) ? pc : substr(line, i - 1, 1)
@@ -228,12 +286,12 @@ heredoc_split() {
       # «<(» · «>(» (프로세스 치환)의 괄호는 명령 경계가 아니다(bash <(cat <<EOF) 의 받는 쪽이 bash 로 보이게)
       if (c == "(") { if (t == "C") cd[sp]++; p = (i > 1) ? substr(line, i - 1, 1) : ""; addu((p == "<" || p == ">") ? " " : c); i++; continue }
       if (c == ")") {
-        # $(…) 가 닫히면 안쪽 글은 걷는다 — $(bash x.sh) 가 밖 명령의 받는 쪽으로 보이지 않게
-        if (t == "C") { if (cd[sp] == 0) { if (cu[sp] <= length(u)) u = substr(u, 1, cu[sp]); if (sp > 1) sp--; addu(" "); i++; continue } cd[sp]-- }
+        if (t == "C") { if (cd[sp] == 0) { if (sp > 1) sp--; addu(" "); i++; continue } cd[sp]-- }
         addu(c); i++; continue
       }
       if (c == "$") {
         if (substr(line, i, 3) == "$((") { j = findch(line, i, n, "))"); if (j) { addu(" ARITH "); i = j + 2; continue } }
+        if (substr(line, i, 2) == "$" SQ) { st[++sp] = "A"; i += 2; continue }
         if (substr(line, i, 2) == "$(") { st[++sp] = "C"; cd[sp] = 0; cu[sp] = length(u); addu(" "); i += 2; continue }
         addu(c); i++; continue
       }
@@ -241,7 +299,8 @@ heredoc_split() {
       if (substr(line, i, 3) == "<<<") { addu(" <<< "); i += 3; continue }
       if (substr(line, i, 2) == "<<") {
         rest = substr(line, i + 2, 512)
-        if (match(rest, /^-?[ \t]*\\?["\047]?[A-Za-z_][A-Za-z0-9_.-]*["\047]?/)) {
+        # 구분자 — 따옴표 친 것은 따옴표 안 글자 전부(EOF:1 · END!), 맨 것은 메타 글자 전까지
+        if (match(rest, /^-?[ \t]*(\047[^\047]+\047|"[^"]+"|\\?[A-Za-z0-9_][^ \t;&|<>()"\047\\$`]*)/)) {
           tok = substr(rest, 1, RLENGTH)
           d = tok; sub(/^-?[ \t]*\\?["\047]?/, "", d); sub(/["\047]$/, "", d)
           np++; qd[np] = d; qq[np] = (tok ~ /["\047\\]/); qs[np] = (tok ~ /^-/); qpre[np] = u; qoff[np] = length(pv)
@@ -254,7 +313,7 @@ heredoc_split() {
     out(line "\n")
     t = st[sp]
     # 논리 줄이 끝나야 본문이 시작된다 — 줄 이음 · 열린 따옴표면 다음 줄로 이어 간다(bash 와 같다 — 7회차 minor 2)
-    if (cont || t == "Q" || t == "D") {
+    if (cont || t == "Q" || t == "D" || t == "A") {
       carry = (u == "") ? " " : u
       cprev = cont ? substr(line, n - 1, 1) : " "; if (cprev == "") cprev = " "
     } else if (np) {
@@ -283,7 +342,7 @@ scan_shell() {
     return 0
   }
   # 앞 글의 끝 256자(out 은 이어 붙이는 비용을 줄이려 큰 조각 + 작은 조각 둘로 쌓는다)
-  function otail(a, b,   L) { if (length(b) >= 256) return b; L = length(a); return ((L > 256) ? substr(a, L - 255) : a) b }
+  function otail(a, b,   L) { if (length(b) >= 1024) return b; L = length(a); return ((L > 1024) ? substr(a, L - 1023) : a) b }
   # $(…) 의 짝 «)» — 안쪽 따옴표 · 백슬래시는 건너뛴다(따옴표 안의 «)» 로 일찍 닫히지 않게)
   function matchparen(s, p,   lvl, k, ch, n, j) {
     lvl = 0; n = length(s); k = p
@@ -304,15 +363,15 @@ scan_shell() {
     return n + 1
   }
   function quoted(buf, before, depth,   t, mid, r, gm, tail, L, j) {
-    # 앞 글은 끝 256자만 본다 — 따옴표마다 앞 글 전체에 정규식을 돌리면 큰 입력에서 제곱으로 느려진다
-    L = length(before); tail = (L > 256) ? substr(before, L - 255) : before
+    # 앞 글은 끝 1KB 만 본다 — 따옴표마다 앞 글 전체에 정규식을 돌리면 큰 입력에서 제곱으로 느려진다(긴 ssh 옵션 뒤 문자열 — 8회차 M1)
+    L = length(before); tail = (L > 1024) ? substr(before, L - 1023) : before
     # 래퍼 판정은 같은 줄에서만(앞 줄의 gh run watch · ssh 가 뒤 줄 따옴표를 숨기지 않게 — QA ⑥ 6회차 B1)
     while ((j = index(tail, "\n")) > 0) tail = substr(tail, j + 1)
     gsub(/\001/, " ", tail)   # 줄 이음 뒤 문자열(bash -c 다음 줄의 문자열 — 7회차 minor 1)
     # 문자열을 명령으로 받는 것 — bash/sh/fish -c(앞에 -o pipefail · -O extglob · --login · 묶음 옵션, 뒤에 -x · -- 가 껴도) · eval · trap ·
     #   watch · flock/su/npx/script … -c · env -S · tmux · ssh <호스트> · git rebase -x/--exec · git submodule foreach ·
     #   orca … --text(다른 터미널에 쳐 넣는다). 따로 뽑아 다시 본다(5단까지)
-    if (depth < 6 && buf ~ /[[:space:]]/ && tail ~ /(^|[[:space:];&|(!{\/])((bash|sh|zsh|dash|ksh|fish)([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-[[:alnum:]]*c[[:alnum:]]*([[:space:]]+-[^[:space:];&|]*)*|eval|trap|watch([[:space:]]+[^[:space:];&|]+)*|(flock|su|npx|script)([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-c|env([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-S|tmux([[:space:]]+[^[:space:];&|]+)*|ssh([[:space:]]+[^[:space:];&|]+)+|git([[:space:]]+[^[:space:];&|]+)*[[:space:]]+(-x|--exec|foreach)|orca([[:space:]]+[^[:space:];&|]+)*[[:space:]]+--text=?|(bash|sh|zsh|dash|ksh)([[:space:]]+[^[:space:];&|]+)*[[:space:]]*<<<)[[:space:]]*$/) {
+    if (depth < 6 && buf ~ /[[:space:]]/ && tail ~ /(^|[[:space:];&|(!{\/])((bash|sh|zsh|dash|ksh|fish|\$SHELL|\$\{SHELL\})([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-[[:alnum:]]*c[[:alnum:]]*([[:space:]]+-[^[:space:];&|]*)*|eval|trap|watch([[:space:]]+[^[:space:];&|]+)*|(flock|su|npx|script)([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-c|env([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-S|tmux([[:space:]]+[^[:space:];&|]+)*|parallel([[:space:]]+[^[:space:];&|]+)*|ssh([[:space:]]+[^[:space:];&|]+)+|git([[:space:]]+[^[:space:];&|]+)*[[:space:]]+(-x|--exec|foreach)|orca([[:space:]]+[^[:space:];&|]+)*[[:space:]]+--text=?|(bash|sh|zsh|dash|ksh)([[:space:]]+[^[:space:];&|]+)*[[:space:]]*<<<)[[:space:]]*$/) {
       r = scan(buf, depth + 1); INNERS = INNERS "\n" r
       return " SUBST "
     }
@@ -327,7 +386,7 @@ scan_shell() {
     if (buf ~ /(createPullRequest|updatePullRequest)/ && buf ~ /(baseRefName|base)[^[:alnum:]]*(refs\/heads\/)?prod([^[:alnum:]_-]|$)/) gm = gm " GQLPRBASE"
     if (buf ~ /force"?[[:space:]]*:[[:space:]]*true/) gm = gm " JSONFORCE"
     # 공백 든 JSON · jq 식 안의 prod ref(--input 판정용 — 따옴표 문자열은 Q 로 걷혀 글자가 안 보인다)
-    if (buf ~ /refs\/heads\/prod([^[:alnum:]_.-]|$)/ || buf ~ /(ref|base|branch|new_name)"?[[:space:]]*[:=][[:space:]]*"?(refs\/heads\/)?prod([^[:alnum:]_.-]|$)/) gm = gm " PRODREF"
+    if (buf ~ /refs\/heads\/prod([^[:alnum:]_.-]|$)/ || buf ~ /(^|[^[:alnum:]_])(ref|base|branch|new_name)"?[[:space:]]*[:=][[:space:]]*"?(refs\/heads\/)?prod([^[:alnum:]_.-]|$)/) gm = gm " PRODREF"
     mid = (tail ~ /[^[:space:]]$/)
     # 한 단어는 따옴표만 벗긴다(refspec · 브랜치 이름) — 셸 구분 글자(괄호 · ; & | < > 백틱)가 든 것은 값(쿼리 · JSON)이라 Q 로
     #   1KB 넘는 한 단어는 refspec · 이름일 수 없다 — Q 로(큰 입력에서 뒤 정규식이 느려지지 않게)
@@ -438,7 +497,11 @@ scan_shell() {
     }
     return out op
   }
-  BEGIN { RS = "\003" }
+  BEGIN {
+    RS = "\003"; SQ = sprintf("%c", 39)
+    RE_DQS = "\"([^\"\\\\]|\\\\.)*\""
+    RE_SQS = SQ "([^" SQ "\\\\]|\\\\.)*" SQ
+  }
   { ALL = ALL (NR > 1 ? RS : "") $0 }
   END { INNERS = ""; RES = scan(ALL, 0); gsub(/\001/, " ", RES); gsub(/\001/, " ", INNERS); printf "%s\n%s\n", RES, INNERS }
   '
@@ -470,6 +533,10 @@ check_git_push() { # $1 = «git push» 뒤 인자(스캐너가 정리한 글)
   if [[ "$args" =~ $re_many ]]; then
     block "git push --mirror / --all 차단 — prod 를 포함한 여러 ref 를 한꺼번에 밉니다. 필요한 브랜치만 이름으로 push 하세요."
   fi
+  # 자리표시 목적지({} · {1} — xargs -I · parallel · find -exec)는 판정할 수 없다(8회차 M1)
+  if [[ "$args" == *"{}"* || "$args" =~ \{[0-9]+\} ]]; then
+    block "git push 목적지가 자리표시({})라 판정할 수 없습니다 — 브랜치를 이름으로 적어 push 하세요."
+  fi
   if [[ "$args" == *"*"* ]]; then
     block "글롭 refspec(*) push 차단 — prod 까지 함께 밀 수 있습니다. 필요한 브랜치만 이름으로 push 하세요."
   fi
@@ -493,9 +560,12 @@ check_git_push() { # $1 = «git push» 뒤 인자(스캐너가 정리한 글)
 check_gh_api() { # $1 = «gh api» 부터 세그먼트 끝까지(정리한 글)
   local s=" $1 " low
   low=$(printf '%s' "$s" | tr 'A-Z' 'a-z')
-  # production workflow 수동 실행(dispatch) — 그 ref 가 prod 서버에 그대로 배포된다
-  if [[ "$low" =~ /actions/workflows/[^[:space:]]*production[^[:space:]]*/dispatches ]]; then
-    block "production workflow 수동 실행(dispatch) 차단 — 그 ref 가 prod 서버에 바로 배포됩니다. prod 브랜치 승격 경로(nomacomfe-prod-push-check)로."
+  # workflow 수동 실행(dispatch) — ci · design-system-publish 밖(production · 숫자 ID · 변수)은 막는다(gh workflow run 과 같은 규칙 — 8회차 minor 1)
+  if [[ "$low" =~ /actions/workflows/([^/[:space:]]+)/dispatches ]]; then
+    case "${BASH_REMATCH[1]}" in
+      ci|ci.yml|design-system-publish|design-system-publish.yml) : ;;
+      *) block "workflow 수동 실행(dispatch) 차단 — production workflow 는 그 ref 를 prod 서버에 바로 배포합니다(이름 · ID 로 가릴 수 없어 ci · design-system-publish 외 전부). prod 브랜치 승격 경로(nomacomfe-prod-push-check)로." ;;
+    esac
   fi
   # workflow run · job 재실행(REST) — gh run rerun 과 같다(production run 재실행 = 재배포)
   if [[ "$low" =~ /actions/(runs|jobs)/[^[:space:]/]+/(rerun|rerun-failed-jobs)([^[:alnum:]_-]|$) ]]; then
@@ -552,7 +622,9 @@ check_segment() { # $1 = 세그먼트(정리한 글)
   # --- gh api · gh pr · gh workflow (세그먼트 어디든) ---
   if [[ "$s" =~ (^|[[:space:]/!{])gh[[:space:]]+api([[:space:]].*)?$ ]]; then
     check_gh_api "gh api${BASH_REMATCH[2]}"
-    [[ "$s" =~ [[:space:]]--input([[:space:]=]|$) || "$s" =~ [[:space:]](-[fF]|--field|--raw-field)([[:space:]]*|=)[a-zA-Z_]+=@ ]] && HAS_INPUT_API=1
+    # 표준 입력 · 파일로 본문을 넘기는 ref · 머지 · PR · 파일 커밋(contents) · graphql 호출만(이슈 댓글 -F body=@- 본문의 refs/heads/prod 글자로 막지 않게 — 8회차 minor 4)
+    [[ "$s" =~ (/git/|/branches|/merges|/merge-upstream|/pulls|/contents/|[[:space:]/]graphql([[:space:]]|$)) ]] &&
+      [[ "$s" =~ [[:space:]]--input([[:space:]=]|$) || "$s" =~ [[:space:]](-[fF]|--field|--raw-field)([[:space:]]*|=)[a-zA-Z_]+=@ ]] && HAS_INPUT_API=1
     [[ "$s" =~ [[:space:]/]graphql([[:space:]]|$) ]] && HAS_GRAPHQL_API=1
     # 변수 · 치환에 담은 쿼리(-f query="$QUERY") — 같은 명령 글 어디든 mutation 이 보이면 막는다(7회차 minor 6)
     [[ "$s" =~ [[:space:]/]graphql([[:space:]]|$) && "$s" =~ query=(\$|SUBST) ]] && HAS_GRAPHQL_VAR=1
@@ -577,7 +649,7 @@ check_segment() { # $1 = 세그먼트(정리한 글)
         --ref|-r|--repo|-R|--field|-f|--raw-field|-F|--json) skipnext=1; continue ;;
         -*) continue ;;
       esac
-      wf="$tok"; break
+      wf="${tok##*/}"; break   # 경로로 적어도 파일 이름으로(.github/workflows/ci.yml)
     done
     case "$wf" in
       ci|ci.yml|design-system-publish|design-system-publish.yml) : ;;
@@ -588,7 +660,8 @@ check_segment() { # $1 = 세그먼트(정리한 글)
   # curl · wget · http 로 GitHub API 를 직접 불러 ref 를 바꾸기(gh api 와 같은 일) — 조회(GET)는 두고, 쓰는 메서드 · 본문을 줄 때만
   #   (curl -X/--request · -d/--data* · -F/--form · -T · --json · wget --method · --post-data · httpie 메서드 낱말 — 7회차 minor 5)
   if [[ "$s" =~ (^|[[:space:]/!{])(curl|wget|http|https)[[:space:]] && "$s" == *api.github.com* ]] &&
-    [[ "$s" =~ refs/heads/prod([^[:alnum:]_.-]|$) || "$s" =~ /branches/prod(/|[^[:alnum:]_.-]|$) || "$s" =~ /merges([^[:alnum:]_-]|$) || "$s" == *" PRODREF"* ]]; then
+    [[ "$s" =~ refs/heads/prod([^[:alnum:]_.-]|$) || "$s" =~ /branches/prod(/|[^[:alnum:]_.-]|$) || "$s" =~ /merges([^[:alnum:]_-]|$) || "$s" == *" PRODREF"* ||
+      "$s" =~ /actions/workflows/[^/[:space:]]+/dispatches || "$s" =~ /actions/(runs|jobs)/[^[:space:]/]+/(rerun|rerun-failed-jobs)([^[:alnum:]_-]|$) ]]; then
     local low
     low=$(printf '%s' "$s" | tr 'A-Z' 'a-z')
     if [[ "$low" =~ (-x|--request|--method)[[:space:]=]*q?(patch|post|put|delete) ||
@@ -608,6 +681,8 @@ check_segment() { # $1 = 세그먼트(정리한 글)
   local re_buildx='(^|[[:space:]/!{])docker[[:space:]](.*[[:space:]])?(buildx|builder|build)[[:space:]](.*[[:space:],=])?(--push|type=registry|push=true)([[:space:],=]|$)'
   local re_reset='(^|[[:space:]/!{])git[[:space:]]+reset([[:space:]].*)?[[:space:]]Q?--(ha|har|hard)([[:space:]]|$)'
   local re_ssm='(^|[[:space:]/!{])aws[[:space:]](.*[[:space:]])?ssm[[:space:]]+(put-parameter|delete-parameter|delete-parameters)([[:space:]]|$)'
+  # CodeDeploy 직접 배포 — prod 브랜치 push 와 같은 일(8회차 minor 7)
+  local re_deploy='(^|[[:space:]/!{])aws[[:space:]](.*[[:space:]])?deploy[[:space:]]+create-deployment([[:space:]]|$)'
   if [[ "$s" =~ $re_docker || "$s" =~ $re_buildx || "$s" =~ $re_compose1 || "$s" =~ $re_imgtools ]]; then
     block "수동 docker push 금지. 배포는 GitHub Actions(prod 브랜치 push)로 트리거 — nomacom-admin / nomacom-client 이미지는 .github/workflows/*-production.yml 이 빌드."
   fi
@@ -616,6 +691,9 @@ check_segment() { # $1 = 세그먼트(정리한 글)
   fi
   if [[ "$s" =~ $re_ssm ]]; then
     block "SSM 변경 차단. 시크릿 변경은 콘솔 또는 사용자 명시 승인 필요 (.claude/rules/ssm-paths.md)."
+  fi
+  if [[ "$s" =~ $re_deploy ]]; then
+    block "CodeDeploy 직접 배포 차단 — prod 브랜치 push 와 같은 배포입니다. nomacomfe-prod-push-check 뒤 사용자 명시 승인으로."
   fi
 }
 
@@ -657,14 +735,16 @@ judge_text() {
 # heredoc 으로 쓴 파일 $1 을 정리한 글에서 실행하는가 — bash|sh|zsh|dash|ksh|source|. [옵션] [<] 파일 · ./파일 · 경로 든 파일을 명령 자리에서 ·
 #   파일 | sh. 그 파일일 때만 본문을 명령으로 본다(git add . · bash <다른 스크립트> 가 모든 데이터 heredoc 을 명령으로 만들던 오탐 — 7회차 M1)
 ran_file() {
-  local f="${1#./}" e re1 re2 re3 re4 nl=$'\n'
+  local f="${1#./}" e re1 re2 re3 re4 re5 nl=$'\n'
   [[ -n "$f" ]] || return 1
   e=$(printf '%s' "$f" | sed 's#[][\.*^$+?(){}|]#\\&#g') || block "$FAIL_MSG"
-  re1="(^|[[:space:];&|(!{])(bash|sh|zsh|dash|ksh|source|\\.)([[:space:]]+-[^[:space:]]+)*[[:space:]]+(<[[:space:]]*)?(\\./)?${e}([[:space:];&|)]|\$)"
+  # 옵션은 n 이 없는 짧은 옵션 · 긴 옵션만(bash -n = 문법 검사 — 실행하지 않는다)
+  re1="(^|[[:space:];&|(!{])(bash|sh|zsh|dash|ksh|source)([[:space:]]+(-[a-mo-zA-Z]+|--[a-z-]+))*[[:space:]]+(<[[:space:]]*)?(\\./)?${e}([[:space:];&|)]|\$)"
+  re5="(^|[;&|(!{${nl}])[[:space:]]*\\.[[:space:]]+(\\./)?${e}([[:space:];&|)]|\$)"
   re2="(^|[[:space:];&|(!{])\\./${e}([[:space:];&|)]|\$)"
   re3="(^|[;&|(!{${nl}])[[:space:]]*((then|do|else|exec|sudo|nohup|time|command)[[:space:]]+)*${e}([[:space:];&|)]|\$)"
   re4="(^|[[:space:]])(\\./)?${e}[[:space:]]*\\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh|zsh|dash|ksh)([[:space:]]|\$)"
-  [[ "$CLEAN" =~ $re1 || "$CLEAN" =~ $re2 || "$CLEAN" =~ $re4 ]] && return 0
+  [[ "$CLEAN" =~ $re1 || "$CLEAN" =~ $re2 || "$CLEAN" =~ $re4 || "$CLEAN" =~ $re5 ]] && return 0
   [[ "$f" == */* && "$CLEAN" =~ $re3 ]]
 }
 
@@ -702,7 +782,7 @@ judge_cmd "$cmd" 0
 flat=$(printf '%s %s' "$CLEAN" "$BODIES" | tr '\r\n\t' '   ')
 # 표준 입력 · heredoc 으로 JSON 을 넘기는 gh api(--input) — 정리한 글 어디든 prod ref 가 보이면 막는다
 if (( HAS_INPUT_API )) &&
-  [[ "$flat" == *" PRODREF"* || "$flat" =~ refs/heads/prod([^[:alnum:]_.-]|$) || "$flat" =~ \"?(ref|base|branch|new_name)\"?[[:space:]]*:[[:space:]]*\"?(refs/heads/)?prod([^[:alnum:]_.-]|$) ]]; then
+  [[ "$flat" == *" PRODREF"* || "$flat" =~ refs/heads/prod([^[:alnum:]_.-]|$) || "$flat" =~ (^|[^[:alnum:]_])\"?(ref|base|branch|new_name)\"?[[:space:]]*:[[:space:]]*\"?(refs/heads/)?prod([^[:alnum:]_.-]|$) ]]; then
   block "gh api --input 으로 prod ref 변경 차단 — git push 와 동등한 배포 트리거입니다. 사용자 명시 승인 필요."
 fi
 # 표준 입력 · heredoc 으로 넘긴 JSON 의 force(ref 되감기 — echo '{"sha":"…","force":true}' | gh api -X PATCH …/refs/heads/x --input -)
