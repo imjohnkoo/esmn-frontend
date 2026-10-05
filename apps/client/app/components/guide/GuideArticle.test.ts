@@ -9,6 +9,17 @@ import { guidePlainText } from '~/content/guide/inline'
 import { IOS_GUIDE } from '~/content/guide/ios'
 import type { GuideContent } from '~/content/guide/types'
 import { SMARTSTORE_URL, SUPPORT_KAKAO_URL } from '~/content/support'
+import {
+  ArrowPathIcon,
+  DevicePhoneMobileIcon,
+  ExclamationTriangleIcon,
+  HomeIcon,
+  InformationCircleIcon,
+  LightBulbIcon,
+  PowerIcon,
+  WifiIcon,
+} from '@heroicons/vue/24/outline'
+import { readFileSync } from 'node:fs'
 import GuideArticle from './GuideArticle.vue'
 import GuideText from './GuideText.vue'
 
@@ -207,6 +218,52 @@ describe.each([
     expect(got.filter((t) => t === 'warn').length).toBeGreaterThanOrEqual(2)
   })
 
+  it('아이콘 짝 — 안내 박스(경고 = 삼각 느낌표 · 참고 = 동그라미 i · 팁 = 전구 · 귀국 = 집) · 확인 카드(인터넷 = Wi-Fi 등)', () => {
+    const svg = (c: unknown) =>
+      mount(c as never)
+        .find('svg')
+        .html()
+        .replace(/\s(class|aria-hidden|data-v-[\w-]+)="[^"]*"/g, '')
+    const NOTE = {
+      warn: ExclamationTriangleIcon,
+      info: InformationCircleIcon,
+      tip: LightBulbIcon,
+      home: HomeIcon,
+    } as const
+    for (const n of w.findAll('.g-note')) {
+      const tone = n
+        .classes()
+        .find((c) => c.startsWith('g-note--'))!
+        .slice(8) as keyof typeof NOTE
+      expect(
+        n
+          .find('svg')
+          .html()
+          .replace(/\s(class|aria-hidden|data-v-[\w-]+)="[^"]*"/g, ''),
+        tone,
+      ).toBe(svg(NOTE[tone]))
+    }
+    const CHECK = {
+      wifi: WifiIcon,
+      update: ArrowPathIcon,
+      device: DevicePhoneMobileIcon,
+      clean: PowerIcon,
+    } as const
+    const tiles = w.findAll('.g-check__tile')
+    expect(tiles).toHaveLength(content.checks.items.length)
+    content.checks.items.forEach((c, i) =>
+      expect(
+        tiles[i]!.find('svg')
+          .html()
+          .replace(/\s(class|aria-hidden|data-v-[\w-]+)="[^"]*"/g, ''),
+        c.title,
+      ).toBe(svg(CHECK[c.icon])),
+    )
+    expect(
+      content.checks.items.map((c) => [c.icon, c.title.includes('인터넷') ? 'net' : ''])[0],
+    ).toEqual(['wifi', 'net'])
+  })
+
   it('머리 안내 줄(빨간 테두리 = 누를 곳) · 단계 번호 화면낭독 글자 «N번.» · 새 창 링크 안내', () => {
     expect(w.find('.g-hero__hint').text()).toBe('화면의 빨간 테두리가 누를 곳이에요.')
     const first = w.find('ol.g-steps .g-step__num')
@@ -251,5 +308,36 @@ describe('GuideText — 글자는 원문 그대로, 이름 · 경로 뒤 조사�
     expect(ui.element.parentElement!.textContent).toBe('eSIM 추가를')
     const segs = w.findAll('.g-path > .g-nw').map((s) => s.text())
     expect(segs).toEqual(['설정', '셀룰러에서'])
+  })
+})
+
+describe('화면 스타일 고정(spec ⑤ · D-6 — happy-dom 은 컴포넌트 CSS 를 적용하지 않아 소스로 본다)', () => {
+  const css = (f: string) =>
+    readFileSync(`${process.cwd()}/app/components/guide/${f}`, 'utf8').split('<style scoped>')[1] ?? ''
+  const rule = (f: string, sel: string) =>
+    css(f).match(
+      new RegExp(`(^|\\n)${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`),
+    )?.[2] ?? ''
+  it('줄바꿈 금지 묶음 · 이미지 창 폭 · 이미지가 창 폭을 채움', () => {
+    expect(rule('GuideText.vue', '.g-nw')).toMatch(/white-space:\s*nowrap/)
+    expect(rule('GuideShot.vue', '.g-shot')).toMatch(/max-width:\s*calc\(368px \+ 10px\)/)
+    expect(rule('GuideShot.vue', '.g-shot')).toMatch(/width:\s*100%/)
+    expect(rule('GuideShot.vue', '.g-shot__img')).toMatch(/width:\s*100%/)
+  })
+  it('가이드 화면 어디에도 숨김(display:none · visibility:hidden · 높이 0 · max-height) 규칙이 없다 — 문제 해결은 전부 펼침', () => {
+    for (const f of [
+      'GuideArticle.vue',
+      'GuideSteps.vue',
+      'GuideNote.vue',
+      'GuideText.vue',
+      'GuideShot.vue',
+      'GuideContact.vue',
+      'GuideFlow.vue',
+      'GuideStatusBar.vue',
+    ]) {
+      expect(css(f), f).not.toMatch(
+        /display:\s*none|visibility:\s*hidden|max-height|height:\s*0[^.\d]/,
+      )
+    }
   })
 })
