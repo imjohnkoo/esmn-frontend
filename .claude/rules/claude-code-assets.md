@@ -27,8 +27,8 @@
   - `git -C <path> push` 같은 **전역 옵션 삽입**도 정규화 후 판정 (Orca 워크트리 상시 사용).
   - heredoc 본문은 «데이터» 라 판정에서 제외 (커밋 메시지 안의 명령 예시로 막히지 않게).
   - jq 부재 시 **fail-closed** — 안전장치가 조용히 사라지는 것보다 시끄럽게 막힌다.
-  - ⭐ **2026-10-04 구멍 수정**: 목적지가 «refs/heads/» 형태 · 따옴표 · «+» 인 prod refspec, «+refspec» · «-fu» 묶음 force, --mirror · --all · 글롭 refspec, gh api 의 필드 전달(-X 없이 POST) · 브랜치 rename · graphql ref 변경, prod base PR(gh pr create/edit) 를 막는다. 변수 치환 · 원격 설정(upstream) · gh pr merge 로 prod 를 움직이는 길은 여전히 못 본다 — 실수 방지용이지 악의적 우회 방어선이 아니다.
-  - ⚠️ **완화·강화 시 회귀 테스트 필수**: `.claude/hooks/guard-prod-push.test.sh` (ALLOW 32 / BLOCK 35, 67케이스)
+  - ⭐ **2026-10-05 구멍 · 오탐 수정**(QA ⑥ 두 회차): 판정은 «명령 자리»(세그먼트 첫 명령 — 환경 변수 · sudo · env 등을 걷은 뒤)에서만 — grep · echo · commit -m 인자 안 글자로 막지 않는다. 줄바꿈도 명령 경계 · $(…) · 백틱 안쪽은 따로 본다 · bash -c · eval 은 안쪽을 다시 본다. 인자에서 공백이 든 따옴표 문자열은 빼고 한 단어 따옴표는 벗긴다. 막는 것: 목적지 bare prod · heads/prod · refs/heads/prod(따옴표 · + · 리다이렉트), force 3형태(--force · -f 묶음 · +refspec), --mirror · --all · 글롭, -c remote.*.push, xargs push, gh api 쓰기(메서드 대소문자 무관 · 필드 -f/-F 붙여 쓰기 포함 · --input) 대상 prod ref · ref=/new_name=/base= prod · branches/prod · production workflow dispatch, gh pr create/new/edit --base prod, gh workflow run *-production, graphql ref 변경 · 머지 mutation 전부(refId 로는 대상을 못 가린다). 여전히 못 보는 길: 변수에 담은 목적지 · upstream 설정 · gh pr merge · ID 로 부르는 workflow — 실수 방지용이지 악의적 우회 방어선이 아니다.
+  - ⚠️ **완화·강화 시 회귀 테스트 필수**: `.claude/hooks/guard-prod-push.test.sh` (인라인 ALLOW 31 · BLOCK 36 + 케이스 파일 `guard-prod-push.cases.txt` ALLOW 51 · BLOCK 66 를 LF · CRLF 로 — 총 301판정)
   - ⚠️ m8-frontend 는 2026-08-15 에 prod 차단을 **해제**했다(게이트가 Dockerfile 로 이동). **nomacom 은 유지** — Dockerfile 게이트가 없어 prod push = 무검증 즉시 배포다.
 
 > ⛔ **`agents/` · `commands/` 는 2026-09-02 폐기했다.** agents 15 + commands 8. nomacom 도메인

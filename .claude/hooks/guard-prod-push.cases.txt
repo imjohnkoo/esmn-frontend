@@ -1,0 +1,269 @@
+# guard-prod-push.sh 판정 케이스 — guard-prod-push.test.sh 가 읽는다(2026-10-05 QA ⑥ 적대적 리뷰가 만든 케이스 · 누락 · 오탐 · 따옴표 회귀 · 입력 깨짐).
+# 형식: «=== <allow|block> <라벨>» 줄 다음 줄부터 다음 «===» 전까지가 명령(여러 줄 가능). 이 머리 주석은 첫 «===» 앞이라 버려진다 — 케이스 사이에 주석을 넣지 말 것(앞 명령에 붙는다).
+=== block B01 @:prod
+git push origin @:prod
+=== block B02 HEAD:heads/prod (git resolves heads/prod -> refs/heads/prod)
+git push origin HEAD:heads/prod
+=== block B03 cmd-subst source $(...):prod
+git push origin $(git rev-parse HEAD):prod
+=== block B04 cmd-subst quoted "$(...):refs/heads/prod"
+git push origin "$(git rev-parse origin/dev)":refs/heads/prod
+=== block B05 redirect attached prod>/dev/null
+git push origin prod>/dev/null
+=== block B06 redirect attached HEAD:prod>log 2>&1
+git push origin HEAD:prod>push.log 2>&1
+=== block B07 backtick wrap
+out=`git push origin prod`
+=== block B08 git -P global opt
+git -P push origin prod
+=== block B09 git --no-optional-locks
+git --no-optional-locks push origin prod
+=== block B10 git -c quoted value w/ space
+git -c "user.name=John Koo" push origin prod
+=== block B11 git -C quoted path w/ space
+git -C "/Users/someone/My Work/nomacom" push origin HEAD:prod
+=== block B12 tab between git and push
+git	push origin prod
+=== block B13 -c remote push refspec config
+git -c remote.origin.push=+HEAD:refs/heads/prod push origin
+=== block B14 gh api lowercase -X delete
+gh api -X delete repos/o/r/git/refs/heads/prod
+=== block B15 gh api --method=Delete mixed case
+gh api --method=Delete repos/o/r/git/refs/heads/prod
+=== block B16 gh api attached field -fsha
+gh api -X patch repos/o/r/git/refs/heads/prod -fsha=abc
+=== block B17 gh api attached field create -fref=
+gh api repos/o/r/git/refs -fref=refs/heads/prod -fsha=abc
+=== block B18 REST merges API base=prod (moves prod)
+gh api repos/o/r/merges -f base=prod -f head=dev
+=== block B19 graphql mergeBranch base prod
+gh api graphql -f query='mutation { mergeBranch(input: {repositoryId: "R", base: "prod", head: "dev"}) { mergeCommit { oid } } }'
+=== block B20 graphql updateRef by refId (no literal name)
+gh api graphql -f query='mutation { updateRef(input: {refId: "REF_kwDOabc", oid: "abc", force: true}) { ref { name } } }'
+=== block B21 graphql flags before endpoint
+gh api -f query='mutation { createRef(input: {name: "refs/heads/prod", oid: "abc", repositoryId: "R"}) { ref { name } } }' graphql
+=== block B22 gh pr new alias --base prod
+gh pr new --base prod --title x --body y
+=== block B23 gh pr create -Bprod attached
+gh pr create -Bprod --title x
+=== block B24 gh api PATCH pulls base=prod (retarget)
+gh api -X PATCH repos/o/r/pulls/12 -f base=prod
+=== block B25 gh api create PR base=prod
+gh api repos/o/r/pulls -f base=prod -f head=dev -f title=x
+=== block B26 workflow_dispatch deploy (default ref = dev)
+gh workflow run client-production.yml
+=== block B27 workflow_dispatch deploy --ref dev
+gh workflow run admin-production.yml --ref dev
+=== block B28 piped json --input create ref
+echo '{"ref":"refs/heads/prod","sha":"abc"}' | gh api repos/o/r/git/refs --input -
+=== block B29 heredoc delimiter with hyphen swallows rest
+cat > note.md <<'END-NOTE'
+memo
+END-NOTE
+git push origin prod
+=== block B30 herestring treated as heredoc
+grep -c ok <<< "done"
+git push origin prod
+=== block B31 refs/heads/prod trailing slash gh api
+gh api -X DELETE repos/o/r/git/refs/heads/prod/
+=== block B32 force-with-lease prod
+git push --force-with-lease origin prod
+=== block B33 quoted +refspec mid
+git push origin '+refs/heads/dev:refs/heads/prod'
+=== block B34 delete -d prod
+git push origin -d prod
+=== block B35 :refs/heads/prod delete
+git push origin :refs/heads/prod
+=== block B36 upstream remote
+git push upstream HEAD:prod
+=== block B37 URL remote
+git push git@github.com:imjohnkoo/nomacom-frontend.git HEAD:prod
+=== block B38 line continuation
+git push origin \
+  HEAD:prod
+=== block B39 bash -c
+bash -c 'git push origin HEAD:prod'
+=== block B40 --repo + -u
+git push --repo=origin -u prod
+=== block B41 git -C then -c then push
+git -C ~/orca/workspaces/nomacom-frontend/x -c push.default=current push origin HEAD:refs/heads/prod
+=== block B42 gh api -XDELETE attached
+gh api -XDELETE repos/o/r/git/refs/heads/prod
+=== block B43 gh api --method DELETE branches/prod via quotes
+gh api --method 'DELETE' 'repos/{owner}/{repo}/git/refs/heads/prod'
+=== block B44 xargs
+echo prod | xargs git push origin
+=== block B45 prod with comment after
+git push origin prod # deploy
+=== block B46 gh api graphql updateRefs name
+gh api graphql -f query='mutation { updateRefs(input: {repositoryId: "R", refUpdates: [{name: "refs/heads/prod", afterOid: "abc", force: true}]}) { clientMutationId } }'
+=== block B47 gh pr edit --base=prod
+gh pr edit 12 --base=prod
+=== block B48 git push --mirror=
+git push --mirror
+=== block B49 git push -f at end
+git push origin feat/x -f
+=== block B50 git push -nf bundle
+git push -nf origin feat/x
+=== allow A01 multiline push then ls glob
+git push -u origin imjohnkoo/issuer-legal-links
+ls apps/*/package.json
+=== allow A02 multiline push then rm -rf
+git push origin imjohnkoo/x
+rm -rf apps/client/.output
+=== allow A03 multiline push then chmod +x
+git push origin imjohnkoo/x
+chmod +x .claude/hooks/guard-prod-push.sh
+=== allow A04 multiline push then curl -fsSL
+git push origin imjohnkoo/x
+curl -fsSL https://example.com/health
+=== allow A05 multiline push then git log --all
+git push origin imjohnkoo/x
+git log --all --oneline -5
+=== allow A06 multiline push then commit --allow-empty
+git push origin imjohnkoo/x
+git commit --allow-empty -m "ci: retrigger"
+=== allow A07 multiline push then gh pr create inline body w/ markdown bold
+git push -u origin imjohnkoo/x
+gh pr create --base dev --title "fix: hook" --body "**요약** 훅 구멍 수정"
+=== allow A08 multiline push then tar -xzf
+git push origin imjohnkoo/x
+tar -xzf out.tgz
+=== allow A09 multiline push then grep -rf? (grep -F pattern)
+git push origin imjohnkoo/x
+grep -rnF "TODO" apps/client/app
+=== allow A10 multiline push then yarn turbo run build --filter
+git push origin imjohnkoo/x
+yarn turbo run build --filter=nomacom-client
+=== allow A11 single-line push then && with glob
+git push origin imjohnkoo/x && ls apps/*/package.json
+=== allow A12 push then ; git diff with + (diff +line)
+git push origin imjohnkoo/x; echo "+1 done"
+=== allow A13 multiline push then echo with +
+git push origin imjohnkoo/x
+echo "+1 커밋 push 완료"
+=== allow A14 gh api GET contents at prod with -X GET -f ref=prod
+gh api -X GET repos/o/r/contents/apps/client/package.json -f ref=prod
+=== allow A15 gh api GET contents ?ref=prod
+gh api 'repos/o/r/contents/apps/client/package.json?ref=prod' --jq .sha
+=== allow A16 gh api compare prod...dev
+gh api repos/o/r/compare/prod...dev --jq .ahead_by
+=== allow A17 gh api branches/prod/protection GET
+gh api repos/o/r/branches/prod/protection
+=== allow A18 gh api -X GET matching-refs heads/prod with -f per_page
+gh api -X GET repos/o/r/git/matching-refs/heads/prod -f per_page=5
+=== allow A19 gh api read prod then PATCH dev newline
+gh api repos/o/r/git/refs/heads/prod --jq .object.sha
+gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc
+=== allow A20 gh pr create body mentions --base prod inline (doc of this hook)
+gh pr create --base dev --title "fix(hook): prod base PR 차단" --body "gh pr create --base prod 를 막는다"
+=== allow A21 gh pr list --base prod
+gh pr list --base prod --state merged
+=== allow A22 gh pr create body heredoc mentioning prod push
+gh pr create --base dev --title "fix: hook" --body "$(cat <<'EOF'
+## 요약
+- git push origin HEAD:refs/heads/prod 를 막는다
+- gh api repos/o/r/git/refs -f ref=refs/heads/prod 도
+- **+refspec** · `-fu` · --mirror · --all · refs/heads/*
+EOF
+)"
+=== allow A23 commit -m inline mentioning force push words
+git commit -m "fix(hook): +refspec, -fu, --mirror, --all 차단"
+=== allow A24 grep for prod push in hook
+grep -n "git push origin prod" .claude/hooks/guard-prod-push.sh
+=== allow A25 git push branch named prod-hotfix
+git push origin prod-hotfix
+=== allow A26 git push branch hotfix-prod
+git push -u origin imjohnkoo/hotfix-prod
+=== allow A27 git push tag v1.0-fix
+git push origin v1.0-fix
+=== allow A28 git push from prod to backup branch
+git push origin origin/prod:refs/heads/backup/prod-2026-10-05
+=== allow A29 git push --dry-run feat (with -n)
+git push -n origin imjohnkoo/x
+=== allow A30 git push -o ci.skip
+git push -o ci.skip origin imjohnkoo/x
+=== allow A31 gh api graphql read prod ref
+gh api graphql -f query='query { repository(owner: "o", name: "r") { ref(qualifiedName: "refs/heads/prod") { target { oid } } } }'
+=== allow A32 gh run list prod + gh api
+gh run list --branch prod --limit 3 --json databaseId,headSha
+=== allow A33 git push dev with -C orca path
+git -C /Users/johnkoo/orca/workspaces/nomacom-frontend/issuer-legal-links push -u origin imjohnkoo/issuer-legal-links
+=== allow A34 git push then newline git status -sb (no f)
+git push origin imjohnkoo/x
+git status -sb
+=== allow A35 git push with commit msg -F file afterwards newline
+git push origin imjohnkoo/x
+git commit -F msg.txt
+=== allow A36 gh api ref=dev field with prod in comment? workflow dispatch on dev (read-ish)
+gh api repos/o/r/git/refs/heads/dev -X PATCH -f sha=abc
+=== allow A37 git push origin HEAD:refs/heads/imjohnkoo/prod
+git push origin HEAD:refs/heads/imjohnkoo/prod
+=== allow A38 gh api branches/prod-backup rename? (other branch)
+gh api -X POST repos/o/r/branches/prod-backup/rename -f new_name=prod-backup-old
+=== allow A39 gh api ref=production field
+gh api repos/o/r/git/refs -f ref=refs/heads/production-notes -f sha=abc
+=== allow A40 multiline push then git push --tags? (tags only)
+git push origin imjohnkoo/x
+git push origin --tags
+=== allow R01 grep quoted push-prod string
+grep -rn "git push origin prod" .claude/
+=== allow R02 rg single-quoted
+rg -n 'git push origin HEAD:prod' .claude/rules
+=== allow R03 commit -m ending in prod"
+git commit -m "fix(hook): block git push origin prod"
+=== allow R04 echo forbidden example
+echo "금지: git push origin prod"
+=== allow R05 grep refs/heads/prod example
+grep -n "git push origin HEAD:refs/heads/prod" .claude/hooks/guard-prod-push.test.sh
+=== allow R06 gh pr create inline body with gh api example
+gh pr create --base dev --title "fix(hook)" --body "막는 것: gh pr create -B prod"
+=== allow R07 printf in test file
+printf '%s\n' "run block 'git push origin prod'"
+=== allow R08 sed print lines mentioning push prod
+sed -n '/git push origin prod/p' .claude/rules/deployment.md
+=== block C01 unbalanced double quote
+git push origin "prod
+=== block C02 unbalanced single quote
+git push origin 'HEAD:prod
+=== block C03 percent and backslashes
+printf '%s\n' "a\\b" ; git push origin HEAD:prod
+=== block C04 CRLF line endings
+git add -A
+git push origin prod
+=== block C05 brackets and regex chars around
+[[ -n "$x" ]] && git push origin prod
+=== block C06 leading dash segment
+-x ; git push origin prod
+=== block C07 heredoc with interpreter keeps body
+bash <<'EOF'
+git push origin prod
+EOF
+=== block C08 heredoc then push on later line
+cat > a.txt <<'EOF'
+hello
+EOF
+git push origin HEAD:prod
+=== block C09 dollar-single-quote ANSI
+git push origin $'prod'
+=== block C10 graphql inside heredoc to gh --input? (flat)
+gh api graphql -f query='mutation { deleteRef(input: {refId: "x"}) { clientMutationId } } # refs/heads/prod'
+=== block C11 prod after many spaces/tabs
+git push origin			prod
+=== block C12 env prefix
+GIT_TRACE=1 git push origin prod
+=== block C13 sudo/command prefix
+command git push origin prod
+=== block C14 git push with = form --delete=prod? (not valid but) and -- separator
+git push origin -- prod
+=== allow C15 empty-ish whitespace
+
+=== allow C16 only comment
+# git push origin prod
+=== block E01 skill-style promote with var
+git push origin "$PROMOTE_SHA":prod
+=== block E02 skill-style promote with cmd subst inside quotes
+git push origin "$(git rev-parse origin/dev):prod"
+=== allow E03 newline-joined pr create then pr list --base prod
+gh pr create --base dev --title x
+gh pr list --base prod

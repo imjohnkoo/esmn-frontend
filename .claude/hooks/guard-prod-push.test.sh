@@ -127,6 +127,32 @@ run block 'gh pr create --base prod --title x --body y'
 run block 'gh pr create -B prod'
 run block 'gh pr edit 12 --base prod'
 
+# 판정 케이스 파일(2026-10-05 QA ⑥ — 누락 · 오탐 · 따옴표 회귀 · 입력 깨짐) — 여러 줄 명령 그대로 · CRLF 판도 한 번 더
+CASES="$(cd "$(dirname "$0")" && pwd)/guard-prod-push.cases.txt"
+run_cases() { # run_cases <crlf: 0|1>
+  local crlf="$1" line expect="" cmd="" have=0
+  flush() {
+    (( have )) || return
+    cmd="${cmd%$'\n'}"
+    (( crlf )) && cmd="$(printf '%s' "$cmd" | sed 's/$/\r/')"
+    run "$expect" "$cmd"
+    have=0; cmd=""
+  }
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" == "=== "* ]]; then
+      flush
+      expect="${line#=== }"; expect="${expect%% *}"; have=1; cmd=""
+    elif (( have )); then
+      cmd+="$line"$'\n'
+    fi
+  done < "$CASES"
+  flush
+}
+echo "== 케이스 파일 $(grep -c '^=== ' "$CASES")건 (LF · CRLF) =="
+[[ -f "$CASES" ]] || { echo "  ⛔ 케이스 파일 없음: $CASES"; fail=$((fail + 1)); }
+run_cases 0
+run_cases 1
+
 echo
 printf 'pass=%d fail=%d\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]] || exit 1
