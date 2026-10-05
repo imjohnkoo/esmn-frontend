@@ -118,6 +118,64 @@ describe.each(Object.entries(GUIDES))('%s 가이드 콘텐츠', (os, g) => {
     expect(g.checks.items).toHaveLength(4)
   })
 
+  it('단계마다 붙는 화면이 2609 판 순서 그대로(원본 <figure data-screen> 순서 · 상태 표시줄 자리 포함)', () => {
+    const want =
+      os === 'ios'
+        ? [
+            'ios-cellular',
+            'ios-transfer',
+            'ios-esim-setup',
+            'ios-qr-scan',
+            'web-qr',
+            'ios-longpress',
+            'web-codes-ios',
+            'ios-qr-scan',
+            'ios-manual',
+            'ios-activate-alert',
+            'ios-activate-ready',
+            'ios-where',
+            'ios-plan',
+            'ios-done',
+            'ios-cellular',
+            'ios-line',
+            'ios-lock-noti',
+            'ios-travel-choice',
+            'ios-lowdata',
+            'ios-line',
+            'ios-celldata',
+            'status',
+          ]
+        : [
+            'aos-connections',
+            'aos-sim',
+            'aos-method',
+            'aos-scan',
+            'web-qr',
+            'aos-scan',
+            'web-codes-aos',
+            'aos-scan',
+            'aos-code',
+            'aos-confirm',
+            'aos-sim',
+            'aos-sim',
+            'aos-sim',
+            'aos-roaming',
+            'aos-data-sheet',
+            'aos-roaming',
+            'status',
+          ]
+    expect(stepsOf(g).map((s) => (s.figure ? GUIDE_FIGURES[s.figure].screen : 'status'))).toEqual(
+      want,
+    )
+    const faqWant =
+      os === 'ios'
+        ? ['ios-error', 'ios-cellular', '-', '-', 'ios-network', '-']
+        : ['-', '-', '-', 'aos-carrier', '-']
+    expect(g.help.faqs.map((f) => (f.figure ? GUIDE_FIGURES[f.figure].screen : '-'))).toEqual(
+      faqWant,
+    )
+  })
+
   it('화면 창 수 — 아이폰 24 · 안드로이드 17(같은 화면은 파일을 함께 쓴다) · 상태 표시줄 그림 1', () => {
     expect(figuresOf(g)).toHaveLength(os === 'ios' ? 24 : 17)
     expect(stepsOf(g).filter((s) => s.status === os)).toHaveLength(1)
@@ -131,16 +189,22 @@ describe.each(Object.entries(GUIDES))('%s 가이드 콘텐츠', (os, g) => {
 
   it('eSIM 카피 불변식 — 자정 기준 서술 0 · «현지에서 처음 연결된 순간부터 24시간 단위» · 미리 설치로는 시작 안 함', () => {
     const all = strings(g).map(guidePlainText).join('\n')
-    expect(all).not.toMatch(/자정|0시 기준|날짜가 바뀌/)
+    expect(all).not.toMatch(
+      /자정|0시|날짜가 바뀌|매일|하루씩|그때부터 사용일수|설치하면 사용일수가 시작|켜면 사용일수가 시작/,
+    )
     expect(all).toContain('현지에서 처음 연결된 순간부터 24시간 단위로 차감돼요')
     expect(all).toContain('설치만으로는 사용일수가 시작되지 않아요')
-    expect(all).not.toMatch(/재개통|나라마다 다시/)
+    expect(all).toContain('미리 설치해도 사용일수는 시작되지 않아요')
+    expect(all).toContain('한국에서 켜 두어도 사용일수는 시작되지 않고')
+    expect(all).not.toMatch(/재개통|나라마다 다시|국가마다 다시/)
   })
 
   it('공급사 값 · 개인정보 0 — 주소 · 도메인 · 코드 값 · 전화번호 · 이메일 · ICCID · URL 을 본문에 적지 않는다', () => {
     const all = strings(g).map(guidePlainText).join('\n')
     expect(all).not.toMatch(/https?:\/\/|LPA:1\$|\b[a-z0-9-]+\.(com|net|io|global|kr|co|org)\b/i)
-    expect(all).not.toMatch(/\b01[016789][-\s]?\d{3,4}[-\s]?\d{4}\b|[\w.+-]+@[\w-]+\.[\w.]+|\b89\d{17,18}\b/)
+    expect(all).not.toMatch(
+      /\b01[016789][-\s]?\d{3,4}[-\s]?\d{4}\b|[\w.+-]+@[\w-]+\.[\w.]+|\b89\d{17,18}\b/,
+    )
   })
 
   it('제품명 표기 «아이폰»(client-shell D-52) — 본문에 «iPhone» 0', () => {
@@ -155,11 +219,17 @@ describe('공통 문안(허브 · 카드 · 흐름 · 문의) — 본문과 같�
     expect(all).not.toMatch(/자정|iPhone|https?:\/\/|\b01[016789]-?\d{3,4}-?\d{4}\b/)
   })
   it('OS 페이지 경로 · 이름은 글자 그대로(아이폰 → /guide/ios · 안드로이드 → /guide/android — 서로 바뀌면 실패)', () => {
-    expect(GUIDE_PAGES.ios).toMatchObject({ to: '/guide/ios', label: '아이폰 설치 가이드', short: '아이폰' })
-    expect(GUIDE_PAGES.android).toMatchObject({
+    expect(GUIDE_PAGES.ios).toEqual({
+      to: '/guide/ios',
+      label: '아이폰 설치 가이드',
+      short: '아이폰',
+      sub: 'QR 스캔 · QR 길게 누르기 · 코드 입력',
+    })
+    expect(GUIDE_PAGES.android).toEqual({
       to: '/guide/android',
       label: '안드로이드 설치 가이드',
       short: '안드로이드',
+      sub: '갤럭시 기준 · QR 스캔 · QR 이미지 · 코드 입력',
     })
     expect(IOS_GUIDE.os).toBe('ios')
     expect(ANDROID_GUIDE.os).toBe('android')
@@ -176,7 +246,8 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
     expect(keys.filter((k) => !used.has(k))).toEqual([])
   })
 
-  it('모든 창에 대체 글이 있고, 키는 파일 이름으로 쓸 수 있는 글자만', () => {
+  it('모든 창에 대체 글이 있고(창마다 다르다), 키는 파일 이름으로 쓸 수 있는 글자만', () => {
+    expect(new Set(keys.map((k) => GUIDE_FIGURES[k].alt)).size).toBe(keys.length)
     for (const k of keys) {
       expect(GUIDE_FIGURES[k].alt.length, k).toBeGreaterThan(5)
       expect(k).toMatch(/^[a-z0-9-]+$/)
@@ -203,7 +274,9 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
   })
 
   it('PNG 가 지금 매니페스트 · 템플릿 · 글꼴로 구운 것이다(figures.lock.json — 고치고 다시 굽지 않으면 실패)', () => {
-    const lock = lockJson as { figures: Record<string, { inputs: string; figure: string; png: string }> }
+    const lock = lockJson as {
+      figures: Record<string, { inputs: string; figure: string; png: string }>
+    }
     const inputs = guideInputsHash(
       new URL('scripts/guide-screens/', CLIENT).pathname,
       new URL('public/fonts/PretendardVariable.woff2', CLIENT).pathname,
@@ -236,7 +309,9 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
     const icon = { ios: 'fill="#111827"', android: 'fill="#3ddc84"' } as const
     for (const os of ['ios', 'android'] as const) {
       const card = view.match(
-        new RegExp(`<NLinkCard[^>]*:label="GUIDE_PAGES\\.${os}\\.label"[^>]*>[\\s\\S]*?</NLinkCard>`),
+        new RegExp(
+          `<NLinkCard[^>]*:label="GUIDE_PAGES\\.${os}\\.label"[^>]*>[\\s\\S]*?</NLinkCard>`,
+        ),
       )?.[0]
       expect(card, os).toBeTruthy()
       expect(card).toContain(`:sub="GUIDE_PAGES.${os}.sub"`)
@@ -252,11 +327,16 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
     const hits: string[] = []
     let scanned = 0
     const walk = (rel: string) => {
-      for (const e of readdirSync(new URL(rel ? `${rel}/` : './', CLIENT), { withFileTypes: true })) {
+      for (const e of readdirSync(new URL(rel ? `${rel}/` : './', CLIENT), {
+        withFileTypes: true,
+      })) {
         if (SKIP.has(e.name)) continue
         const p = rel ? `${rel}/${e.name}` : e.name
         if (e.isDirectory()) walk(p)
-        else if (/\.(vue|ts|mjs|js|json|html|css|md|ya?ml|txt)$/.test(e.name) && !p.endsWith('guide.test.ts')) {
+        else if (
+          /\.(vue|ts|mjs|js|json|html|css|md|ya?ml|txt)$/.test(e.name) &&
+          !p.endsWith('guide.test.ts')
+        ) {
           if (statSync(new URL(p, CLIENT)).size > 5_000_000) continue
           scanned++
           if (read(p).includes('super.site')) hits.push(p)

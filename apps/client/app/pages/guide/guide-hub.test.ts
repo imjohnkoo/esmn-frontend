@@ -28,6 +28,8 @@ describe('/guide 허브', () => {
       ['아이폰 설치 가이드', '/guide/ios'],
       ['안드로이드 설치 가이드', '/guide/android'],
     ])
+    // 아이콘 짝 — 아이폰 카드 = 사과 · 안드로이드 카드 = 안드로이드
+    expect(cards.map((c) => c.find('img').attributes('src'))).toEqual(['/icons/apple.svg', '/icons/android.svg'])
     // 새 탭이 아니다(사이트 안 이동)
     for (const c of cards) expect(c.attributes('target')).toBeUndefined()
     expect(w.findAll('.g-flow__item').map((li) => li.find('.g-flow__title').text())).toEqual(

@@ -247,7 +247,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
 
 .g-hero__hint {
   margin: 14px 0 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #c62828;
 }
@@ -413,7 +413,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
 
 .g-method__desc {
   margin: 0 6px 20px;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
   color: var(--n-color-neutral-600, #525252);
   text-align: center;

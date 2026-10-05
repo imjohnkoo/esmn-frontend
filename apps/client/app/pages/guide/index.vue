@@ -84,6 +84,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
 /* DS 카드 설명(#a3a3a3 · 11px)은 명암비 2.5:1 — 설치 방법 목록이라 읽혀야 한다(4.5:1 이상) */
 .guide-page__cards :deep(.n-link-card__sub) {
   color: var(--n-color-neutral-500, #737373);
+  font-size: 13px;
 }
 
 .guide-page__h2 {

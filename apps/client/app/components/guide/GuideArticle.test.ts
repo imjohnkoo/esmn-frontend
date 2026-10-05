@@ -171,11 +171,25 @@ describe.each([
     ])
   })
 
-  it('상태 표시줄 그림 1개(이미지 대신 그림 · 대체 글 있음)', () => {
+  it('상태 표시줄 그림 1개 — 캡션 · 대체 글이 2609 판 뜻 그대로(아이폰: 위 칸 = 여행용 eSIM)', () => {
     const st = w.findAll('.g-status')
     expect(st).toHaveLength(1)
     expect(st[0]!.attributes('role')).toBe('img')
-    expect(st[0]!.attributes('aria-label')).toContain('5G')
+    if (os === 'ios') {
+      expect(norm(st[0]!.find('.g-status__cap').text())).toBe('위 칸 = 여행용 eSIM · 아래 칸 = 한국 회선')
+      expect(st[0]!.attributes('aria-label')).toContain('위 칸은 여행용 eSIM, 아래 칸은 한국 회선')
+    } else {
+      expect(norm(st[0]!.find('.g-status__cap').text())).toBe('신호 표시 + 5G 또는 LTE')
+      expect(st[0]!.attributes('aria-label')).toContain('5G 또는 LTE')
+    }
+  })
+
+  it('머리 안내 줄(빨간 테두리 = 누를 곳) · 단계 번호 화면낭독 글자 «N번.» · 새 창 링크 안내', () => {
+    expect(w.find('.g-hero__hint').text()).toBe('화면의 빨간 테두리가 누를 곳이에요.')
+    const first = w.find('ol.g-steps .g-step__num')
+    expect(first.text()).toBe('1번.')
+    expect(first.find('.g-step__sr').text()).toBe('번.')
+    for (const a of w.findAll('a.g-cs__card')) expect(a.text()).toContain('(새 창)')
   })
 
   it('문의 — 카카오톡 채널 · 네이버 톡톡이 새 탭 링크 · 고객센터 전체 보기(F-5)', () => {

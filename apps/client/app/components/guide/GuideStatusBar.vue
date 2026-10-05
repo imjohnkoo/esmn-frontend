@@ -165,7 +165,7 @@ defineProps<{ os: GuideOs }>()
 }
 
 .g-status__cap {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--n-color-neutral-600, #525252);
   text-align: center;

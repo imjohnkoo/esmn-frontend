@@ -28,6 +28,7 @@ const rows = supportRows().filter((r) => r.key === 'kakao' || r.key === 'naver')
           <span class="g-cs__text">
             <span class="g-cs__name">{{ row.label }}</span>
             <span class="g-cs__handle">{{ row.text }}</span>
+            <span v-if="row.href" class="g-cs__sr">(새 창)</span>
           </span>
           <ChevronRightIcon v-if="row.href" class="g-cs__chev" aria-hidden="true" />
         </component>
@@ -56,7 +57,7 @@ const rows = supportRows().filter((r) => r.key === 'kakao' || r.key === 'naver')
 
 .g-cs__lede {
   margin: 0 0 18px;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
   color: var(--n-color-neutral-300, #d4d4d4);
 }
@@ -118,6 +119,15 @@ const rows = supportRows().filter((r) => r.key === 'kakao' || r.key === 'naver')
 .g-cs__handle {
   font-size: 16px;
   font-weight: 800;
+}
+
+.g-cs__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .g-cs__chev {
