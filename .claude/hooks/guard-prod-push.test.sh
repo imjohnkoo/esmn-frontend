@@ -17,8 +17,16 @@ fail=0
 
 run() { # run <expect: allow|block> <command>
   local expect="$1" cmd="$2" out actual
-  out=$(jq -n --arg c "$cmd" '{tool_input: {command: $c}}' | "$HOOK")
-  if [[ -z "$out" ]]; then actual="allow"; else actual="block"; fi
+  # 훅은 이 테스트를 돌린 bash 로 부른다(/bin/bash test.sh 가 정말 3.2 로 돌게 — shebang 의 env bash 를 타지 않는다)
+  out=$(jq -n --arg c "$cmd" '{tool_input: {command: $c}}' | "$BASH" "$HOOK")
+  # 차단 = permissionDecision deny 인 JSON 하나 · 통과 = 빈 출력. 그 밖의 출력은 실패로 센다
+  if [[ -z "$out" ]]; then
+    actual="allow"
+  elif [[ "$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)" == deny ]]; then
+    actual="block"
+  else
+    actual="bad-output"
+  fi
   if [[ "$actual" == "$expect" ]]; then
     pass=$((pass + 1))
   else
@@ -152,6 +160,20 @@ echo "== 케이스 파일 $(grep -c '^=== ' "$CASES")건 (LF · CRLF) =="
 [[ -f "$CASES" ]] || { echo "  ⛔ 케이스 파일 없음: $CASES"; fail=$((fail + 1)); }
 run_cases 0
 run_cases 1
+
+# fail-closed — jq 가 없거나 awk 가 죽으면 «통과» 가 아니라 «차단» 이다
+FC=$(mktemp -d)
+mkdir -p "$FC/nojq" "$FC/badawk"
+for t in bash cat tr sed awk grep printf mktemp; do p=$(command -v "$t") && ln -sf "$p" "$FC/nojq/$t"; done
+for t in bash cat tr sed grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/badawk/$t"; done
+printf '#!/bin/sh\nexit 2\n' > "$FC/badawk/awk" && chmod +x "$FC/badawk/awk"
+fc() { # fc <이름> <PATH> — 정상 명령(git status)도 막혀야 한다
+  local o; o=$(printf '%s' '{"tool_input":{"command":"git status"}}' | PATH="$2" "$BASH" "$HOOK" 2>/dev/null)
+  if [[ "$o" == *'"deny"'* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); printf '  ⛔ fail-closed 아님: %s\n' "$1"; fi
+}
+echo "== fail-closed (jq 없음 · awk 실패) =="
+fc "jq 없음" "$FC/nojq"
+fc "awk 실패" "$FC/badawk"
 
 echo
 printf 'pass=%d fail=%d\n' "$pass" "$fail"
