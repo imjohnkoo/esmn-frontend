@@ -4654,3 +4654,167 @@ EOF
 === allow R12-m8 산술식 1 << 3 은 heredoc 이 아니다
 echo $(( 1 << 3 ))
 x=1
+=== block R13-M1a $(…) 뒤에 붙은 # 는 낱말 안 — 뒤 명령을 숨기지 않는다
+echo $(date +%s)#; git push origin HEAD:prod
+=== block R13-M1b URL 조각(#install) 앞 $(…)
+curl -s http://localhost:3000/guide/$(cat /tmp/id)#install && git push origin prod
+=== block R13-M1c 대입 x=$(…)# 뒤 reset --hard
+x=$(pwd)#; git reset --hard
+=== block R13-M1d $(…)# 뒤 docker push
+echo $(whoami)#; docker push img:prod
+=== block R13-M1e $((…)) 뒤 #
+echo $((1+2))#x; git push origin prod
+=== block R13-M1f 이스케이프한 \) 뒤 #
+echo \)#; git push origin prod
+=== block R13-M1g 이스케이프한 공백 뒤 #
+echo a\ #; git push origin prod
+=== block R13-M1h 프로세스 치환 <(…) 뒤 #
+cat <(echo a)#; git push origin prod
+=== block R13-M1i 이스케이프한 ; 뒤 #
+echo a\;#; git push origin prod
+=== block R13-M1j 줄 이음 뒤 # 는 $(…) 에 붙은 글자
+echo $(date)\
+#; git push origin prod
+=== allow R13-M1k 서브셸을 닫는 ) 뒤 # 는 주석(bash 와 같다)
+(cd /x)#; git push origin prod
+=== allow R13-M1l 산술 명령 ((…)) 뒤 # 는 주석
+((n++))#; git push origin prod
+=== block R13-M1m heredoc 처리기 — 서브셸 ) 뒤 #<<EOF 는 주석이라 다음 줄은 명령
+(cd /x)#<<EOF
+git push origin prod
+EOF
+=== allow R13-M1n heredoc 처리기 — $(…)#<<EOF 는 진짜 heredoc(본문은 echo 의 데이터)
+echo $(date)#<<EOF
+git push origin prod
+EOF
+=== allow R13-M1o heredoc 처리기 — 이스케이프한 공백 뒤 #<<EOF 도 heredoc
+echo a\ #<<EOF
+git push origin prod
+EOF
+=== allow R13-M1p heredoc 처리기 — $((…))#<<EOF 도 heredoc
+echo $((1))#<<EOF
+git push origin prod
+EOF
+=== allow R13-M1q heredoc 처리기 — 줄 이음 뒤 #<<EOF 는 앞 $(…) 에 붙은 글자(heredoc)
+echo $(date)\
+#<<EOF
+git push origin prod
+EOF
+=== block R13-m1a git 전역 옵션 값이 ; 와 다음 명령을 삼키지 않는다(docker push)
+git -C /x;docker push img:latest
+=== block R13-m1b git 전역 옵션 값이 ; 와 다음 명령을 삼키지 않는다(aws ssm put-parameter)
+git -C /x;aws ssm put-parameter --name /nomacom/x --value y --overwrite
+=== block R13-m2a eval 문자열 뒤 인자
+eval 'git push' origin prod
+=== block R13-m2b eval 큰따옴표 문자열 뒤 인자
+eval "git push origin" prod
+=== block R13-m2c eval -- 문자열
+eval -- "git push origin prod"
+=== allow R13-m2d eval "$(ssh-agent -s)" 뒤 git status
+eval "$(ssh-agent -s)" && git status
+=== allow R13-m2e eval 문자열 뒤 dev push
+eval 'echo hi' && git push origin dev
+=== block R13-m4a zsh =docker 확장
+=docker push imjohnkoo/nomacom-client:prod
+=== block R13-m4b zsh =git reset --hard
+=git reset --hard origin/dev
+=== block R13-m4c zsh =git subtree push
+=git subtree push --prefix apps/client origin prod
+=== block R13-m4d zsh =docker buildx --push
+=docker buildx build --push -t imjohnkoo/nomacom-client:prod .
+=== block R13-m4e 경로 없이 이름으로 실행하는 스크립트
+cat > deployit <<'EOF'
+git push origin HEAD:prod
+EOF
+chmod +x deployit && deployit
+=== block R13-m4f bash < 파일
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+bash < /tmp/d.sh
+=== block R13-m4g 따옴표 친 "bash" 로 받는 파이프
+cat <<'EOF' | "bash"
+git push origin prod
+EOF
+=== allow R13-m4h <<\EOF 는 따옴표 친 구분자(본문의 $(…) 는 글자)
+cat <<\EOF
+echo $(git push origin prod)
+EOF
+=== block R13-m4i curl -T - 로 heredoc 본문을 보내는 GitHub API ref 생성
+curl -s -X POST -H "Authorization: token $T" https://api.github.com/repos/o/r/git/refs -T - <<'EOF'
+{"ref": "refs/heads/prod", "sha": "0123456789abcdef0123456789abcdef01234567"}
+EOF
+=== block R13-m4j heredoc 연산자 뒤 긴 파이프라인 끝의 bash(뒤 글 창)
+cat <<'EOF' | sed -e 's/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/b/' -e 's/c/d/' -e 's/e/f/' | bash
+git push origin prod
+EOF
+=== block R13-m4k 긴 인자 뒤 heredoc 을 받는 bash -s(앞 글 창)
+bash -s -- --branch dev --app nomacom-client --dry-run 0 --verbose --log /tmp/x.log --retries 3 <<'EOF'
+git push origin prod
+EOF
+=== block R13-m5a 변수 대입 접두 뒤 실행
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+DRY=0 /tmp/d.sh
+=== block R13-m5b "$SHELL" 파일
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+"$SHELL" /tmp/d.sh
+=== block R13-m5c if 파일; then
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+if /tmp/d.sh; then echo ok; fi
+=== block R13-m5d sudo -u 사용자 파일
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+sudo -u deploy /tmp/d.sh
+=== block R13-m5e timeout 600 ./파일
+cat > d.sh <<'EOF'
+git push origin prod
+EOF
+timeout 600 ./d.sh
+=== allow R13-m5f 쓴 파일을 git add 만(time 접두)
+cat > d.sh <<'EOF'
+git push origin prod
+EOF
+time git add d.sh
+=== allow R13-m5g 쓴 파일에 sudo chmod +x 만
+cat > d.sh <<'EOF'
+git push origin prod
+EOF
+sudo chmod +x d.sh
+=== allow R13-m5h 쓴 파일(경로)에 sudo chmod +x 만
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+sudo chmod +x /tmp/d.sh
+=== block R13-m6a flock -c "$(cat <<EOF)"
+flock /tmp/l -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R13-m6b env -S "$(cat <<EOF)"
+env -S "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R13-m6c git rebase -x "$(cat <<EOF)"
+git rebase -x "$(cat <<'EOF'
+git push origin prod
+EOF
+)" HEAD~1
+=== block R13-m6d git submodule foreach --recursive 문자열
+git submodule foreach --recursive 'git push origin prod'
+=== block R13-m6e git rebase --exec= 문자열
+git rebase --exec='git push origin prod' HEAD~1
+=== block R13-m6f git config set --append remote.*.push
+git config set --append remote.origin.push HEAD:prod
+=== allow R13-m6g 커밋 메시지 heredoc 의 명령 글자(데이터)
+git commit -m "$(cat <<'EOF'
+fix: git push origin prod 예시
+EOF
+)"

@@ -135,6 +135,33 @@ run block 'gh pr create --base prod --title x --body y'
 run block 'gh pr create -B prod'
 run block 'gh pr edit 12 --base prod'
 
+# 꾸민 큰 입력 — 600초 제한을 넘겨 판정 없이 통과(fail-open)하지 않는다(13회차 minor 8): heredoc 본문 400개 · 명령 치환 1만 개 ·
+#   닫히지 않은 $( 64개 · 명령 512KB 를 넘으면 판정 불가로 막고, push-option · gh -R 2,000개는 빨리 판정한다(bash 3.2 에서 483초였다).
+#   큰 글은 인자가 아니라 표준 입력으로 JSON 을 만든다(리눅스는 인자 하나가 128KB 를 넘지 못한다)
+runbig() { # runbig <expect> <command> — run 과 같되 JSON 을 표준 입력으로 만든다
+  local expect="$1" cmd="$2" out actual
+  out=$(printf '%s' "$cmd" | jq -Rs '{tool_input: {command: .}}' | "$BASH" "$HOOK")
+  if [[ -z "$out" ]]; then actual="allow"
+  elif [[ "$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)" == deny ]]; then actual="block"
+  else actual="bad-output"; fi
+  if [[ "$actual" == "$expect" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); printf '  ⛔ expected %-5s got %-5s : %s…(%d바이트)\n' "$expect" "$actual" "${cmd:0:60}" "${#cmd}"; fi
+}
+echo "== 꾸민 큰 입력 (상한 · 시간) =="
+big=""; for ((k = 0; k < 401; k++)); do big+="bash <<EOF"$'\n'"echo $k"$'\n'"EOF"$'\n'; done
+runbig block "$big"
+big="echo "; for ((k = 0; k < 10001; k++)); do big+='$(a)'; done
+runbig block "$big"
+big="echo "; for ((k = 0; k < 65; k++)); do big+='$( '; done
+runbig block "$big"
+big=$(head -c 524289 /dev/zero | tr '\0' 'a')
+runbig block "echo $big"
+SECONDS=0
+big="git push"; for ((k = 0; k < 2000; k++)); do big+=" -o ci.skip"; done
+runbig allow "$big origin dev"
+big="gh"; for ((k = 0; k < 2000; k++)); do big+=" -R o/r"; done
+runbig allow "$big pr list"
+if ((SECONDS > 60)); then fail=$((fail + 1)); echo "  ⛔ push-option · gh -R 걷기가 느리다: ${SECONDS}초"; fi
+
 # 판정 케이스 파일(2026-10-05 QA ⑥ — 누락 · 오탐 · 따옴표 회귀 · 입력 깨짐) — 여러 줄 명령 그대로 · CRLF 판도 한 번 더
 CASES="$(cd "$(dirname "$0")" && pwd)/guard-prod-push.cases.txt"
 run_cases() { # run_cases <crlf: 0|1>
@@ -187,11 +214,20 @@ printf '#!/bin/sh\ncat >/dev/null\nexit 0\n' > "$FC/emptyawk/awk" && chmod +x "$
 mkdir -p "$FC/latesed"
 for t in bash cat tr awk grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/latesed/$t"; done
 printf '#!/bin/sh\n"%s" "$@"\nexit 2\n' "$(command -v sed)" > "$FC/latesed/sed" && chmod +x "$FC/latesed/sed"
-fc() { # fc <이름> <PATH> — 정상 명령(git status)도 막혀야 한다
-  local o; o=$(printf '%s' '{"tool_input":{"command":"git status"}}' | PATH="$2" "$BASH" "$HOOK" 2>/dev/null)
+# tr · wc 가 실패해도 막는다 — 소문자 변환(gh api) · 마지막 평탄화(gh api --input 판정) · 써 두는 파일 수 세기(13회차 minor 3).
+#   인자로 골라 그 호출만 실패시킨다(맨 앞 tr 실패가 먼저 막아 뒤 장치를 못 보는 일이 없게)
+mkdir -p "$FC/trlow" "$FC/trflat" "$FC/badwc"
+for t in bash cat sed awk grep jq printf wc; do p=$(command -v "$t") && ln -sf "$p" "$FC/trlow/$t" && ln -sf "$p" "$FC/trflat/$t"; done
+for t in bash cat tr sed awk grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/badwc/$t"; done
+printf '#!/bin/sh\n[ "$1" = A-Z ] && exit 2\nexec "%s" "$@"\n' "$(command -v tr)" > "$FC/trlow/tr" && chmod +x "$FC/trlow/tr"
+printf '#!/bin/sh\ncase "$1" in *n*t*) exit 2 ;; esac\nexec "%s" "$@"\n' "$(command -v tr)" > "$FC/trflat/tr" && chmod +x "$FC/trflat/tr"
+printf '#!/bin/sh\nexit 2\n' > "$FC/badwc/wc" && chmod +x "$FC/badwc/wc"
+fc() { # fc <이름> <PATH> [명령] — 정상 명령(기본 git status)도 막혀야 한다
+  local o j; j=$(jq -n --arg c "${3:-git status}" '{tool_input: {command: $c}}')
+  o=$(printf '%s' "$j" | PATH="$2" "$BASH" "$HOOK" 2>/dev/null)
   if [[ "$o" == *'"deny"'* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); printf '  ⛔ fail-closed 아님: %s\n' "$1"; fi
 }
-echo "== fail-closed (jq 없음 · jq 실패 · awk 실패 · awk · sed 출력 뒤 실패 · awk 빈 출력 · 스캐너 · heredoc 처리기만 실패) =="
+echo "== fail-closed (jq 없음 · jq 실패 · awk 실패 · awk · sed 출력 뒤 실패 · awk 빈 출력 · 스캐너 · heredoc 처리기만 실패 · tr · wc 실패) =="
 fc "jq 없음" "$FC/nojq"
 fc "awk 실패" "$FC/badawk"
 fc "awk 출력 뒤 실패" "$FC/lateawk"
@@ -200,6 +236,9 @@ fc "awk 빈 출력(종료 0)" "$FC/emptyawk"
 fc "jq 실패(종료 134)" "$FC/badjq"
 fc "스캐너 awk 만 실패" "$FC/scanfail"
 fc "heredoc 처리기 awk 만 실패" "$FC/hsfail"
+fc "tr 소문자 변환만 실패(gh api 판정)" "$FC/trlow" "gh api repos/o/r/pulls"
+fc "tr 마지막 평탄화만 실패" "$FC/trflat"
+fc "wc 실패(써 두는 파일 수 세기)" "$FC/badwc" "$(printf 'cat <<%sEOF%s\nhi\nEOF' "'" "'")"
 
 echo
 printf 'pass=%d fail=%d\n' "$pass" "$fail"

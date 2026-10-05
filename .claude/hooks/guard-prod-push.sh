@@ -7,7 +7,7 @@
 #    m8-frontend 의 판정 로직(세그먼트 분리 · 단어 경계 · heredoc 제외 · fail-closed)을
 #    이식하되, **prod 차단은 유지**한다 — m8 은 게이트를 Dockerfile 로 옮겨서 해제했지만
 #    nomacom 은 Dockerfile 게이트가 없고 prod push = 즉시 CodeDeploy 배포다.
-# ⭐ 2026-10-05 개정 (구멍 · 오탐 수정 — QA ⑥ 세 회차).
+# ⭐ 2026-10-05 개정 (구멍 · 오탐 수정 — QA ⑥ 1~3회차 · 4~13회차는 아래 회차별 기록).
 #    앞단 = 따옴표를 아는 스캐너(awk): 작은따옴표 안은 글자 그대로 · 큰따옴표 · 맨 글자의 $(…) · `…` 는 명령으로 뽑아 따로 본다 ·
 #    공백이 든 따옴표 문자열(메시지 · 본문 · 쿼리)은 자리표시 «Q» 로(graphql ref · 머지 mutation 이름이 있으면 표식) ·
 #    한 단어 따옴표는 벗긴다(«"HEAD:prod"» → HEAD:prod) · bash -c '…' · eval "…" 의 문자열은 명령으로 다시 본다.
@@ -83,6 +83,16 @@
 #    1EOF 구분자 · expect -c · aws 서비스 뒤 전역 옵션(aws ssm --region … put-parameter) · PR 리뷰 · 댓글 본문의 «base: prod» 오탐 · tr · wc 실패 fail-closed.
 #    dev 판은 막는데 이 판은 못 보는 것(설계상 — 문서의 못 보는 길): python · node 코드 문자열 안 명령(os.system · subprocess · execSync) ·
 #    echo «명령» | bash · 여러 줄로 연 $( 다음 줄의 heredoc(bash -c "$( ⏎ cat <<EOF …)").
+# ⭐ 13회차(QA ⑥ major 1 · minor 8): 주석은 낱말 첫머리의 # 만 — 서브셸 · 묶음을 닫는 «)» 뒤는 주석, $(…) · $((…)) · <(…) · \) · «\ » 뒤는 낱말 안
+#    (12회차 «)#» 규칙이 echo $(date)#; git push … 를 주석으로 숨기던 퇴행 — 스캐너 · heredoc 처리기 모두 괄호 종류를 쌓아 판정) ·
+#    git 전역 옵션 값에 ; & | ( ) 를 넣지 않는다(git -C /x;docker push) · eval 문자열은 그 자리에 풀어 뒤 인자와 한 명령으로(eval «git push» origin prod · eval --) ·
+#    $(cat <<EOF) 의 바깥 래퍼(flock · script -c · env -S · git rebase -x · tmux) · submodule foreach --recursive · rebase --exec= · git config set --append ·
+#    써서 실행하는 스크립트의 접두(DRY=0 · if · "$SHELL") · 접두 뒤 인자는 옵션 · 숫자 · 대입만(time git add f · sudo chmod +x f 오탐 해소) ·
+#    마지막 평탄화 tr 실패 fail-closed · 꾸민 입력 상한(heredoc 본문 판정 400개 · 명령 치환 1만 개 · 명령 512KB → 판정 불가 — 위 회차의 1MB · 1.9MB 실측 입력은 이제 차단) ·
+#    -o · gh -R 걷기를 sed 한 번으로(bash 3.2 에서 2,000개 483초 → 0.1초).
+#    더 못 보는 길(dev 판도 놓친다): eval 문자열을 변수에 담아 넘기는 것 · 쓴 파일을 다른 이름(링크 · 복사)으로 실행하는 것.
+#    알고 두는 한계(꾸민 입력 — 실제 명령에는 없다): 본문 없는 heredoc 연산자(cat <<E <<E …)를 한 줄에 12만 개 이으면(500KB) 판정이
+#    240초를 넘어 600초 제한에 닿을 수 있다(판정 없이 통과). 그 밖의 꾸민 큰 입력 35꼴은 bash 3.2 에서 최대 105초(다른 검사와 동시 실행).
 set +e
 # 파이프라인 어느 단계가 실패해도 실패로(awk 가 일부만 내고 죽으면 통과시키지 않는다 — fail-closed)
 set -o pipefail
@@ -112,6 +122,12 @@ block() {
   exit 0
 }
 
+# 아주 긴 명령(512KB 초과 — 실제 명령 1만 6천 건 중 가장 긴 것이 34KB)은 판정 불가로 막는다. 큰 입력은 꼴에 따라 크기보다 빨리 느려져
+#   600초 제한을 넘기면 판정 없이 통과(fail-open)하기 때문이다(13회차 minor 8 — 개수 상한만으로는 모든 꼴을 막지 못한다)
+if (( ${#cmd} > 524288 )); then
+  block "명령이 512KB 를 넘어 판정할 수 없습니다 — fail-closed 로 차단합니다. 내용은 파일로 쓰고(Write 도구) 짧은 명령으로 실행하세요."
+fi
+
 # ⭐ heredoc 본문은 «데이터» 라 판정에서 뺀다 — 커밋 메시지 · 문서의 명령 «예시» 가 실행으로 오인되지 않게.
 #   셸이 먹는 본문(받는 쪽이 bash · sh · ssh · eval · source · | bash)은 명령이다 — 밖 글과 **따로** 판정한다(judge_cmd 가 다시 부른다).
 #   다른 인터프리터(python · node …) 본문은 줄마다 셸 기준으로 짝이 안 맞는 따옴표를 지워 따로 본다(백틱 · $(…) 는 셸이 실행한다).
@@ -136,6 +152,8 @@ heredoc_split() {
   function isshell(t) { return t ~ /(^|[^A-Za-z0-9_.-])(bash|sh|zsh|dash|ksh|fish|ssh|su|eval|source|trap|watch|send-keys|\$SHELL|\$\{SHELL[^}]*\}|\$BASH|\$\{BASH\}|--text)([^A-Za-z0-9_.-]|$)/ }
   # 따옴표 친 낱말(QWQ 표식)까지 셸 낱말로 보는 판 — "bash" · "/bin/bash" 를 받는 쪽으로 볼 때
   function isshellq(t) { gsub(/QWQ/, " ", t); return isshell(t) }
+  # 문자열을 명령으로 받는 래퍼 — 스캐너 목록과 같게(flock · npx · script -c · env -S · git rebase -x · submodule foreach · tmux · parallel — 13회차 minor 6)
+  function iswrap(t) { return t ~ /(^|[^A-Za-z0-9_.-])((flock|npx|npm|script|expect)([ \t]+[^ \t;&|]+)*[ \t]+-c|env([ \t]+[^ \t;&|]+)*[ \t]+-S|git([ \t]+[^ \t;&|]+)*[ \t]+(-x|--exec|foreach)|tmux|parallel)([^A-Za-z0-9_.-]|$)/ }
   function isinterp(t) { return t ~ /(^|[^A-Za-z0-9_.-])(python[0-9.]*|node|nodejs|deno|bun|ruby|perl|php|osascript)([^A-Za-z0-9_.-]|$)/ }
   # 인터프리터 종류 — 2 백틱이 셸 명령인 언어(ruby · perl · php) · 4 그 밖(python · node … — 백틱은 글자)
   function ik(t) { return (t ~ /(^|[^A-Za-z0-9_.-])(ruby|perl|php)([^A-Za-z0-9_.-]|$)/) ? 2 : 4 }
@@ -203,7 +221,7 @@ heredoc_split() {
     if (w ~ /^(git|gh|cat|tee|jq|yq|psql|mysql|sqlite3|wc|grep|egrep|head|tail|sort|uniq|base64|xxd|pbcopy|diff|tr|cut|column|curl|openssl|gpg)$/) {
       # 바깥 명령(그 단순 명령 전체 — if · then · timeout 600 · sudo -u x · docker exec c sh -c)에 따옴표 밖 셸 낱말이 있으면 셸(11회차 B1).
       #   따옴표 친 낱말(--title "ssh")은 보지 않는다(10회차 오탐)
-      if (outer != "" && isshell(lastseg(outer))) return 0
+      if (outer != "" && (isshell(lastseg(outer)) || iswrap(lastseg(outer)))) return 0
       if (w == "gh" && seg ~ /(codespace|cs)[ \t]+ssh/) return 0   # gh codespace ssh = 원격 셸
       return pq ? 1 : 3
     }
@@ -318,8 +336,8 @@ heredoc_split() {
     #   "$(cat <<EOF … EOF )" 처럼 큰따옴표 안 $(…) 의 heredoc 은 진짜 heredoc 이다(bash 가 $(…) 안을 셸로 읽는다)
     #   줄 이음(«\» 로 끝난 줄)은 같은 명령이다 — 앞 줄의 글을 이어 받아 받는 쪽을 정한다(bash \ ⏎ -s <<EOF) ·
     #   이음 직후의 «#» 는 앞 글자에 붙은 글자다(주석이 아니다 — 7회차 minor 9)
-    if (carry != "") { u = carry; pc = cprev } else { u = ""; pc = " " }
-    carry = ""; n = length(line); i = 1; cont = 0
+    if (carry != "") { u = carry; pc = cprev; lnc = cnc } else { u = ""; pc = " "; lnc = 0 }
+    carry = ""; n = length(line); i = 1; cont = 0; hnc = 0; cnc = 0; nar = 0
     while (i <= n) {
       t = st[sp]
       if (t == "Q") { j = findch(line, i, n, "\047"); if (j == 0) { i = n + 1; break } if (sp > 1) sp--; qclose(j); i = j + 1; continue }
@@ -343,8 +361,8 @@ heredoc_split() {
       if (j > i) { addu(substr(line, i, j - i)); i = j }
       c = substr(line, i, 1)
       if (c == "\\") {
-        if (i == n) { cont = 1; addu(" "); i++; continue }
-        x = substr(line, i + 1, 1); addu(x ~ /[[:alnum:]_]/ ? x : substr(line, i, 2)); i += 2; continue   # \bash = bash
+        if (i == n) { cont = 1; cnc = (hnc == i); addu(" "); i++; continue }
+        x = substr(line, i + 1, 1); addu(x ~ /[[:alnum:]_]/ ? x : substr(line, i, 2)); i += 2; hnc = i; continue   # \bash = bash · 이스케이프한 글자 바로 뒤 # 는 낱말 안
       }
       if (c == "\047") { st[++sp] = "Q"; qb[sp] = i + 1; qn[sp] = NR; i++; continue }
       if (c == "\"") {
@@ -353,17 +371,27 @@ heredoc_split() {
       if (c == "`") { if (t == "B") { if (sp > 1) sp-- } else st[++sp] = "B"; addu(" "); i++; continue }
       if (c == "#") {
         p = (i == 1) ? pc : substr(line, i - 1, 1)
-        if (p ~ /[ \t;&|()]/) break
+        # 주석은 낱말 첫머리에서만 — $(…) · $((…)) · <(…) · 이스케이프한 글자 바로 뒤의 # 는 낱말 안이다(bash 와 같게 — 13회차 M1)
+        if (!((i == 1) ? lnc : (hnc == i)) && p ~ /[ \t;&|()]/) break
         addu(c); i++; continue
       }
       # «<(» · «>(» · zsh «=(» (프로세스 치환)의 괄호는 명령 경계가 아니다(bash <(cat <<EOF) 의 받는 쪽이 bash 로 보이게 · tee >(bash) 는 셸)
-      if (c == "(") { if (t == "C") cd[sp]++; p = (i > 1) ? substr(line, i - 1, 1) : ""; addu((p == "<" || p == ">" || p == "=") ? " PSUB " : c); i++; continue }
+      if (c == "(") {
+        if (t == "C") cd[sp]++
+        p = (i > 1) ? substr(line, i - 1, 1) : ""; bq = (i > 1) ? p : pc
+        # 괄호 종류(13회차 M1): 명령 자리의 «(» 만 서브셸 · 묶음(G — 닫는 «)» 뒤 # 는 주석). $(( · <( · 낱말에 붙은 «(» 는 낱말 안(A)
+        if (length(hp) >= 256) hov++
+        else hp = hp ((bq ~ /[ \t;&|(]/ && !((i == 1) ? lnc : (hnc == i)) && !(bq == "(" && substr(hp, length(hp)) == "A")) ? "G" : "A")
+        addu((p == "<" || p == ">" || p == "=") ? " PSUB " : c); i++; continue
+      }
       if (c == ")") {
-        if (t == "C") { if (cd[sp] == 0) { if (sp > 1) sp--; addu(" "); i++; continue } cd[sp]-- }
+        if (t == "C") { if (cd[sp] == 0) { if (sp > 1) sp--; addu(" "); i++; hnc = i; continue } cd[sp]-- }
+        if (hov) { hov--; hnc = i + 1 } else if (hp != "") { if (substr(hp, length(hp)) == "A") hnc = i + 1; hp = substr(hp, 1, length(hp) - 1) }
         addu(c); i++; continue
       }
       if (c == "$") {
-        if (substr(line, i, 3) == "$((") { j = findch(line, i, n, "))"); if (j) { addu(" ARITH "); i = j + 2; continue } }
+        # 닫는 «))» 가 그 뒤에 없다는 것을 알면 다시 찾지 않는다(줄마다 — $(( 수만 개가 하나마다 줄 끝까지 찾아 제곱으로 느려지지 않게)
+        if (substr(line, i, 3) == "$((" && (nar == 0 || i < nar)) { j = findch(line, i, n, "))"); if (j) { addu(" ARITH "); i = j + 2; hnc = i; continue } nar = i }
         if (substr(line, i, 2) == "$" SQ) { st[++sp] = "A"; i += 2; continue }
         if (substr(line, i, 2) == "$(") { st[++sp] = "C"; cd[sp] = 0; cu[sp] = length(u); addu(" "); i += 2; continue }
         addu(c); i++; continue
@@ -436,23 +464,28 @@ scan_shell() {
     }
     return 0
   }
-  # $(…) 의 짝 «)» — 안쪽 따옴표 · 백슬래시는 건너뛴다(따옴표 안의 «)» 로 일찍 닫히지 않게)
-  function matchparen(s, p,   lvl, k, ch, n, j) {
+  # $(…) 의 짝 «)» — 안쪽 따옴표 · 백슬래시는 건너뛴다(따옴표 안의 «)» 로 일찍 닫히지 않게).
+  #   한 번 훑으며 만난 괄호의 짝을 전부 기억한다 — 같은 글(g = scan 한 번의 번호)에서 그 자리를 다시 물으면 바로 답한다(그 자리부터 새로
+  #   훑어도 같은 답이다). 닫히지 않은 $( 가 많으면 하나마다 글 끝까지 다시 훑어 제곱으로 느려졌다(500KB 에 몇 시간 — 13회차 minor 8)
+  function matchparen(s, p, g,   lvl, k, ch, n, j, t) {
+    if ((g, p) in MPC) return MPC[g, p]
     lvl = 0; n = length(s); k = p
     while (k <= n) {
-      k = findre(s, k, n, "[\\\\\047\"()]"); if (k == 0) return n + 1
+      k = findre(s, k, n, "[\\\\\047\"()]"); if (k == 0) break
       ch = substr(s, k, 1)
       if (ch == "\\") { k += 2; continue }
-      if (ch == "\047") { j = findch(s, k + 1, n, "\047"); if (j == 0) return n + 1; k = j + 1; continue }
+      if (ch == "\047") { j = findch(s, k + 1, n, "\047"); if (j == 0) break; k = j + 1; continue }
       if (ch == "\"") {
         k++
-        while (k <= n) { k = findre(s, k, n, "[\\\\\"]"); if (k == 0) return n + 1; if (substr(s, k, 1) == "\\") { k += 2; continue } break }
+        while (k <= n) { k = findre(s, k, n, "[\\\\\"]"); if (k == 0) break; if (substr(s, k, 1) == "\\") { k += 2; continue } break }
+        if (k == 0) break
         k++; continue
       }
-      if (ch == "(") lvl++
-      else { lvl--; if (lvl == 0) return k }
+      if (ch == "(") MPS[++lvl] = k
+      else if (lvl > 0) { MPC[g, MPS[lvl]] = k; if (--lvl == 0) return k }
       k++
     }
+    for (t = 1; t <= lvl; t++) MPC[g, MPS[t]] = n + 1   # 닫히지 않은 괄호 — 그 자리에서 물어도 닫히지 않는다
     return n + 1
   }
   function quoted(buf, before, depth,   t, mid, r, gm, tail, L, j) {
@@ -464,7 +497,9 @@ scan_shell() {
     # 문자열을 명령으로 받는 것 — bash/sh/fish -c(앞에 -o pipefail · -O extglob · --login · 묶음 옵션, 뒤에 -x · -- 가 껴도) · eval · trap ·
     #   watch · flock/su/npx/script … -c · env -S · tmux · ssh <호스트> · git rebase -x/--exec · git submodule foreach ·
     #   orca … --text(다른 터미널에 쳐 넣는다). 따로 뽑아 다시 본다(5단까지)
-    if (depth < 6 && buf ~ /[[:space:]]/ && tail ~ /(^|[[:space:];&|(!{\/])((bash|sh|zsh|dash|ksh|fish|SUBST|\$SHELL|\$\{SHELL[^}]*\}|\$BASH|\$\{BASH\})([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-[[:alnum:]]*c[[:alnum:]]*([[:space:]]+-[^[:space:];&|]*)*|eval|trap|watch([[:space:]]+[^[:space:];&|]+)*|(flock|su|npx|npm|script|expect)([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-c|env([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-S|tmux([[:space:]]+[^[:space:];&|]+)*|parallel([[:space:]]+[^[:space:];&|]+)*|ssh([[:space:]]+[^[:space:];&|]+)+|git([[:space:]]+[^[:space:];&|]+)*[[:space:]]+(-x|--exec|foreach)|orca([[:space:]]+[^[:space:];&|]+)*[[:space:]]+--text=?|(bash|sh|zsh|dash|ksh)([[:space:]]+[^[:space:];&|]+)*[[:space:]]*<<<)[[:space:]]*$/) {
+    # eval 은 인자를 이어 붙여 다시 읽는다 — 문자열을 그 자리에 풀어 뒤 인자와 한 명령으로 본다(eval «git push» origin prod · eval -- … — 13회차 minor 2)
+    if (depth < 6 && tail ~ /(^|[[:space:];&|(!{\/])eval([[:space:]]+--)?[[:space:]]*$/) { r = scan(buf, depth + 1); return " " r " " }
+    if (depth < 6 && buf ~ /[[:space:]]/ && tail ~ /(^|[[:space:];&|(!{\/])((bash|sh|zsh|dash|ksh|fish|SUBST|\$SHELL|\$\{SHELL[^}]*\}|\$BASH|\$\{BASH\})([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-[[:alnum:]]*c[[:alnum:]]*([[:space:]]+-[^[:space:];&|]*)*|eval|trap|watch([[:space:]]+[^[:space:];&|]+)*|(flock|su|npx|npm|script|expect)([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-c|env([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-S|tmux([[:space:]]+[^[:space:];&|]+)*|parallel([[:space:]]+[^[:space:];&|]+)*|ssh([[:space:]]+[^[:space:];&|]+)+|git([[:space:]]+[^[:space:];&|]+)*[[:space:]]+(-x|--exec=?|foreach([[:space:]]+-[^[:space:];&|]*)*)|orca([[:space:]]+[^[:space:];&|]+)*[[:space:]]+--text=?|(bash|sh|zsh|dash|ksh)([[:space:]]+[^[:space:];&|]+)*[[:space:]]*<<<)[[:space:]]*$/) {
       r = scan(buf, depth + 1); INNERS = INNERS "\n" r
       return " SUBST "
     }
@@ -493,13 +528,17 @@ scan_shell() {
     t = (mid ? "Q" : " Q") gm
     return (mid && gm == "") ? t : t " "
   }
-  function scan(s, depth,   out, op, i, n, c, j, k, buf, bp, inner, r, closed, p) {
+  function scan(s, depth,   out, op, i, n, c, j, k, buf, bp, inner, r, closed, p, q, ps, nc, pov, g) {
     if (depth > 64) { DEEP = 1; return "" }       # $( · 백틱 64겹 넘게 — 판정 불가(END 에서 실패 코드 → fail-closed)
-    out = ""; op = ""; n = length(s); i = 1
+    # 명령 치환이 아주 많아도(꾸민 입력 — 한 줄에 $(a) 8만 개 35초 · 크기보다 빨리 는다) · 닫히지 않은 $( 가 64개를 넘어도(bash 는 문법 오류로
+    #   실행하지 않는다 — 실제 명령에는 없다) 판정 불가로(13회차 minor 8)
+    if (++NSUB > 10000) { DEEP = 1; return "" }
+    out = ""; op = ""; n = length(s); i = 1; ps = ""; nc = 0; pov = 0; g = ++GID
     while (i <= n) {
+      if (DEEP) return ""                         # 판정 불가가 정해졌으면 나머지는 훑지 않는다
       if (length(op) > 8192) { out = out op; op = "" }
-      # 특수 글자(\ # $ 따옴표 백틱) 전까지는 한 번에 붙인다 — 한 글자씩 이으면 큰 입력에서 느리다
-      j = findre(s, i, n, "[\\\\#$\047\"`]")
+      # 특수 글자(\ # $ 따옴표 백틱 괄호) 전까지는 한 번에 붙인다 — 한 글자씩 이으면 큰 입력에서 느리다
+      j = findre(s, i, n, "[\\\\#$\047\"`()]")
       if (j == 0) { op = op substr(s, i); break }
       if (j > i) { op = op substr(s, i, j - i); i = j }
       if (i > n) break
@@ -508,15 +547,16 @@ scan_shell() {
       if (c == "\\") {
         if (substr(s, i + 1, 1) ~ /[[:alnum:]_]/) op = op substr(s, i + 1, 1)
         else op = op substr(s, i, 2)
-        i += 2; continue
+        i += 2; nc = i; continue
       }
       # 주석 — 따옴표 밖에서 단어 첫머리의 # 부터 줄 끝까지(줄바꿈은 남긴다). 줄 이음 표식(\001)에서도 끝난다 —
       #   bash 는 주석 끝의 «\» 로 다음 줄을 잇지 않는다(«# C:\» 다음 줄의 push 가 주석에 먹히지 않게).
       #   이음 바로 뒤의 # 는 이음 앞 글자로 판정한다(a\ ⏎ #; … 는 a# 라 주석이 아니다 — 7회차 minor 9)
       if (c == "#") {
-        p = (i > 1) ? substr(s, i - 1, 1) : " "
-        if (p == "\001") p = (i > 2) ? substr(s, i - 2, 1) : " "
-        if (p ~ /[[:space:];&|()]/) {
+        p = (i > 1) ? substr(s, i - 1, 1) : " "; q = i
+        if (p == "\001") { p = (i > 2) ? substr(s, i - 2, 1) : " "; q = i - 1 }
+        #   서브셸 · 묶음을 닫는 «)» 뒤는 주석 · $(…) · $((…)) · <(…) · 이스케이프한 글자 바로 뒤의 # 는 낱말 안이다(13회차 M1 — bash 와 같게)
+        if (q != nc && p ~ /[[:space:];&|()]/) {
           j = findre(s, i, n, "[\n\001]")
           if (j == 0) break
           i = j; continue
@@ -560,7 +600,7 @@ scan_shell() {
           if (c == "\\") { bp = bp substr(s, i + 1, 1); i += 2; continue }
           if (c == "\"") { i++; closed = 1; break }
           if (c == "$" && substr(s, i + 1, 1) == "(" && substr(s, i + 2, 1) != "(") {
-            j = matchparen(s, i + 1); if (j > n) { bp = bp " "; i += 2; continue }
+            j = matchparen(s, i + 1, g); if (j > n) { if (++NUNCL > 64) { DEEP = 1; return "" } bp = bp " "; i += 2; continue }
             inner = substr(s, i + 2, j - i - 2)
             r = scan(inner, depth + 1); INNERS = INNERS "\n" r; bp = bp "SUBST"; i = j + 1; continue
           }
@@ -578,15 +618,26 @@ scan_shell() {
       }
       if (c == "$" && substr(s, i + 1, 1) == "(" && substr(s, i + 2, 1) != "(") {
         # 닫히지 않은 $( 는 나머지를 안쪽으로 다시 훑지 않고 같은 단계에서 이어 본다(bash 는 실행하지 않는다 · 글자는 그대로 판정 — 큰 입력이 제곱으로)
-        j = matchparen(s, i + 1); if (j > n) { op = op " "; i += 2; continue }
+        j = matchparen(s, i + 1, g); if (j > n) { if (++NUNCL > 64) { DEEP = 1; return "" } op = op " "; i += 2; continue }
         inner = substr(s, i + 2, j - i - 2)
-        r = scan(inner, depth + 1); INNERS = INNERS "\n" r; op = op " SUBST "; i = j + 1; continue
+        r = scan(inner, depth + 1); INNERS = INNERS "\n" r; op = op " SUBST "; i = j + 1; nc = i; continue
       }
       if (c == "`") {
         j = findch(s, i + 1, n, "`")
         if (j == 0) { op = op substr(s, i + 1); break }
         inner = substr(s, i + 1, j - i - 1)
-        r = scan(inner, depth + 1); INNERS = INNERS "\n" r; op = op " SUBST "; i = j + 1; continue
+        r = scan(inner, depth + 1); INNERS = INNERS "\n" r; op = op " SUBST "; i = j + 1; nc = i; continue
+      }
+      # 괄호 종류(13회차 M1) — 명령 자리의 «(» 만 서브셸 · 묶음(G — 닫는 «)» 뒤 # 는 주석). $(( · <( · 낱말에 붙은 «(» 는 낱말 안(A)
+      if (c == "(") {
+        p = (i > 1) ? substr(s, i - 1, 1) : " "
+        if (length(ps) >= 256) { pov++; op = op c; i++; continue }   # 깊이 256 넘게는 종류를 모른다(A 로 — 쌓는 글이 길어 제곱으로 느려지지 않게)
+        ps = ps ((p ~ "[[:space:];&|(\001]" && i != nc && !(p == "(" && substr(ps, length(ps)) == "A")) ? "G" : "A")
+        op = op c; i++; continue
+      }
+      if (c == ")") {
+        if (pov) { pov--; nc = i + 1 } else if (ps != "") { if (substr(ps, length(ps)) == "A") nc = i + 1; ps = substr(ps, 1, length(ps) - 1) }
+        op = op c; i++; continue
       }
       op = op c; i++
     }
@@ -598,7 +649,7 @@ scan_shell() {
     RE_SQS = SQ "([^" SQ "\\\\]|\\\\.)*" SQ
   }
   { ALL = ALL (NR > 1 ? RS : "") $0 }
-  END { INNERS = ""; DEEP = 0; RES = scan(ALL, 0); if (DEEP) exit 3; gsub(/\001/, " ", RES); gsub(/\001/, " ", INNERS); printf "%s\n%s\n", RES, INNERS }
+  END { INNERS = ""; DEEP = 0; NSUB = 0; NUNCL = 0; RES = scan(ALL, 0); if (DEEP) exit 3; gsub(/\001/, " ", RES); gsub(/\001/, " ", INNERS); printf "%s\n%s\n", RES, INNERS }
   '
 }
 
@@ -608,7 +659,10 @@ check_git_push() { # $1 = «git push» 뒤 인자(스캐너가 정리한 글)
   local args=" $1 "
   # push-option 값은 원격에 넘기는 글자다(-o 'prod' · -o ci.variable="GLOB=*.ts" · --push-option "+1") — 판정 전에 걷는다
   local re_po='[[:space:]](-o|Q-o|--push-option|Q--push-option)([[:space:]]+|=)[^[:space:]]+'
-  while [[ "$args" =~ $re_po ]]; do args="${args/"${BASH_REMATCH[0]}"/ }"; done
+  # 한 번에 걷는다(sed) — 되풀이 치환은 bash 3.2 에서 -o 2,000개에 483초(꾸민 입력이 600초를 넘겨 판정 없이 통과 — 13회차 minor 8)
+  if [[ "$args" =~ $re_po ]]; then
+    args=$(printf '%s' "$args" | sed -E 's/[[:space:]](-o|Q-o|--push-option|Q--push-option)([[:space:]]+|=)[^[:space:]]+/ /g') || block "$FAIL_MSG"
+  fi
   # 따옴표 친 옵션은 스캐너가 «Q-…» 로 남긴다(git push "--force" · '-f')
   case "$args" in
     *" --force"*|*" -f "*|*" Q--force"*|*" Q-f "*|*" --fo "*|*" --for "*|*" --forc "*|*" Q--fo "*|*" Q--for "*|*" Q--forc "*)   # git 은 긴 옵션의 고유 접두를 받는다(--forc)
@@ -709,10 +763,12 @@ check_segment() { # $1 = 세그먼트(정리한 글)
 
   # gh 하위 명령 앞의 -R/--repo 는 걷는다(gh pr -R o/r create --base prod · gh workflow -R o/r run … — 9회차 m2)
   if [[ "$s" == *"gh "* ]]; then
-    while [[ "$s" =~ (gh([[:space:]]+[a-z]+)?)[[:space:]]+(-R|--repo)([[:space:]]+|=)[^[:space:]]+ ]]; do s="${s/"${BASH_REMATCH[0]}"/${BASH_REMATCH[1]}}"; done
+    if [[ "$s" =~ (gh([[:space:]]+[a-z]+)?)[[:space:]]+(-R|--repo)([[:space:]]+|=)[^[:space:]]+ ]]; then   # sed 로(bash 3.2 의 되풀이 치환은 제곱보다 느리다 — 13회차 minor 8)
+      s=$(printf '%s' "$s" | sed -E -e ':a' -e 's/(gh([[:space:]]+[a-z]+)?)[[:space:]]+(-R|--repo)([[:space:]]+|=)[^[:space:]]+/\1/' -e 'ta') || block "$FAIL_MSG"
+    fi
   fi
   # git config 로 push refspec 에 prod 를 넣는 것(뒤의 맨 git push 가 prod 로 간다 — -c remote.*.push 와 같은 일 · 9회차 m5)
-  if [[ "$s" =~ (^|[[:space:]/!{])git[[:space:]]+config([[:space:]]+-[^[:space:]]+)*([[:space:]]+set)?[[:space:]]+remote\.[^[:space:]]+\.(push|mirror)[[:space:]]+[^[:space:]]*(prod|\*|true) ]]; then
+  if [[ "$s" =~ (^|[[:space:]/!{])git[[:space:]]+config([[:space:]]+-[^[:space:]]+)*([[:space:]]+set)?([[:space:]]+-[^[:space:]]+)*[[:space:]]+remote\.[^[:space:]]+\.(push|mirror)[[:space:]]+[^[:space:]]*(prod|\*|true) ]]; then
     block "$PROD_MSG"
   fi
 
@@ -814,10 +870,11 @@ check_segment() { # $1 = 세그먼트(정리한 글)
 }
 
 FAIL_MSG="guard 훅의 판정 도구(awk · sed)가 실패해 판정할 수 없습니다 — fail-closed 로 차단합니다."
-# 명령 경계로 쪼개기(리다이렉트 2>&1 · &> 는 경계가 아니다)
-SPLIT='{gsub(/[0-9]*>&[0-9]*-?|&>>?|<&[0-9]*-?/, " REDIR "); gsub(/&&|\|\||[;|()&]/, "\n"); print}'
+# 명령 경계로 쪼개기(리다이렉트 2>&1 · &> 는 경계가 아니다). 볼 명령 이름(check_segment 의 첫 거름과 같은 낱말)이 없는 조각은 여기서 버린다 —
+#   조각마다 도는 bash 반복이 큰 입력에서 느리다(꾸민 입력 — $(( · ; 25만 조각에 64초 · 13회차 minor 8). 판정 플래그는 모두 그 거름 뒤에서만 선다
+SPLIT='{gsub(/[0-9]*>&[0-9]*-?|&>>?|<&[0-9]*-?/, " REDIR "); gsub(/&&|\|\||[;|()&]/, "\n"); n = split($0, a, "\n"); for (k = 1; k <= n; k++) if (a[k] ~ /git|gh |docker|aws|api\.github\.com/) print a[k]}'
 # ⭐ git 과 서브커맨드 사이 전역 옵션을 걷는다(git -C <Orca 워크트리> push … 가 일상 형태) — 따옴표 든 값은 스캐너가 Q 로 바꿨다
-GITOPTS='s/(^|[[:space:]/!{(;\&|=])git(([[:space:]]+(-C|-c|--git-dir|--work-tree|--namespace|--exec-path|--super-prefix|--config-env|--attr-source)([[:space:]]+|=)[^[:space:]]+)|([[:space:]]+(--no-pager|-P|--paginate|-p|--bare|--no-replace-objects|--literal-pathspecs|--glob-pathspecs|--noglob-pathspecs|--icase-pathspecs|--no-optional-locks|--no-lazy-fetch|--no-advice)))+/\1git/g'
+GITOPTS='s/(^|[[:space:]/!{(;\&|=])git(([[:space:]]+(-C|-c|--git-dir|--work-tree|--namespace|--exec-path|--super-prefix|--config-env|--attr-source)([[:space:]]+|=)[^[:space:];&|()]+)|([[:space:]]+(--no-pager|-P|--paginate|-p|--bare|--no-replace-objects|--literal-pathspecs|--glob-pathspecs|--noglob-pathspecs|--icase-pathspecs|--no-optional-locks|--no-lazy-fetch|--no-advice)))+/\1git/g'
 CLEAN=""
 BODIES=""
 HAS_INPUT_API=0
@@ -860,15 +917,18 @@ ran_file() {
   # 경로가 아니라 이름으로 — 앞의 디렉터리는 어떤 글자든(변수 · cd 뒤 상대 경로). 같은 이름의 다른 파일이면 안전 쪽 오탐
   e=$(printf '%s' "${f##*/}" | sed 's#[][\.*^$+?(){}|]#\\&#g') || block "$FAIL_MSG"
   e="([^[:space:];&|()<>]*/)?${e}"
+  # 명령 자리 접두(then · if · sudo · time · env · timeout · 변수 대입 DRY=0 …) — 접두 뒤 인자는 옵션(+ 값 하나) · 숫자 · 대입만
+  #   (time git add f · sudo chmod +x f 는 그 파일을 실행하지 않는다 — 13회차 minor 5)
+  local pfx="((then|do|else|if|elif|while|until|exec|sudo|nohup|time|command|env|timeout|nice|[A-Za-z_][A-Za-z0-9_]*=[^[:space:];&|]*)([[:space:]]+(-[^[:space:]]*([[:space:]]+[^-[:space:]/;&|][^[:space:]/;&|]*)?|[0-9][^[:space:];&|]*|[A-Za-z_][A-Za-z0-9_]*=[^[:space:];&|]*))*[[:space:]]+)*"
   # 옵션은 n 이 없는 짧은 옵션 · 긴 옵션만(bash -n = 문법 검사 — 실행하지 않는다)
   #   셸 이름 앞 경로(/bin/bash) · "$BASH" · 값을 받는 옵션(-o pipefail · -O extglob · -euo pipefail) · 리다이렉트(2>&1) · 파일 앞 $PWD/ · $(pwd)/ ·
   #   파일 바로 뒤 «>»(10회차 B1)
-  re1="(^|[[:space:];&|(!{])([^[:space:];&|()]*/)?(bash|sh|zsh|dash|ksh|source|\\\$BASH|\\\$\\{BASH\\})([[:space:]]+(-[a-mo-zA-Z]*[oO]([[:space:]]+[a-z]+)?|-[a-mo-zA-Z]+|--[a-z-]+|--|[0-9]*>&[0-9]+|&?>[^[:space:]]+))*[[:space:]]+(<[[:space:]]*)?${e}([[:space:];&|)<>]|\$)"
+  re1="(^|[[:space:];&|(!{])([^[:space:];&|()]*/)?(bash|sh|zsh|dash|ksh|source|\\\$BASH|\\\$\\{BASH\\}|\\\$SHELL|\\\$\\{SHELL[^}]*\\})([[:space:]]+(-[a-mo-zA-Z]*[oO]([[:space:]]+[a-z]+)?|-[a-mo-zA-Z]+|--[a-z-]+|--|[0-9]*>&[0-9]+|&?>[^[:space:]]+))*[[:space:]]+(<[[:space:]]*)?${e}([[:space:];&|)<>]|\$)"
   # eval "$(cat f)" · bash -c "$(cat f)" — 그 파일을 읽어 셸로 돌린다
   re6="(^|[[:space:]])cat[[:space:]]+${e}([[:space:];&|)]|\$)"
   re5="(^|[;&|(!${nl}]|\\{[[:space:]])[[:space:]]*\\.[[:space:]]+${e}([[:space:];&|)]|\$)"
-  re2="(^|[;&|(!${nl}]|\\{[[:space:]])[[:space:]]*((then|do|else|exec|sudo|nohup|time|command|env|timeout|nice)([[:space:]]+[^[:space:]/;&|]+)*[[:space:]]+)*([^[:space:];&|()<>]*/)${e#*\?}([[:space:];&|)<>]|\$)"
-  re3="(^|[;&|(!${nl}]|\\{[[:space:]])[[:space:]]*((then|do|else|exec|sudo|nohup|time|command|env|timeout|nice)([[:space:]]+[^[:space:]/;&|]+)*[[:space:]]+)*${e}([[:space:];&|)]|\$)"
+  re2="(^|[;&|(!${nl}]|\\{[[:space:]])[[:space:]]*${pfx}([^[:space:];&|()<>]*/)${e#*\?}([[:space:];&|)<>]|\$)"
+  re3="(^|[;&|(!${nl}]|\\{[[:space:]])[[:space:]]*${pfx}${e}([[:space:];&|)]|\$)"
   # 파일 | bash — bash 뒤에 스크립트 인자가 없을 때만(파일 | bash x.sh 의 표준 입력은 데이터 — 9회차 m1)
   re4="(^|[[:space:]])${e}[[:space:]]*\\|[[:space:]]*(sudo[[:space:]]+)?(bash|sh|zsh|dash|ksh)([[:space:]]+-[^[:space:]]+)*[[:space:]]*([;&|)${nl}]|\$)"
   [[ "$CLEAN" =~ $re1 || "$CLEAN" =~ $re2 || "$CLEAN" =~ $re4 || "$CLEAN" =~ $re5 ]] && return 0
@@ -876,9 +936,18 @@ ran_file() {
   [[ "$CLEAN" =~ $re3 ]]
 }
 
+# heredoc 본문 판정은 본문마다 다시 훑는다 — 아주 많으면(꾸민 입력 — 짧은 셸 heredoc 하나에 약 21ms · 2만 8천 개면 600초)
+#   판정 없이 통과(fail-open)하지 않게 판정 불가로 막는다(13회차 minor 8 — 실제 명령은 많아야 몇 개)
+NJUDGE=0
+count_judge() {
+  NJUDGE=$((NJUDGE + 1))
+  [[ "$NJUDGE" -le 400 ]] || block "heredoc 본문이 400개를 넘어 판정할 수 없습니다 — fail-closed 로 차단합니다. 나눠서 실행하거나 스크립트 파일로 쓰세요."
+}
+
 # 명령 원문 하나를 판정한다 — 밖 글(데이터 heredoc 본문은 걷는다) · 셸 본문 · 인터프리터 본문 · 실행하는 파일의 본문을 각각 따로
 judge_cmd() { # $1 = 원문 · $2 = 깊이(셸 본문 안의 셸 본문 — 4단까지)
   local raw="$1" d="$2" hs out chunk f
+  count_judge
   hs=$(printf '%s' "$raw" | heredoc_split text) || block "$FAIL_MSG"
   [[ "$raw" =~ [^[:space:]] && ! "$hs" =~ [^[:space:]] ]] && block "$FAIL_MSG"
   judge_text "$hs"
@@ -895,6 +964,7 @@ judge_cmd() { # $1 = 원문 · $2 = 깊이(셸 본문 안의 셸 본문 — 4단
   # 인터프리터 본문(python · node · ruby …) — 줄마다 짝 없는 따옴표를 지운 글을 따로(백틱 · $(…) 는 셸 명령)
   out=$(printf '%s' "$raw" | heredoc_split interp) || block "$FAIL_MSG"
   while IFS= read -r -d $'\004' chunk; do
+    count_judge
     judge_text "$chunk"
   done <<< "$out"
   # heredoc 으로 쓴 파일을 같은 명령에서 실행하면(cat > p.sh <<EOF … EOF; bash p.sh · . p.sh · ./p.sh) 그 본문도 명령이다
@@ -913,7 +983,7 @@ judge_cmd() { # $1 = 원문 · $2 = 깊이(셸 본문 안의 셸 본문 — 4단
 
 judge_cmd "$cmd" 0
 
-flat=$(printf '%s %s' "$CLEAN" "$BODIES" | tr '\r\n\t' '   ')
+flat=$(printf '%s %s' "$CLEAN" "$BODIES" | tr '\r\n\t' '   ') || block "$FAIL_MSG"
 # 표준 입력 · heredoc 으로 JSON 을 넘기는 gh api(--input) — 정리한 글 어디든 prod ref 가 보이면 막는다
 if (( HAS_INPUT_API )) &&
   [[ "$flat" == *" PRODREF"* || "$flat" =~ refs/heads/prod([^[:alnum:]_.-]|$) || "$flat" =~ (^|[^[:alnum:]_])\"?(ref|base|branch|new_name)\"?[[:space:]]*:[[:space:]]*\"?(refs/heads/)?prod([^[:alnum:]_.-]|$) ]]; then
