@@ -6,10 +6,11 @@
 // - 매니페스트 = app/content/guide/figures.ts (페이지와 같은 표). 키마다 public/guide-screens/<key>.<버전>.png 하나.
 // - 화면 템플릿 = 같은 폴더의 screens.js · ui.css (2609 판 사본), 글꼴 = public/fonts/PretendardVariable.woff2.
 //   네트워크를 쓰지 않는다 — 요청은 전부 이 디스크에서 채운다(같은 입력이면 같은 PNG).
-// - 강조(빨간 테두리)가 창 밖으로 잘리면 그 키를 찍고 실패한다(spec DoD 3). 파일은 쓰지 않는다.
+// - 강조(빨간 테두리)가 창 밖으로 잘리면 그 키를 찍고 실패한다(spec DoD 3). 그 키의 파일 · 기록은 쓰지 않는다 —
+//   통과한 다른 키는 쓰므로, 실패하면 고친 뒤 다시 굽는다.
 // - playwright 는 레포 의존성이 아니다 — design 생성기와 같이 PLAYWRIGHT 로 위치를 준다.
 // - 지우는 일은 하지 않는다. 매니페스트에 없는 PNG 는 목록만 찍는다(guide.test.ts 가 고아 파일을 막는다).
-// - 구운 기록 = app/content/guide/figures.lock.json — 창마다 {입력 지문(템플릿 · 생성기 · 글꼴) · 창 값 지문 · PNG 지문} + 구운 브라우저 판.
+// - 구운 기록 = app/content/guide/figures.lock.json — 창마다 {입력 지문(템플릿 · 생성기 · 글꼴) · 창 값 지문 · PNG 지문 · 구운 브라우저(판 · OS)}.
 //   guide.test.ts 가 지금 파일로 다시 계산해 대조한다 — figures.ts · screens.js · ui.css · render.mjs 를 고치고 다시 굽지 않으면 실패한다.
 // - 화면 글자는 전부 Pretendard 로 그려져야 한다 — 창마다 CDP 로 실제 쓰인 글꼴을 보고, 다른 글꼴(SF · 이모지 등)이면 실패한다
 //   (불변식 «SF 글꼴 미사용» · 굽는 기계마다 PNG 가 달라지지 않게).
@@ -86,6 +87,7 @@ async function foreignFonts() {
 
 mkdirSync(OUT, { recursive: true })
 const inputs = guideInputsHash(HERE, FONT)
+const BAKED_BY = `chromium ${browser.version()} · ${process.platform}`
 const lock = existsSync(LOCK) ? JSON.parse(readFileSync(LOCK, 'utf8')) : { figures: {} }
 const clipped = []
 const foreign = []
@@ -148,10 +150,14 @@ for (const key of keys) {
   }
   const png = await page.locator('#win').screenshot({ animations: 'disabled' })
   writeFileSync(join(CLIENT, 'public', figureSrc(key)), png)
-  lock.figures[key] = { inputs, figure: guideFigureHash(fig, FIGURE_WIDTH, FIGURE_SCALE), png: sha256(png) }
+  lock.figures[key] = {
+    inputs,
+    figure: guideFigureHash(fig, FIGURE_WIDTH, FIGURE_SCALE),
+    png: sha256(png),
+    browser: BAKED_BY,
+  }
   written++
 }
-lock.browser = `chromium ${browser.version()}`
 await browser.close()
 // 매니페스트에 없는 키는 기록에서 뺀다 · 키 순서 고정(diff 가 작게)
 lock.figures = Object.fromEntries(
@@ -159,7 +165,7 @@ lock.figures = Object.fromEntries(
     .filter((k) => lock.figures[k])
     .map((k) => [k, lock.figures[k]]),
 )
-writeFileSync(LOCK, JSON.stringify({ browser: lock.browser, figures: lock.figures }, null, 2) + '\n')
+writeFileSync(LOCK, JSON.stringify({ figures: lock.figures }, null, 2) + '\n')
 
 const known = new Set(Object.keys(GUIDE_FIGURES).map((k) => figureSrc(k).split('/').pop()))
 const orphans = existsSync(OUT) ? readdirSync(OUT).filter((f) => !known.has(f)) : []

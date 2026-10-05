@@ -2,9 +2,11 @@
    screens.js — 설치가이드 재구성 화면 (iOS 26~27 · One UI 7~8 · 우리 발급 화면)
 
    원본: design/install-guide/shared/screens.js @ eb96d75 («설치가이드 2609 v1» · 브랜치
-   imjohnkoo/smartstore-assets). 사이트 가이드(client-guide spec)용 사본이다 — 바꾼 곳은
-   «우리 발급 화면» 3종(web-qr · web-codes-ios · web-codes-aos)과 길게 누르기 화면의 주소창뿐이다
-   (spec D-4 — 지금 발급 화면 /view/{orderId} 의 글자 · 배치와 맞춘다).
+   imjohnkoo/smartstore-assets). 사이트 가이드(client-guide spec)용 사본이다 — 원본과 다른 곳(spec D-4):
+   ① «우리 발급 화면» 3종(web-qr · web-codes-ios · web-codes-aos) — 지금 발급 화면 /view/{orderId} 의 글자 · 배치
+   ② 길게 누르기 화면 — 주소창 app.esimmany.com · 뒤 페이지 QR 숨김(w-page--behind — QR 이 두 개로 보이지 않게)
+   ③ aos-code-input 의 입력 칸 안내 예시 주소를 가린 값(LPA:1$••••$•••• · https://••••)으로
+   원본을 다시 복사해 올 때(spec D-8) 이 세 곳을 되살린다 — guide.test.ts 가 ① 글자 · ③ 가림을 검사한다.
    이 파일은 render.mjs 가 harness.html 에서 읽어 PNG 로 굽는다 — 사이트가 직접 싣지 않는다.
 
    <figure class="shot" data-screen="ios-cellular" data-state="pre"

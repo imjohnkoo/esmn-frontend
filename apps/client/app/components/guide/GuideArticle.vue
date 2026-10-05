@@ -249,6 +249,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
   margin: 14px 0 0;
   font-size: 15px;
   font-weight: 600;
+  line-height: 1.6;
   color: #c62828;
 }
 

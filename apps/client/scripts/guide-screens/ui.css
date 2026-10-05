@@ -1,7 +1,8 @@
 /* ====================================================================
    ui.css — 설치가이드 화면 재구성용 부품 (iOS 26~27 · One UI 7~8)
-   원본: design/install-guide/shared/ui.css @ eb96d75 — 사본. 바꾼 곳은 «우리 발급 화면» 블록뿐이다
-   (지금 /view/{orderId} 모양 — client-guide spec D-4)
+   원본: design/install-guide/shared/ui.css @ eb96d75 — 사본. 원본과 다른 곳: «우리 발급 화면» 블록(지금 /view/{orderId}
+   모양 — client-guide spec D-4) · 길게 누르기 뒤 페이지(w-page--behind) · 글꼴 지정에서 system-ui 제거(SF 로 그려지지 않게 —
+   render.mjs 가 굽는 순간 Pretendard 만 쓰였는지 검사한다)
 
    원칙
    - 모양과 문구는 .cache/ 의 참고 이미지(Apple · 삼성 공식 문서, 경쟁사 가이드)에서 확인한 것만 쓴다

@@ -54,7 +54,7 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
       <NPageHeading
         eyebrow="eSIM QR 코드 발급"
         :title="`eSIM 발급이\n완료됐어요`"
-        :description="`QR 코드를 스캔해서 설치해 주세요.\n현지 도착 후 데이터 로밍을 켜면 자동으로 연결돼요.`"
+        :description="`QR 코드를 스캔해서 설치해 주세요.\n출국 전에 이 회선의 데이터 로밍을 켜 두면 도착하자마자 연결돼요.`"
       />
     </div>
 

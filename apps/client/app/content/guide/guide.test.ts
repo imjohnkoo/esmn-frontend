@@ -292,7 +292,7 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
 
   it('PNG 가 지금 매니페스트 · 템플릿 · 글꼴로 구운 것이다(figures.lock.json — 고치고 다시 굽지 않으면 실패)', () => {
     const lock = lockJson as {
-      figures: Record<string, { inputs: string; figure: string; png: string }>
+      figures: Record<string, { inputs: string; figure: string; png: string; browser: string }>
     }
     const inputs = guideInputsHash(
       new URL('scripts/guide-screens/', CLIENT).pathname,
@@ -310,13 +310,23 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
     }
   })
 
-  it('구운 기록에 구운 브라우저 판이 있다(다른 판으로 다시 구우면 바이트가 바뀐다 — 대조 근거)', () => {
-    expect((lockJson as { browser?: string }).browser).toMatch(/^chromium \d+\./)
+  it('창마다 구운 브라우저(판 · OS)가 기록돼 있고 한 판으로만 구웠다(일부만 다른 판으로 다시 구우면 실패 — spec F-3)', () => {
+    const recs = Object.values(
+      (lockJson as { figures: Record<string, { browser?: string }> }).figures,
+    )
+    for (const r of recs) expect(r.browser).toMatch(/^chromium \d+\.\S+ · [a-z0-9]+$/)
+    expect(new Set(recs.map((r) => r.browser)).size).toBe(1)
   })
 
   it('웹 화면 PNG 글자 = 지금 발급 화면 글자(발급 화면을 고치면 템플릿도 고쳐 다시 굽는다 — 앱 CLAUDE.md)', () => {
     const view = read('app/pages/view/[orderId].vue')
-    const screens = read('scripts/guide-screens/screens.js')
+    // 웹 화면 구간만 본다(«SM-DP+ 주소» · «활성화 코드» 는 아이폰 · 안드로이드 입력 화면에도 있다)
+    const all = read('scripts/guide-screens/screens.js')
+    const screens = all.slice(
+      all.indexOf('// 우리 발급 화면 (/view/{orderId})'),
+      all.indexOf('// 화면별 근거와 확인 필요 항목'),
+    )
+    expect(screens.length).toBeGreaterThan(500)
     for (const t of [
       '아이폰 수동 설치',
       '안드로이드 수동 설치',
@@ -332,11 +342,60 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
     }
   })
 
-  it('이미지 템플릿 안 주소 조각 0 — LPA · SM-DP+ 값은 가린 글자(••••)만 · URL 은 가린 예시 하나(불변식 · D-4)', () => {
+  it('이미지 템플릿 안 주소 · 코드 0 — 웹 화면 값은 가린 글자(••••)만 · 도메인 · 활성화 코드 모양 0 · URL 은 가린 예시 하나(불변식 · D-4)', () => {
     const screens = read('scripts/guide-screens/screens.js')
+    // 발급 화면 코드 줄(wRow) 의 값 = 가린 글자 · 구분자만(LPA:1$ 접두 허용)
+    const vals = [...screens.matchAll(/wRow\('([^']+)', '([^']*)'\)/g)].map(
+      (m) => [m[1], m[2]] as const,
+    )
+    expect(vals.map(([k]) => k)).toEqual(['SM-DP+ 주소', '활성화 코드', 'LPA 전체'])
+    for (const [k, v] of vals) expect(v, k).toMatch(/^(LPA:1\$)?[•$-]+$/)
+    // 도메인 모양(하위 도메인까지 통째로 · 두 글자 이상 이름 + 최상위 도메인)은 발급 호스트 주소창 하나뿐 ·
+    // 활성화 코드 모양(대문자 · 숫자 묶음 - 묶음) 0
+    const domains =
+      screens.match(/(?:[a-z0-9-]+\.)*[a-z0-9-]{2,}\.(?:com|net|org|io|kr|me|app)\b/gi) ?? []
+    expect(domains.length).toBeGreaterThan(0)
+    expect(new Set(domains)).toEqual(new Set(['app.esimmany.com']))
+    expect(screens).not.toMatch(/\b[A-Z0-9]{1,6}-[A-Z0-9]{4,}\b/)
     expect(screens).not.toMatch(/LPA:1\$[^$•…\s]*[A-Za-z0-9-]\.[A-Za-z]{2,}/)
-    expect(screens.match(/https?:\/\/[^\s"'<`]*/g) ?? []).toEqual(['https://••••'])
+    expect(new Set(screens.match(/https?:\/\/[^\s"'<`)]*/g) ?? [])).toEqual(
+      new Set(['https://••••']),
+    )
     expect(screens).not.toMatch(/operator|sm-dp\.|smdp\./i)
+  })
+
+  it('스위치 켜짐/꺼짐 = 본문 행동(«꺼 두세요» 를 켜진 그림으로 그리지 않는다 — 로밍 요금 위험 · QA ⑥ R5)', () => {
+    const screens = read('scripts/guide-screens/screens.js')
+    const sw = (label: string) =>
+      [
+        ...screens.matchAll(
+          new RegExp(
+            `[ia]Row\\('${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}',[^)]*?sw: (true|false)`,
+            'g',
+          ),
+        ),
+      ].map((m) => m[1])
+    const want = {
+      '이 회선 켜기': 'true', // ios STEP 2 «이 회선 켜기와 데이터 로밍을 미리 켜 두세요»
+      '데이터 로밍': 'true',
+      '셀룰러 데이터 전환 허용': 'false', // ios «셀룰러 데이터 전환 허용은 꺼 두세요»
+      '데이터 전환': 'false', // android «데이터 전환은 꺼 두세요»
+      '데이터 로밍 SIM 1': 'false', // android «데이터 로밍 SIM 1은 꺼 두세요»
+      '데이터 로밍 eSIM 1': 'true', // android «데이터 로밍 eSIM 1을 미리 켜 두세요»
+      'eSIM 1': 'true', // android «eSIM 1이 켜져 있으면»
+    } as const
+    for (const [label, on] of Object.entries(want)) {
+      const got = sw(label)
+      expect(got.length, label).toBeGreaterThan(0)
+      expect(new Set(got), label).toEqual(new Set([on]))
+    }
+    // 본문이 그 행동을 말한다(문장이 바뀌면 이 표도 본다)
+    const body = strings(IOS_GUIDE).join('\n') + strings(ANDROID_GUIDE).join('\n')
+    expect(body).toContain('{{이 회선 켜기}}와 {{데이터 로밍}}을 미리 켜 두세요')
+    expect(body).toContain('{{셀룰러 데이터 전환 허용}}은 꺼 두세요')
+    expect(body).toContain('{{데이터 전환}}은 꺼 두세요')
+    expect(body).toContain('**데이터 로밍 SIM 1은 꺼 두세요.**')
+    expect(body).toContain('{{데이터 로밍 eSIM 1}}을 미리 켜 두세요')
   })
 
   it('src 는 /guide-screens/<키>.<버전>.png (CloudFront 캐시 무효화가 필요 없게 버전 접미 — Proposal K4)', () => {
