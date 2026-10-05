@@ -8,7 +8,10 @@ import { GUIDE_FLOW } from '~/content/guide/common'
     <li v-for="item in GUIDE_FLOW" :key="item.step" class="g-flow__item">
       <span class="g-flow__step">{{ item.step }}</span>
       <span class="g-flow__title">{{ item.title }}</span>
-      <span class="g-flow__meta">{{ item.meta }}</span>
+      <span class="g-flow__meta"
+        >{{ item.meta.split(' · ')[0] }}
+        <span class="g-flow__nw">· {{ item.meta.split(' · ')[1] }}</span></span
+      >
     </li>
   </ol>
 </template>
@@ -46,6 +49,10 @@ import { GUIDE_FLOW } from '~/content/guide/common'
   font-weight: 800;
   line-height: 1.35;
   color: var(--n-color-neutral-900, #171717);
+}
+
+.g-flow__nw {
+  white-space: nowrap;
 }
 
 .g-flow__meta {

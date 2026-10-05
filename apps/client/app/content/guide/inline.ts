@@ -28,7 +28,7 @@ export function parseGuideInline(src: string): GuideInline[] {
 
   const pushText = (text: string) => {
     if (!text) return
-    if (STRAY.test(text))
+    if (STRAY.test(text) || /[{}]/.test(text))
       throw new Error(`guide inline: 짝이 안 맞는 표기 — ${JSON.stringify(src)}`)
     let rest = text
     if (pendingParticle) {
@@ -47,6 +47,10 @@ export function parseGuideInline(src: string): GuideInline[] {
     pushText(src.slice(last, m.index))
     pendingParticle = null
     const [, ui, path, bold, nw] = m
+    const inner = (ui ?? path ?? bold ?? nw)!
+    // 표기 안에 또 표기 · 빈 이름은 문안 실수다(«{{eSIM **추가**}}» 는 별표가 화면에 그대로 찍힌다)
+    if (STRAY.test(inner) || /[{}[\]*]/.test(inner) || !inner.trim())
+      throw new Error(`guide inline: 표기 안 표기 · 빈 표기 — ${JSON.stringify(src)}`)
     if (ui !== undefined) {
       out.push({ t: 'ui', v: ui, particle: '' })
       pendingParticle = { t: 'ui' }

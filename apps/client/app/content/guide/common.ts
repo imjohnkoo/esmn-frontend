@@ -47,6 +47,8 @@ export const GUIDE_HUB = {
 
 export const GUIDE_CONTACT = {
   title: '그래도 해결되지 않으면 문의해 주세요',
+  /** 허브(/guide)용 — 허브에는 문제 해결 내용이 없어 «그래도» 를 뺀다 */
+  hubTitle: '설치가 잘 안 되면 문의해 주세요',
   lede: '설치 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.',
   more: '고객센터 전체 보기',
 } as const

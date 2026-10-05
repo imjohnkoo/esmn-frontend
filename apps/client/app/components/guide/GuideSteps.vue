@@ -10,10 +10,12 @@ defineProps<{ steps: readonly GuideStep[] }>()
 </script>
 
 <template>
-  <ol class="g-steps">
+  <ol class="g-steps" role="list">
     <li v-for="(step, i) in steps" :key="i" class="g-step">
       <div class="g-step__text">
-        <span class="g-step__num" aria-hidden="true">{{ i + 1 }}</span>
+        <span class="g-step__num"
+          >{{ i + 1 }}<span class="g-step__sr">번.</span></span
+        >
         <p class="g-step__p">
           <GuideText :src="step.text" />
           <span v-if="step.sub" class="g-step__sub"><GuideText :src="step.sub" /></span>
@@ -52,6 +54,15 @@ defineProps<{ steps: readonly GuideStep[] }>()
   color: #fff;
   font-size: 14px;
   font-weight: 800;
+}
+
+.g-step__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .g-step__p {

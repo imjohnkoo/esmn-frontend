@@ -1,7 +1,10 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { STATIC_ROUTES } from '#shared/catalog/seo'
 import { ANDROID_GUIDE } from './android'
+// 생성 스크립트의 지문 계산을 그대로 쓴다(같은 계산이어야 대조가 된다)
+import { guideFigureHash, guideInputsHash, sha256 } from '../../../scripts/guide-screens/lock.mjs'
+import * as COMMON from './common'
 import { GUIDE_PAGES } from './common'
 import {
   FIGURE_SCALE,
@@ -13,6 +16,7 @@ import {
   type FigureKey,
 } from './figures'
 import { guidePlainText, parseGuideInline } from './inline'
+import lockJson from './figures.lock.json'
 import { IOS_GUIDE } from './ios'
 import type { GuideContent, GuideStep } from './types'
 
@@ -62,10 +66,14 @@ describe('인라인 표기 파서', () => {
       { t: 'text', v: '.' },
     ])
   })
-  it('짝이 안 맞는 표기 · 빈 경로 토막은 던진다', () => {
+  it('짝이 안 맞는 표기 · 빈 경로 토막 · 표기 안 표기 · 빈 이름 · 남는 괄호는 던진다', () => {
     expect(() => parseGuideInline('{{계속을 눌러요')).toThrow()
     expect(() => parseGuideInline('**굵게')).toThrow()
     expect(() => parseGuideInline('[[설정 › ]]')).toThrow()
+    expect(() => parseGuideInline('{{eSIM **추가**}}를')).toThrow()
+    expect(() => parseGuideInline('[[설정 › {{셀룰러}}]]에서')).toThrow()
+    expect(() => parseGuideInline('{{a}}}')).toThrow()
+    expect(() => parseGuideInline('{{ }}를')).toThrow()
   })
   it('표기를 걷은 글자 — 경로는 « › » 로 잇는다', () => {
     expect(guidePlainText('[[설정 › 셀룰러 › 셀룰러 데이터]]를 **메인**으로')).toBe(
@@ -129,14 +137,34 @@ describe.each(Object.entries(GUIDES))('%s 가이드 콘텐츠', (os, g) => {
     expect(all).not.toMatch(/재개통|나라마다 다시/)
   })
 
-  it('공급사 값 · 개인정보 0 — 주소 · 코드 값 · 전화번호 · URL 을 본문에 적지 않는다', () => {
+  it('공급사 값 · 개인정보 0 — 주소 · 도메인 · 코드 값 · 전화번호 · 이메일 · ICCID · URL 을 본문에 적지 않는다', () => {
     const all = strings(g).map(guidePlainText).join('\n')
-    expect(all).not.toMatch(/https?:\/\/|LPA:1\$|\.io\b|\b01[016789]-?\d{3,4}-?\d{4}\b/)
+    expect(all).not.toMatch(/https?:\/\/|LPA:1\$|\b[a-z0-9-]+\.(com|net|io|global|kr|co|org)\b/i)
+    expect(all).not.toMatch(/\b01[016789][-\s]?\d{3,4}[-\s]?\d{4}\b|[\w.+-]+@[\w-]+\.[\w.]+|\b89\d{17,18}\b/)
   })
 
   it('제품명 표기 «아이폰»(client-shell D-52) — 본문에 «iPhone» 0', () => {
     const all = strings(g).map(guidePlainText).join('\n')
     expect(all).not.toContain('iPhone')
+  })
+})
+
+describe('공통 문안(허브 · 카드 · 흐름 · 문의) — 본문과 같은 카피 불변식', () => {
+  const all = JSON.stringify(COMMON)
+  it('자정 · iPhone · URL · 전화번호 0', () => {
+    expect(all).not.toMatch(/자정|iPhone|https?:\/\/|\b01[016789]-?\d{3,4}-?\d{4}\b/)
+  })
+  it('OS 페이지 경로 · 이름은 글자 그대로(아이폰 → /guide/ios · 안드로이드 → /guide/android — 서로 바뀌면 실패)', () => {
+    expect(GUIDE_PAGES.ios).toMatchObject({ to: '/guide/ios', label: '아이폰 설치 가이드', short: '아이폰' })
+    expect(GUIDE_PAGES.android).toMatchObject({
+      to: '/guide/android',
+      label: '안드로이드 설치 가이드',
+      short: '안드로이드',
+    })
+    expect(IOS_GUIDE.os).toBe('ios')
+    expect(ANDROID_GUIDE.os).toBe('android')
+    expect(IOS_GUIDE.title).toContain('아이폰')
+    expect(ANDROID_GUIDE.title).toContain('안드로이드')
   })
 })
 
@@ -157,7 +185,9 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
 
   it('PNG 가 전부 있고 크기가 매니페스트와 같다(가로 368 × 3 · 세로 = 가로 ÷ 비율) · 매니페스트 밖 파일 0', () => {
     const dir = new URL('public/guide-screens/', CLIENT)
-    const files = readdirSync(dir).sort()
+    const files = readdirSync(dir)
+      .filter((f) => !f.startsWith('.'))
+      .sort()
     expect(files).toEqual(keys.map((k) => figureSrc(k).split('/').pop()!).sort())
     for (const k of keys) {
       const buf = readFileSync(new URL(`${k}.${FIGURE_VERSION}.png`, dir))
@@ -169,6 +199,25 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
       ])
     }
     expect(FIGURE_WIDTH).toBe(368)
+    expect(FIGURE_SCALE).toBe(3)
+  })
+
+  it('PNG 가 지금 매니페스트 · 템플릿 · 글꼴로 구운 것이다(figures.lock.json — 고치고 다시 굽지 않으면 실패)', () => {
+    const lock = lockJson as { figures: Record<string, { inputs: string; figure: string; png: string }> }
+    const inputs = guideInputsHash(
+      new URL('scripts/guide-screens/', CLIENT).pathname,
+      new URL('public/fonts/PretendardVariable.woff2', CLIENT).pathname,
+    )
+    expect(Object.keys(lock.figures).sort()).toEqual([...keys].sort())
+    for (const k of keys) {
+      const rec = lock.figures[k]!
+      expect(rec.inputs, `${k} — 템플릿 · 글꼴이 바뀌었다: render.mjs 로 다시 굽기`).toBe(inputs)
+      expect(rec.figure, `${k} — 창 값이 바뀌었다: render.mjs 로 다시 굽기`).toBe(
+        guideFigureHash(GUIDE_FIGURES[k], FIGURE_WIDTH, FIGURE_SCALE),
+      )
+      const png = readFileSync(new URL(`public/guide-screens/${k}.${FIGURE_VERSION}.png`, CLIENT))
+      expect(rec.png, `${k} — PNG 가 기록과 다르다`).toBe(sha256(png))
+    }
   })
 
   it('src 는 /guide-screens/<키>.<버전>.png (CloudFront 캐시 무효화가 필요 없게 버전 접미 — Proposal K4)', () => {
@@ -182,30 +231,40 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
       expect(STATIC_ROUTES as readonly string[]).toContain(page.to)
   })
 
-  it('발급 화면 카드가 사이트 안 OS 가이드를 새 탭으로 연다(D-5)', () => {
+  it('발급 화면 카드가 사이트 안 OS 가이드를 새 탭으로 연다(D-5) — 아이폰 카드(사과 아이콘)는 ios · 안드로이드 카드는 android', () => {
     const view = read('app/pages/view/[orderId].vue')
+    const icon = { ios: 'fill="#111827"', android: 'fill="#3ddc84"' } as const
     for (const os of ['ios', 'android'] as const) {
       const card = view.match(
-        new RegExp(`<NLinkCard[^>]*:href="GUIDE_PAGES\\.${os}\\.to"[^>]*>`, 's'),
+        new RegExp(`<NLinkCard[^>]*:label="GUIDE_PAGES\\.${os}\\.label"[^>]*>[\\s\\S]*?</NLinkCard>`),
       )?.[0]
       expect(card, os).toBeTruthy()
+      expect(card).toContain(`:sub="GUIDE_PAGES.${os}.sub"`)
+      expect(card).toContain(`:href="GUIDE_PAGES.${os}.to"`)
       expect(card).toMatch(/\sexternal\s/)
+      expect(card).toContain(icon[os])
     }
+    expect(view).not.toMatch(/Universal Link 자동 설치|Galaxy · Pixel · QR 등록/)
   })
 
-  it('외부 가이드 사이트(esimmany.super.site)로 나가는 링크 0 — app · shared · server 전체', () => {
-    const roots = ['app', 'shared', 'server']
+  it('외부 가이드 사이트(esimmany.super.site)로 나가는 링크 0 — apps/client 전체(생성물 · 의존성 폴더 밖)', () => {
+    const SKIP = new Set(['node_modules', '.nuxt', '.output', '.data', '.cache'])
     const hits: string[] = []
+    let scanned = 0
     const walk = (rel: string) => {
-      for (const e of readdirSync(new URL(`${rel}/`, CLIENT), { withFileTypes: true })) {
-        const p = `${rel}/${e.name}`
+      for (const e of readdirSync(new URL(rel ? `${rel}/` : './', CLIENT), { withFileTypes: true })) {
+        if (SKIP.has(e.name)) continue
+        const p = rel ? `${rel}/${e.name}` : e.name
         if (e.isDirectory()) walk(p)
-        else if (/\.(vue|ts|json)$/.test(e.name) && !p.endsWith('guide.test.ts')) {
+        else if (/\.(vue|ts|mjs|js|json|html|css|md|ya?ml|txt)$/.test(e.name) && !p.endsWith('guide.test.ts')) {
+          if (statSync(new URL(p, CLIENT)).size > 5_000_000) continue
+          scanned++
           if (read(p).includes('super.site')) hits.push(p)
         }
       }
     }
-    roots.forEach(walk)
+    walk('')
+    expect(scanned).toBeGreaterThan(100)
     expect(hits).toEqual([])
   })
 })

@@ -72,7 +72,7 @@ describe('정적 페이지 결선 — 각 페이지가 자기 경로의 설명�
 })
 
 describe('프리렌더 · sitemap (catalog spec F-9 · E2E-15)', () => {
-  it('프리렌더 = 홈 · 검색 · 국가 전수 · 상품 전수 · 정적 6 — 전부 소문자 · 중복 없음', () => {
+  it('프리렌더 = 홈 · 검색 · 국가 전수 · 상품 전수 · 정적 7 — 전부 소문자 · 중복 없음', () => {
     const routes = prerenderRoutes(catalog)
     expect(routes).toHaveLength(
       2 + countriesOf(catalog).length + catalog.zones.length + STATIC_ROUTES.length,

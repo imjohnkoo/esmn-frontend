@@ -5,7 +5,7 @@ import { NLinkCard } from '@imjohnkoo/design-vue'
 import { STATIC_DESCRIPTIONS } from '#shared/catalog/seo'
 import GuideContact from '~/components/guide/GuideContact.vue'
 import GuideFlow from '~/components/guide/GuideFlow.vue'
-import { GUIDE_HUB, GUIDE_PAGES } from '~/content/guide/common'
+import { GUIDE_CONTACT, GUIDE_HUB, GUIDE_PAGES } from '~/content/guide/common'
 import type { GuideOs } from '~/content/guide/types'
 
 // canonical · 설명 — sitemap 에 든 정적 페이지(catalog F-9)
@@ -47,7 +47,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
 
     <NuxtLink to="/supported-devices" class="guide-page__link">지원 기기 확인</NuxtLink>
 
-    <GuideContact />
+    <GuideContact :title="GUIDE_CONTACT.hubTitle" />
   </div>
 </template>
 

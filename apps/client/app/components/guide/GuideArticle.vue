@@ -136,8 +136,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
       <div class="g-faqs">
         <div v-for="(f, i) in content.help.faqs" :key="f.q" class="g-faq">
           <h3 class="g-faq__q">
-            <span class="g-faq__n">Q{{ i + 1 }}</span
-            ><span><GuideText :src="f.q" /></span>
+            <span class="g-faq__n">Q{{ i + 1 }}</span> <span><GuideText :src="f.q" /></span>
           </h3>
           <div class="g-faq__a">
             <p v-for="(a, j) in f.a" :key="j"><GuideText :src="a" /></p>
@@ -167,11 +166,6 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
 
 .g-article p {
   text-wrap: pretty;
-}
-
-/* 고정 헤더 아래로 앵커가 오게 */
-.g-article :is(section, header) {
-  scroll-margin-top: calc(var(--shell-header-height, 56px) + 8px);
 }
 
 /* ----- 머리 ----- */
@@ -217,7 +211,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
   border-radius: var(--n-radius-full, 9999px);
   font-size: 15px;
   font-weight: 700;
-  color: var(--n-color-neutral-500, #737373);
+  color: var(--n-color-neutral-600, #525252);
   text-decoration: none;
 }
 
@@ -255,7 +249,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
   margin: 14px 0 0;
   font-size: 13px;
   font-weight: 600;
-  color: #e5372f;
+  color: #c62828;
 }
 
 /* ----- 구간 ----- */

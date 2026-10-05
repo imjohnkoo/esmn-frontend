@@ -1079,8 +1079,9 @@
   gap: 6px;
   padding: 11px 18px;
   border-radius: 12px;
-  background: #f1edff;
-  color: #6239ff;
+  /* 발급 화면 버튼 = DS NButton secondary(회색 바탕 · 진한 글자) */
+  background: #f5f5f5;
+  color: #262626;
   font-size: 15px;
   font-weight: 700;
 }
@@ -1088,6 +1089,10 @@
   width: 16px;
   height: 16px;
   stroke: currentColor;
+}
+/* 길게 누르기 화면 — 들어 올린 QR 만 보이게 뒤 페이지의 QR 은 숨긴다(QR 이 두 개로 보이지 않게) */
+.w-page--behind .w-qr {
+  visibility: hidden;
 }
 .w-hint {
   margin: 12px 0 0;

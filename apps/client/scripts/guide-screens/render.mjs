@@ -9,6 +9,8 @@
 // - 강조(빨간 테두리)가 창 밖으로 잘리면 그 키를 찍고 실패한다(spec DoD 3). 파일은 쓰지 않는다.
 // - playwright 는 레포 의존성이 아니다 — design 생성기와 같이 PLAYWRIGHT 로 위치를 준다.
 // - 지우는 일은 하지 않는다. 매니페스트에 없는 PNG 는 목록만 찍는다(guide.test.ts 가 고아 파일을 막는다).
+// - 구운 기록 = app/content/guide/figures.lock.json — 창마다 {입력 지문(템플릿 · 글꼴) · 창 값 지문 · PNG 지문}.
+//   guide.test.ts 가 지금 파일로 다시 계산해 대조한다 — figures.ts · screens.js · ui.css 를 고치고 다시 굽지 않으면 실패한다.
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
@@ -22,6 +24,8 @@ const FONT = join(CLIENT, 'public/fonts/PretendardVariable.woff2')
 const { GUIDE_FIGURES, FIGURE_WIDTH, FIGURE_SCALE, figureSize, figureSrc } = await import(
   join(CLIENT, 'app/content/guide/figures.ts')
 )
+const { guideInputsHash, guideFigureHash, sha256 } = await import(join(HERE, 'lock.mjs'))
+const LOCK = join(CLIENT, 'app/content/guide/figures.lock.json')
 const { chromium } = await import(process.env.PLAYWRIGHT ?? 'playwright')
 
 const onlyArg = process.argv.indexOf('--only')
@@ -64,6 +68,8 @@ if (!fontOk) {
 }
 
 mkdirSync(OUT, { recursive: true })
+const inputs = guideInputsHash(HERE, FONT)
+const lock = existsSync(LOCK) ? JSON.parse(readFileSync(LOCK, 'utf8')) : { figures: {} }
 const clipped = []
 let written = 0
 for (const key of keys) {
@@ -119,9 +125,17 @@ for (const key of keys) {
   }
   const png = await page.locator('#win').screenshot({ animations: 'disabled' })
   writeFileSync(join(CLIENT, 'public', figureSrc(key)), png)
+  lock.figures[key] = { inputs, figure: guideFigureHash(fig, FIGURE_WIDTH, FIGURE_SCALE), png: sha256(png) }
   written++
 }
 await browser.close()
+// 매니페스트에 없는 키는 기록에서 뺀다 · 키 순서 고정(diff 가 작게)
+lock.figures = Object.fromEntries(
+  Object.keys(GUIDE_FIGURES)
+    .filter((k) => lock.figures[k])
+    .map((k) => [k, lock.figures[k]]),
+)
+writeFileSync(LOCK, JSON.stringify(lock, null, 2) + '\n')
 
 const known = new Set(Object.keys(GUIDE_FIGURES).map((k) => figureSrc(k).split('/').pop()))
 const orphans = existsSync(OUT) ? readdirSync(OUT).filter((f) => !known.has(f)) : []

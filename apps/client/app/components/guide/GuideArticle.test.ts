@@ -53,6 +53,7 @@ describe.each([
 
   it('모든 단계 · 보조 문장 · 안내 · 질문 · 답이 화면 글자에 있다(표기를 걷은 글자 그대로)', () => {
     const all = [
+      content.eyebrow,
       content.title,
       ...content.lede,
       content.checks.lede,
@@ -78,9 +79,19 @@ describe.each([
       ...[content.step1, content.step2, content.step3].flatMap((s) =>
         s.notes.flatMap((n) => n.lines),
       ),
-      ...content.help.faqs.flatMap((f) => [f.q, ...f.a]),
+      ...content.help.faqs.flatMap((f) => [f.q, ...f.a, f.link?.label ?? '']),
     ].filter(Boolean)
     for (const s of all) expect(text, s).toContain(norm(guidePlainText(s)))
+  })
+
+  it('화면 글자에 인라인 표기({{ [[ ** (( 와 짝)가 하나도 남지 않는다', () => {
+    expect(text).not.toMatch(/\{\{|\}\}|\[\[|\]\]|\*\*|\(\(|\)\)/)
+  })
+
+  it('삭제 경고가 설치 단계보다 앞에 있다(확인 구간 → STEP 1 순서)', () => {
+    const alert = w.find('.g-alert').element
+    const step1 = w.find('#step1').element
+    expect(alert.compareDocumentPosition(step1) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('문제 해결은 접지 않는다(D-6) — details · 숨김 0, 질문 번호 Q1…', () => {
@@ -114,9 +125,11 @@ describe.each([
 
   it('문의 — 카카오톡 채널 · 네이버 톡톡이 새 탭 링크 · 고객센터 전체 보기(F-5)', () => {
     const cards = w.findAll('a.g-cs__card')
-    expect(cards.map((a) => [a.attributes('href'), a.attributes('target')])).toEqual([
-      [SUPPORT_KAKAO_URL, '_blank'],
-      [SMARTSTORE_URL, '_blank'],
+    expect(
+      cards.map((a) => [a.attributes('href'), a.attributes('target'), a.attributes('rel')]),
+    ).toEqual([
+      [SUPPORT_KAKAO_URL, '_blank', 'noopener noreferrer'],
+      [SMARTSTORE_URL, '_blank', 'noopener noreferrer'],
     ])
     expect(w.find('.g-cs__more').attributes('href')).toBe('/my#cs')
   })

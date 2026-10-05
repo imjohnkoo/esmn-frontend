@@ -66,7 +66,7 @@ export const ANDROID_GUIDE: GuideContent = {
         steps: [
           {
             text: '발급 화면에서 {{QR 코드 다운로드}}를 눌러 갤러리에 저장해요.',
-            sub: '저장이 안 되면 화면을 캡처해도 돼요.',
+            sub: '저장이 안 되면 화면을 캡처해도 돼요. 한 주문에 eSIM 이 여러 개면 버튼 이름이 ‘QR 다운로드’예요.',
             figure: 'web-qr-aos-download',
           },
           {

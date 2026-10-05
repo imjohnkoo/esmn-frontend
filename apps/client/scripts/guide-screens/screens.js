@@ -222,7 +222,7 @@
       os: 'ios',
       cls: 'i-safari',
       build:
-        () => `${iStatus({ net: '5G' })}<div class="w-page" style="filter:blur(2px);opacity:.55">${webQrBody()}</div>
+        () => `${iStatus({ net: '5G' })}<div class="w-page w-page--behind" style="filter:blur(2px);opacity:.55">${webQrBody()}</div>
         <div class="i-dim" style="background:rgba(0,0,0,.18)"></div>
         <div style="position:absolute;z-index:4;left:95px;top:150px;width:200px;height:200px;padding:14px;border-radius:18px;background:#fff;box-shadow:0 18px 40px rgba(0,0,0,.25)">${fakeQr(5).replace('class="qr"', 'style="width:100%;height:100%"')}</div>
         <div class="i-menu" style="left:70px;top:372px">
@@ -397,7 +397,7 @@
   }
 
   // 우리 발급 화면 (/view/{orderId}) — 글자는 지금 화면 그대로(spec D-4), 값은 가린다
-  const W_STEP = '<div class="w-step"><span class="w-step__bar"><b></b></span><span class="w-step__t">4/4 · 발급 완료</span></div>'
+  const W_STEP = '<div class="w-step"><span class="w-step__bar"><b></b></span><span class="w-step__t">4 / 4 발급 완료</span></div>'
   function webQrBody() {
     return `${W_STEP}<p class="w-eyebrow">eSIM QR 코드 발급</p><h3 class="w-title">eSIM 발급이<br />완료됐어요</h3>
       <div class="w-card"><span class="w-pill"><i></i>발급완료</span>
@@ -409,8 +409,9 @@
     `<div class="w-code"><span class="w-code__t"><span class="w-code__k">${k}</span><span class="w-code__v">${v}</span></span><span class="w-copy">${I.copy}복사</span></div>`
   // 발급 화면 아래쪽: 수동 설치 코드 두 묶음 — 강조는 OS 에 맞는 묶음
   function webCodes(os) {
-    const ios = `<div class="w-divider"><span>아이폰 수동 설치</span></div>${wRow('SM-DP+ 주소', '••••••••.io')}${wRow('활성화 코드', 'K2-••••••-••••••')}`
-    const aos = `<div class="w-divider"><span>안드로이드 수동 설치</span></div>${wRow('LPA 전체', 'LPA:1$••••••••.io$K2-••••••')}`
+    // 값은 가린다 — 공급사 주소처럼 보이는 조각(도메인 · 접두)도 넣지 않는다(spec 불변식 «공급사 값 미기재»)
+    const ios = `<div class="w-divider"><span>아이폰 수동 설치</span></div>${wRow('SM-DP+ 주소', '••••••••••••••')}${wRow('활성화 코드', '••••-••••-••••-••••')}`
+    const aos = `<div class="w-divider"><span>안드로이드 수동 설치</span></div>${wRow('LPA 전체', 'LPA:1$••••••••••$••••-••••')}`
     return `<div class="w-card w-card--codes"><div${os === 'ios' ? ' data-k="codes"' : ''}>${ios}</div><div${os === 'aos' ? ' data-k="codes"' : ''}>${aos}</div></div>`
   }
 

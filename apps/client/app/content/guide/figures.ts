@@ -7,7 +7,7 @@
  * `<figure class="shot">` 속성 그대로다. 창 폭이 2609 판(약 352px)과 비슷해 같은 범위가 보인다.
  * 예외(spec D-3): ① 2609 판의 축소 배율(0.86 · 0.92 — 5창)은 1 로 — 휴대폰 폭에서 화면 글자를 키운다.
  *   그 때문에 아래 버튼이 잘린 ios-plan-data-only 만 초점 42 → 50.
- *   또 아래 안내 · QR 이 잘리던 ios-qr-scan · web-qr-ios 는 초점 30 → 44(강조 없는 창 — 휴대폰 1열에서 다 보이게).
+ *   또 아래 안내 · QR 이 잘리던 ios-qr-scan · web-qr-ios 는 초점 30 → 41 · 46(강조 없는 창 — 안내 · QR 은 다 보이고 반쯤 잘린 글자 · 버튼은 창 밖으로).
  * ② 문제 해결 창의 비율 0.9 → 0.82(본문 창과 같은 비율 — 같은 화면이면 파일을 함께 쓴다).
  *
  * ⚠️ 이 파일은 Node 가 타입만 지우고 바로 읽는다(render.mjs) — import · enum 을 쓰지 않는다.
@@ -64,14 +64,14 @@ export const GUIDE_FIGURES = {
   'ios-qr-scan': {
     screen: 'ios-qr-scan',
     ar: 0.82,
-    focus: 44,
+    focus: 41,
     alt: 'QR 코드 스캔 화면 — 화면 안에 QR 코드를 맞춘 모습',
   },
   'web-qr-ios': {
     screen: 'web-qr',
     state: 'ios',
     ar: 0.82,
-    focus: 44,
+    focus: 46,
     alt: '아이폰 Safari 로 연 발급 완료 화면 — QR 코드',
   },
   'ios-longpress-add-esim': {

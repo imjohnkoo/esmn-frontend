@@ -5,12 +5,13 @@ import { ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { GUIDE_CONTACT } from '~/content/guide/common'
 import { supportRows } from '~/content/support'
 
+const props = withDefaults(defineProps<{ title?: string }>(), { title: GUIDE_CONTACT.title })
 const rows = supportRows().filter((r) => r.key === 'kakao' || r.key === 'naver')
 </script>
 
 <template>
   <section class="g-cs" aria-labelledby="guide-cs-title">
-    <h2 id="guide-cs-title" class="g-cs__title">{{ GUIDE_CONTACT.title }}</h2>
+    <h2 id="guide-cs-title" class="g-cs__title">{{ props.title }}</h2>
     <p class="g-cs__lede">{{ GUIDE_CONTACT.lede }}</p>
     <ul class="g-cs__cards">
       <li v-for="row in rows" :key="row.key">
