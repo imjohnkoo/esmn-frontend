@@ -167,13 +167,18 @@ mkdir -p "$FC/nojq" "$FC/badawk"
 for t in bash cat tr sed awk grep printf mktemp; do p=$(command -v "$t") && ln -sf "$p" "$FC/nojq/$t"; done
 for t in bash cat tr sed grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/badawk/$t"; done
 printf '#!/bin/sh\nexit 2\n' > "$FC/badawk/awk" && chmod +x "$FC/badawk/awk"
+# awk 가 제 할 일을 다 내고 실패 코드로 끝나도(일부만 내고 죽는 경우의 대역) 막는다 — pipefail(7회차 minor 10)
+mkdir -p "$FC/lateawk"
+for t in bash cat tr sed grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/lateawk/$t"; done
+printf '#!/bin/sh\n"%s" "$@"\nexit 2\n' "$(command -v awk)" > "$FC/lateawk/awk" && chmod +x "$FC/lateawk/awk"
 fc() { # fc <이름> <PATH> — 정상 명령(git status)도 막혀야 한다
   local o; o=$(printf '%s' '{"tool_input":{"command":"git status"}}' | PATH="$2" "$BASH" "$HOOK" 2>/dev/null)
   if [[ "$o" == *'"deny"'* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); printf '  ⛔ fail-closed 아님: %s\n' "$1"; fi
 }
-echo "== fail-closed (jq 없음 · awk 실패) =="
+echo "== fail-closed (jq 없음 · awk 실패 · awk 출력 뒤 실패) =="
 fc "jq 없음" "$FC/nojq"
 fc "awk 실패" "$FC/badawk"
+fc "awk 출력 뒤 실패" "$FC/lateawk"
 
 echo
 printf 'pass=%d fail=%d\n' "$pass" "$fail"

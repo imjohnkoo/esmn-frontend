@@ -1087,7 +1087,7 @@ gh api -X POST repos/o/r/actions/runs/123/rerun
 git push --mirr origin
 === block R5-c1-H14 git push origin "prod" with -- separator quoted
 git push origin -- "prod"
-=== block R5-c1-H15 git push with refspec via =  --repo= then prod
+=== block R5-c1-H15 git push --repo origin prod (공백 꼴)
 git push --repo origin prod
 === block R5-c1-H16 su -c
 su john -c 'git push origin HEAD:prod'
@@ -1507,7 +1507,7 @@ git reset "--hard" HEAD~1
 git -C ../x push origin HEAD:prod
 === block R6-p1-P02 push prod with --no-verify after
 git push origin HEAD:prod --no-verify
-=== block R6-p1-P03 push with -u and quoted var dest
+=== block R6-p1-P03 push with -u (변수 목적지는 못 본다 — 머리 주석)
 git push -u origin HEAD:prod
 === block R6-p1-P04 git push --force-if-includes
 git push --force-if-includes origin dev
@@ -1548,7 +1548,7 @@ gh api -X DELETE "repos/o/r/git/refs/heads/prod"
 === block R6-p1-P22 gh api PATCH prod with --raw-field
 gh api -X PATCH repos/o/r/git/refs/heads/prod --raw-field sha=abc
 === block R6-p1-P23 git push origin HEAD:prod  with trailing spaces
-git push origin HEAD:prod
+git push origin HEAD:prod   
 === block R6-p1-P24 git push origin HEAD:prod;
 git push origin HEAD:prod;
 === block R6-p1-P25 git push origin $(echo HEAD):prod
@@ -1592,10 +1592,10 @@ cat <<-EOF > x
 	memo
 	EOF
 git push origin HEAD:prod
-=== block R6-p1-P38 heredoc delimiter with trailing space on close line
+=== block R6-p1-P38 닫는 줄 뒤 공백 — bash 도 닫지 않는다(끝까지 본문) · 훅은 닫히지 않은 heredoc 을 되살려 명령으로 본다(안전 쪽)
 cat <<'EOF' > x
 memo
-EOF
+EOF 
 git push origin HEAD:prod
 === allow R6-p1-P39 commit heredoc unquoted delim, body with $VAR only
 git commit -F - <<EOF
@@ -1699,7 +1699,7 @@ git push origin HEAD:prod
 EOF
 === block R6-p2-X20 git push -- refspec quoted with spaces? no: push with --repo=URL then prod
 git push --repo=https://github.com/imjohnkoo/nomacom-frontend.git HEAD:prod
-=== block R6-p2-X21 gh api PATCH refs/heads/prod via --method and -F at end without space value
+=== block R6-p2-X21 gh api -F 로 prod ref 쓰기(메서드 없이 — 필드가 있으면 POST)
 gh api repos/o/r/git/refs/heads/prod -F sha=abc
 === block R6-p2-X22 git push origin HEAD:prod inside $(()) ? no — inside process substitution
 cat <(git push origin HEAD:prod)
@@ -1799,7 +1799,7 @@ git rebase -x 'yarn turbo run test --filter=nomacom-client' origin/dev
 eval "echo 'git push origin prod 는 금지'"
 === allow R6-p3-Y38 gh pr create title containing "docker push" phrase
 gh pr create --base dev --title "chore: docker push 경로 문서화" --body "x"
-=== allow R6-p3-Y39 heredoc data with gh api text then gh api comment --input other (cross-seg FP documented)
+=== allow R6-p3-Y39 커밋 메시지 heredoc 뒤 gh pr view
 git commit -F - <<'EOF'
 fix: x
 EOF
@@ -1912,3 +1912,208 @@ git push origin "HEAD:prod"
 === block R6-p6-Z12 git config core.sshCommand then quoted
 git config core.sshCommand "ssh -i ~/.ssh/id_work"
 git push origin "HEAD:prod"
+=== block R7-B01 앞 명령 bash x.sh 뒤 커밋 heredoc 본문의 don't — 닫는 줄 뒤 prod push(7회차 B1)
+bash .claude/hooks/guard-prod-push.test.sh && git commit -F - <<'EOF'
+fix(hook): don't treat commit bodies as commands
+EOF
+git push origin HEAD:prod && gh run list --branch prod --limit 1 --json status -q '.[0].status'
+=== block R7-B02 같은 꼴 — amend 뒤 force-with-lease
+bash .claude/hooks/guard-prod-push.test.sh && git commit --amend -F - <<'EOF'
+fix(hook): don't treat commit bodies as commands
+EOF
+git push --force-with-lease origin imjohnkoo/x && gh pr view --json url -q '.url'
+=== block R7-B03 같은 꼴 — reset --hard
+bash .claude/hooks/guard-prod-push.test.sh && git commit -F - <<'EOF'
+fix: it's done
+EOF
+git reset --hard origin/dev && echo 'reset'
+=== block R7-B04 들여 쓴 닫는 줄은 닫지 않는다(bash 실측) — 진짜 닫는 줄 뒤 prod push
+cat > docs/heredoc.md <<'EOF'
+예시는 아래처럼 닫는다:
+    EOF
+it's the closing line
+EOF
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B05 python 본문의 이스케이프 따옴표(개수는 짝수 · 셸 기준 짝 없음)
+python3 - <<'PY'
+x = 'a\'b\'c'
+PY
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B06 ssh heredoc 본문의 won't — 닫는 줄 뒤 prod push
+ssh admin-ec2 <<'EOF'
+echo deploy won't start
+EOF
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B07 cat heredoc | bash 본문의 it's — 닫는 줄 뒤 prod push
+cat <<'EOF' | bash
+echo it's fine
+EOF
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B08 시작 줄 앞 명령 ssh '…' · 본문의 인치 표기 — 닫는 줄 뒤 prod push
+ssh admin-ec2 'sudo docker ps' && cat > notes.md <<'EOF'
+12" 모니터
+EOF
+git push origin HEAD:prod && echo "ok"
+=== block R7-B09 셸 본문 안의 prod push 는 따로 봐도 막힌다(뒤에 짝 없는 따옴표)
+ssh admin-ec2 <<'EOF'
+git push origin HEAD:prod
+echo won't
+EOF
+=== block R7-B10 $(…) 안 bash heredoc 본문의 prod push
+out="$(bash <<'EOF'
+git push origin HEAD:prod
+EOF
+)"
+=== block R7-B11 줄 끝 «\» 뒤 heredoc — 본문은 논리 줄 뒤부터(이어진 줄의 prod push · 7회차 minor 2)
+git commit -F - <<'EOF' && \
+  git push origin HEAD:prod
+fix: msg
+EOF
+=== block R7-B12 줄 끝 «\» 뒤 heredoc — 이어진 줄의 --base prod
+gh pr create --title x --body-file - <<'EOF' \
+  --base prod
+body
+EOF
+=== block R7-B13 here-string <<< 뒤 줄은 본문이 아니다(7회차 minor 3)
+tr a-z A-Z <<< done
+git push origin HEAD:prod
+done
+=== block R7-B14 한 줄에 heredoc 둘 — 둘째 본문의 it's 가 뒤 명령을 숨기지 않는다
+cat <<'A' > a.md && cat <<'B' > b.md
+first
+A
+it's second
+B
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B15 <<- 는 앞 탭만 지우고 닫는다 — 닫는 줄 뒤 prod push
+cat <<-'EOF' > x.md
+	don't
+	EOF
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B16 ruby 본문의 백틱 명령(셸이 실행)
+ruby <<'RB'
+puts `git push origin HEAD:prod`
+RB
+=== block R7-B17 줄 이음 뒤 | bash 로 받는 heredoc
+cat <<'EOF' | \
+  bash
+git push origin HEAD:prod
+EOF
+=== allow R7-B18 bash x.sh 뒤 커밋 heredoc 본문의 명령 글자(데이터)
+bash .claude/hooks/guard-prod-push.test.sh && git commit -F - <<'EOF'
+fix(hook): don't run git push origin HEAD:prod by hand
+EOF
+=== allow R7-B19 들여 쓴 EOF 가 든 문서 heredoc — 진짜 닫는 줄까지 데이터
+cat > docs/heredoc.md <<'EOF'
+    EOF
+git push origin HEAD:prod 는 John 이
+EOF
+=== block R7-B20 한글 7KB 한 줄 커밋 메시지 뒤 prod push(창 경계가 글자 중간)
+git commit -m "가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" "
+git push origin HEAD:prod
+=== allow R7-B21 한글 7KB 따옴표 없는 heredoc 본문(큰따옴표 · 명령 글자 포함)
+git commit -F - <<EOF
+가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하"
+git push origin HEAD:prod 예시
+EOF
+=== allow R7-M01 git add . 뒤 커밋 메시지 heredoc 의 prod 언급(7회차 M1)
+git add .
+git commit -m "$(cat <<'EOF'
+fix(hook): x
+
+- git push origin HEAD:prod 차단
+EOF
+)"
+=== allow R7-M02 문서 heredoc 뒤 npx prettier --check .
+cat > /tmp/runbook.md <<'EOF'
+1. git push origin <sha>:prod (John 승인)
+EOF
+npx prettier --check . >/dev/null
+=== allow R7-M03 finish-branch Option 2 — 게이트 스크립트 실행 뒤 PR 본문 heredoc
+DRAFT="--draft"
+if env -u CONTENT_GATE_ROOT bash .github/scripts/content-pending-gate.sh >/dev/null 2>&1; then DRAFT=""; fi
+gh pr create --base dev $DRAFT --title "fix(hook): x" --body "$(cat <<'EOF'
+## Summary
+- git push origin HEAD:refs/heads/prod 를 막는다
+- gh workflow run client-production.yml 도 막는다
+EOF
+)"
+=== allow R7-M04 source ~/.nvm/nvm.sh 뒤 커밋 heredoc
+source ~/.nvm/nvm.sh && git commit -F - <<'EOF'
+docs: git push origin HEAD:prod 는 John 이
+EOF
+=== allow R7-M05 heredoc 으로 쓴 파일과 다른 스크립트 실행
+cat > notes.md <<'EOF'
+git push origin HEAD:prod
+EOF
+bash .claude/hooks/guard-prod-push.test.sh
+=== block R7-M06 heredoc 으로 쓴 그 파일을 ./ 로 실행
+cat > promote.sh <<'EOF'
+git push origin origin/dev:prod
+EOF
+chmod +x promote.sh && ./promote.sh
+=== block R7-M07 heredoc 으로 쓴 그 파일을 sh 로(리다이렉트가 뒤에 · 절대 경로)
+cat <<'EOF' > /tmp/p.sh
+git push origin HEAD:prod
+EOF
+sh /tmp/p.sh
+=== block R7-M08 tee 로 쓴 파일을 source
+tee deploy.sh >/dev/null <<'EOF'
+git push origin HEAD:prod
+EOF
+source deploy.sh
+=== block R7-M09 따옴표 친 파일 이름으로 쓰고 실행
+cat > "run me.sh" <<'EOF'
+git push origin HEAD:prod
+EOF
+cat > "p2.sh" <<'EOF'
+git push origin HEAD:prod
+EOF
+bash "p2.sh"
+=== block R7-m01 줄 이음 뒤 bash -c 문자열(7회차 minor 1)
+bash -c \
+  'git push origin HEAD:prod'
+=== block R7-m01b 줄 이음 뒤 eval 문자열
+eval \
+  "git push origin HEAD:prod"
+=== block R7-m04 docker compose -f 값 뒤 push(7회차 minor 4)
+docker compose -f docker-compose.prod.yml push
+=== block R7-m04b docker compose -p 값 뒤 push
+docker compose -p nomacom push
+=== block R7-m04c docker-compose push
+docker-compose -f docker-compose.yml push
+=== allow R7-m04d docker compose -f 값 뒤 exec 안의 drizzle-kit push
+docker compose -f docker-compose.yml exec admin npx drizzle-kit push
+=== allow R7-m05 curl 로 prod 브랜치 조회(GET · 7회차 minor 5)
+curl -s -H "Authorization: token $(gh auth token)" https://api.github.com/repos/imjohnkoo/nomacom-frontend/branches/prod | jq -r .commit.sha
+=== block R7-m05b curl --request PATCH prod ref
+curl --request PATCH https://api.github.com/repos/o/r/git/refs/heads/prod --data '{"sha":"abc"}'
+=== block R7-m05c curl -d 로 merges
+curl -d '{"base":"prod","head":"dev"}' https://api.github.com/repos/o/r/merges
+=== block R7-m05d httpie PATCH prod ref
+http PATCH https://api.github.com/repos/o/r/git/refs/heads/prod sha=abc
+=== block R7-m06 변수에 담은 graphql mutation(7회차 minor 6)
+QUERY='mutation { updateRef(input: {refId: "REF_x", oid: "abc", force: true}) { ref { name } } }'
+gh api graphql -f query="$QUERY"
+=== allow R7-m06b 변수에 담은 graphql 조회
+QUERY='query { repository(owner: "o", name: "r") { ref(qualifiedName: "refs/heads/prod") { target { oid } } } }'
+gh api graphql -f query="$QUERY"
+=== block R7-m07 orca --text= 붙여 쓴 꼴(7회차 minor 7)
+orca terminal send --text="git push origin HEAD:prod" --enter
+=== block R7-m08 buildx imagetools create 로 :prod 재태그(7회차 minor 8)
+docker buildx imagetools create -t imjohnkoo/nomacom-client:prod imjohnkoo/nomacom-client:sha-abc
+=== block R7-m09 줄 이음 직후 # 는 주석이 아니다(7회차 minor 9)
+echo a\
+#; git push origin HEAD:prod
+=== allow R7-m09b 줄 이음 앞이 공백이면 주석이다
+echo a \
+# git push origin HEAD:prod
+=== block R7-Y39 알고 두는 오탐(안전 쪽) — 데이터 heredoc 의 refs/heads/prod 글자 + 다른 gh api --input
+git commit -F - <<'EOF'
+docs: refs/heads/prod 는 John 만 민다
+EOF
+gh api repos/o/r/issues/1/comments --input comment.json
+=== block R7-H15 git push --repo= 꼴
+git push --repo=origin prod
+=== block R7-X21 gh api --method PATCH prod ref -F
+gh api --method PATCH repos/o/r/git/refs/heads/prod -F sha=abc
