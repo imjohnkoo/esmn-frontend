@@ -69,7 +69,7 @@
 #    읽히지 않게) · $(…) 바깥은 명령 낱말로(--title "ssh" 가 PR 본문을 명령으로 만들던 오탐 — orca --text · tmux send-keys 는 그대로) · 묶음
 #    ({ …; } <<EOF)은 첫 명령으로 · 산술식 1 << 3(맨 구분자는 글자로 시작) · jq 실패 · 쓰는 파일 200개 초과는 fail-closed(꾸민 입력이 600초를 넘겨
 #    판정 없이 통과하지 않게) · enablePullRequestAutoMerge · git config set remote.*.push · 따옴표 없는 별칭 git -c alias.p=push.
-#    더 못 보는 길(dev 판도 놓친다): printf > f 로 쓴 스크립트 · echo … | bash · for 목록 · exec 3<<EOF; bash <&3 · heredoc 을 변수로 읽어 eval ·
+#    더 못 보는 길(dev 판도 놓친다): printf > f 로 쓴 스크립트 · for 목록 · exec 3<<EOF; bash <&3 · heredoc 을 변수로 읽어 eval ·
 #    echo "$(cat <<EOF)" | bash · $(cat <<EOF) 를 명령 자리에 · push-option 안 이스케이프 & · 낱말 중간 줄 이음(pro\ ⏎ d).
 # ⭐ 11회차(QA ⑥ blocker 3 · major 1 · minor 5): $(…) 안 heredoc 의 바깥은 그 단순 명령 전체의 셸 낱말로(if … then · timeout 600 · sudo -u x ·
 #    docker exec c sh -c) — 따옴표 친 낱말은 QWQ 표식으로 받는 명령 판정에만 쓰고 바깥 판정에서는 뺀다(--title "ssh" 오탐) · 써서 실행하는
@@ -78,6 +78,11 @@
 #    Monitor 도구도 이 훅을 지난다(settings matcher Bash|Monitor — 같은 tool_input.command). 테스트: 스캐너 · heredoc 처리기 awk 만 실패 ·
 #    접두 건너뛰기 · 파일 | bash · 깊은 중첩. 알고 두는 오탐: orca terminal send --text 로 보내는 프롬프트 안 명령 글자(다른 터미널에 쳐 넣는 글).
 #    성능(11회차 실측): 따옴표 인자 한 줄 960KB 약 28초 · node 한 줄 JSON 1MB 약 40초 · $( 1만 겹 14초(차단).
+# ⭐ 12회차(QA ⑥ blocker 1 · major 1 · minor 9): git 전역 옵션 걷기 앞 글자에 ( ; & | — (git -C wt push …) · cd x;git -C … · a&&git -c …
+#    (쪼개기 전에 돌아 git push 판정이 빗나가던 것 — git -C 는 일상 형태) · zsh =git · =docker · ${SHELL:-bash} · ${BASH} 받는 쪽 · )# 주석 ·
+#    1EOF 구분자 · expect -c · aws 서비스 뒤 전역 옵션(aws ssm --region … put-parameter) · PR 리뷰 · 댓글 본문의 «base: prod» 오탐 · tr · wc 실패 fail-closed.
+#    dev 판은 막는데 이 판은 못 보는 것(설계상 — 문서의 못 보는 길): python · node 코드 문자열 안 명령(os.system · subprocess · execSync) ·
+#    echo «명령» | bash · 여러 줄로 연 $( 다음 줄의 heredoc(bash -c "$( ⏎ cat <<EOF …)").
 set +e
 # 파이프라인 어느 단계가 실패해도 실패로(awk 가 일부만 내고 죽으면 통과시키지 않는다 — fail-closed)
 set -o pipefail
@@ -150,7 +155,7 @@ heredoc_split() {
     return 0
   }
   # 리다이렉트(2>&1 · &> · >&2) · ${…} 는 명령 경계가 아니다
-  function nrm(t) { gsub(/[0-9]*>&[0-9]*-?|&>>?|<&[0-9]*-?/, " R ", t); gsub(/\$\{[^}]*\}/, " V ", t); return t }
+  function nrm(t) { gsub(/[0-9]*>&[0-9]*-?|&>>?|<&[0-9]*-?/, " R ", t); gsub(/\$\{SHELL[^}]*\}/, "$SHELL", t); gsub(/\$\{BASH\}/, "$BASH", t); gsub(/\$\{[^}]*\}/, " V ", t); return t }
   function lastseg(t) {
     gsub(/(^|[ \t])[{}]([ \t]|$)/, " ; ", t)      # 낱말로 선 중괄호만 묶음 경계({ cmd; }) — {a,b} 확장은 아니다
     while (match(t, /[;&|()]/)) t = substr(t, RSTART + 1)
@@ -348,7 +353,7 @@ heredoc_split() {
       if (c == "`") { if (t == "B") { if (sp > 1) sp-- } else st[++sp] = "B"; addu(" "); i++; continue }
       if (c == "#") {
         p = (i == 1) ? pc : substr(line, i - 1, 1)
-        if (p ~ /[ \t;&|(]/) break
+        if (p ~ /[ \t;&|()]/) break
         addu(c); i++; continue
       }
       # «<(» · «>(» · zsh «=(» (프로세스 치환)의 괄호는 명령 경계가 아니다(bash <(cat <<EOF) 의 받는 쪽이 bash 로 보이게 · tee >(bash) 는 셸)
@@ -368,7 +373,7 @@ heredoc_split() {
       if (substr(line, i, 2) == "<<") {
         rest = substr(line, i + 2, 512)
         # 구분자 — 따옴표 친 것은 따옴표 안 글자 전부(EOF:1 · END!), 맨 것은 메타 글자 전까지, 이어 붙인 조각(E + 따옴표 OF)은 이어서
-        if (match(rest, /^-?[ \t]*(\047[^\047]*\047|"[^"]*"|\\?[A-Za-z_][^ \t;&|<>()"\047\\$`]*)(\047[^\047]*\047|"[^"]*"|[^ \t;&|<>()"\047\\$`]+)*/)) {
+        if (match(rest, /^-?[ \t]*(\047[^\047]*\047|"[^"]*"|\\?([0-9]+)?[A-Za-z_][^ \t;&|<>()"\047\\$`]*)(\047[^\047]*\047|"[^"]*"|[^ \t;&|<>()"\047\\$`]+)*/)) {
           tok = substr(rest, 1, RLENGTH)
           d = tok; sub(/^-?[ \t]*/, "", d); gsub(/["\047\\]/, "", d)   # 일부만 따옴표 친 구분자(E + 따옴표 OF = EOF)
           np++; qd[np] = d; qq[np] = (tok ~ /["\047\\]/); qs[np] = (tok ~ /^-/); qoff[np] = length(pv)
@@ -459,7 +464,7 @@ scan_shell() {
     # 문자열을 명령으로 받는 것 — bash/sh/fish -c(앞에 -o pipefail · -O extglob · --login · 묶음 옵션, 뒤에 -x · -- 가 껴도) · eval · trap ·
     #   watch · flock/su/npx/script … -c · env -S · tmux · ssh <호스트> · git rebase -x/--exec · git submodule foreach ·
     #   orca … --text(다른 터미널에 쳐 넣는다). 따로 뽑아 다시 본다(5단까지)
-    if (depth < 6 && buf ~ /[[:space:]]/ && tail ~ /(^|[[:space:];&|(!{\/])((bash|sh|zsh|dash|ksh|fish|SUBST|\$SHELL|\$\{SHELL[^}]*\}|\$BASH|\$\{BASH\})([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-[[:alnum:]]*c[[:alnum:]]*([[:space:]]+-[^[:space:];&|]*)*|eval|trap|watch([[:space:]]+[^[:space:];&|]+)*|(flock|su|npx|npm|script)([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-c|env([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-S|tmux([[:space:]]+[^[:space:];&|]+)*|parallel([[:space:]]+[^[:space:];&|]+)*|ssh([[:space:]]+[^[:space:];&|]+)+|git([[:space:]]+[^[:space:];&|]+)*[[:space:]]+(-x|--exec|foreach)|orca([[:space:]]+[^[:space:];&|]+)*[[:space:]]+--text=?|(bash|sh|zsh|dash|ksh)([[:space:]]+[^[:space:];&|]+)*[[:space:]]*<<<)[[:space:]]*$/) {
+    if (depth < 6 && buf ~ /[[:space:]]/ && tail ~ /(^|[[:space:];&|(!{\/])((bash|sh|zsh|dash|ksh|fish|SUBST|\$SHELL|\$\{SHELL[^}]*\}|\$BASH|\$\{BASH\})([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-[[:alnum:]]*c[[:alnum:]]*([[:space:]]+-[^[:space:];&|]*)*|eval|trap|watch([[:space:]]+[^[:space:];&|]+)*|(flock|su|npx|npm|script|expect)([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-c|env([[:space:]]+[^[:space:];&|]+)*[[:space:]]+-S|tmux([[:space:]]+[^[:space:];&|]+)*|parallel([[:space:]]+[^[:space:];&|]+)*|ssh([[:space:]]+[^[:space:];&|]+)+|git([[:space:]]+[^[:space:];&|]+)*[[:space:]]+(-x|--exec|foreach)|orca([[:space:]]+[^[:space:];&|]+)*[[:space:]]+--text=?|(bash|sh|zsh|dash|ksh)([[:space:]]+[^[:space:];&|]+)*[[:space:]]*<<<)[[:space:]]*$/) {
       r = scan(buf, depth + 1); INNERS = INNERS "\n" r
       return " SUBST "
     }
@@ -511,7 +516,7 @@ scan_shell() {
       if (c == "#") {
         p = (i > 1) ? substr(s, i - 1, 1) : " "
         if (p == "\001") p = (i > 2) ? substr(s, i - 2, 1) : " "
-        if (p ~ /[[:space:];&|(]/) {
+        if (p ~ /[[:space:];&|()]/) {
           j = findre(s, i, n, "[\n\001]")
           if (j == 0) break
           i = j; continue
@@ -653,7 +658,7 @@ check_git_push() { # $1 = «git push» 뒤 인자(스캐너가 정리한 글)
 
 check_gh_api() { # $1 = «gh api» 부터 세그먼트 끝까지(정리한 글)
   local s=" $1 " low
-  low=$(printf '%s' "$s" | tr 'A-Z' 'a-z')
+  low=$(printf '%s' "$s" | tr 'A-Z' 'a-z') || block "$FAIL_MSG"
   # workflow 수동 실행(dispatch) — ci · design-system-publish 밖(production · 숫자 ID · 변수)은 막는다(gh workflow run 과 같은 규칙 — 8회차 minor 1)
   if [[ "$low" =~ /actions/workflows/([^/[:space:]]+)/dispatches ]]; then
     case "${BASH_REMATCH[1]}" in
@@ -712,7 +717,7 @@ check_segment() { # $1 = 세그먼트(정리한 글)
   fi
 
   # --- git push(세그먼트 어디든 — if · then · timeout · nice · /usr/bin/git 접두 포함) ---
-  if [[ "$s" =~ (^|[[:space:]/!{])git[[:space:]]+push([[:space:]].*)?$ ]]; then
+  if [[ "$s" =~ (^|[[:space:]/!{=])git[[:space:]]+push([[:space:]].*)?$ ]]; then
     rest="${BASH_REMATCH[2]}"
     if [[ "$s" =~ (^|[[:space:]])xargs[[:space:]] ]]; then
       block "xargs 로 git push 차단 — 목적지(표준 입력)를 판정할 수 없습니다. 브랜치를 이름으로 적어 push 하세요."
@@ -721,7 +726,7 @@ check_segment() { # $1 = 세그먼트(정리한 글)
   fi
 
   # git subtree push · git send-pack 도 원격 ref 를 민다 — 같은 판정
-  if [[ "$s" =~ (^|[[:space:]/!{])git[[:space:]]+(subtree[[:space:]]+push|send-pack)([[:space:]].*)?$ ]]; then
+  if [[ "$s" =~ (^|[[:space:]/!{=])git[[:space:]]+(subtree[[:space:]]+push|send-pack)([[:space:]].*)?$ ]]; then
     check_git_push "${BASH_REMATCH[3]}"
   fi
 
@@ -729,7 +734,7 @@ check_segment() { # $1 = 세그먼트(정리한 글)
   if [[ "$s" =~ (^|[[:space:]/!{])gh[[:space:]]+api([[:space:]].*)?$ ]]; then
     check_gh_api "gh api${BASH_REMATCH[2]}"
     # 표준 입력 · 파일로 본문을 넘기는 ref · 머지 · PR · 파일 커밋(contents) · graphql 호출만(이슈 댓글 -F body=@- 본문의 refs/heads/prod 글자로 막지 않게 — 8회차 minor 4)
-    [[ "$s" =~ (/git/|/branches|/merges|/merge-upstream|/pulls|/contents/|[[:space:]/]graphql([[:space:]]|$)) ]] &&
+    [[ "$s" =~ (/git/|/branches|/merges|/merge-upstream|/pulls(/[0-9]+)?([[:space:]?]|$)|/contents/|[[:space:]/]graphql([[:space:]]|$)) ]] &&
       [[ "$s" =~ [[:space:]]--input([[:space:]=]|$) || "$s" =~ [[:space:]](-[fF]|--field|--raw-field)([[:space:]]*|=)[a-zA-Z_]+=@ ]] && HAS_INPUT_API=1
     [[ "$s" =~ [[:space:]/]graphql([[:space:]]|$) ]] && HAS_GRAPHQL_API=1
     # 변수 · 치환에 담은 쿼리(-f query="$QUERY") — 같은 명령 글 어디든 mutation 이 보이면 막는다(7회차 minor 6)
@@ -765,7 +770,7 @@ check_segment() { # $1 = 세그먼트(정리한 글)
 
   # curl 이 표준 입력(heredoc)으로 본문을 보내면 gh api --input 과 같이 본다(curl -d @- <<EOF {"ref": "refs/heads/prod"} — 9회차 m3)
   if [[ "$s" =~ (^|[[:space:]/!{])(curl|wget|http|https)[[:space:]] && "$s" == *api.github.com* &&
-    "$s" =~ (/git/|/branches|/merges|/merge-upstream|/pulls|/contents/|graphql) && "$s" =~ (@-([[:space:]]|$)|-T[[:space:]]+-([[:space:]]|$)) ]]; then
+    "$s" =~ (/git/|/branches|/merges|/merge-upstream|/pulls(/[0-9]+)?([[:space:]?]|$)|/contents/|graphql) && "$s" =~ (@-([[:space:]]|$)|-T[[:space:]]+-([[:space:]]|$)) ]]; then
     HAS_INPUT_API=1
   fi
   # curl · wget · http 로 GitHub API 를 직접 불러 ref 를 바꾸기(gh api 와 같은 일) — 조회(GET)는 두고, 쓰는 메서드 · 본문을 줄 때만
@@ -774,7 +779,7 @@ check_segment() { # $1 = 세그먼트(정리한 글)
     [[ "$s" =~ refs/heads/prod([^[:alnum:]_.-]|$) || "$s" =~ /branches/prod(/|[^[:alnum:]_.-]|$) || "$s" =~ /merges([^[:alnum:]_-]|$) || "$s" == *" PRODREF"* ||
       "$s" =~ /actions/workflows/[^/[:space:]]+/dispatches || "$s" =~ /actions/(runs|jobs)/[^[:space:]/]+/(rerun|rerun-failed-jobs)([^[:alnum:]_-]|$) ]]; then
     local low
-    low=$(printf '%s' "$s" | tr 'A-Z' 'a-z')
+    low=$(printf '%s' "$s" | tr 'A-Z' 'a-z') || block "$FAIL_MSG"
     if [[ "$low" =~ (-x|--request|--method)[[:space:]=]*q?(patch|post|put|delete) ||
       "$s" =~ [[:space:]]Q?(-d|-F|-T|--data[a-z-]*|--form[a-z-]*|--upload-file|--json|--post-data|--post-file|--body-data|--body-file)([[:space:]=]|$) ||
       "$s" =~ [[:space:]](-d|-F|-T)[^[:space:]] ||
@@ -785,15 +790,15 @@ check_segment() { # $1 = 세그먼트(정리한 글)
 
   # --- 나머지 파괴적 명령 — 사이에 옵션 · 하위 명령이 껴도(docker image push · buildx --push · reset -q --hard · aws --profile … ssm) ---
   # docker: push 는 하위 명령 자리에서만(docker exec … git push 는 docker push 가 아니다) · buildx 는 --push · type=registry · push=true
-  local re_docker='(^|[[:space:]/!{])docker([[:space:]]+(--(context|host|config|log-level|tlscacert|tlscert|tlskey)[[:space:]]+[^[:space:]]+|-(H|c|l)[[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+((image|manifest|trust)[[:space:]]+([^[:space:]]+[[:space:]]+)*|compose[[:space:]]+((-f|-p|--file|--project-name|--project-directory|--env-file|--profile|--ansi|--progress|--parallel)[[:space:]]+[^[:space:]]+[[:space:]]+|-[^[:space:]]+[[:space:]]+)*)?push([[:space:]]|$)'
+  local re_docker='(^|[[:space:]/!{=])docker([[:space:]]+(--(context|host|config|log-level|tlscacert|tlscert|tlskey)[[:space:]]+[^[:space:]]+|-(H|c|l)[[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+((image|manifest|trust)[[:space:]]+([^[:space:]]+[[:space:]]+)*|compose[[:space:]]+((-f|-p|--file|--project-name|--project-directory|--env-file|--profile|--ansi|--progress|--parallel)[[:space:]]+[^[:space:]]+[[:space:]]+|-[^[:space:]]+[[:space:]]+)*)?push([[:space:]]|$)'
   # docker-compose(옛 단독 실행 파일) push · compose 의 값 받는 옵션(-f · -p — 7회차 minor 4) · buildx imagetools create(레지스트리 재태그 — minor 8)
   local re_compose1='(^|[[:space:]/!{])docker-compose([[:space:]]+((-f|-p|--file|--project-name|--project-directory|--env-file|--profile|--ansi)[[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+push([[:space:]]|$)'
   local re_imgtools='(^|[[:space:]/!{])docker[[:space:]](.*[[:space:]])?buildx[[:space:]](.*[[:space:]])?imagetools[[:space:]]+create([[:space:]]|$)'
-  local re_buildx='(^|[[:space:]/!{])docker[[:space:]](.*[[:space:]])?(buildx|builder|build)[[:space:]](.*[[:space:],=])?(--push|type=registry|push=true)([[:space:],=]|$)'
-  local re_reset='(^|[[:space:]/!{])git[[:space:]]+reset([[:space:]].*)?[[:space:]]Q?--(ha|har|hard)([[:space:]]|$)'
-  local re_ssm='(^|[[:space:]/!{])aws[[:space:]](.*[[:space:]])?ssm[[:space:]]+(put-parameter|delete-parameter|delete-parameters)([[:space:]]|$)'
+  local re_buildx='(^|[[:space:]/!{=])docker[[:space:]](.*[[:space:]])?(buildx|builder|build)[[:space:]](.*[[:space:],=])?(--push|type=registry|push=true)([[:space:],=]|$)'
+  local re_reset='(^|[[:space:]/!{=])git[[:space:]]+reset([[:space:]].*)?[[:space:]]Q?--(ha|har|hard)([[:space:]]|$)'
+  local re_ssm='(^|[[:space:]/!{])aws[[:space:]](.*[[:space:]])?ssm([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:space:]][^[:space:]]*)?)*[[:space:]]+(put-parameter|delete-parameter|delete-parameters)([[:space:]]|$)'
   # CodeDeploy 직접 배포 — prod 브랜치 push 와 같은 일(8회차 minor 7)
-  local re_deploy='(^|[[:space:]/!{])aws[[:space:]](.*[[:space:]])?(deploy[[:space:]]+create-deployment|ssm[[:space:]]+send-command)([[:space:]]|$)'
+  local re_deploy='(^|[[:space:]/!{])aws[[:space:]](.*[[:space:]])?(deploy|ssm)([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:space:]][^[:space:]]*)?)*[[:space:]]+(create-deployment|send-command)([[:space:]]|$)'
   if [[ "$s" =~ $re_docker || "$s" =~ $re_buildx || "$s" =~ $re_compose1 || "$s" =~ $re_imgtools ]]; then
     block "수동 docker push 금지. 배포는 GitHub Actions(prod 브랜치 push)로 트리거 — nomacom-admin / nomacom-client 이미지는 .github/workflows/*-production.yml 이 빌드."
   fi
@@ -812,7 +817,7 @@ FAIL_MSG="guard 훅의 판정 도구(awk · sed)가 실패해 판정할 수 없�
 # 명령 경계로 쪼개기(리다이렉트 2>&1 · &> 는 경계가 아니다)
 SPLIT='{gsub(/[0-9]*>&[0-9]*-?|&>>?|<&[0-9]*-?/, " REDIR "); gsub(/&&|\|\||[;|()&]/, "\n"); print}'
 # ⭐ git 과 서브커맨드 사이 전역 옵션을 걷는다(git -C <Orca 워크트리> push … 가 일상 형태) — 따옴표 든 값은 스캐너가 Q 로 바꿨다
-GITOPTS='s/(^|[[:space:]/!{])git(([[:space:]]+(-C|-c|--git-dir|--work-tree|--namespace|--exec-path|--super-prefix|--config-env|--attr-source)([[:space:]]+|=)[^[:space:]]+)|([[:space:]]+(--no-pager|-P|--paginate|-p|--bare|--no-replace-objects|--literal-pathspecs|--glob-pathspecs|--noglob-pathspecs|--icase-pathspecs|--no-optional-locks|--no-lazy-fetch|--no-advice)))+/\1git/g'
+GITOPTS='s/(^|[[:space:]/!{(;\&|=])git(([[:space:]]+(-C|-c|--git-dir|--work-tree|--namespace|--exec-path|--super-prefix|--config-env|--attr-source)([[:space:]]+|=)[^[:space:]]+)|([[:space:]]+(--no-pager|-P|--paginate|-p|--bare|--no-replace-objects|--literal-pathspecs|--glob-pathspecs|--noglob-pathspecs|--icase-pathspecs|--no-optional-locks|--no-lazy-fetch|--no-advice)))+/\1git/g'
 CLEAN=""
 BODIES=""
 HAS_INPUT_API=0
@@ -895,7 +900,9 @@ judge_cmd() { # $1 = 원문 · $2 = 깊이(셸 본문 안의 셸 본문 — 4단
   # heredoc 으로 쓴 파일을 같은 명령에서 실행하면(cat > p.sh <<EOF … EOF; bash p.sh · . p.sh · ./p.sh) 그 본문도 명령이다
   out=$(printf '%s' "$raw" | heredoc_split written) || block "$FAIL_MSG"
   # 써 두는 파일이 아주 많으면(꾸민 입력) 파일마다 정리한 글 전체를 훑느라 600초를 넘겨 판정 없이 통과(fail-open)할 수 있다 — 판정 불가로 막는다
-  if [[ $(printf '%s' "$out" | tr -cd '\004' | wc -c) -gt 200 ]]; then
+  local nw
+  nw=$(printf '%s' "$out" | tr -cd '\004' | wc -c) || block "$FAIL_MSG"
+  if [[ "$nw" -gt 200 ]]; then
     block "heredoc 으로 쓰는 파일이 200개를 넘어 판정할 수 없습니다 — fail-closed 로 차단합니다. 나눠서 실행하거나 스크립트 파일로 쓰세요."
   fi
   while IFS= read -r -d $'\004' chunk; do
