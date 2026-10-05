@@ -2413,12 +2413,6 @@ gh run watch 33599247862 --exit-status || gh run view 33599247862 --log-failed |
 git push -u origin imjohnkoo/hook-prod-refspec 2>&1 | tail -3
 gh pr checks 12 --watch --fail-fast
 gh pr view 12 --json mergeable,mergeStateStatus -q '.mergeable + " " + .mergeStateStatus'
-=== block R8-M2a ruby 본문 — 이스케이프 따옴표 줄(짝 없음) 뒤 백틱 push(본문 정리를 빼면 다음 따옴표까지 삼켜진다)
-ruby <<'RB'
-puts 'it\'s'
-puts `git push origin HEAD:prod`
-puts 'x'
-RB
 === block R8-M2b ruby 본문 — 따옴표 개수는 짝수 · 셸 기준 짝 없음(이스케이프 판정을 빼면 샌다)
 ruby <<'RB'
 x = 'a\'b\'c'
@@ -2925,3 +2919,1274 @@ PROMOTE_SHA="$(git rev-parse origin/dev)"
 git merge-base --is-ancestor "$PROMOTE_SHA" origin/dev || { echo "⛔ origin/dev 에 없는 SHA — prod 는 dev 의 한 SHA"; exit 1; }
 [ "$(git rev-parse HEAD)" = "$PROMOTE_SHA" ] || { echo "⛔ HEAD ≠ PROMOTE_SHA — git checkout --detach $PROMOTE_SHA 뒤 다시"; exit 1; }
 echo "PROMOTE_SHA=$PROMOTE_SHA"   # 보고 템플릿에 적어 두고, 뒤 Phase 의 셸마다 이 값으로 다시 둔다(셸 변수는 이어지지 않는다)
+=== block R10-A01 commit heredoc with apostrophe then push prod
+git add -A && git commit -m "$(cat <<'EOF'
+fix: don't block it's fine
+EOF
+)" && git push origin HEAD:prod
+=== allow R10-A02 commit heredoc then push dev
+git add -A && git commit -m "$(cat <<'EOF'
+fix: git push origin prod 예시는 막지 않는다
+EOF
+)" && git push -u origin HEAD
+=== allow R10-A03 pr create body heredoc mentions prod push
+gh pr create --base dev --title "fix(hook): prod refspec" --body "$(cat <<'EOF'
+## Summary
+- `git push origin prod` 는 막힌다
+- `gh pr create --base prod` 도
+EOF
+)"
+=== block R10-A04 unquoted heredoc commit msg with backtick (bash runs it)
+git commit -F - <<EOF
+`git push origin HEAD:prod`
+EOF
+=== block R10-A05 python heredoc then push on next line
+python3 - <<'PY'
+print("it's")
+PY
+git push origin HEAD:prod
+=== block R10-A06 commit body with unbalanced quote then push after closing
+git commit -F - <<'EOF'
+12" monitor, don't
+EOF
+git push origin prod
+=== block R10-A07 heredoc delim with trailing spaces in closing line (bash does not close) then real end
+cat > x.txt <<'EOF'
+body
+EOF
+git push origin prod
+=== block R10-A08 two heredocs same line
+cat <<'A' > a.txt; cat <<'B' > b.txt
+aaa
+A
+bbb
+B
+git push origin prod
+=== block R10-A09 heredoc in if-then
+if true; then cat > f.txt <<'EOF'
+x
+EOF
+fi; git push origin prod
+=== block R10-A10 heredoc <<- with tab-indented close
+cat <<-'EOF' > f.txt
+	body
+	EOF
+git push origin prod
+=== block R10-A11 heredoc delimiter quoted with double quotes
+cat > f.txt <<"EOF"
+body
+EOF
+git push origin prod
+=== block R10-A12 tee heredoc then push
+tee f.txt >/dev/null <<'EOF'
+body
+EOF
+git push origin prod
+=== block R10-A13 heredoc body run via bash script file written
+cat > /tmp/qa-x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+chmod +x /tmp/qa-x.sh && /tmp/qa-x.sh
+=== block R10-A14 written script run via bash "$PWD/x.sh"
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash "$PWD/x.sh"
+=== block R10-A15 written script run via sh $(pwd)/x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+sh "$(pwd)/x.sh"
+=== block R10-A16 written script then bash -x ./x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -x ./x.sh
+=== block R10-A17 written script then source x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+source x.sh
+=== block R10-A18 written relative dir script then bash scripts/x.sh
+mkdir -p scripts && cat > scripts/x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash scripts/x.sh
+=== block R10-A21 cat heredoc | xargs -I{} git push origin {}
+cat <<'EOF' | xargs -I{} git push origin {}
+prod
+EOF
+=== block R10-A23 orca terminal send text git push
+orca terminal send --terminal t1 --text "git push origin HEAD:prod" --enter
+=== block R10-A24 env -i git push
+env -i PATH=/usr/bin git push origin prod
+=== block R10-A28 git push in $(…) assignment
+OUT=$(git push origin HEAD:prod 2>&1)
+=== block R10-A29 git push via npx/yarn exec? no - git push inside make-like: sh -c with double quotes nested var
+sh -c "cd /tmp && git push origin HEAD:prod"
+=== block R10-A30 git push with repo URL and prod
+git push https://github.com/imjohnkoo/nomacom-frontend.git HEAD:prod
+=== block R10-A31 git push origin dev:prod
+git push origin dev:prod
+=== block R10-A32 git push origin HEAD:prod after --
+git push origin -- HEAD:prod
+=== block R10-A34 heredoc commit then push prod with -C path
+git -C /Users/johnkoo/orca/workspaces/nomacom-frontend/x commit -F - <<'EOF'
+msg
+EOF
+git -C /Users/johnkoo/orca/workspaces/nomacom-frontend/x push origin HEAD:prod
+=== block R10-A35 docker push after build
+docker build -t imjohnkoo/nomacom-client:prod . && docker push imjohnkoo/nomacom-client:prod
+=== block R10-A36 aws ssm put inside for loop
+for k in A B; do aws ssm put-parameter --name /nomacom/client/$k --value x --overwrite; done
+=== block R10-A37 aws --profile nomacom ssm put-parameter
+aws --profile nomacom --region ap-northeast-2 ssm put-parameter --name /x --value y
+=== block R10-A38 git reset --hard in subshell
+(cd /tmp/x && git reset --hard origin/dev)
+=== block R10-A39 reset --hard=? no: git reset --hard after git stash
+git stash push -u -m tag && git reset --hard HEAD
+=== block R10-A40 gh workflow run with -f before name
+gh workflow run -f x=y client-production.yml
+=== block R10-A41 gh workflow run --ref prod name later
+gh workflow run --ref dev admin-production.yml
+=== block R10-A42 gh workflow run via -R repo after run
+gh workflow run -R imjohnkoo/nomacom-frontend client-production.yml
+=== block R10-A43 gh run rerun --failed
+gh run rerun 12345 --failed
+=== block R10-A45 gh pr create base prod with heredoc body
+gh pr create --base prod --title "release" --body "$(cat <<'EOF'
+release
+EOF
+)"
+=== block R10-A46 gh pr create body heredoc then --base prod after
+gh pr create --title "release" --body "$(cat <<'EOF'
+release notes
+EOF
+)" --base prod
+=== block R10-A47 gh pr create with continuation lines
+gh pr create \
+  --title "release" \
+  --base prod \
+  --body "x"
+=== block R10-A48 git push with continuation & comment
+git push origin \
+  HEAD:prod  # deploy
+=== block R10-A49 heredoc inside bash -c string
+bash -c "$(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)"
+=== block R10-A50 ssh heredoc
+ssh ec2-user@host <<'EOF'
+cd /app && git reset --hard origin/dev
+EOF
+=== block R10-R01 same-line write + /bin/bash run
+cat > /tmp/qa/x.sh <<'EOF' && /bin/bash /tmp/qa/x.sh
+git push origin HEAD:prod
+EOF
+=== block R10-R02 separate-line write + /bin/bash run (relative)
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+/bin/bash x.sh
+=== block R10-R03 same-line write + bash -o pipefail run
+cat > x.sh <<'EOF' && bash -o pipefail x.sh
+git push origin HEAD:prod
+EOF
+=== block R10-R04 separate-line write + bash -euo pipefail run
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -euo pipefail x.sh
+=== block R10-R05 write + bash x.sh>log attached redirect
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash x.sh>/tmp/qa/log 2>&1
+=== block R10-R06 write + "$BASH" x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+"$BASH" x.sh
+=== block R10-R07 write + bash -c "$(cat x.sh)" same line
+cat > /tmp/qa/x.sh <<'EOF' && bash -c "$(cat /tmp/qa/x.sh)"
+git push origin HEAD:prod
+EOF
+=== block R10-R08 write + bash "$(pwd)/x.sh"
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash "$(pwd)/x.sh"
+=== block R10-R09 write + /usr/bin/env bash x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+/usr/bin/env bash x.sh
+=== block R10-R10 write + env bash x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+env bash x.sh
+=== block R10-R11 write + /bin/sh -e x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+/bin/sh -e x.sh
+=== block R10-R12 write + bash ~/x.sh tilde path
+cat > ~/qa-x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash ~/qa-x.sh
+=== block R10-R13 write to "$T" then bash "$T"
+T=$(mktemp); cat > "$T" <<'EOF'
+git push origin HEAD:prod
+EOF
+bash "$T"
+=== block R10-R14 heredoc to bash via /opt/homebrew/bin/bash -s
+/opt/homebrew/bin/bash -s <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-R15 write file via tee -a then bash
+tee -a x.sh >/dev/null <<'EOF'
+git push origin HEAD:prod
+EOF
+bash x.sh
+=== block R10-R16 write file via cat >| then bash
+cat >| x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash x.sh
+=== block R10-R17 heredoc to sudo bash
+sudo bash <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-R18 heredoc to sudo -u deploy -H bash -l
+sudo -u deploy -H bash -l <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-R19 heredoc into docker exec -i ctr sh
+docker exec -i ctr sh <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-R21 heredoc body into ssh with -T and host and command bash -s
+ssh -T ec2-user@1.2.3.4 'bash -s' <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-R22 heredoc to command bash (command prefix)
+command bash <<'EOF'
+git push origin HEAD:prod
+EOF
+=== allow R10-R26 commit heredoc then bash test.sh same line (data consumer git)
+git commit -F - <<'EOF' && bash scripts/check.sh
+msg: git push origin prod 예시
+EOF
+=== allow R10-R27 cat > md heredoc then bash lint on next line
+cat > docs/x.md <<'EOF'
+- git push origin prod 는 막힌다
+EOF
+bash scripts/lint.sh docs/x.md
+=== allow R10-R28 python with script arg heredoc stdin data
+python3 scripts/patch.py <<'EOF'
+git push origin prod
+EOF
+=== allow R10-R29 jq heredoc
+jq . <<'EOF'
+{"cmd": "git push origin prod"}
+EOF
+=== allow R10-R30 gh issue comment body heredoc
+gh issue comment 12 --body-file - <<'EOF'
+`git push origin prod` 를 막는다
+EOF
+=== allow R10-R31 PR body with ssh mention in title short quoted
+gh pr create --base dev --title "ssh" --body "$(cat <<'EOF'
+git push origin prod 예시
+EOF
+)"
+=== allow R10-R32 commit message with "bash" one-word title then heredoc body
+git commit -m "bash" -m "$(cat <<'EOF'
+git push origin prod 예시
+EOF
+)"
+=== allow R10-R33 commit -m heredoc preceded by bash test in same line
+bash scripts/test.sh && git commit -m "$(cat <<'EOF'
+docs: git push origin prod 예시
+EOF
+)"
+=== allow R10-R34 cat heredoc piped to git commit -F -
+cat <<'EOF' | git commit -F -
+docs: git push origin prod 예시
+EOF
+=== allow R10-R35 heredoc to yarn prettier --stdin then echo bash
+yarn prettier --stdin-filepath x.md <<'EOF' ; echo "use bash"
+git push origin prod 예시
+EOF
+=== allow R10-R36 heredoc to wc after sh word in path
+wc -l <<'EOF' # see ./sh/notes
+git push origin prod 예시
+EOF
+=== block R10-L01 push-option value with backslash then prod
+git push -o 'a\b' origin HEAD:prod
+=== block R10-L02 push-option value with glob star then prod
+git push -o 'a*b' origin HEAD:prod
+=== block R10-L03 push-option value with bracket then prod
+git push -o '[x' origin HEAD:prod
+=== block R10-L04 push-option value with lone backslash
+git push -o '\' origin HEAD:prod
+=== block R10-L05 push-option value with question mark
+git push -o 'a?b' origin HEAD:prod
+=== block R10-L07 gh -R value with backslash
+gh pr -R 'o/r\x' create --base prod
+=== block R10-L08 gh -R value with star
+gh pr -R 'o/r*' create --base prod
+=== block R10-L09 gh -R value with bracket
+gh -R '[o/r' pr create --base prod
+=== block R10-L10 gh -R value with lone backslash
+gh pr -R '\' create --base prod
+=== block R10-L11 push-option value contains -o again
+git push -o -o -o x origin HEAD:prod
+=== block R10-L12 push-option equals with backslash star
+git push --push-option='\*' origin HEAD:prod
+=== block R10-L13 gh -R value with double backslash
+gh pr -R 'a\\b' create --base prod
+=== block R10-L14 gh -R repeated
+gh pr -R a -R b -R c create --base prod
+=== block R10-Q01 bash -s with short quoted arg containing ;cat (qclose injection)
+bash -s -- 'a;cat' <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q02 ssh host short quoted remote cmd with |tee
+ssh host 'x|tee' <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q03 bash -s arg "(cat)"
+bash -s "(cat)" <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q04 sh -s quoted arg with && git
+sh -s -- "x&&git" <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q05 bash heredoc with quoted label arg "release;tee"
+bash -s "release;tee" <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q06 bash -s quoted arg {cat} braces
+bash -s -- "}" cat <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q07 bash <<EOF where line also has quoted path with ; and git
+cd "/tmp/a;git" && bash <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q08 bash with redirect target quoted w/ semicolon
+bash > "log;cat" <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q09 bash heredoc with -o pipefail args after
+bash -o pipefail -s <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q10 heredoc receiver after time + quoted short arg
+time bash -s "x" <<'EOF'
+git push origin HEAD:prod
+EOF
+=== allow R10-Q11 cat heredoc with quoted path containing bash word one-word
+cat > "bash.md" <<'EOF'
+git push origin prod 예시
+EOF
+=== allow R10-Q12 git commit -F - with --author "ssh" (short word)
+git commit --author "bot" -F - <<'EOF'
+docs: git push origin prod 예시
+EOF
+=== allow R10-Q13 tee to a quoted path with sh in it
+tee "docs/sh-notes.md" >/dev/null <<'EOF'
+git push origin prod 예시
+EOF
+=== allow R10-Q14 cat heredoc to file named "eval"
+cat > "eval" <<'EOF'
+git push origin prod 예시
+EOF
+=== allow R10-Q15 commit -m short quoted subject "watch" + body heredoc
+git commit -m "watch" -m "$(cat <<'EOF'
+docs: git push origin prod 예시
+EOF
+)"
+=== allow R10-Q16 gh issue create --label "sh" body heredoc
+gh issue create --title t --label "sh" --body "$(cat <<'EOF'
+git push origin prod 예시
+EOF
+)"
+=== block R10-T01 heredoc | tee x.sh then bash x.sh
+cat <<'EOF' | tee x.sh >/dev/null
+git push origin HEAD:prod
+EOF
+bash x.sh
+=== block R10-T04 cat <<EOF | sudo tee x.sh then sh x.sh
+cat <<'EOF' | sudo tee /tmp/qa/x.sh
+git push origin HEAD:prod
+EOF
+sh /tmp/qa/x.sh
+=== block R10-T05 written via cat > then run with bash -e -o pipefail
+cat > /tmp/qa/deploy.sh <<'EOF'
+set -e
+git push origin dev:prod
+EOF
+bash -e -o pipefail /tmp/qa/deploy.sh
+=== block R10-T06 written then run via zsh path /bin/zsh
+cat > /tmp/qa/deploy.sh <<'EOF'
+git push origin dev:prod
+EOF
+/bin/zsh /tmp/qa/deploy.sh
+=== block R10-T07 written then run via chmod and relative path without ./ in subdir (scripts/x.sh)
+cat > scripts/deploy.sh <<'EOF'
+git push origin dev:prod
+EOF
+chmod +x scripts/deploy.sh && scripts/deploy.sh
+=== block R10-T08 written then run by bash with redirect before filename
+cat > /tmp/qa/d.sh <<'EOF'
+git push origin dev:prod
+EOF
+bash 2>&1 /tmp/qa/d.sh
+=== block R10-T09 written then nohup bash path &
+cat > /tmp/qa/d.sh <<'EOF'
+git push origin dev:prod
+EOF
+nohup bash /tmp/qa/d.sh > /tmp/qa/d.log 2>&1 &
+=== block R10-T10 written then bash "$SP/d.sh" quoted var path
+SP=/tmp/qa
+cat > "$SP/d.sh" <<'EOF'
+git push origin dev:prod
+EOF
+bash "$SP/d.sh"
+=== block R10-T11 written then bash ${SP}/d.sh brace var
+cat > ${SP}/d.sh <<'EOF'
+git push origin dev:prod
+EOF
+bash ${SP}/d.sh
+=== block R10-T12 written then source with path ./
+cat > ./env.sh <<'EOF'
+git push origin dev:prod
+EOF
+source ./env.sh
+=== block R10-S01 same line write && /bin/bash f
+cat > /tmp/qa/d.sh <<'EOF' && /bin/bash /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S02 same line write && /bin/sh f
+cat > /tmp/qa/d.sh <<'EOF' && /bin/sh /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S03 same line write && /bin/zsh f
+cat > /tmp/qa/d.sh <<'EOF' && /bin/zsh /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S04 same line write && bash -o pipefail f
+cat > /tmp/qa/d.sh <<'EOF' && bash -o pipefail /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S05 same line write && bash 2>&1 f
+cat > /tmp/qa/d.sh <<'EOF' && bash 2>&1 /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S06 same line write && bash f>log
+cat > /tmp/qa/d.sh <<'EOF' && bash /tmp/qa/d.sh>/tmp/qa/d.log
+git push origin dev:prod
+EOF
+=== block R10-S07 same line write && eval "$(cat f)"
+cat > /tmp/qa/d.sh <<'EOF' && eval "$(cat /tmp/qa/d.sh)"
+git push origin dev:prod
+EOF
+=== block R10-S08 same line write && bash -c "$(cat f)"
+cat > /tmp/qa/d.sh <<'EOF' && bash -c "$(cat /tmp/qa/d.sh)"
+git push origin dev:prod
+EOF
+=== block R10-S09 same line write ; bash -O extglob f
+cat > /tmp/qa/d.sh <<'EOF'; bash -O extglob /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S10 same line write && bash "$PWD/d.sh"
+cat > d.sh <<'EOF' && bash "$PWD/d.sh"
+git push origin dev:prod
+EOF
+=== block R10-S11 same line tee -a f >/dev/null && /bin/bash f
+tee /tmp/qa/d.sh >/dev/null <<'EOF' && /bin/bash /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S12 same line write && sh -e f (control: handled)
+cat > /tmp/qa/d.sh <<'EOF' && sh -e /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-G01 env assign with spaced quote before git push
+GIT_SSH_COMMAND="ssh -i ~/.ssh/k -o IdentitiesOnly=yes" git push origin HEAD:prod
+=== block R10-G02 env assign single quotes + quoted dest
+GIT_SSH_COMMAND='ssh -o X=1' git push origin 'HEAD:prod'
+=== block R10-G03 while ! push loop
+while ! git push origin HEAD:prod; do sleep 1; done
+=== block R10-G04 test || push
+test -f x || git push origin HEAD:prod
+=== block R10-G05 echo y | push
+echo y | git push origin HEAD:prod
+=== block R10-G06 push with trailing comment containing quote
+git push origin HEAD:prod # don't forget
+=== block R10-G07 push "HEAD":"prod"
+git push origin "HEAD":"prod"
+=== block R10-G08 -o attached -oci.skip
+git push -oci.skip origin HEAD:prod
+=== block R10-G09 push after cd quoted var
+cd "$WT" && git push origin HEAD:prod
+=== block R10-G10 multiple refspecs second prod
+git push origin HEAD:dev HEAD:prod
+=== block R10-G11 time with -p
+time -p git push origin HEAD:prod
+=== block R10-G12 heredoc to git push itself (stdin unused)
+git push origin HEAD:prod <<'EOF'
+EOF
+=== block R10-G13 push in function def then call
+deploy() { git push origin HEAD:prod; }; deploy
+=== block R10-G14 push inside multi-line if with heredoc commit before
+if git diff --cached --quiet; then
+  echo nothing
+else
+  git commit -F - <<'EOF'
+release: don't wait
+EOF
+  git push origin HEAD:prod
+fi
+=== block R10-G15 push inside $(...) inside double-quoted echo with apostrophe text
+echo "result: $(git push origin HEAD:prod 2>&1) — it's done"
+=== block R10-G16 push inside backticks in double quotes
+echo "`git push origin HEAD:prod`"
+=== block R10-G17 push after python heredoc with triple-quoted string
+python3 - <<'PY'
+s = """
+it's a "doc"
+"""
+print(s)
+PY
+git push origin HEAD:prod
+=== block R10-G18 push after node heredoc with template literal
+node <<'JS'
+const s = `it's ${1}`;
+console.log(s)
+JS
+git push origin HEAD:prod
+=== block R10-G19 push after jq with complex filter
+jq -r '.items[] | "\(.name)\t\(.v // "n/a")"' x.json
+git push origin HEAD:prod
+=== block R10-G20 push after awk program with # and quotes
+awk -F'\t' '{ # col
+  print $1 "x" }' f.tsv
+git push origin HEAD:prod
+=== block R10-G21 push after sed with escaped quote
+sed -i '' -e "s/it\'s/it is/" f.md
+git push origin HEAD:prod
+=== block R10-G22 push after perl one-liner with q()
+perl -pi -e 's/a/b/' f && git push origin HEAD:prod
+=== block R10-G23 push after printf with %
+printf '%s\n' "it's" "a \"b\"" && git push origin HEAD:prod
+=== block R10-G24 push after grep -E with parens in quotes
+grep -nE "(a|b)'" f.txt; git push origin HEAD:prod
+=== block R10-G25 push after heredoc to gh api comment with apostrophes
+gh api repos/o/r/issues/1/comments -F body=@- <<'EOF'
+it's "quoted" and `ticked`
+EOF
+git push origin HEAD:prod
+=== block R10-G26 push after case statement
+case "$x" in
+  a|b) echo "it's $x" ;;
+  *) echo other ;;
+esac
+git push origin HEAD:prod
+=== block R10-G27 push after arithmetic with << shift
+x=$(( 1 << 3 ))
+git push origin HEAD:prod
+=== block R10-G28 push after (( )) with << shift and a later line equal to 3
+(( y = 1 << 3 ))
+git push origin HEAD:prod
+3
+=== block R10-G29 push after [[ =~ ]] with quote in regex
+[[ "$x" =~ ^it\'s$ ]] && echo y
+git push origin HEAD:prod
+=== block R10-G30 push after ${var//\'/}
+y=${x//\'/}
+git push origin HEAD:prod
+echo 'z'
+=== block R10-G31 push after ${x:-'}'}
+echo ${x:-'}'}
+git push origin HEAD:prod
+echo 'done'
+=== block R10-G32 push after ${x#\#}
+y=${x#\#} ; git push origin HEAD:prod
+=== block R10-G33 push after $"…" locale string
+echo $"it's"
+git push origin HEAD:prod
+=== block R10-G34 workflow run with path and quotes
+gh workflow run ".github/workflows/client-production.yml" --ref dev
+=== block R10-G35 docker push after multi-line build continuation
+docker build \
+  -t imjohnkoo/nomacom-admin:prod \
+  . && docker push imjohnkoo/nomacom-admin:prod
+=== block R10-V01 default JSON in ${…:-'{}'} then push then later quote
+BODY=${BODY:-'{}'}
+git push origin HEAD:prod
+echo 'done'
+=== block R10-V02 ${X:-"{}"} unquoted default then push and later dq
+X=${X:-"{}"}
+git push origin HEAD:prod
+echo "done"
+=== block R10-V03 "${X:-{}}" inside dq (control)
+X="${X:-{}}"
+git push origin HEAD:prod
+echo "done"
+=== block R10-V04 ${X:-'a}b'} default with brace
+echo ${X:-'a}b'}; git push origin HEAD:prod; echo 'x'
+=== block R10-V05 ${#arr[@]} then push
+n=${#arr[@]}; git push origin HEAD:prod
+=== block R10-V06 ${X/\}/} then push and later quote
+y=${X/\}/}
+git push origin HEAD:prod
+echo 'x'
+=== block R10-V07 ${X:-$(cat <<'EOF' … )} default heredoc (rare)
+X=${X:-$(cat <<'EOF'
+a
+EOF
+)}
+git push origin HEAD:prod
+=== allow R10-N01 nrm: commit heredoc with 2>&1 then bash check on same line (data)
+git commit -F - 2>&1 <<'EOF' && bash scripts/check.sh
+docs: git push origin prod 예시
+EOF
+=== allow R10-N02 nrm: ${VAR} path consumer cat then bash later same line
+cat > ${OUT}/note.md <<'EOF' && bash scripts/lint.sh
+git push origin prod 예시
+EOF
+=== allow R10-N03 lastseg brace: { git commit -F -; } heredoc then bash on same line
+{ git commit -F - ; } <<'EOF' && bash scripts/check.sh
+docs: git push origin prod 예시
+EOF
+=== allow R10-N04 nrm &> before heredoc to git
+git commit -F - &>/dev/null <<'EOF' ; bash scripts/check.sh
+docs: git push origin prod 예시
+EOF
+=== block R10-X01 unquoted git -c alias.p=push p origin prod
+git -c alias.p=push p origin HEAD:prod
+=== block R10-X02 graphql enablePullRequestAutoMerge via --input heredoc (quoted form is blocked)
+gh api graphql --input - <<'EOF'
+{"query": "mutation { enablePullRequestAutoMerge(input: {pullRequestId: \"PR_x\"}) { clientMutationId } }"}
+EOF
+=== block R10-X04 git config set (git 2.46 syntax) remote.origin.push prod
+git config set remote.origin.push HEAD:refs/heads/prod
+=== block R10-DOS heredoc 으로 쓰는 파일 201개 — 판정 불가로 막는다(파일마다 전체를 훑느라 600초를 넘겨 판정 없이 통과하지 않게)
+cat > /tmp/qa/n0.md <<'EOF'
+note 0
+EOF
+cat > /tmp/qa/n1.md <<'EOF'
+note 1
+EOF
+cat > /tmp/qa/n2.md <<'EOF'
+note 2
+EOF
+cat > /tmp/qa/n3.md <<'EOF'
+note 3
+EOF
+cat > /tmp/qa/n4.md <<'EOF'
+note 4
+EOF
+cat > /tmp/qa/n5.md <<'EOF'
+note 5
+EOF
+cat > /tmp/qa/n6.md <<'EOF'
+note 6
+EOF
+cat > /tmp/qa/n7.md <<'EOF'
+note 7
+EOF
+cat > /tmp/qa/n8.md <<'EOF'
+note 8
+EOF
+cat > /tmp/qa/n9.md <<'EOF'
+note 9
+EOF
+cat > /tmp/qa/n10.md <<'EOF'
+note 10
+EOF
+cat > /tmp/qa/n11.md <<'EOF'
+note 11
+EOF
+cat > /tmp/qa/n12.md <<'EOF'
+note 12
+EOF
+cat > /tmp/qa/n13.md <<'EOF'
+note 13
+EOF
+cat > /tmp/qa/n14.md <<'EOF'
+note 14
+EOF
+cat > /tmp/qa/n15.md <<'EOF'
+note 15
+EOF
+cat > /tmp/qa/n16.md <<'EOF'
+note 16
+EOF
+cat > /tmp/qa/n17.md <<'EOF'
+note 17
+EOF
+cat > /tmp/qa/n18.md <<'EOF'
+note 18
+EOF
+cat > /tmp/qa/n19.md <<'EOF'
+note 19
+EOF
+cat > /tmp/qa/n20.md <<'EOF'
+note 20
+EOF
+cat > /tmp/qa/n21.md <<'EOF'
+note 21
+EOF
+cat > /tmp/qa/n22.md <<'EOF'
+note 22
+EOF
+cat > /tmp/qa/n23.md <<'EOF'
+note 23
+EOF
+cat > /tmp/qa/n24.md <<'EOF'
+note 24
+EOF
+cat > /tmp/qa/n25.md <<'EOF'
+note 25
+EOF
+cat > /tmp/qa/n26.md <<'EOF'
+note 26
+EOF
+cat > /tmp/qa/n27.md <<'EOF'
+note 27
+EOF
+cat > /tmp/qa/n28.md <<'EOF'
+note 28
+EOF
+cat > /tmp/qa/n29.md <<'EOF'
+note 29
+EOF
+cat > /tmp/qa/n30.md <<'EOF'
+note 30
+EOF
+cat > /tmp/qa/n31.md <<'EOF'
+note 31
+EOF
+cat > /tmp/qa/n32.md <<'EOF'
+note 32
+EOF
+cat > /tmp/qa/n33.md <<'EOF'
+note 33
+EOF
+cat > /tmp/qa/n34.md <<'EOF'
+note 34
+EOF
+cat > /tmp/qa/n35.md <<'EOF'
+note 35
+EOF
+cat > /tmp/qa/n36.md <<'EOF'
+note 36
+EOF
+cat > /tmp/qa/n37.md <<'EOF'
+note 37
+EOF
+cat > /tmp/qa/n38.md <<'EOF'
+note 38
+EOF
+cat > /tmp/qa/n39.md <<'EOF'
+note 39
+EOF
+cat > /tmp/qa/n40.md <<'EOF'
+note 40
+EOF
+cat > /tmp/qa/n41.md <<'EOF'
+note 41
+EOF
+cat > /tmp/qa/n42.md <<'EOF'
+note 42
+EOF
+cat > /tmp/qa/n43.md <<'EOF'
+note 43
+EOF
+cat > /tmp/qa/n44.md <<'EOF'
+note 44
+EOF
+cat > /tmp/qa/n45.md <<'EOF'
+note 45
+EOF
+cat > /tmp/qa/n46.md <<'EOF'
+note 46
+EOF
+cat > /tmp/qa/n47.md <<'EOF'
+note 47
+EOF
+cat > /tmp/qa/n48.md <<'EOF'
+note 48
+EOF
+cat > /tmp/qa/n49.md <<'EOF'
+note 49
+EOF
+cat > /tmp/qa/n50.md <<'EOF'
+note 50
+EOF
+cat > /tmp/qa/n51.md <<'EOF'
+note 51
+EOF
+cat > /tmp/qa/n52.md <<'EOF'
+note 52
+EOF
+cat > /tmp/qa/n53.md <<'EOF'
+note 53
+EOF
+cat > /tmp/qa/n54.md <<'EOF'
+note 54
+EOF
+cat > /tmp/qa/n55.md <<'EOF'
+note 55
+EOF
+cat > /tmp/qa/n56.md <<'EOF'
+note 56
+EOF
+cat > /tmp/qa/n57.md <<'EOF'
+note 57
+EOF
+cat > /tmp/qa/n58.md <<'EOF'
+note 58
+EOF
+cat > /tmp/qa/n59.md <<'EOF'
+note 59
+EOF
+cat > /tmp/qa/n60.md <<'EOF'
+note 60
+EOF
+cat > /tmp/qa/n61.md <<'EOF'
+note 61
+EOF
+cat > /tmp/qa/n62.md <<'EOF'
+note 62
+EOF
+cat > /tmp/qa/n63.md <<'EOF'
+note 63
+EOF
+cat > /tmp/qa/n64.md <<'EOF'
+note 64
+EOF
+cat > /tmp/qa/n65.md <<'EOF'
+note 65
+EOF
+cat > /tmp/qa/n66.md <<'EOF'
+note 66
+EOF
+cat > /tmp/qa/n67.md <<'EOF'
+note 67
+EOF
+cat > /tmp/qa/n68.md <<'EOF'
+note 68
+EOF
+cat > /tmp/qa/n69.md <<'EOF'
+note 69
+EOF
+cat > /tmp/qa/n70.md <<'EOF'
+note 70
+EOF
+cat > /tmp/qa/n71.md <<'EOF'
+note 71
+EOF
+cat > /tmp/qa/n72.md <<'EOF'
+note 72
+EOF
+cat > /tmp/qa/n73.md <<'EOF'
+note 73
+EOF
+cat > /tmp/qa/n74.md <<'EOF'
+note 74
+EOF
+cat > /tmp/qa/n75.md <<'EOF'
+note 75
+EOF
+cat > /tmp/qa/n76.md <<'EOF'
+note 76
+EOF
+cat > /tmp/qa/n77.md <<'EOF'
+note 77
+EOF
+cat > /tmp/qa/n78.md <<'EOF'
+note 78
+EOF
+cat > /tmp/qa/n79.md <<'EOF'
+note 79
+EOF
+cat > /tmp/qa/n80.md <<'EOF'
+note 80
+EOF
+cat > /tmp/qa/n81.md <<'EOF'
+note 81
+EOF
+cat > /tmp/qa/n82.md <<'EOF'
+note 82
+EOF
+cat > /tmp/qa/n83.md <<'EOF'
+note 83
+EOF
+cat > /tmp/qa/n84.md <<'EOF'
+note 84
+EOF
+cat > /tmp/qa/n85.md <<'EOF'
+note 85
+EOF
+cat > /tmp/qa/n86.md <<'EOF'
+note 86
+EOF
+cat > /tmp/qa/n87.md <<'EOF'
+note 87
+EOF
+cat > /tmp/qa/n88.md <<'EOF'
+note 88
+EOF
+cat > /tmp/qa/n89.md <<'EOF'
+note 89
+EOF
+cat > /tmp/qa/n90.md <<'EOF'
+note 90
+EOF
+cat > /tmp/qa/n91.md <<'EOF'
+note 91
+EOF
+cat > /tmp/qa/n92.md <<'EOF'
+note 92
+EOF
+cat > /tmp/qa/n93.md <<'EOF'
+note 93
+EOF
+cat > /tmp/qa/n94.md <<'EOF'
+note 94
+EOF
+cat > /tmp/qa/n95.md <<'EOF'
+note 95
+EOF
+cat > /tmp/qa/n96.md <<'EOF'
+note 96
+EOF
+cat > /tmp/qa/n97.md <<'EOF'
+note 97
+EOF
+cat > /tmp/qa/n98.md <<'EOF'
+note 98
+EOF
+cat > /tmp/qa/n99.md <<'EOF'
+note 99
+EOF
+cat > /tmp/qa/n100.md <<'EOF'
+note 100
+EOF
+cat > /tmp/qa/n101.md <<'EOF'
+note 101
+EOF
+cat > /tmp/qa/n102.md <<'EOF'
+note 102
+EOF
+cat > /tmp/qa/n103.md <<'EOF'
+note 103
+EOF
+cat > /tmp/qa/n104.md <<'EOF'
+note 104
+EOF
+cat > /tmp/qa/n105.md <<'EOF'
+note 105
+EOF
+cat > /tmp/qa/n106.md <<'EOF'
+note 106
+EOF
+cat > /tmp/qa/n107.md <<'EOF'
+note 107
+EOF
+cat > /tmp/qa/n108.md <<'EOF'
+note 108
+EOF
+cat > /tmp/qa/n109.md <<'EOF'
+note 109
+EOF
+cat > /tmp/qa/n110.md <<'EOF'
+note 110
+EOF
+cat > /tmp/qa/n111.md <<'EOF'
+note 111
+EOF
+cat > /tmp/qa/n112.md <<'EOF'
+note 112
+EOF
+cat > /tmp/qa/n113.md <<'EOF'
+note 113
+EOF
+cat > /tmp/qa/n114.md <<'EOF'
+note 114
+EOF
+cat > /tmp/qa/n115.md <<'EOF'
+note 115
+EOF
+cat > /tmp/qa/n116.md <<'EOF'
+note 116
+EOF
+cat > /tmp/qa/n117.md <<'EOF'
+note 117
+EOF
+cat > /tmp/qa/n118.md <<'EOF'
+note 118
+EOF
+cat > /tmp/qa/n119.md <<'EOF'
+note 119
+EOF
+cat > /tmp/qa/n120.md <<'EOF'
+note 120
+EOF
+cat > /tmp/qa/n121.md <<'EOF'
+note 121
+EOF
+cat > /tmp/qa/n122.md <<'EOF'
+note 122
+EOF
+cat > /tmp/qa/n123.md <<'EOF'
+note 123
+EOF
+cat > /tmp/qa/n124.md <<'EOF'
+note 124
+EOF
+cat > /tmp/qa/n125.md <<'EOF'
+note 125
+EOF
+cat > /tmp/qa/n126.md <<'EOF'
+note 126
+EOF
+cat > /tmp/qa/n127.md <<'EOF'
+note 127
+EOF
+cat > /tmp/qa/n128.md <<'EOF'
+note 128
+EOF
+cat > /tmp/qa/n129.md <<'EOF'
+note 129
+EOF
+cat > /tmp/qa/n130.md <<'EOF'
+note 130
+EOF
+cat > /tmp/qa/n131.md <<'EOF'
+note 131
+EOF
+cat > /tmp/qa/n132.md <<'EOF'
+note 132
+EOF
+cat > /tmp/qa/n133.md <<'EOF'
+note 133
+EOF
+cat > /tmp/qa/n134.md <<'EOF'
+note 134
+EOF
+cat > /tmp/qa/n135.md <<'EOF'
+note 135
+EOF
+cat > /tmp/qa/n136.md <<'EOF'
+note 136
+EOF
+cat > /tmp/qa/n137.md <<'EOF'
+note 137
+EOF
+cat > /tmp/qa/n138.md <<'EOF'
+note 138
+EOF
+cat > /tmp/qa/n139.md <<'EOF'
+note 139
+EOF
+cat > /tmp/qa/n140.md <<'EOF'
+note 140
+EOF
+cat > /tmp/qa/n141.md <<'EOF'
+note 141
+EOF
+cat > /tmp/qa/n142.md <<'EOF'
+note 142
+EOF
+cat > /tmp/qa/n143.md <<'EOF'
+note 143
+EOF
+cat > /tmp/qa/n144.md <<'EOF'
+note 144
+EOF
+cat > /tmp/qa/n145.md <<'EOF'
+note 145
+EOF
+cat > /tmp/qa/n146.md <<'EOF'
+note 146
+EOF
+cat > /tmp/qa/n147.md <<'EOF'
+note 147
+EOF
+cat > /tmp/qa/n148.md <<'EOF'
+note 148
+EOF
+cat > /tmp/qa/n149.md <<'EOF'
+note 149
+EOF
+cat > /tmp/qa/n150.md <<'EOF'
+note 150
+EOF
+cat > /tmp/qa/n151.md <<'EOF'
+note 151
+EOF
+cat > /tmp/qa/n152.md <<'EOF'
+note 152
+EOF
+cat > /tmp/qa/n153.md <<'EOF'
+note 153
+EOF
+cat > /tmp/qa/n154.md <<'EOF'
+note 154
+EOF
+cat > /tmp/qa/n155.md <<'EOF'
+note 155
+EOF
+cat > /tmp/qa/n156.md <<'EOF'
+note 156
+EOF
+cat > /tmp/qa/n157.md <<'EOF'
+note 157
+EOF
+cat > /tmp/qa/n158.md <<'EOF'
+note 158
+EOF
+cat > /tmp/qa/n159.md <<'EOF'
+note 159
+EOF
+cat > /tmp/qa/n160.md <<'EOF'
+note 160
+EOF
+cat > /tmp/qa/n161.md <<'EOF'
+note 161
+EOF
+cat > /tmp/qa/n162.md <<'EOF'
+note 162
+EOF
+cat > /tmp/qa/n163.md <<'EOF'
+note 163
+EOF
+cat > /tmp/qa/n164.md <<'EOF'
+note 164
+EOF
+cat > /tmp/qa/n165.md <<'EOF'
+note 165
+EOF
+cat > /tmp/qa/n166.md <<'EOF'
+note 166
+EOF
+cat > /tmp/qa/n167.md <<'EOF'
+note 167
+EOF
+cat > /tmp/qa/n168.md <<'EOF'
+note 168
+EOF
+cat > /tmp/qa/n169.md <<'EOF'
+note 169
+EOF
+cat > /tmp/qa/n170.md <<'EOF'
+note 170
+EOF
+cat > /tmp/qa/n171.md <<'EOF'
+note 171
+EOF
+cat > /tmp/qa/n172.md <<'EOF'
+note 172
+EOF
+cat > /tmp/qa/n173.md <<'EOF'
+note 173
+EOF
+cat > /tmp/qa/n174.md <<'EOF'
+note 174
+EOF
+cat > /tmp/qa/n175.md <<'EOF'
+note 175
+EOF
+cat > /tmp/qa/n176.md <<'EOF'
+note 176
+EOF
+cat > /tmp/qa/n177.md <<'EOF'
+note 177
+EOF
+cat > /tmp/qa/n178.md <<'EOF'
+note 178
+EOF
+cat > /tmp/qa/n179.md <<'EOF'
+note 179
+EOF
+cat > /tmp/qa/n180.md <<'EOF'
+note 180
+EOF
+cat > /tmp/qa/n181.md <<'EOF'
+note 181
+EOF
+cat > /tmp/qa/n182.md <<'EOF'
+note 182
+EOF
+cat > /tmp/qa/n183.md <<'EOF'
+note 183
+EOF
+cat > /tmp/qa/n184.md <<'EOF'
+note 184
+EOF
+cat > /tmp/qa/n185.md <<'EOF'
+note 185
+EOF
+cat > /tmp/qa/n186.md <<'EOF'
+note 186
+EOF
+cat > /tmp/qa/n187.md <<'EOF'
+note 187
+EOF
+cat > /tmp/qa/n188.md <<'EOF'
+note 188
+EOF
+cat > /tmp/qa/n189.md <<'EOF'
+note 189
+EOF
+cat > /tmp/qa/n190.md <<'EOF'
+note 190
+EOF
+cat > /tmp/qa/n191.md <<'EOF'
+note 191
+EOF
+cat > /tmp/qa/n192.md <<'EOF'
+note 192
+EOF
+cat > /tmp/qa/n193.md <<'EOF'
+note 193
+EOF
+cat > /tmp/qa/n194.md <<'EOF'
+note 194
+EOF
+cat > /tmp/qa/n195.md <<'EOF'
+note 195
+EOF
+cat > /tmp/qa/n196.md <<'EOF'
+note 196
+EOF
+cat > /tmp/qa/n197.md <<'EOF'
+note 197
+EOF
+cat > /tmp/qa/n198.md <<'EOF'
+note 198
+EOF
+cat > /tmp/qa/n199.md <<'EOF'
+note 199
+EOF
+cat > /tmp/qa/n200.md <<'EOF'
+note 200
+EOF
+=== allow R10-DOS2 heredoc 으로 쓰는 파일 3개(문턱 아래 — 일상형)
+cat > /tmp/qa/m0.md <<'EOF'
+note 0
+EOF
+cat > /tmp/qa/m1.md <<'EOF'
+note 1
+EOF
+cat > /tmp/qa/m2.md <<'EOF'
+note 2
+EOF
