@@ -46,7 +46,7 @@ describe('/guide 허브', () => {
       '설치 직후 · 1분',
       '도착 후 · 1분',
     ])
-    expect(w.find('a[href="/supported-devices"]').exists()).toBe(true)
+    expect(w.find('a[href="/supported-devices"]').text()).toBe('지원 기기 확인')
     expect(w.find('#guide-cs-title').text()).toBe(GUIDE_CONTACT.hubTitle)
     expect(seo).toHaveBeenCalledWith(expect.objectContaining({ title: '설치 가이드' }))
     expect(w.text()).not.toMatch(/super\.site/)

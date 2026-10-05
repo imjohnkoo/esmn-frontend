@@ -38,7 +38,7 @@ import { GUIDE_FLOW } from '~/content/guide/common'
 }
 
 .g-flow__step {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.04em;
   color: var(--n-color-primary-500, #6239ff);
@@ -56,7 +56,7 @@ import { GUIDE_FLOW } from '~/content/guide/common'
 }
 
 .g-flow__meta {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--n-color-neutral-500, #737373);
 }
 </style>

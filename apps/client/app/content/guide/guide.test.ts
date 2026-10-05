@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { STATIC_ROUTES } from '#shared/catalog/seo'
 import { ANDROID_GUIDE } from './android'
@@ -17,6 +17,7 @@ import {
 } from './figures'
 import { guidePlainText, parseGuideInline } from './inline'
 import lockJson from './figures.lock.json'
+import { guideGolden } from './golden'
 import { IOS_GUIDE } from './ios'
 import type { GuideContent, GuideStep } from './types'
 
@@ -318,8 +319,40 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
       expect(card).toContain(`:href="GUIDE_PAGES.${os}.to"`)
       expect(card).toMatch(/\sexternal\s/)
       expect(card).toContain(icon[os])
+      // 화면낭독기가 읽는 이름 = 그 카드의 이름 — 설명 (새 창)(다른 OS 이름으로 읽히면 실패)
+      expect(card).toContain(
+        ':aria-label="`${GUIDE_PAGES.' + os + '.label} — ${GUIDE_PAGES.' + os + '.sub} (새 창)`"',
+      )
     }
     expect(view).not.toMatch(/Universal Link 자동 설치|Galaxy · Pixel · QR 등록/)
+  })
+
+  it('가이드 화면 글자 크기 하한 — 모든 글 13px 이상 · 본문 칸 15px 이상(spec ⑤ — 장식 로고 글자 제외)', () => {
+    const files = [
+      ...readdirSync(new URL('app/components/guide/', CLIENT))
+        .filter((f) => f.endsWith('.vue'))
+        .map((f) => `app/components/guide/${f}`),
+      'app/pages/guide/index.vue',
+    ]
+    const BODY =
+      /^\.(g-step__p|g-check__body|g-alert__body|g-sec__lede|g-hero__lede|g-hero__hint|g-faq__a|g-note|g-method__desc|g-cs__lede|g-status__cap|guide-page__desc)$/
+    const DECOR = /^\.g-cs__icon(--kakao|--naver)?$/
+    let seen = 0
+    for (const f of files) {
+      const css = read(f).split('<style scoped>')[1] ?? ''
+      for (const m of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+        const sel = m[1]!.trim()
+        const px = m[2]!.match(/font-size:\s*(\d+(?:\.\d+)?)px/)
+        if (!px) continue
+        seen++
+        const size = Number(px[1])
+        if (sel.split(',').every((x) => DECOR.test(x.trim()))) continue
+        expect(size, `${f} ${sel}`).toBeGreaterThanOrEqual(13)
+        if (sel.split(',').some((x) => BODY.test(x.trim())))
+          expect(size, `${f} ${sel}`).toBeGreaterThanOrEqual(15)
+      }
+    }
+    expect(seen).toBeGreaterThan(30)
   })
 
   it('외부 가이드 사이트(esimmany.super.site)로 나가는 링크 0 — apps/client 전체(생성물 · 의존성 폴더 밖)', () => {
@@ -346,5 +379,16 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
     walk('')
     expect(scanned).toBeGreaterThan(100)
     expect(hits).toEqual([])
+  })
+})
+
+describe('골든 — 2609 원본 대조를 마친 콘텐츠 전체(spec F-2 · D-3 · D-4)', () => {
+  const GOLDEN = new URL('./guide.golden.json', import.meta.url)
+  it('문장 · 표기 · 보조 문장 위치 · 화면 창(상태 · 강조 · 초점 · 대체 글) · 안내 박스 종류 · 공통 문안이 골든과 같다', () => {
+    const now = guideGolden()
+    if (process.env.WRITE_GUIDE_GOLDEN === '1')
+      writeFileSync(GOLDEN, JSON.stringify(now, null, 2) + '\n')
+    expect(existsSync(GOLDEN), 'guide.golden.json 없음 — WRITE_GUIDE_GOLDEN=1 로 쓴다').toBe(true)
+    expect(now).toEqual(JSON.parse(readFileSync(GOLDEN, 'utf8')))
   })
 })

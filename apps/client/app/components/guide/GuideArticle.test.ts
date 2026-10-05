@@ -145,7 +145,9 @@ describe.each([
       expect(items.map((li) => li.find('.g-step__num').text().replace(/\D/g, ''))).toEqual(
         lists[k]!.map((_, i) => String(i + 1)),
       )
-      items.forEach((li, i) => expect(norm(li.text())).toContain(norm(guidePlainText(lists[k]![i]!.text))))
+      items.forEach((li, i) =>
+        expect(norm(li.text())).toContain(norm(guidePlainText(lists[k]![i]!.text))),
+      )
     })
   })
 
@@ -155,7 +157,9 @@ describe.each([
     expect(
       w
         .findAll('.g-flow__item')
-        .map((li) => ['.g-flow__step', '.g-flow__title', '.g-flow__meta'].map((c) => norm(li.find(c).text()))),
+        .map((li) =>
+          ['.g-flow__step', '.g-flow__title', '.g-flow__meta'].map((c) => norm(li.find(c).text())),
+        ),
     ).toEqual([
       ['STEP 1', '집에서 설치', '출국 전 · 5분'],
       ['STEP 2', '회선 설정', '설치 직후 · 1분'],
@@ -176,12 +180,31 @@ describe.each([
     expect(st).toHaveLength(1)
     expect(st[0]!.attributes('role')).toBe('img')
     if (os === 'ios') {
-      expect(norm(st[0]!.find('.g-status__cap').text())).toBe('위 칸 = 여행용 eSIM · 아래 칸 = 한국 회선')
+      expect(norm(st[0]!.find('.g-status__cap').text())).toBe(
+        '위 칸 = 여행용 eSIM · 아래 칸 = 한국 회선',
+      )
       expect(st[0]!.attributes('aria-label')).toContain('위 칸은 여행용 eSIM, 아래 칸은 한국 회선')
     } else {
       expect(norm(st[0]!.find('.g-status__cap').text())).toBe('신호 표시 + 5G 또는 LTE')
       expect(st[0]!.attributes('aria-label')).toContain('5G 또는 LTE')
     }
+  })
+
+  it('안내 박스 종류(경고 · 팁 · 참고 · 귀국)가 콘텐츠 순서 그대로 화면 클래스로 — 경고는 빨간 박스', () => {
+    const want = [
+      ...content.step1.methods.flatMap((m) => (m.note ? [m.note.tone] : [])),
+      ...content.step1.notes.map((n) => n.tone),
+      ...content.step2.notes.map((n) => n.tone),
+      ...content.step3.notes.map((n) => n.tone),
+    ]
+    const got = w.findAll('.g-note').map((n) =>
+      n
+        .classes()
+        .find((c) => c.startsWith('g-note--'))
+        ?.slice(8),
+    )
+    expect(got).toEqual(want)
+    expect(got.filter((t) => t === 'warn').length).toBeGreaterThanOrEqual(2)
   })
 
   it('머리 안내 줄(빨간 테두리 = 누를 곳) · 단계 번호 화면낭독 글자 «N번.» · 새 창 링크 안내', () => {

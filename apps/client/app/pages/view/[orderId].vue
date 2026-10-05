@@ -266,7 +266,7 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
           :label="GUIDE_PAGES.ios.label"
           :sub="GUIDE_PAGES.ios.sub"
           :href="GUIDE_PAGES.ios.to"
-          :aria-label="`${GUIDE_PAGES.ios.label} (새 창)`"
+          :aria-label="`${GUIDE_PAGES.ios.label} — ${GUIDE_PAGES.ios.sub} (새 창)`"
           external
         >
           <template #icon>
@@ -281,7 +281,7 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
           :label="GUIDE_PAGES.android.label"
           :sub="GUIDE_PAGES.android.sub"
           :href="GUIDE_PAGES.android.to"
-          :aria-label="`${GUIDE_PAGES.android.label} (새 창)`"
+          :aria-label="`${GUIDE_PAGES.android.label} — ${GUIDE_PAGES.android.sub} (새 창)`"
           external
         >
           <template #icon>
