@@ -188,7 +188,7 @@ gh api graphql -f query='query { repository(owner: "o", name: "r") { ref(qualifi
 === allow A32 gh run list prod + gh api
 gh run list --branch prod --limit 3 --json databaseId,headSha
 === allow A33 git push dev with -C orca path
-git -C /Users/johnkoo/orca/workspaces/nomacom-frontend/issuer-legal-links push -u origin imjohnkoo/issuer-legal-links
+git -C /Users/someone/orca/workspaces/nomacom-frontend/issuer-legal-links push -u origin imjohnkoo/issuer-legal-links
 === allow A34 git push then newline git status -sb (no f)
 git push origin imjohnkoo/x
 git status -sb
@@ -267,3 +267,361 @@ git push origin "$(git rev-parse origin/dev):prod"
 === allow E03 newline-joined pr create then pr list --base prod
 gh pr create --base dev --title x
 gh pr list --base prod
+=== block K01 if/then keyword before push
+if git diff --quiet origin/prod origin/dev; then echo same; else git push origin origin/dev:prod; fi
+=== block K02 then on its own
+if true; then git push origin HEAD:prod; fi
+=== block K03 retry until loop
+until git push origin HEAD:prod; do sleep 5; done
+=== block K04 while ! retry
+while ! git push origin HEAD:prod; do sleep 2; done
+=== block K05 brace group
+{ git push origin HEAD:prod; } 2>&1 | tail -3
+=== block K06 negation
+! git push origin HEAD:prod
+=== block K07 if git push directly
+if git push origin HEAD:prod; then echo ok; fi
+=== block K08 timeout wrapper
+timeout 120 git push origin HEAD:prod
+=== block K09 absolute git path
+/usr/bin/git push origin HEAD:prod
+=== block K10 homebrew git path
+/opt/homebrew/bin/git push origin prod
+=== block K11 nice wrapper
+nice git push origin prod
+=== block K12 caffeinate
+caffeinate -i git push origin prod
+=== block K13 env with -u option
+env -u GIT_DIR git push origin prod
+=== block K14 env var with quoted space value
+GIT_SSH_COMMAND="ssh -i ~/.ssh/id_work" git push origin HEAD:prod
+=== block K15 git -c value with quote mid-token (space)
+git -c core.sshCommand="ssh -i ~/.ssh/id_work" push origin HEAD:prod
+=== block K16 git -c user.name="John Koo"
+git -c user.name="John Koo" push origin prod
+=== block K17 /bin/bash -c
+/bin/bash -c 'git push origin HEAD:prod'
+=== block K18 bash --norc -c
+bash --norc -c 'git push origin HEAD:prod'
+=== block K19 do body in for loop with literal
+for i in 1 2; do git push origin HEAD:prod && break; sleep 3; done
+=== block K20 else branch
+git diff --quiet || echo diff; if false; then :; else git push origin prod; fi
+=== block K21 elif
+if false; then :; elif true; then git push origin prod; fi
+=== block K22 gh pr create in then
+if true; then gh pr create --base prod --title x --body y; fi
+=== block K23 gh api in then
+if true; then gh api -X PATCH repos/o/r/git/refs/heads/prod -f sha=abc; fi
+=== block K24 gh workflow run in do
+for w in client-production.yml; do gh workflow run $w; done
+=== block K25 time with -p
+time -p git push origin prod
+=== block K26 sudo -u
+sudo -u john git push origin prod
+=== block K27 sh heredoc no leading space
+sh <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block K28 cat heredoc piped to sh
+cat <<'EOF' | sh
+git push origin HEAD:prod
+EOF
+=== block K30 gh workflow run by display name
+gh workflow run "Client Production"
+=== block K31 multiline inline body then --base prod at end
+gh pr create --title "fix" --body "line1
+line2" --base prod
+=== block K32 gh api pulls multiline body then base=prod
+gh api repos/o/r/pulls -f title=x -f body="line1
+line2" -f base=prod -f head=dev
+=== block K33 PROMOTE style with ${}
+git push origin "${PROMOTE_SHA}:refs/heads/prod"
+=== block K34 git push --set-upstream origin prod
+git push --set-upstream origin prod
+=== block K35 git push two refspecs
+git push origin dev prod
+=== block K36 gh pr create --base "prod" quoted
+gh pr create --base "prod" --title "fix: x" --body "y"
+=== block K37 pr create with title apostrophes both sides
+gh pr create --title "John's" --base prod --body "Bob's"
+=== block K38 gh api PATCH with quoted path and $(...)
+gh api -X PATCH "repos/{owner}/{repo}/git/refs/heads/prod" -f sha="$(git rev-parse origin/dev)"
+=== block K39 git push in && chain after cd with orca path
+cd /Users/someone/orca/workspaces/nomacom-frontend/issuer-legal-links && git push origin HEAD:prod 2>&1 | tail -5
+=== block K40 push prod via exec
+exec git push origin prod
+=== allow F01 commit -m multiline inline with command line at start
+git commit -m "fix(hook): prod 차단 구멍
+
+git push origin HEAD:prod 형태를 막는다"
+=== allow F02 pr create multiline inline body with command line
+gh pr create --base dev --title "fix(hook): prod 구멍" --body "## 요약
+git push origin HEAD:refs/heads/prod 를 막는다
+gh pr create --base prod 도 막는다"
+=== allow F03 single-quoted body with backticks (literal)
+gh pr create --base dev --title x --body 'Fixes `git push origin prod` 차단'
+=== allow F04 single-quoted $(...) literal
+echo 'example: $(git push origin prod)'
+=== allow F05 commit -m with semicolon inside quotes
+git commit -m "fix(hook): 줄바꿈 경계; git push origin prod 차단"
+=== allow F06 grep alternation with pipe inside quotes
+grep -nE "force|git push origin prod" .claude/hooks/guard-prod-push.test.sh
+=== allow F07 trailing comment mentions prod
+git push -u origin imjohnkoo/issuer-legal-links  # prod 는 건드리지 않음
+=== allow F08 grep for graphql mutation names in hook
+grep -nE "gh api graphql|createRef|updateRef" .claude/hooks/guard-prod-push.sh
+=== allow F09 commit -m mentions gh api graphql mergeBranch
+git commit -m "fix(hook): gh api graphql mergeBranch · updateRef 차단"
+=== allow F10 gh pr create body mentions gh api graphql createRef
+gh pr create --base dev --title "fix(hook)" --body "막는 것: gh api graphql createRef / updateRef"
+=== allow F11 graphql read with variable name=refs/heads/prod
+gh api graphql -F name=refs/heads/prod -f query='query($name: String!) { repository(owner: "o", name: "r") { ref(qualifiedName: $name) { target { oid } } } }'
+=== allow F12 title with paren then command text
+gh pr create --base dev --title "막는 형태(QA) git push origin HEAD:prod" --body x
+=== allow F13 commit -m mentions --input refs/heads/prod
+git commit -m "fix(hook): gh api --input 으로 refs/heads/prod 생성 차단"
+=== allow F14 heredoc with <<\EOF backslash form
+git commit -F - <<\EOF
+fix: hook
+
+git push origin prod
+EOF
+=== allow F15 long multi-line script typical
+cd /Users/someone/orca/workspaces/nomacom-frontend/issuer-legal-links
+git status -sb
+git add -A
+git commit -m "$(cat <<'EOF'
+fix(hook): x
+
+- git push origin HEAD:prod
+EOF
+)"
+git push -u origin imjohnkoo/issuer-legal-links 2>&1 | tail -5
+gh pr create --base dev --title "fix(hook): x" --body "$(cat <<'EOF'
+## 요약
+- gh pr create --base prod 차단
+- gh workflow run client-production.yml 차단
+EOF
+)"
+=== allow F16 git push with -o ci options
+git push -o ci.skip -o merge_request.create origin imjohnkoo/x
+=== allow F17 git push --follow-tags
+git push --follow-tags origin imjohnkoo/x
+=== allow F18 git log prod range in $(...) inside echo
+echo "ahead: $(git rev-list --count origin/prod..origin/dev)"
+=== allow F19 gh api GET pulls base=prod
+gh api -X GET repos/o/r/pulls -f base=prod -f state=closed
+=== allow F20 gh api actions runs list on production workflow
+gh api repos/o/r/actions/workflows/client-production.yml/runs --jq '.workflow_runs[0].head_sha'
+=== allow F21 gh run list workflow production
+gh run list --workflow client-production.yml --limit 3
+=== allow F22 gh workflow view production
+gh workflow view client-production.yml
+=== allow F23 diff with origin/prod in subshell
+(cd apps/client && git diff --stat origin/prod..HEAD)
+=== allow F24 git push dev in if/then
+if git diff --quiet; then git push origin HEAD:dev; fi
+=== allow F25 for loop pushing feature branches
+for b in imjohnkoo/a imjohnkoo/b; do git push origin "$b"; done
+=== allow F26 git fetch prod
+git fetch origin prod:refs/remotes/origin/prod
+=== allow F27 git merge-base with prod
+git merge-base --is-ancestor origin/prod origin/dev && echo ff-ok
+=== allow F28 python heredoc not mentioning commands
+python3 - <<'PY'
+import json
+print(json.dumps({"ok": True}))
+PY
+=== allow F29 jq with pipe in single quotes
+gh api repos/o/r/branches/prod | jq -r '.commit.sha | .[0:7]'
+=== allow F30 git push with HEAD:dev and comment containing prod refspec
+git push origin HEAD:dev
+# 다음 단계: git push origin HEAD:prod (사용자 승인 후)
+=== allow F31 echo with backtick in double quotes mentions prod (would run!)
+echo "next: run nomacomfe-prod-push-check"
+=== allow F32 printf multi-line var
+printf '%s\n' "line1" "git push origin prod 는 금지"
+=== allow F33 gh pr create body inline mentions -B prod
+gh pr create --base dev --title "x" --body "-B prod 막음"
+=== allow F34 gh pr create --base dev --body mentions --base prod on new line
+gh pr create --base dev --title "x" --body "요약
+--base prod 는 막는다"
+=== allow F35 git -C path with spaces quoted then push dev
+git -C "/Users/someone/My Work/x" push origin HEAD:dev
+=== allow F36 git push tags only with -f in message? no — push --tags
+git push origin --tags
+=== allow F37 gh api PATCH dev with force=false
+gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc -F force=false
+=== allow F38 docker build tag prod (not push)
+docker build -t imjohnkoo/nomacom-client:prod-local .
+=== allow F39 multiline commit msg with -f word
+git commit -m "chore: x
+-f 옵션 설명"
+=== allow F40 here-string with prod word into grep
+grep -c prod <<< "$(git branch -r)"
+=== block G01 force in then
+if true; then git push -f origin imjohnkoo/x; fi
+=== block G02 force --force in until retry
+until git push --force origin imjohnkoo/x; do sleep 1; done
+=== block G03 -C double-quoted var
+git -C "$WT" push origin HEAD:prod
+=== block G04 --git-dir quoted
+git --git-dir="$W/.git" push origin prod
+=== block G05 subshell
+(git push origin HEAD:prod)
+=== block G06 || true
+git push origin HEAD:prod || true
+=== block G07 x=$(...)
+x=$(git push origin HEAD:prod 2>&1)
+=== block G08 nested $(...)
+echo "$(echo "$(git push origin HEAD:prod)")"
+=== block G09 subst with parens inside
+out=$( (git push origin prod) )
+=== block G10 glob chars in subst before push (bash3.2 pattern replace)
+ls $(echo apps/*/package.json) && git push origin HEAD:prod
+=== block G11 bracket chars in subst
+echo $(echo [a]) ; git push origin HEAD:prod
+=== block G12 question mark in backtick
+echo `echo ?` ; git push origin HEAD:prod
+=== block G13 gh pr create inside $(...)
+url=$(gh pr create --base prod --fill)
+=== block G14 gh pr edit no number
+gh pr edit --base prod
+=== block G15 gh pr create --repo then base
+gh pr create --repo imjohnkoo/nomacom-frontend --head dev --base prod --fill
+=== block G16 gh api leading slash path
+gh api --method PATCH /repos/o/r/git/refs/heads/prod -f sha=x
+=== block G17 gh api quoted field ref
+gh api -X POST repos/o/r/git/refs -f "ref=refs/heads/prod" -f "sha=$SHA"
+=== block G18 gh api raw-field merges
+gh api -X POST repos/o/r/merges --raw-field base=prod --raw-field head=dev
+=== block G19 dispatch via api w/o method
+gh api repos/o/r/actions/workflows/client-production.yml/dispatches -f ref=dev
+=== block G20 workflow run name no ext
+gh workflow run client-production
+=== block G21 workflow run -r
+gh workflow run admin-production.yml -r prod
+=== block G22 heredoc-looking text in commit msg swallows later lines
+git commit -m "fix: heredoc <<EOF 처리"
+git push origin HEAD:prod
+=== block G23 heredoc delimiter with space quoted
+cat > x.md <<'END NOTE'
+memo
+END NOTE
+git push origin HEAD:prod
+=== block G24 push prod then comment w/o space
+git push origin prod#deploy
+=== block G25 git push HEAD:prod with trailing semicolon no space
+git push origin HEAD:prod;echo ok
+=== block G26 git push origin prod with backslash-continued options
+git push \
+  --no-verify \
+  origin \
+  HEAD:refs/heads/prod
+=== block G27 eval with double quotes and var
+eval "git push origin HEAD:prod"
+=== block G28 gh api PATCH -F force=true dev (rewind)
+gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc -F force=true
+=== block G29 gh api refs/heads/prod PATCH lowercase flag --method patch
+gh api --method patch repos/o/r/git/refs/heads/prod -f sha=abc
+=== block G30 git push origin HEAD:prod with ANSI-C and space? ok
+git push origin $'HEAD:prod'
+=== block G31 git push to prod with -q and ref with ^{commit}
+git push -q origin "$(git rev-parse 'origin/dev^{commit}')":refs/heads/prod
+=== block G32 git push origin dev:prod via `git -C` + tabs
+git	-C	/x	push	origin	dev:prod
+=== block G33 git push origin 'HEAD:prod' with -o "a b"
+git push -o "ci skip note" origin 'HEAD:prod'
+=== block G34 mirror via quoted refspec glob
+git push origin "refs/heads/*"
+=== block G35 xargs -I
+printf 'prod\n' | xargs -I{} git push origin {}
+=== block G36 gh api graphql via heredoc file input
+gh api graphql -F query=@- <<'EOF'
+mutation { updateRef(input: {refId: "x", oid: "y"}) { clientMutationId } }
+EOF
+=== block G37 git push origin prod --dry-run=false? (no)
+git push origin prod --porcelain
+=== allow G38 git push origin prod-hotfix:prod-hotfix
+git push origin prod-hotfix:prod-hotfix
+=== allow G39 git push origin HEAD:refs/heads/prodx
+git push origin HEAD:refs/heads/prodx
+=== allow G40 gh api read refs/heads/prod with -H header
+gh api -H "Accept: application/vnd.github+json" repos/o/r/git/refs/heads/prod
+=== allow G41 gh api read refs/heads/prod paginated with -q
+gh api repos/o/r/git/refs/heads/prod -q .object.sha
+=== allow G42 gh api compare with field-like query in URL (GET)
+gh api "repos/o/r/pulls?base=prod&state=closed" --jq '.[].number'
+=== allow G43 gh api branches/prod protection GET w/ -F?? GET
+gh api -X GET repos/o/r/commits -f sha=prod -f per_page=3
+=== block H01 backslash inside $(...)
+echo $(printf '%s' 'a\b') ; git push origin HEAD:prod
+=== block H02 backslash inside backticks
+echo `printf '%s' a\\b` ; git push origin HEAD:prod
+=== block H03 ampersand inside $(...)
+echo $(echo a && echo b) ; git push origin HEAD:prod
+=== block H04 empty $()
+echo $() ; git push origin HEAD:prod
+=== block H05 unterminated $(
+echo $(echo a ; git push origin HEAD:prod
+=== block H06 unterminated backtick
+echo `echo a ; git push origin HEAD:prod
+=== block H07 $(...) containing SUBST literal text
+echo $(echo SUBST) $(echo SUBST) ; git push origin HEAD:prod
+=== block H08 same $(...) repeated
+echo $(date) $(date) $(date) ; git push origin HEAD:prod
+=== block H09 nested backtick in $()
+echo $(echo `echo x`) ; git push origin HEAD:prod
+=== block H10 NBSP-free unicode emoji
+echo "🚀 배포" ; git push origin HEAD:prod
+=== block H11 only CR newlines (old mac)
+echo a git push origin HEAD:prod
+=== block H12 percent-s in segment
+printf '%s %d %n' ; git push origin HEAD:prod
+=== block H13 dash-n first word
+-n ; git push origin HEAD:prod
+=== block H14 starts with = sign
+=x ; git push origin HEAD:prod
+=== block H15 bracket glob-like token in git args
+git push origin HEAD:prod '[x]'
+=== block H16 very long branch-like token before prod
+git push origin aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:feat HEAD:prod
+=== block H17 bash -c with nested quotes depth 2
+bash -c "bash -c 'git push origin HEAD:prod'"
+=== block H18 eval of single quoted then && other
+eval 'git push origin HEAD:prod' && echo done
+=== block Q01 escaped quotes in title then --base prod
+gh pr create --title "fix \"hook\" now" --base prod --body "x y"
+=== block Q02 escaped quote pair in body before base
+gh pr create --body "say \"hi\"" --base prod --title t
+=== block Q03 push with -o escaped quotes
+git push -o "msg=\"a b\"" origin HEAD:prod
+=== block Q04 apostrophe in double-quoted title, base after
+gh pr create --title "John's fix" --base prod --body "it's done"
+=== block Q05 mixed quotes concatenated refspec
+git push origin "HEAD":'prod'
+=== block Q06 push with -o value containing apostrophe
+git push -o "note=it's" origin 'HEAD:prod' -o "x=it's"
+=== allow Q07 dev push with -o containing prod
+git push origin HEAD:dev -o "ci.variable=TARGET=prod"
+=== allow Q08 push to prod-preview
+git push origin feat/x:prod-preview
+=== allow Q09 commit -m containing 'prod' single-quoted one word then push dev
+git commit -m 'prod' && git push origin HEAD:dev
+=== allow Q10 gh pr create base dev with body containing -B prod one-word quoted
+gh pr create --base dev --title x --body "-Bprod"
+=== block M01 multi-line if block (push on its own line)
+if git merge-base --is-ancestor origin/prod "$PROMOTE_SHA"; then
+  git push origin "$PROMOTE_SHA":prod
+fi
+=== block M02 one-line promote with ff check (skill-shaped)
+if git merge-base --is-ancestor origin/prod "$PROMOTE_SHA"; then git push origin "$PROMOTE_SHA":prod; else echo "not ff"; fi
+=== block M03 && chain promote (control)
+git merge-base --is-ancestor origin/prod "$PROMOTE_SHA" && git push origin "$PROMOTE_SHA":prod
+=== block M04 noglob zsh precommand
+noglob git push origin HEAD:prod
+=== block M05 then on same line as newline-if
+if true
+then git push origin HEAD:prod
+fi
