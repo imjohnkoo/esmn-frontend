@@ -1,0 +1,1160 @@
+/* ====================================================================
+   ui.css — 설치가이드 화면 재구성용 부품 (iOS 26~27 · One UI 7~8)
+   원본: design/install-guide/shared/ui.css @ eb96d75 — 사본. 바꾼 곳은 «우리 발급 화면» 블록뿐이다
+   (지금 /view/{orderId} 모양 — client-guide spec D-4)
+
+   원칙
+   - 모양과 문구는 .cache/ 의 참고 이미지(Apple · 삼성 공식 문서, 경쟁사 가이드)에서 확인한 것만 쓴다
+   - Apple UI 킷 · SF 글꼴 · Apple 아이콘 · 삼성 아이콘은 쓰지 않는다. 아이콘은 직접 그리거나 Tabler(MIT)
+   - 화면은 논리 폭 390px 로 그리고, shots.js 가 캡처 창 크기에 맞춰 축소·확대한다
+   - 강조는 [data-k] 요소에 .is-hl 을 붙여 그린다 (좌표 불필요)
+   ==================================================================== */
+.scr {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 390px;
+  min-height: 844px;
+  transform-origin: top left;
+  font-family: 'Pretendard', system-ui, sans-serif;
+  word-break: keep-all;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0;
+  color: #000;
+}
+.scr * {
+  box-sizing: border-box;
+}
+.scr svg {
+  display: block;
+}
+
+/* 강조 — 누를 곳
+   outline 은 Figma 캡처(html-to-design)에 옮겨지지 않아서, 실제 요소(.hl-ring)로 테두리를 그린다 */
+.scr .is-hl {
+  position: relative;
+  z-index: 3;
+}
+.scr .hl-ring {
+  position: absolute;
+  inset: -6.5px;
+  z-index: 5;
+  border: 3.5px solid #ff3b30;
+  border-radius: 16px;
+  pointer-events: none;
+}
+.scr .hl-round > .hl-ring {
+  border-radius: 999px;
+}
+
+/* ====================================================================
+   iOS 26 ~ 27
+   ==================================================================== */
+.scr-ios {
+  --ios-blue: #0088ff;
+  --ios-green: #34c759;
+  --ios-red: #ff383c;
+  --ios-gray: #8e8e93;
+  --ios-label2: rgba(60, 60, 67, 0.6);
+  --ios-sep: rgba(60, 60, 67, 0.2);
+  --ios-bg: #f2f2f7;
+  --ios-fill: rgba(120, 120, 128, 0.16);
+  background: var(--ios-bg);
+  font-size: 17px;
+}
+.scr-ios.bg-white {
+  background: #fff;
+}
+
+/* 상태 표시줄 — iOS 27 은 아이콘 모서리가 둥글다 */
+.i-sb {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 54px;
+  padding: 10px 34px 0 44px;
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.i-sb__r {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.i-sig {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+.i-sig b {
+  width: 3.4px;
+  border-radius: 1.4px;
+  background: #000;
+}
+.i-sig b:nth-child(1) {
+  height: 4px;
+}
+.i-sig b:nth-child(2) {
+  height: 6.6px;
+}
+.i-sig b:nth-child(3) {
+  height: 9.3px;
+}
+.i-sig b:nth-child(4) {
+  height: 12px;
+}
+/* 듀얼 회선: 위 칸 = 데이터 회선(오른쪽으로 높아짐), 아래 칸 = 다른 회선(같은 크기 네모 4개) */
+.i-dual {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.6px;
+  height: 12px;
+}
+.i-dual b {
+  display: grid;
+  grid-template-rows: auto 3.4px;
+  row-gap: 1.3px;
+  width: 3.4px;
+}
+.i-dual b::before,
+.i-dual b::after {
+  content: '';
+  border-radius: 1.1px;
+  background: #000;
+}
+.i-dual b::before {
+  height: var(--h);
+}
+.i-dual b:nth-child(1),
+.i-dual b:nth-child(2) {
+  --h: 3.4px;
+}
+.i-dual b:nth-child(3) {
+  --h: 5.2px;
+}
+.i-dual b:nth-child(4) {
+  --h: 7.3px;
+}
+.i-net {
+  font-size: 14px;
+  font-weight: 800;
+}
+.i-wifi {
+  width: 17px;
+  height: 12px;
+}
+.i-bat {
+  position: relative;
+  width: 27px;
+  height: 13px;
+  padding: 1.6px;
+  border: 1.4px solid rgba(0, 0, 0, 0.4);
+  border-radius: 4.3px;
+}
+.i-bat::before {
+  content: '';
+  display: block;
+  height: 100%;
+  width: 82%;
+  border-radius: 2.2px;
+  background: #000;
+}
+.i-bat::after {
+  content: '';
+  position: absolute;
+  top: 3.3px;
+  right: -4px;
+  width: 2px;
+  height: 4.4px;
+  border-radius: 0 1.2px 1.2px 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* 내비게이션 */
+.i-nav {
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  align-items: center;
+  height: 56px;
+  padding: 0 16px;
+}
+.i-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.1),
+    0 2px 10px rgba(0, 0, 0, 0.08);
+}
+.bg-white .i-circle {
+  background: #eeeef0;
+  box-shadow: none;
+}
+.i-circle svg {
+  width: 20px;
+  height: 20px;
+  stroke: #000;
+}
+.i-nav__t {
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+}
+.i-nav__btn {
+  justify-self: end;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--ios-blue);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 그룹 목록 */
+.i-cap {
+  margin: 20px 36px 7px;
+  font-size: 14px;
+  color: var(--ios-label2);
+}
+.i-foot {
+  margin: 8px 36px 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ios-label2);
+}
+.i-group {
+  margin: 12px 16px 0;
+  border-radius: 26px;
+  background: #fff;
+  overflow: visible;
+}
+.i-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 10px 18px;
+}
+.i-row + .i-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 0;
+  border-top: 0.66px solid var(--ios-sep);
+}
+.i-row__t {
+  flex: 1;
+  min-width: 0;
+}
+.i-row__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 14px;
+  color: var(--ios-label2);
+}
+.i-row__v {
+  color: var(--ios-gray);
+  white-space: nowrap;
+}
+.i-chev {
+  width: 9px;
+  height: 14px;
+  stroke: #c4c4c7;
+}
+.i-link {
+  color: var(--ios-blue);
+}
+.i-tag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--ios-gray);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  vertical-align: 2px;
+}
+.i-check {
+  width: 20px;
+  height: 20px;
+  stroke: var(--ios-blue);
+}
+
+/* 스위치 (iOS 26 이후 넓은 캡슐) */
+.i-sw {
+  position: relative;
+  flex: 0 0 64px;
+  width: 64px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--ios-fill);
+}
+.i-sw::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 38px;
+  height: 24px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+.i-sw.on {
+  background: var(--ios-green);
+}
+.i-sw.on::after {
+  left: 24px;
+}
+
+/* 설정 시트 (eSIM 설정 흐름) */
+.i-sheet {
+  min-height: 790px;
+  margin-top: 10px;
+  padding: 16px 20px 24px;
+  border-radius: 38px 38px 0 0;
+  background: #fff;
+}
+.i-sheet .i-circle {
+  background: #eeeef0;
+  box-shadow: none;
+}
+.i-ant {
+  display: block;
+  width: 58px;
+  height: 58px;
+  margin: 14px auto 22px;
+  stroke: var(--ios-blue);
+}
+.i-h {
+  margin: 0 8px 8px;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.i-p {
+  margin: 0 8px 12px;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--ios-gray);
+}
+.i-more {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 8px 26px;
+  color: var(--ios-blue);
+  font-size: 15px;
+}
+.i-more i {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ios-blue);
+  color: #fff;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+}
+.i-opts {
+  border-radius: 22px;
+  background: var(--ios-bg);
+}
+.i-opt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 16.5px;
+}
+.i-opt + .i-opt::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 58px;
+  right: 16px;
+  border-top: 0.66px solid var(--ios-sep);
+}
+.i-opt svg.ico {
+  width: 28px;
+  height: 28px;
+  stroke: var(--ios-blue);
+}
+.i-opt .i-row__t {
+  flex: 1;
+}
+.i-btn {
+  display: grid;
+  place-items: center;
+  height: 52px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.i-btn--blue {
+  background: var(--ios-blue);
+  color: #fff;
+}
+.i-btn--gray {
+  background: #e9e9eb;
+  color: #000;
+}
+/* 실제 iOS 는 하단 고정 버튼이지만, 가이드 창에서 제목과 함께 보이도록 내용 바로 아래에 둔다 */
+.i-bottom {
+  margin: 34px 0 0;
+}
+
+/* 선택 카드 (사용할 위치 · 요금제 유형) */
+.i-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: var(--ios-bg);
+}
+.i-choice__t {
+  flex: 1;
+  font-weight: 700;
+  font-size: 17px;
+}
+.i-choice__t span {
+  display: block;
+  margin-top: 4px;
+  font-weight: 400;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--ios-gray);
+}
+.i-radio {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.6px solid #c7c7cc;
+}
+.i-radio.on {
+  border: 0;
+  background: var(--ios-blue)
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M6 12.5l4 4 8-9'/></svg>")
+    center / 16px no-repeat;
+}
+
+/* 입력칸 (활성화 코드) */
+.i-field {
+  margin: 0 8px;
+  padding: 14px 4px;
+  border-bottom: 0.66px solid var(--ios-sep);
+  font-size: 17px;
+}
+.i-field__ph {
+  color: #c4c4c7;
+}
+.i-field__v {
+  color: #000;
+  font-variant-numeric: tabular-nums;
+}
+.i-fields {
+  margin-top: 18px;
+  border-radius: 14px;
+}
+
+/* 카메라 (QR 스캔) */
+.i-cam {
+  position: relative;
+  height: 300px;
+  margin: 0 -20px 22px;
+  background: linear-gradient(160deg, #3c3c42, #1d1d20);
+  display: grid;
+  place-items: center;
+}
+.i-cam .qr {
+  width: 150px;
+  height: 150px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff;
+}
+.i-cam::after {
+  content: '';
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  border: 3px solid #ffd60a;
+  border-radius: 18px;
+}
+
+/* 알림 (iOS 26 글래스) */
+.i-dim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.24);
+}
+.i-alert {
+  position: absolute;
+  z-index: 4;
+  left: 36px;
+  right: 36px;
+  padding: 22px 20px 18px;
+  border-radius: 34px;
+  background: rgba(250, 250, 252, 0.95);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+.i-alert__t {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.i-alert__m {
+  margin: 0 0 18px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: #3c3c43;
+}
+.i-alert__btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.i-alert__btns .i-btn {
+  height: 48px;
+}
+.i-alert--center {
+  text-align: center;
+}
+
+/* 길게 누르기 메뉴 */
+.i-menu {
+  position: absolute;
+  z-index: 4;
+  width: 250px;
+  border-radius: 22px;
+  background: rgba(250, 250, 252, 0.97);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+}
+.i-menu__i {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  font-size: 16px;
+}
+.i-menu__i + .i-menu__i {
+  border-top: 0.66px solid var(--ios-sep);
+}
+.i-menu__i svg {
+  width: 20px;
+  height: 20px;
+  stroke: #000;
+}
+
+/* 잠금 화면 알림 */
+.i-lock {
+  background: linear-gradient(170deg, #9fb3d9 0%, #6a7fb8 55%, #3f4f86 100%);
+  color: #fff;
+}
+.i-lock__time {
+  margin-top: 70px;
+  text-align: center;
+  font-size: 84px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.i-lock__date {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 19px;
+  font-weight: 600;
+}
+.i-noti {
+  margin: 60px 12px 0;
+  padding: 14px 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #000;
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+.i-noti__ico {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+}
+.i-noti__ico svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--ios-blue);
+}
+.i-noti__t {
+  font-size: 15px;
+  font-weight: 700;
+}
+.i-noti__m {
+  font-size: 14px;
+  color: #3c3c43;
+}
+
+/* Safari 풍 웹 화면 */
+.i-safari {
+  background: #fff;
+}
+.i-urlbar {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 30px;
+  height: 50px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(245, 245, 247, 0.95);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  font-size: 15px;
+  color: #3c3c43;
+}
+
+/* ====================================================================
+   One UI 7 ~ 8
+   ==================================================================== */
+.scr-aos {
+  --a-blue: #3e7bfa;
+  --a-bg: #f4f4f6;
+  --a-text: #1a1a1a;
+  --a-sub: #767676;
+  --a-sep: rgba(0, 0, 0, 0.08);
+  background: var(--a-bg);
+  color: var(--a-text);
+  font-size: 17px;
+}
+.scr-aos.bg-white {
+  background: #fff;
+}
+.scr-aos.bg-dark {
+  background: #000;
+  color: #fff;
+}
+.a-sb {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 40px;
+  padding: 6px 24px 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.bg-dark .a-sb {
+  color: #fff;
+}
+.a-sb__r {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.a-sig {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+.a-bat {
+  width: 24px;
+  height: 13px;
+  border-radius: 7px;
+  background: currentColor;
+  opacity: 0.85;
+}
+.a-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 64px;
+  padding: 0 18px;
+  font-size: 22px;
+  font-weight: 700;
+}
+.a-head svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--a-text);
+}
+.a-cap {
+  margin: 18px 30px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--a-sub);
+}
+.a-foot {
+  margin: 10px 30px 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--a-sub);
+}
+.a-group {
+  margin: 10px 14px 0;
+  border-radius: 26px;
+  background: #fff;
+}
+.a-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 62px;
+  padding: 12px 22px;
+}
+.a-row + .a-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 22px;
+  right: 22px;
+  border-top: 1px solid var(--a-sep);
+}
+.a-row__t {
+  flex: 1;
+  min-width: 0;
+  font-size: 17.5px;
+}
+.a-row__sub {
+  display: block;
+  margin-top: 3px;
+  font-size: 14px;
+  color: var(--a-sub);
+  line-height: 1.4;
+}
+.a-row__sub.blue {
+  color: var(--a-blue);
+}
+.a-plus {
+  width: 26px;
+  height: 26px;
+  stroke: #1ea756;
+}
+.a-simico {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--a-blue);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+.a-sw {
+  position: relative;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 26px;
+  border-radius: 999px;
+  border: 2px solid #9a9a9a;
+  background: #fff;
+}
+.a-sw::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #9a9a9a;
+}
+.a-sw.on {
+  border-color: var(--a-blue);
+  background: var(--a-blue);
+}
+.a-sw.on::after {
+  left: 25px;
+  background: #fff;
+}
+.a-vbar {
+  width: 1px;
+  height: 30px;
+  background: var(--a-sep);
+}
+
+/* 전체 화면 흐름 (eSIM 추가 · 코드 입력 · 확인) */
+.a-flow {
+  min-height: 804px;
+  padding: 36px 26px 30px;
+  background: #fff;
+}
+.a-flow__ico {
+  width: 30px;
+  height: 30px;
+  margin: 18px auto 18px;
+  stroke: var(--a-blue);
+}
+.a-flow__t {
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 600;
+}
+.a-flow__p {
+  margin: 0 0 28px;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #444;
+}
+.a-list {
+  margin-top: 70px;
+}
+.a-list__i {
+  padding: 18px 6px;
+  font-size: 18px;
+  border-bottom: 1px solid var(--a-sep);
+}
+.a-input {
+  margin-top: 10px;
+  padding: 10px 2px;
+  border-bottom: 2px solid var(--a-blue);
+  font-size: 17px;
+  color: #b0b0b0;
+}
+.a-hint {
+  margin-top: 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #555;
+}
+/* 실제 One UI 는 오른쪽 아래 고정 버튼이지만, 가이드 창에서 함께 보이도록 내용 아래 오른쪽에 둔다 */
+.a-pill {
+  display: block;
+  width: fit-content;
+  margin: 48px 0 0 auto;
+  padding: 12px 26px;
+  border-radius: 999px;
+  background: var(--a-blue);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+}
+.a-pill.dim {
+  background: #b9cffb;
+}
+
+/* QR 스캔 (검은 화면) */
+.a-scan {
+  text-align: center;
+  padding: 26px 24px 0;
+  color: #fff;
+}
+.a-scan__p {
+  font-size: 16px;
+  margin-bottom: 34px;
+}
+.a-scan__frame {
+  position: relative;
+  width: 230px;
+  height: 230px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+}
+.a-scan__frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid #fff;
+  border-radius: 12px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) top left / 40px 40px no-repeat,
+    linear-gradient(#000 0 0) top right / 40px 40px no-repeat,
+    linear-gradient(#000 0 0) bottom left / 40px 40px no-repeat,
+    linear-gradient(#000 0 0) bottom right / 40px 40px no-repeat;
+  mask:
+    linear-gradient(#000 0 0) top left / 40px 40px no-repeat,
+    linear-gradient(#000 0 0) top right / 40px 40px no-repeat,
+    linear-gradient(#000 0 0) bottom left / 40px 40px no-repeat,
+    linear-gradient(#000 0 0) bottom right / 40px 40px no-repeat;
+}
+.a-scan__frame .qr {
+  width: 176px;
+  height: 176px;
+  padding: 8px;
+  background: #fff;
+}
+.a-scan__link {
+  display: inline-block;
+  margin-top: 30px;
+  font-size: 16px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.a-scan__btns {
+  display: flex;
+  justify-content: center;
+  gap: 70px;
+  margin-top: 60px;
+}
+.a-scan__btn {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.16);
+}
+.a-scan__btn svg {
+  width: 28px;
+  height: 28px;
+  stroke: #fff;
+}
+
+/* 아래에서 올라오는 선택 창 */
+.a-dim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.32);
+}
+.a-sheet {
+  position: absolute;
+  z-index: 4;
+  left: 12px;
+  right: 12px;
+  bottom: 22px;
+  padding: 26px 24px 18px;
+  border-radius: 30px;
+  background: #fff;
+}
+.a-sheet__t {
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-weight: 700;
+}
+.a-opt {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 4px;
+  font-size: 17.5px;
+}
+.a-opt__r {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #9a9a9a;
+}
+.a-opt__r.on {
+  border: 6.5px solid var(--a-blue);
+}
+.a-sheet__btn {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--a-blue);
+}
+.a-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 6px 14px 0;
+  border-bottom: 1px solid var(--a-sep);
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--a-sub);
+}
+.a-tabs span {
+  padding: 12px 0;
+}
+.a-tabs .on {
+  color: var(--a-text);
+  border-bottom: 3px solid var(--a-text);
+}
+
+/* ====================================================================
+   우리 발급 화면 (웹, 두 OS 공용) — /view/{orderId} 구성 · 글자를 따른다
+   ==================================================================== */
+.w-page {
+  padding: 14px 22px 0;
+  background: #fff;
+  color: #171717;
+}
+.w-step {
+  display: grid;
+  gap: 8px;
+}
+.w-step__bar {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: #ede9fe;
+  overflow: hidden;
+}
+.w-step__bar b {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #6239ff;
+}
+.w-step__t {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6239ff;
+}
+.w-eyebrow {
+  margin: 26px 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #6239ff;
+}
+.w-title {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.w-card {
+  margin-top: 22px;
+  padding: 18px 18px 20px;
+  border: 1px solid #eef2f7;
+  border-radius: 18px;
+  text-align: center;
+  box-shadow: 0 8px 24px -16px rgba(15, 23, 42, 0.18);
+}
+.w-card--codes {
+  margin-top: 6px;
+  padding-top: 4px;
+  text-align: left;
+}
+.w-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 700;
+}
+.w-pill i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+.w-qr {
+  width: 200px;
+  height: 200px;
+  margin: 14px auto 16px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-sizing: content-box;
+}
+.w-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 18px;
+  border-radius: 12px;
+  background: #f1edff;
+  color: #6239ff;
+  font-size: 15px;
+  font-weight: 700;
+}
+.w-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+.w-hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: #737373;
+}
+.w-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 4px;
+}
+.w-divider::before,
+.w-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #e5e7eb;
+}
+.w-divider span {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #f5f5f5;
+  font-size: 13px;
+  font-weight: 700;
+  color: #262626;
+}
+.w-code {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 2px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.w-code__t {
+  flex: 1;
+  min-width: 0;
+}
+.w-code__k {
+  display: block;
+  font-size: 12px;
+  color: #a3a3a3;
+}
+.w-code__v {
+  display: block;
+  margin-top: 3px;
+  font-size: 15px;
+  color: #171717;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.w-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f1edff;
+  color: #6239ff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.w-copy svg {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+}
+

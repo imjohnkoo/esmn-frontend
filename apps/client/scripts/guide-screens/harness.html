@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>guide-screens harness</title>
+    <!-- render.mjs 전용 — 사이트가 싣지 않는다. 글꼴은 사이트 것(public/fonts)을 그대로 써서 CDN 없이 같은 PNG 가 나온다 -->
+    <style>
+      @font-face {
+        font-family: 'Pretendard';
+        src: url('/fonts/PretendardVariable.woff2') format('woff2');
+        font-weight: 45 920;
+        font-display: block;
+      }
+      html,
+      body {
+        margin: 0;
+        background: #fff;
+      }
+      #stage {
+        padding: 16px;
+      }
+      .shot__win {
+        position: relative;
+        overflow: hidden;
+      }
+      .font-warm {
+        position: absolute;
+        left: -9999px;
+        font-family: 'Pretendard';
+      }
+    </style>
+    <link rel="stylesheet" href="/ui.css" />
+  </head>
+  <body>
+    <span class="font-warm" style="font-weight: 400">가나다 eSIM 123</span>
+    <span class="font-warm" style="font-weight: 600">가나다 eSIM 123</span>
+    <span class="font-warm" style="font-weight: 700">가나다 eSIM 123</span>
+    <span class="font-warm" style="font-weight: 800">가나다 eSIM 123</span>
+    <div id="stage"></div>
+    <script src="/screens.js"></script>
+  </body>
+</html>

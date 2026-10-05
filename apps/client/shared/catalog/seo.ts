@@ -11,12 +11,14 @@ import type { CatalogView, ZoneView } from './types'
 
 export { SITE_ORIGIN }
 
-/** 카탈로그와 무관한 정적 페이지 — 법정 3종(사업자정보 페이지는 없다 — client-shell D-39) · 가이드 · 지원 기기 */
+/** 카탈로그와 무관한 정적 페이지 — 법정 3종(사업자정보 페이지는 없다 — client-shell D-39) · 가이드 허브 + OS 2(client-guide F-7) · 지원 기기 */
 export const STATIC_ROUTES = [
   '/terms',
   '/privacy',
   '/refund',
   '/guide',
+  '/guide/ios',
+  '/guide/android',
   '/supported-devices',
 ] as const
 
@@ -94,7 +96,11 @@ export const STATIC_DESCRIPTIONS: Record<(typeof STATIC_ROUTES)[number], string>
   '/terms': '이심마니 해외여행 eSIM 서비스 이용약관이에요.',
   '/privacy': '이심마니가 주문 · 발급에 쓰는 개인정보와 보관 기간을 안내해요.',
   '/refund': '발급 전이면 전액 환불해 드려요. 신청 방법과 처리 기한을 안내해요.',
-  '/guide': 'eSIM 설치 가이드와 지원 기기 확인으로 가는 길을 모아 두었어요.',
+  '/guide': '아이폰과 안드로이드 eSIM 설치 방법을 출국 전 설치부터 현지에서 켜기까지 순서대로 안내해요.',
+  '/guide/ios':
+    '아이폰 eSIM 설치 가이드 — QR 코드로 집에서 설치하고, 이어서 나오는 화면과 현지에서 여행용 eSIM 을 켜는 법을 화면과 함께 안내해요.',
+  '/guide/android':
+    '안드로이드(갤럭시) eSIM 설치 가이드 — SIM 관리자에서 QR 코드로 설치하고, 현지에서 모바일 데이터와 데이터 로밍을 켜는 법을 화면과 함께 안내해요.',
   '/supported-devices': 'eSIM 을 쓸 수 있는 아이폰 · 갤럭시 기종을 확인해 보세요.',
 }
 

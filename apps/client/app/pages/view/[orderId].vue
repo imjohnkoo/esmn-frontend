@@ -9,6 +9,7 @@ import {
   NLinkCard,
   NButton,
 } from '@imjohnkoo/design-vue'
+import { GUIDE_PAGES } from '~/content/guide/common'
 import { useOrderStore } from '~/stores/order'
 
 const route = useRoute()
@@ -257,14 +258,14 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
         </li>
       </ul>
 
-      <!-- 공통 설치 가이드 — single/multi 둘 다 1회만 -->
+      <!-- 공통 설치 가이드 — single/multi 둘 다 1회만. 사이트 안 가이드(client-guide F-6) · 새 탭(D-5 — QR 화면을 닫지 않는다) -->
       <div class="view-page__divider"><span>설치 가이드</span></div>
 
       <div class="view-page__guides">
         <NLinkCard
-          label="아이폰 설치 가이드"
-          sub="iOS · Universal Link 자동 설치"
-          href="https://esimmany.super.site"
+          :label="GUIDE_PAGES.ios.label"
+          :sub="GUIDE_PAGES.ios.sub"
+          :href="GUIDE_PAGES.ios.to"
           external
         >
           <template #icon>
@@ -276,9 +277,9 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
           </template>
         </NLinkCard>
         <NLinkCard
-          label="안드로이드 설치 가이드"
-          sub="Galaxy · Pixel · QR 등록"
-          href="https://esimmany.super.site"
+          :label="GUIDE_PAGES.android.label"
+          :sub="GUIDE_PAGES.android.sub"
+          :href="GUIDE_PAGES.android.to"
           external
         >
           <template #icon>

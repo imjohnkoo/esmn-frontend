@@ -21,9 +21,9 @@ import { parseCatalog } from './validate'
 const catalog = fixtureCatalog()
 
 describe('정적 페이지 목록 (spec S-6)', () => {
-  it('법정 3종 · 가이드 · 지원 기기 — spec 이 정한 다섯 경로(사업자정보 페이지는 없다 — client-shell D-39)', () => {
+  it('법정 3종 · 가이드 허브 + OS 2(client-guide F-7) · 지원 기기 — 일곱 경로(사업자정보 페이지는 없다 — client-shell D-39)', () => {
     expect([...STATIC_ROUTES].sort()).toEqual(
-      ['/guide', '/privacy', '/refund', '/supported-devices', '/terms'].sort(),
+      ['/guide', '/guide/android', '/guide/ios', '/privacy', '/refund', '/supported-devices', '/terms'].sort(),
     )
   })
 })
@@ -36,6 +36,8 @@ describe('정적 페이지 결선 — 각 페이지가 자기 경로의 설명�
     ['refund.vue', '/refund'],
     ['supported-devices.vue', '/supported-devices'],
     ['guide/index.vue', '/guide'],
+    ['guide/ios.vue', '/guide/ios'],
+    ['guide/android.vue', '/guide/android'],
   ] as const)('%s → useCatalogSeo(설명 = STATIC_DESCRIPTIONS[%s]) 한 번', (f, route) => {
     const src = page(f)
     const calls = src.match(/useCatalogSeo\(\{[^}]*\}\)/g) ?? []
@@ -56,7 +58,15 @@ describe('정적 페이지 결선 — 각 페이지가 자기 경로의 설명�
     expect(seo).toMatch(/ogTitle: pageTitle\(meta\.title\),/)
   })
   it('정적 경로마다 페이지가 있다 · app.vue 가 html lang="ko"', () => {
-    expect([...STATIC_ROUTES].sort()).toEqual(['/guide', '/privacy', '/refund', '/supported-devices', '/terms'])
+    expect([...STATIC_ROUTES].sort()).toEqual([
+      '/guide',
+      '/guide/android',
+      '/guide/ios',
+      '/privacy',
+      '/refund',
+      '/supported-devices',
+      '/terms',
+    ])
     expect(readFileSync(new URL('../../app/app.vue', import.meta.url), 'utf8')).toMatch(/htmlAttrs: \{ lang: 'ko' \}/)
   })
 })

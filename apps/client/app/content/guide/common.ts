@@ -1,0 +1,52 @@
+/**
+ * 설치 가이드 공통 문안(client-guide spec S-1 · S-2 · S-3) — 허브 · OS 페이지가 같이 쓴다.
+ * 3단계 흐름 · 문의 문장은 2609 판(`design/install-guide/{ios,android}.html` @ eb96d75) 글자 그대로.
+ */
+import type { GuideOs } from './types'
+
+export const GUIDE_FLOW = [
+  { step: 'STEP 1', title: '집에서 설치', meta: '출국 전 · 5분' },
+  { step: 'STEP 2', title: '회선 설정', meta: '설치 직후 · 1분' },
+  { step: 'STEP 3', title: '현지에서 켜기', meta: '도착 후 · 1분' },
+] as const
+
+/** OS 페이지 구간 바로가기(F-4) — id 는 본문 구간 앵커와 같다 */
+export const GUIDE_SECTIONS = [
+  { id: 'check', label: '설치 전 확인' },
+  { id: 'step1', label: 'STEP 1 설치' },
+  { id: 'step2', label: 'STEP 2 설정' },
+  { id: 'step3', label: 'STEP 3 현지' },
+  { id: 'help', label: '문제 해결' },
+] as const
+
+export const GUIDE_HL_HINT = '화면의 빨간 테두리가 누를 곳이에요.'
+
+export const GUIDE_PAGES: Record<
+  GuideOs,
+  { to: string; label: string; short: string; sub: string }
+> = {
+  ios: {
+    to: '/guide/ios',
+    label: '아이폰 설치 가이드',
+    short: '아이폰',
+    sub: 'QR 스캔 · QR 길게 누르기 · 코드 입력',
+  },
+  android: {
+    to: '/guide/android',
+    label: '안드로이드 설치 가이드',
+    short: '안드로이드',
+    sub: '갤럭시 기준 · QR 스캔 · QR 이미지 · 코드 입력',
+  },
+}
+
+export const GUIDE_HUB = {
+  title: '설치 가이드',
+  desc: '아이폰과 안드로이드 설치 방법을 출국 전 설치부터 현지에서 켜기까지 순서대로 안내해요.',
+  flowNote: '설치만으로는 사용일수가 시작되지 않아요.',
+} as const
+
+export const GUIDE_CONTACT = {
+  title: '그래도 해결되지 않으면 문의해 주세요',
+  lede: '설치 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.',
+  more: '고객센터 전체 보기',
+} as const
