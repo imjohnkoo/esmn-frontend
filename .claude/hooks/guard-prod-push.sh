@@ -81,26 +81,56 @@ while IFS= read -r seg; do
         *" --force"*|*" -f "*)
           block "force push 차단. 진짜 필요하면 사용자에게 명시적 확인 받고 hook 우회하세요." ;;
       esac
+      # 짧은 옵션 묶음(-fu · -uf) 안의 f 도 force 다
+      if [[ "$args" =~ [[:space:]]-[a-zA-Z]*f[a-zA-Z]*[[:space:]] ]]; then
+        block "force push(-f 묶음) 차단. 진짜 필요하면 사용자에게 명시적 확인 받고 hook 우회하세요."
+      fi
+      # ⭐ «+refspec» 은 --force 없이도 force push 다(+HEAD:dev · +dev) — 2026-10-04 구멍 수정
+      if [[ "$args" =~ [[:space:]][\'\"]?\+[^[:space:]] ]]; then
+        block "force push(+refspec) 차단 — «+» 가 붙은 refspec 은 강제 덮어쓰기입니다. 진짜 필요하면 사용자 명시 확인 후 hook 우회."
+      fi
+      # --mirror(강제 + 삭제) · --all · 글롭 refspec 은 prod 를 함께 밀 수 있다
+      case "$args" in
+        *" --mirror"*|*" --all"*)
+          block "git push --mirror / --all 차단 — prod 를 포함한 여러 ref 를 한꺼번에 밉니다. 필요한 브랜치만 이름으로 push 하세요." ;;
+      esac
+      if [[ "$args" == *"*"* ]]; then
+        block "글롭 refspec(*) push 차단 — prod 까지 함께 밀 수 있습니다. 필요한 브랜치만 이름으로 push 하세요."
+      fi
       # ⭐ prod 는 막는다 (m8-frontend 와 다른 지점).
       #    prod push = admin-production.yml / client-production.yml 즉시 트리거 = CodeDeploy 배포.
       #    nomacom 은 Dockerfile 안에 typecheck/test 게이트가 없어서 이미지가 무조건 만들어진다
       #    — 즉 훅이 유일한 사전 방어선이다. `nomacomfe-prod-push-check` 를 거치게 하는 것이 목적.
       # ⚠️ 단어 경계로 판정한다. `*prod*` 부분문자열 매칭은 feat/product-detail,
       #    fix/reproduce-issue 같은 정상 브랜치를 오탐 차단한다.
-      if [[ "$args" =~ (^|[[:space:]:])prod([[:space:]]|$) ]]; then
+      #    목적지는 bare «prod» 또는 «refs/heads/prod» — 앞은 공백 · «:» · «+» · 따옴표, 뒤는 따옴표 · 공백 · 끝.
+      #    ⭐ 2026-10-04 구멍 수정: 앞이 «/» 인 «HEAD:refs/heads/prod» · «dev:refs/heads/prod» 가 통과했다.
+      #    «imjohnkoo/prod-x» · «x/prod» 같은 이름(앞이 refs/heads/ 가 아닌 «/»)은 그대로 통과한다.
+      if [[ "$args" =~ (^|[[:space:]:+\'\"])(refs/heads/)?prod[\'\"]?([[:space:]]|$) ]]; then
         block "prod 푸시 차단 — admin/client production 배포가 즉시 트리거됩니다. nomacomfe-prod-push-check 스킬로 pre-flight 를 마치고 사용자 명시 승인을 받으세요."
       fi
       ;;
   esac
 
   # --- prod ref 를 API 로 직접 옮기는 것 (git push 와 동등) ---
-  # 조회(GET)는 안전하므로 쓰기 메서드만 본다.
+  # 조회(GET)는 안전하므로 쓰기만 본다. ⭐ 2026-10-04: gh api 는 필드(-f · -F · --field · --raw-field · --input)를 주면
+  # -X 없이도 POST 다(ref 생성 «git/refs -f ref=refs/heads/prod»). 브랜치 이름 바꾸기(branches/prod/rename · new_name=prod)도 prod 를 옮긴다.
   case "$seg" in
-    *"gh api"*"refs/heads/prod"*)
-      case "$seg" in
-        *"-X PATCH"*|*"-X POST"*|*"-X DELETE"*|*"--method PATCH"*|*"--method POST"*|*"--method DELETE"*)
-          block "gh api 로 prod ref 직접 변경 차단 — git push 와 동등한 배포 트리거입니다. 사용자 명시 승인 필요." ;;
-      esac
+    *"gh api"*)
+      if [[ "$seg" =~ refs/heads/prod([^[:alnum:]_/.-]|$) || "$seg" =~ (ref|new_name)=[\'\"]?(refs/heads/)?prod([^[:alnum:]_/.-]|$) || "$seg" =~ /branches/prod(/|[^[:alnum:]_.-]|$) ]]; then
+        if [[ "$seg" =~ (-X|--method)[[:space:]=]*[\'\"]?(PATCH|POST|PUT|DELETE) || "$seg" =~ [[:space:]](-f|-F|--field|--raw-field|--input)([[:space:]=]|$) ]]; then
+          block "gh api 로 prod ref 직접 변경 차단 — git push 와 동등한 배포 트리거입니다. 사용자 명시 승인 필요."
+        fi
+      fi
+      ;;
+  esac
+
+  # --- prod 를 base 로 하는 PR(머지하면 prod 가 움직인다) ---
+  case "$seg" in
+    *"gh pr create"*|*"gh pr edit"*)
+      if [[ "$seg" =~ (--base|-B)[[:space:]=]+[\'\"]?prod[\'\"]?([[:space:]]|$) ]]; then
+        block "prod 를 base 로 하는 PR 차단 — 머지하면 prod 가 바로 배포됩니다. PR base 는 dev, 승격은 nomacomfe-prod-push-check 뒤 사용자 승인으로."
+      fi
       ;;
   esac
 
@@ -125,5 +155,10 @@ while IFS= read -r seg; do
       block "SSM 변경 차단. 시크릿 변경은 콘솔 또는 사용자 명시 승인 필요 (.claude/rules/ssm-paths.md)." ;;
   esac
 done <<< "$segments"
+
+# graphql ref 변경은 쿼리 안 괄호에서 세그먼트가 갈라지므로 명령 전체(flat)로 본다
+if [[ "$flat" == *"gh api graphql"* && "$flat" == *"refs/heads/prod"* ]] && [[ "$flat" =~ (createRef|updateRef|updateRefs|deleteRef) ]]; then
+  block "gh api graphql 로 prod ref 변경 차단 — git push 와 동등한 배포 트리거입니다. 사용자 명시 승인 필요."
+fi
 
 exit 0

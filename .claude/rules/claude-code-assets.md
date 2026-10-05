@@ -27,7 +27,8 @@
   - `git -C <path> push` 같은 **전역 옵션 삽입**도 정규화 후 판정 (Orca 워크트리 상시 사용).
   - heredoc 본문은 «데이터» 라 판정에서 제외 (커밋 메시지 안의 명령 예시로 막히지 않게).
   - jq 부재 시 **fail-closed** — 안전장치가 조용히 사라지는 것보다 시끄럽게 막힌다.
-  - ⚠️ **완화·강화 시 회귀 테스트 필수**: `.claude/hooks/guard-prod-push.test.sh` (ALLOW 22 / BLOCK 15, 37케이스)
+  - ⭐ **2026-10-04 구멍 수정**: 목적지가 «refs/heads/» 형태 · 따옴표 · «+» 인 prod refspec, «+refspec» · «-fu» 묶음 force, --mirror · --all · 글롭 refspec, gh api 의 필드 전달(-X 없이 POST) · 브랜치 rename · graphql ref 변경, prod base PR(gh pr create/edit) 를 막는다. 변수 치환 · 원격 설정(upstream) · gh pr merge 로 prod 를 움직이는 길은 여전히 못 본다 — 실수 방지용이지 악의적 우회 방어선이 아니다.
+  - ⚠️ **완화·강화 시 회귀 테스트 필수**: `.claude/hooks/guard-prod-push.test.sh` (ALLOW 32 / BLOCK 35, 67케이스)
   - ⚠️ m8-frontend 는 2026-08-15 에 prod 차단을 **해제**했다(게이트가 Dockerfile 로 이동). **nomacom 은 유지** — Dockerfile 게이트가 없어 prod push = 무검증 즉시 배포다.
 
 > ⛔ **`agents/` · `commands/` 는 2026-09-02 폐기했다.** agents 15 + commands 8. nomacom 도메인

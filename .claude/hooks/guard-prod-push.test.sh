@@ -61,6 +61,18 @@ run allow 'git checkout -- design/README.md'
 run allow "$(printf 'git commit -F - <<%s\nfix: 훅 오탐 정리\n\n  git push origin prod\n  gh api -X PATCH repos/o/r/git/refs/heads/prod -f sha=abc\n위 두 예시가 판정에 걸리면 안 된다.\nMSG' "'MSG'")"
 run allow "$(printf 'cat > docs/note.md <<%s\n# 배포\ngit push origin prod 로 배포한다.\nEOF' "'EOF'")"
 
+# 2026-10-04 구멍 수정과 함께 — 이름에 prod 가 든 정상 브랜치 · 조회 · dev base PR 은 통과해야 한다
+run allow 'git push origin HEAD:refs/heads/dev'
+run allow 'git push -u origin imjohnkoo/prod-push-check-fix'
+run allow 'git push origin HEAD:refs/heads/imjohnkoo/hook-prod-refspec'
+run allow 'git push origin x/prod'
+run allow 'git push -u origin feat/x 2>&1 | grep -c "*"'
+run allow 'gh api repos/o/r/git/refs/heads/prod'
+run allow 'gh api repos/o/r/branches/prod --jq .commit.sha'
+run allow 'gh api repos/o/r/git/refs/heads/production-notes -f sha=abc'
+run allow 'gh pr create --base dev --title "fix(hook): prod refspec 구멍"'
+run allow 'gh pr list --base prod'
+
 echo "== BLOCK (진짜 위험 — 반드시 막혀야 함) =="
 
 # prod 배포 트리거 — nomacom 은 Dockerfile 게이트가 없어 훅이 유일한 사전 방어선
@@ -88,6 +100,32 @@ run block 'aws ssm put-parameter --name /nomacom/shared/db/DATABASE_URL --value 
 run block 'aws ssm delete-parameter --name /nomacom/admin/APP_URL'
 # 복합 명령 안에 섞여 있어도 잡힌다
 run block 'yarn build && git push origin prod'
+
+# 2026-10-04 구멍 수정 — 목적지가 «refs/heads/prod» · 따옴표 · «+» · 삭제여도 prod 다
+run block 'git push origin HEAD:refs/heads/prod'
+run block 'git push origin refs/heads/dev:refs/heads/prod'
+run block 'git push origin "HEAD:prod"'
+run block "git push origin 'prod'"
+run block 'git push origin +prod'
+run block 'git push origin --delete refs/heads/prod'
+# «+refspec» · 짧은 옵션 묶음 = force
+run block 'git push origin +HEAD:dev'
+run block 'git push -fu origin feat/x'
+# 여러 ref 를 한꺼번에(prod 포함 가능)
+run block 'git push --mirror origin'
+run block 'git push --all origin'
+run block "git push origin 'refs/heads/*:refs/heads/*'"
+# gh api 는 필드를 주면 -X 없이도 POST — ref 생성 · 갱신 · 이름 바꾸기
+run block 'gh api repos/o/r/git/refs -f ref=refs/heads/prod -f sha=abc'
+run block 'gh api repos/o/r/git/refs/heads/prod -f sha=abc'
+run block 'gh api -X PUT repos/o/r/git/refs/heads/prod -f sha=abc'
+run block 'gh api repos/o/r/branches/dev/rename -f new_name=prod'
+run block 'gh api -X POST repos/o/r/branches/prod/rename -f new_name=old'
+run block "gh api graphql -f query='mutation { createRef(input: {name: \"refs/heads/prod\", oid: \"abc\", repositoryId: \"R\"}) { ref { name } } }'"
+# prod 를 base 로 하는 PR — 머지하면 prod 가 움직인다
+run block 'gh pr create --base prod --title x --body y'
+run block 'gh pr create -B prod'
+run block 'gh pr edit 12 --base prod'
 
 echo
 printf 'pass=%d fail=%d\n' "$pass" "$fail"
