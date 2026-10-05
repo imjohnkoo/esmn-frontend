@@ -438,7 +438,7 @@ gh api repos/o/r/branches/prod | jq -r '.commit.sha | .[0:7]'
 === allow F30 git push with HEAD:dev and comment containing prod refspec
 git push origin HEAD:dev
 # 다음 단계: git push origin HEAD:prod (사용자 승인 후)
-=== allow F31 echo with backtick in double quotes mentions prod (would run!)
+=== allow F31 echo in double quotes mentions prod-push-check (prod 단어 경계)
 echo "next: run nomacomfe-prod-push-check"
 === allow F32 printf multi-line var
 printf '%s\n' "line1" "git push origin prod 는 금지"
@@ -576,7 +576,7 @@ echo $(echo `echo x`) ; git push origin HEAD:prod
 === block H10 NBSP-free unicode emoji
 echo "🚀 배포" ; git push origin HEAD:prod
 === block H11 only CR newlines (old mac)
-echo a git push origin HEAD:prod
+echo agit push origin HEAD:prod
 === block H12 percent-s in segment
 printf '%s %d %n' ; git push origin HEAD:prod
 === block H13 dash-n first word
@@ -625,3 +625,402 @@ noglob git push origin HEAD:prod
 if true
 then git push origin HEAD:prod
 fi
+=== block R4-X01 bash -o pipefail -c
+bash -o pipefail -c 'git push origin HEAD:prod'
+=== block R4-X02 bash -euo pipefail -c
+bash -euo pipefail -c 'git push origin HEAD:prod 2>&1 | tail -3'
+=== block R4-X03 sh -c with -- then string? (sh -c -- 'cmd')
+sh -c -- 'git push origin HEAD:prod'
+=== block R4-X04 bash --login -c
+bash --login -c 'git push origin HEAD:prod'
+=== block R4-X05 bash -O extglob -c
+bash -O extglob -c 'git push origin HEAD:prod'
+=== block R4-X06 watch runs via sh -c
+watch -n 5 'git push origin HEAD:prod'
+=== block R4-X07 backslash-escaped letter in prod
+git push origin HEAD:pr\od
+=== block R4-X08 backslash before git
+\git push origin HEAD:prod
+=== block R4-X09 quoted --force
+git push "--force" origin imjohnkoo/x
+=== block R4-X10 quoted -f
+git push origin imjohnkoo/x '-f'
+=== block R4-X11 quoted --force-with-lease=
+git push "--force-with-lease" origin dev
+=== block R4-X12 gh pr create quoted "--base" prod
+gh pr create "--base" prod --title x
+=== block R4-X13 gh pr create "--base=prod"
+gh pr create "--base=prod" --title x
+=== block R4-X14 git --no-advice global opt
+git --no-advice push origin HEAD:prod
+=== block R4-X15 git --attr-source global opt
+git --attr-source=HEAD push origin HEAD:prod
+=== block R4-X16 git -c with quoted name=value one word
+git -c "push.default=current" push origin HEAD:prod
+=== block R4-X19 default-in-var ${X:-prod}
+git push origin "HEAD:${TARGET:-prod}"
+=== block R4-X20 multi-line commit msg w/ <<EOF line then push prod
+git commit -m "fix(hook): heredoc
+- <<EOF 시작 줄 판정
+" && git push origin HEAD:prod
+=== block R4-X21 comment ending with backslash then push prod
+# 경로 C:\
+git push origin HEAD:prod
+=== block R4-X22 arithmetic shift x<<y then next line push
+echo $((x<<y))
+git push origin HEAD:prod
+=== block R4-X23 heredoc to /bin/sh
+cat <<'EOF' | /bin/sh
+git push origin HEAD:prod
+EOF
+=== block R4-X24 gh run rerun (re-deploy old run)
+gh run rerun 12345678
+=== block R4-X25 gh api contents PUT branch=prod (commit to prod)
+gh api -X PUT repos/o/r/contents/README.md -f message=x -f content=eA== -f branch=prod -f sha=abc
+=== block R4-X26 gh api merge-upstream branch=prod
+gh api repos/o/r/merge-upstream -f branch=prod
+=== block R4-X27 json file written then --input merges base prod
+cat > m.json <<'EOF'
+{"base":"prod","head":"dev"}
+EOF
+gh api repos/o/r/merges --input m.json
+=== block R4-X28 gh api /graphql REST path mutation
+gh api /graphql -f query='mutation { createRef(input: {name: "refs/heads/prod", oid: "abc", repositoryId: "R"}) { ref { name } } }'
+=== block R4-X29 git push in $( ) inside single-quoted bash -c
+bash -c 'out=$(git push origin HEAD:prod)'
+=== block R4-X30 push with ref in braces ${SHA}:prod no quotes
+git push origin ${SHA}:prod
+=== block R4-X31 git push origin @:refs/heads/prod
+git push origin @:refs/heads/prod
+=== block R4-X32 push with -- and :prod
+git push origin -- :prod
+=== block R4-X33 nohup bash -c
+nohup bash -c "git push origin HEAD:prod" > /dev/null 2>&1 &
+=== block R4-X34 eval with $() string
+eval "$(echo git push origin HEAD:prod)"
+=== block R4-X35 single quoted git, double-quoted push
+'git' "push" origin HEAD:prod
+=== block R4-X36 then; newline-separated push inside quotes continues? (bash $'..' newline)
+git push origin $'HEAD:prod'
+=== block R4-X37 git push via env -S
+env -S 'git push origin HEAD:prod'
+=== block R4-X38 force push tag-ish +refs/tags/x
+git push origin +refs/tags/v1
+=== block R4-X39 gh pr create base via env GH? (-B "prod")
+gh pr create -B "prod" --fill
+=== block R4-X40 gh pr create --base prod after $(...) title
+gh pr create --title "$(git log -1 --format=%s)" --base prod --fill
+=== block R4-X41 gh pr edit -B prod
+gh pr edit 3 -B prod
+=== block R4-X42 workflow run quoted name
+gh workflow run 'client-production.yml'
+=== block R4-X43 workflow run with --repo first
+gh workflow run --repo imjohnkoo/nomacom-frontend client-production.yml
+=== block R4-X44 gh api dispatch with -X POST and quoted path
+gh api -X POST "/repos/{owner}/{repo}/actions/workflows/admin-production.yml/dispatches" -f ref=dev
+=== block R4-X45 git push origin prod with trailing \r only line (CR join)
+git push origin HEAD:prod
+=== block R4-X46 sh -c double-quoted with inner single
+sh -c "git push origin 'HEAD:prod'"
+=== block R4-X47 git push --force-with-lease=prod:abc
+git push --force-with-lease=prod:abc origin prod
+=== block R4-X50 gh api with --method patch upper after path and --field=
+gh api repos/o/r/git/refs/heads/prod --method=PATCH --field=sha=abc
+=== allow R4-N01 push -u origin HEAD
+git push -u origin HEAD
+=== allow R4-N02 push delete old branch
+git push origin --delete imjohnkoo/old-branch
+=== allow R4-N03 push :old
+git push origin :imjohnkoo/old
+=== allow R4-N04 push porcelain grep with + in quoted regex
+git push --porcelain origin imjohnkoo/x 2>&1 | grep -E "^(\+|-|!)"
+=== allow R4-N05 commit then bare git push
+git commit -m "fix: x" && git push
+=== allow R4-N06 push current branch via subst
+git push -u origin "$(git branch --show-current)"
+=== allow R4-N07 tail -n +1 after push
+git push origin imjohnkoo/x 2>&1 | tail -n +1
+=== allow R4-N08 log format with quotes after push
+git push origin imjohnkoo/x; git log --oneline -1 --format='%h %s'
+=== allow R4-N09 gh api comment body mentions prod push (double quoted)
+gh api repos/o/r/issues/12/comments -f body="git push origin HEAD:prod 는 훅이 막는다"
+=== allow R4-N10 gh api comment body single quoted
+gh api repos/o/r/issues/12/comments -f body='LGTM — prod 배포는 prod-push-check 뒤'
+=== allow R4-N11 gh api create PR base dev
+gh api repos/o/r/pulls -f title=x -f head=imjohnkoo/x -f base=dev
+=== allow R4-N12 gh pr create head named prod-fix
+gh pr create --base dev --head imjohnkoo/prod-fix --fill
+=== allow R4-N13 gh pr view baseRefName
+gh pr view 12 --json baseRefName -q .baseRefName
+=== allow R4-N14 gh workflow run ci with --ref
+gh workflow run ci.yml --ref imjohnkoo/x
+=== allow R4-N15 gh run view log grep
+gh run view 123 --log-failed | grep -i error
+=== allow R4-N16 gh api actions runs list prod branch
+gh api 'repos/o/r/actions/runs?branch=prod&per_page=3' --jq '.workflow_runs[].conclusion'
+=== allow R4-N17 git stash push -u -m tag (env instructions)
+git stash push -u -m "qa-tag-123"
+=== allow R4-N18 git stash push -m prod word
+git stash push -m prod
+=== allow R4-N19 grep cases count
+grep -c '^=== block' .claude/hooks/guard-prod-push.cases.txt
+=== allow R4-N20 hook test via jq rawfile pipe
+jq -n --rawfile c cmd.txt '{tool_input:{command:$c}}' | bash .claude/hooks/guard-prod-push.sh
+=== allow R4-N21 docker build tag
+docker build -t nomacom-client:p62-verify -f apps/client/Dockerfile .
+=== allow R4-N22 docker compose up
+docker compose -f docker-compose.yml up -d postgres
+=== allow R4-N23 git reset --keep
+git reset --keep origin/dev
+=== allow R4-N24 git worktree add
+git worktree add ../x -b imjohnkoo/x origin/dev
+=== allow R4-N25 python heredoc with quotes (kept body)
+python3 - <<'PY'
+import subprocess, json
+out = subprocess.run(["git", "log", "-1", "origin/prod"], capture_output=True, text=True).stdout
+print(json.dumps({"prod": out.strip(), "note": "git push origin prod 는 금지"}))
+PY
+=== allow R4-N26 node -e with quotes
+node -e 'console.log("git push origin prod is blocked")'
+=== allow R4-N27 gh api graphql addComment mutation
+gh api graphql -f query='mutation { addComment(input: {subjectId: "X", body: "prod 배포 완료"}) { clientMutationId } }'
+=== allow R4-N28 gh api graphql read PR baseRefName prod
+gh api graphql -f query='query { repository(owner: "o", name: "r") { pullRequests(baseRefName: "prod", first: 5) { nodes { number } } } }'
+=== allow R4-N29 git log -S search for push text unquoted? (quoted)
+git log -S"git push origin prod" --oneline
+=== allow R4-N30 git commit --amend --no-edit then push feature with lease? (no force) plain
+git commit --amend --no-edit && git push origin imjohnkoo/x
+=== allow R4-N31 git push origin HEAD:refs/heads/imjohnkoo/x -o ci.skip quoted
+git push origin HEAD:refs/heads/imjohnkoo/x -o "ci.skip"
+=== allow R4-N32 gh pr comment with body mentioning --base prod
+gh pr comment 12 --body "다음: gh pr create --base prod 는 막힌다"
+=== allow R4-N33 gh api pulls list base=prod via -X GET -F
+gh api -X GET repos/o/r/pulls -F base=prod
+=== allow R4-N34 multi-line echo with apostrophe then push feature
+echo "John's change"
+git push origin imjohnkoo/x
+=== allow R4-N35 git push feature then gh api read prod sha in $()
+git push origin imjohnkoo/x && echo "prod=$(gh api repos/o/r/git/refs/heads/prod --jq .object.sha)"
+=== allow R4-N36 orca cli terminal send text with push example? (data)
+orca terminal send --text "git status"
+=== allow R4-N37 git push with --signed=false? nah -- push to dev via full URL
+git push https://github.com/imjohnkoo/nomacom-frontend.git HEAD:dev
+=== allow R4-N38 cat of hook test file via sed range containing prod
+sed -n '/=== block B01/,/=== block B05/p' .claude/hooks/guard-prod-push.cases.txt
+=== allow R4-N39 awk program mentioning git push prod
+awk '/git push origin prod/ {n++} END {print n}' .claude/hooks/guard-prod-push.cases.txt
+=== allow R4-N40 printf with %s and prod one-word quoted
+printf '%s\n' 'prod' && git push origin imjohnkoo/x
+=== block R4-D01 docker image push
+docker image push imjohnkoo/nomacom-client:prod
+=== block R4-D02 docker buildx --push prod tag
+docker buildx build --push -t imjohnkoo/nomacom-client:prod -f apps/client/Dockerfile .
+=== block R4-D03 git reset -q --hard
+git reset -q --hard HEAD~1
+=== block R4-D04 git reset HEAD~1 --hard
+git reset HEAD~1 --hard
+=== block R4-D05 git reset double space --hard (base squeezed spaces)
+git reset  --hard HEAD~1
+=== block R4-D06 aws --profile before ssm
+aws --profile nomacom ssm put-parameter --name /nomacom/x --value y --type String --overwrite
+=== block R4-D07 aws --region before ssm
+aws --region ap-northeast-2 ssm delete-parameter --name /nomacom/x
+=== block R4-D08 docker push double space
+docker  push imjohnkoo/nomacom-client:prod
+=== block R4-D09 aws ssm put-parameters? (no such) -> aws ssm put-parameter with tab? ok
+AWS_PROFILE=nomacom aws ssm put-parameter --name /nomacom/x --value y --overwrite
+=== block R4-D10 aws ssm label-parameter-version? no -> delete-parameters (plural)
+aws ssm delete-parameters --names /nomacom/a /nomacom/b
+=== block R4-S01 '\'' idiom then push
+git commit -m 'it'\''s done' && git push origin HEAD:prod
+=== block R4-S02 unbalanced ) in single quotes inside $() then later quote
+n=$(grep -c ')' file.txt); git push origin HEAD:prod; echo 'done'
+=== block R4-S03 unbalanced ) in double quotes inside $() then later quote
+x=$(echo ")"); git push origin HEAD:prod; echo "done"
+=== block R4-S04 sed with \) inside $() inside double quotes
+v="$(printf '%s' "$x" | sed 's/)$//')"; git push origin HEAD:prod; echo "ok"
+=== block R4-S05 ANSI-C escaped quote then later quote
+echo $'it\'s'; git push origin HEAD:prod; echo 'x'
+=== block R4-S07 unbalanced ( in quotes inside $() (fail-safe?)
+x=$(echo "("); git push origin HEAD:prod; echo "done"
+=== block R4-S08 backtick containing quoted backtick-free ) then push
+x=`echo ")"`; git push origin HEAD:prod; echo "done"
+=== block R4-S09 $( ) with case pattern paren then push
+x=$(case a in a) echo y;; esac); git push origin HEAD:prod; echo "z"
+=== block R4-S10 comment with quote char then push next line
+# John's note
+git push origin HEAD:prod
+=== block R4-S11 comment with unbalanced double quote then push next line
+# "quoted
+git push origin HEAD:prod
+=== block R4-S12 trailing comment with apostrophe then push next line
+git status # it's fine
+git push origin HEAD:prod
+=== block R4-S13 escaped double quote outside quotes then push and later quote pair
+echo \"; git push origin HEAD:prod; echo "a b"
+=== block R4-S14 $(( )) arithmetic with quotes then push
+echo $(( 1 + 2 )) "a b"; git push origin HEAD:prod
+=== block R4-S15 here-string with quotes then push
+read -r x <<< "a b"; git push origin HEAD:prod
+=== block R4-S16 heredoc delimiter quoted with double quotes and dash
+cat > n.md <<-"EOF"
+	memo
+	EOF
+git push origin HEAD:prod
+=== block R4-S17 two heredocs same line
+cat <<A <<B
+a
+A
+b
+B
+git push origin HEAD:prod
+=== block R4-S18 heredoc delimiter followed by ) on same line (bash 5 accepts?)
+x=$(cat <<'EOF'
+memo
+EOF
+); git push origin HEAD:prod
+=== block R4-S19 heredoc never closed then push (bash: push is in heredoc body = data) -- expect allow actually
+cat <<'EOF'
+git push origin HEAD:prod
+=== block R4-S20 heredoc never closed then push (bash treats rest as body) — 알고 두는 오탐(닫는 줄 없는 heredoc 은 되살려 본다 · 안전 쪽)
+cat > x.md <<'EOF'
+memo
+git push origin HEAD:prod
+=== block R4-S21 apostrophe inside double-quoted multi-line commit msg then push
+git commit -m "fix: John's hook
+second line" && git push origin HEAD:prod
+=== block R4-S22 multi-line single-quoted msg containing double quote then push
+git commit -m 'fix: say "hi
+there' && git push origin HEAD:prod
+=== block R4-S23 very deep nested $( )
+echo $(echo $(echo $(echo $(echo $(echo $(echo $(echo $(echo x)))))))) ; git push origin HEAD:prod
+=== block R4-S24 deep bash -c nesting (depth 3)
+bash -c "bash -c \"bash -c 'git push origin HEAD:prod'\""
+=== block R4-S25 eval nested in bash -c
+bash -c 'eval "git push origin HEAD:prod"'
+=== block R4-S26 backslash-newline inside double quotes then push
+echo "a \
+b"; git push origin HEAD:prod
+=== block R4-S27 CR in middle of line
+git push origin HEAD:prod
+=== block R4-S28 line continuation with trailing spaces after backslash then prod
+git push origin \
+HEAD:prod
+=== allow R4-S29 heredoc body word 'eval' path false positive (doc writing)
+cat > notes/evaluation.md <<'EOF'
+- git push origin prod 금지
+EOF
+=== allow R4-S30 commit via -C worktree path containing node
+git -C ~/orca/workspaces/nomacom-frontend/node-22-upgrade commit -F - <<'EOF'
+chore: node 22
+
+- git push origin HEAD:prod 는 사용자 승인 뒤
+EOF
+=== allow R4-S31 gh api comment via heredoc body mentioning prod push
+gh api repos/o/r/issues/12/comments -F body=@- <<'EOF'
+배포 순서: git push origin HEAD:prod (사용자 승인 뒤)
+EOF
+=== allow R4-S32 gh pr create body-file heredoc mentioning prod push
+gh pr create --base dev --title x --body-file - <<'EOF'
+- git push origin HEAD:prod 차단
+EOF
+=== allow R4-S33 grep pattern with unbalanced paren single-quoted
+grep -n 'run block (' .claude/hooks/guard-prod-push.test.sh
+=== allow R4-S34 echo with $'..\n..' containing prod words
+printf $'line1\ngit push origin prod\n'
+=== block R4-S35 git push after $'...' with \' escape (fail-safe tail?)
+echo $'a\'b' ; git push origin HEAD:prod
+=== block R4-S36 prod push inside if with heredoc-ish arithmetic << in [[ ]]? use (( ))
+(( 1 << 2 ))
+git push origin HEAD:prod
+=== block R4-S37 heredoc start inside single-line single-quoted string containing << but line also has real heredoc later lines
+echo 'a <<X' && git push origin HEAD:prod
+=== block R4-S38 unicode NBSP between words? (bash: one word) - expect allow-ish; using regular space here
+git push origin HEAD:prod
+=== block R4-J01 node heredoc with apostrophe in // comment, then push and quoted echo
+node <<'EOF'
+// don't forget
+console.log('x')
+EOF
+git push origin HEAD:prod && echo 'ok'
+=== block R4-J02 python heredoc with apostrophe in ''' docstring then push and quoted echo
+python3 - <<'PY'
+s = '''it's fine'''
+print(s)
+PY
+git push origin HEAD:prod && echo 'ok'
+=== block R4-J03 python heredoc with odd quotes in regex then push with -o quoted
+python3 - <<'PY'
+import re
+print(re.sub(r"[\"']", "", "a'b"))
+PY
+git push origin HEAD:prod -o "ci skip"
+=== block R4-J04 python line with shift << var swallows rest (kept body)
+python3 - <<'PY'
+mask = 1 << bits
+PY
+git push origin HEAD:prod
+=== block R4-J05 node -e script with apostrophe comment then push (single line)
+node -e "// don't" ; git push origin HEAD:prod ; echo 'x'
+=== allow R4-J06 python heredoc with prod words in strings
+python3 - <<'PY'
+print("git push origin prod")
+PY
+=== block R4-J07 heredoc to bash with -o pipefail
+bash -o pipefail <<'SH'
+git push origin HEAD:prod
+SH
+=== block R4-J08 kept heredoc (python) then cat heredoc (stripped) then push
+python3 - <<'PY'
+print(1)
+PY
+cat > x.md <<'EOF'
+memo
+EOF
+git push origin HEAD:prod
+=== block R4-J09 ruby heredoc? (not kept) then push
+ruby <<'RB'
+puts 1
+RB
+git push origin HEAD:prod
+=== block R4-J10 commit msg multi-line containing '<<' + word in middle of line then push
+git commit -m "docs: heredoc 처리
+cat <<EOF 같은 줄
+" && git push origin HEAD:prod
+=== block R4-J11 multi-line double-quoted with apostrophe-only line then push and later quote
+git commit -m "fix
+John's
+" && git push origin HEAD:prod && echo 'ok'
+=== block R4-J12 single-line double-quoted with $( ) containing ) in quotes then push
+git commit -m "$(printf 'fix: a)')" && git push origin HEAD:prod && echo "ok"
+=== block R4-G01 graphql minified updateRef (single-quoted, no spaces)
+gh api graphql -f query='mutation{updateRef(input:{refId:"REF_x",oid:"abc",force:true}){ref{name}}}'
+=== block R4-G02 graphql minified mergeBranch base prod
+gh api graphql -f query='mutation{mergeBranch(input:{repositoryId:"R",base:"prod",head:"dev"}){mergeCommit{oid}}}'
+=== block R4-G03 graphql minified createRef refs/heads/prod (double-quoted)
+gh api graphql -f query="mutation{createRef(input:{name:\"refs/heads/prod\",oid:\"abc\",repositoryId:\"R\"}){ref{name}}}"
+=== block R4-G04 graphql minified createPullRequest base prod
+gh api graphql -f query='mutation{createPullRequest(input:{repositoryId:"R",baseRefName:"prod",headRefName:"dev",title:"x"}){pullRequest{number}}}'
+=== allow R4-G06 wiki push with -C var
+git -C $NOMACOM_WIKI pull --rebase && git -C $NOMACOM_WIKI push origin main
+=== allow R4-G07 wiki push with -C quoted var
+git -C "$NOMACOM_WIKI" push
+=== allow R4-G08 push -o with = prod
+git push origin imjohnkoo/x -o 'ci.var=prod'
+=== allow R4-G09 orca worktree create
+orca worktree create imjohnkoo/x --base dev --setup run
+=== allow R4-G10 gh api search with -X GET and q containing base:prod
+gh api -X GET search/issues -f q='repo:o/r base:prod is:pr is:merged' --jq '.total_count'
+=== allow R4-G11 git branch delete merged with for loop push --delete
+for b in $(git branch -r --merged origin/dev | grep 'origin/imjohnkoo/' | sed 's#origin/##'); do git push origin --delete "$b"; done
+=== allow R4-G12 gh pr merge dev PR (out of scope, allowed)
+gh pr merge 12 --squash --delete-branch
+=== allow R4-G13 python heredoc that writes json with refs/heads/prod for docs (kept body, no gh api)
+python3 - <<'PY'
+import json
+print(json.dumps({"ref": "refs/heads/prod"}))
+PY
+=== allow R4-G14 jq filter with refs/heads/prod and --input-ish word
+jq -r '.[] | select(.ref == "refs/heads/prod") | .object.sha' refs.json
+=== allow R4-G15 gh api graphql read with spaces-free query
+gh api graphql -f query='query{repository(owner:"o",name:"r"){ref(qualifiedName:"refs/heads/prod"){target{oid}}}}'
