@@ -244,7 +244,7 @@ EOF
 git push origin HEAD:prod
 === block C09 dollar-single-quote ANSI
 git push origin $'prod'
-=== block C10 graphql inside heredoc to gh --input? (flat)
+=== block C10 graphql deleteRef mutation 인라인(따옴표 쿼리 · 주석 글자 포함)
 gh api graphql -f query='mutation { deleteRef(input: {refId: "x"}) { clientMutationId } } # refs/heads/prod'
 === block C11 prod after many spaces/tabs
 git push origin			prod
@@ -873,7 +873,7 @@ A
 b
 B
 git push origin HEAD:prod
-=== block R4-S18 heredoc delimiter followed by ) on same line (bash 5 accepts?)
+=== block R4-S18 $(cat <<EOF … EOF) 다음 줄의 ) 뒤 prod push
 x=$(cat <<'EOF'
 memo
 EOF
@@ -977,7 +977,7 @@ cat > x.md <<'EOF'
 memo
 EOF
 git push origin HEAD:prod
-=== block R4-J09 ruby heredoc? (not kept) then push
+=== block R4-J09 ruby heredoc 닫힌 뒤 본문 밖 prod push
 ruby <<'RB'
 puts 1
 RB
@@ -2264,7 +2264,7 @@ EOF
 sudo bash 2>&1 <<'EOF'
 aws ssm put-parameter --name /nomacom/client/X --value y --overwrite
 EOF
-=== block R8-P3-07 python 2>&1 heredoc with os.system unbalanced-free (documented gap?) control for interp kind lost
+=== block R8-P3-07 python 2>&1 - heredoc 닫힌 뒤 본문 밖 prod push
 python3 2>&1 - <<'PY'
 import os
 PY
@@ -2310,7 +2310,7 @@ EOF
 bash -s {a,b} <<'EOF'
 git push origin HEAD:prod
 EOF
-=== block R8-P4-06 python ${X} interp heredoc whose body has shell backtick (cmd executed by shell? no — quoted delim) -> control
+=== block R8-P4-06 sh -s ${X} 따옴표 없는 heredoc 본문의 $(…) prod push
 sh -s ${X} <<EOF
 $(git push origin HEAD:prod)
 EOF
@@ -2425,3 +2425,503 @@ x = 'a\'b\'c'
 puts `git push origin HEAD:prod`
 puts 'y'
 RB
+=== block R9-M1a ANSI-C 안 \' 두 개(하나만이면 처리를 지워도 짝이 우연히 맞는다) 뒤 heredoc · prod push
+git commit -m $'fix: it\'s Claude\'s fix'
+cat > /tmp/qa/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R9-M1b 열린 큰따옴표가 다음 줄에서 닫힌 뒤 본문 시작
+cat <<'EOF' > /tmp/qa/x.txt; echo "a
+b"
+body
+EOF
+git push origin HEAD:prod
+echo "done"
+=== block R9-M1c 따옴표 없는 heredoc 본문의 큰따옴표(인치 표기) 뒤 prod push
+git commit -F - <<EOF
+fix: 12" 모니터
+EOF
+git push origin HEAD:prod
+echo "done"
+=== block R9-M1d 셸 본문 안의 셸 본문(2단)의 reset --hard
+ssh ec2-admin <<'EOF'
+bash <<'IN'
+git reset --hard origin/dev
+IN
+EOF
+=== allow R9-m1 heredoc 으로 쓴 파일을 jq 로 감싸 스크립트에 파이프(| bash <스크립트> 의 표준 입력은 데이터)
+cat > /tmp/qa/probe.txt <<'EOF'
+git push origin HEAD:prod
+EOF
+jq -Rs '{tool_input:{command:.}}' /tmp/qa/probe.txt | bash .claude/hooks/guard-prod-push.sh
+=== allow R9-m1b python 스크립트 파일에 넘기는 데이터 heredoc
+python3 scripts/apply.py <<'EOF'
+git push origin HEAD:prod 는 John 이
+EOF
+=== block R9-m2 gh pr -R o/r create --base prod
+gh pr -R o/r create --base prod --fill
+=== block R9-m2b gh workflow -R o/r run client-production.yml
+gh workflow -R o/r run client-production.yml
+=== block R9-m2c gh run -R o/r rerun
+gh run -R o/r rerun 123
+=== block R9-m3 curl 본문을 heredoc 으로 — refs/heads/prod
+curl -X POST -H "Authorization: token $(gh auth token)" https://api.github.com/repos/o/r/git/refs -d @- <<'EOF'
+{"ref": "refs/heads/prod", "sha": "abc"}
+EOF
+=== block R9-m4 graphql createPullRequest 의 base 를 변수로
+gh api graphql -f query='mutation($b: String!) { createPullRequest(input: {repositoryId: "R", baseRefName: $b, headRefName: "dev", title: "x"}) { pullRequest { url } } }' -f b=prod
+=== block R9-m5 git config remote.origin.push 에 prod 뒤 맨 push
+git config remote.origin.push refs/heads/dev:refs/heads/prod && git push origin
+=== block R9-m7 npm exec -c 문자열
+npm exec -c 'git push origin HEAD:prod'
+=== block R9-m7b $(which bash) -c 문자열
+$(which bash) -c 'git reset --hard origin/dev'
+=== block R9-m7c ${SHELL:-bash} -c 문자열
+${SHELL:-bash} -c 'git push origin HEAD:prod'
+=== block R9-m7d heredoc 으로 쓴 스크립트를 env X=1 경로로 실행
+cat > /tmp/qa/p.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+env X=1 /tmp/qa/p.sh
+=== block R9-m7e heredoc 으로 쓴 스크립트를 bash -- 로 실행
+cat > p.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -- p.sh
+=== block R9-P1-01 cat heredoc piped to while-read eval loop
+cat <<'EOF' | while read -r c; do eval "$c"; done
+git push origin HEAD:prod
+EOF
+=== block R9-P1-03 gh pr -R before create
+gh pr -R imjohnkoo/nomacom-frontend create --base prod --fill
+=== block R9-P1-04 gh workflow -R before run
+gh workflow -R imjohnkoo/nomacom-frontend run client-production.yml
+=== block R9-P1-05 gh run -R before rerun
+gh run -R imjohnkoo/nomacom-frontend rerun 123456
+=== block R9-P1-06 curl create ref prod with heredoc body
+curl -sS -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/nomacom-frontend/git/refs -d @- <<'EOF'
+{"ref": "refs/heads/prod", "sha": "abc123"}
+EOF
+=== block R9-P1-07 written script run via bash --
+cat > /tmp/qa/p.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -- /tmp/qa/p.sh
+=== block R9-P1-08 git commit -m "$(bash <<EOF)" — inner receiver is bash, outer git
+git commit -m "$(bash <<'EOF'
+git push origin HEAD:prod
+echo msg
+EOF
+)"
+=== block R9-P1-09 diff <(ssh host <<EOF) process subst receiver
+diff <(ssh ec2-admin <<'EOF'
+cd /app && git reset --hard origin/dev
+EOF
+) /tmp/local.txt
+=== block R9-P1-10 tee >(bash) heredoc
+tee >(bash) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P1-11 standard commit then && promote on close line
+git commit -m "$(cat <<'EOF'
+chore: release
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)" && git push origin HEAD:dev && gh run watch && git push origin "$(git rev-parse HEAD)":prod
+=== block R9-P1-12 gh run watch multi-line then promote quoted
+gh run watch "$RUN_ID" --exit-status
+git push origin "${PROMOTE_SHA}:prod"
+=== allow R9-P1-13 python patch with backtick command text in dq string
+python3 - <<'PY'
+from pathlib import Path
+p = Path('.claude/rules/deployment.md')
+s = p.read_text()
+s = s.replace("- `git push origin prod` 는 차단", "- `git push origin prod` 는 훅이 차단한다 — don't")
+p.write_text(s)
+PY
+=== allow R9-P1-14 weekly-notify python with message heredoc mentioning prod push (receiver is cat)
+python3 "$NOMACOM_MANAGER/scripts/weekly-notify.py" --event wiki --message "$(cat <<'EOF'
+frontend: 훅 개정 — git push origin prod 와 gh pr create --base prod 를 막는다
+EOF
+)"
+=== allow R9-P1-15 node script reading stdin with message heredoc via $(cat)
+node scripts/notify.mjs "$(cat <<'EOF'
+git push origin prod 는 막힌다
+EOF
+)"
+=== allow R9-P1-16 gh api comment with body via $(cat heredoc) mentioning commands
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments -f body="$(cat <<'EOF'
+QA 9회차: `git push origin prod` · `docker push` · `git reset --hard` 는 막힌다.
+EOF
+)"
+=== allow R9-P1-17 ssh read-only multi-line heredoc
+ssh ec2-admin <<'EOF'
+docker ps
+tail -n 50 /var/log/app.log
+EOF
+=== allow R9-P1-18 orca terminal send yarn command
+orca terminal send --terminal t1 --text "yarn workspace nomacom-client dev"
+=== allow R9-P1-19 cat > notes containing prod push in body, then git add -A
+cat > /tmp/qa/notes.md <<'EOF'
+배포: git push origin HEAD:prod (사용자 승인 뒤)
+EOF
+git add -A && git status -sb
+=== block R9-P2-01 cat heredoc | (cd && bash) subshell receiver
+cat <<'EOF' | (cd /tmp && bash)
+git push origin HEAD:prod
+EOF
+=== block R9-P2-05 cat heredoc piped to parallel (runs each line)
+cat <<'EOF' | parallel
+git push origin HEAD:prod
+EOF
+=== block R9-P2-06 cat heredoc piped to at now
+cat <<'EOF' | at now
+git push origin HEAD:prod
+EOF
+=== block R9-P2-07 $(which bash) -c string
+$(which bash) -c 'git push origin HEAD:prod --no-verify'
+=== block R9-P2-08 npm exec -c
+npm exec -c 'git push origin HEAD:prod --no-verify'
+=== block R9-P2-09 cat heredoc | xargs -0 -I{} sh -c {} (control)
+cat <<'EOF' | xargs -I{} sh -c '{}'
+git push origin HEAD:prod
+EOF
+=== block R9-P2-10 gh codespace ssh heredoc (gh is data consumer)
+gh codespace ssh -c my-cs <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P2-11 written script executed via bash with $S var path
+S=/tmp/qa; cat > "$S/promote.sh" <<'EOF'
+git push origin "$1:prod"
+EOF
+bash "$S/promote.sh" abc123
+=== block R9-P2-12 written script executed via "$S"/x.sh form
+S=/tmp/qa; cat > "$S/promote.sh" <<'EOF'
+git push origin HEAD:prod
+EOF
+bash "$S"/promote.sh
+=== block R9-P2-13 heredoc to shell via bash -s with 3 heredocs, third is shell
+cat > /tmp/qa/a.txt <<'A'
+a
+A
+cat > /tmp/qa/b.txt <<'B'
+b
+B
+bash -s <<'C'
+git push origin HEAD:prod
+C
+=== block R9-P2-14 kind 3 body with $(...) push inside commit heredoc (bash executes)
+git commit -F - <<EOF
+release $(git push origin HEAD:prod)
+EOF
+=== allow R9-P2-16 python3 script.py <<EOF data stdin (body is data for script)
+python3 scripts/render.py > /tmp/qa/out.html <<'EOF'
+# 배포 메모
+git push origin HEAD:prod 는 사용자 승인 뒤
+EOF
+=== allow R9-P2-17 node script.mjs < heredoc data
+node scripts/md2html.mjs <<'EOF'
+- docker push 는 금지
+- git reset --hard 도 금지
+EOF
+=== block R9-P2-18 heredoc delimiter partially quoted E'OF' (bash: delim EOF quoted)
+cat <<E'OF' > /tmp/qa/x.txt
+it's data
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R9-P3-01 subshell (cd && bash) <<EOF
+(cd /Users/johnkoo/orca/workspaces/nomacom-frontend/client-shell && bash) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P3-02 brace group { cd; bash; } <<EOF
+{ cd /tmp/qa; bash; } <<'EOF'
+git reset --hard origin/dev
+EOF
+=== block R9-P3-03 (bash) <<EOF
+(bash) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P3-04 (cd && sudo bash) <<EOF with 2>&1 after
+(cd /app && sudo bash) 2>&1 <<'EOF'
+docker push imjohnkoo/nomacom-client:prod
+EOF
+=== block R9-P3-05 (cd && ssh host) <<EOF
+(cd /tmp && ssh ec2-admin) <<'EOF'
+cd /app/nomacom-frontend && git reset --hard origin/dev
+EOF
+=== block R9-P3-06 control bash <<EOF after cd &&
+cd /tmp/qa && bash <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P3-07 (cd && python3) <<PY — interp kind lost
+(cd /tmp && python3) <<'PY'
+import os
+PY
+git push origin HEAD:prod
+=== block R9-P3-08 sh; inside brace without space-sep
+{ sh;} <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P3-09 bash|tee? (bash first in pipeline, receiver bash)
+bash 2>&1 <<'EOF' | tee /tmp/qa/log.txt
+git push origin HEAD:prod
+EOF
+=== block R9-P3-10 time (cd && bash) <<EOF with quoted body apostrophe and later push
+(cd /tmp && bash) <<'EOF'
+echo "it's fine"
+EOF
+git push origin HEAD:prod
+=== allow R9-P4-01 PR create with code fences and blocked-command text in quoted heredoc body
+gh pr create --base dev --head imjohnkoo/hook-prod-refspec --title "fix(hook): prod refspec 구멍 · 오탐" --body "$(cat <<'EOF'
+## Summary
+- `git push origin <sha>:prod` · `gh workflow run client-production.yml` · `docker push` 를 막는다
+- 커밋 메시지 · PR 본문의 명령 글자는 막지 않는다
+
+## Test plan
+```bash
+bash .claude/hooks/guard-prod-push.test.sh   # pass=1829 fail=0
+echo '{"tool_input":{"command":"git push origin prod"}}' | bash .claude/hooks/guard-prod-push.sh
+```
+- [ ] it's fine — don't worry about "quotes"
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+=== allow R9-P4-02 commit heredoc with apostrophes, backticks, and prod words then push feature
+git add -A && git commit -m "$(cat <<'EOF'
+fix(hook): don't treat `git push origin prod` in messages as commands
+
+- gh api -X PATCH repos/o/r/git/refs/heads/prod -f sha=abc 는 예시
+- 12" 모니터에서도 it's ok
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)" && git push -u origin imjohnkoo/hook-prod-refspec
+=== allow R9-P4-03 hook probe via echo json pipe
+echo '{"tool_input":{"command":"git push origin prod"}}' | bash .claude/hooks/guard-prod-push.sh
+=== allow R9-P4-05 docker exec psql heredoc SQL with comment mentioning push
+docker exec -i nomacom-db psql -U postgres -d esimmany <<'SQL'
+-- git push origin prod 전에 확인
+SELECT count(*) FROM orders WHERE status = 'paid';
+SQL
+=== allow R9-P4-06 wiki update flow
+git -C "$NOMACOM_WIKI" pull --rebase && git -C "$NOMACOM_WIKI" add wiki/frontend/plans/2026-10-05-hook.md && git -C "$NOMACOM_WIKI" commit -m "frontend: hook plan — prod 차단 · git push origin prod 예시" && git -C "$NOMACOM_WIKI" push
+=== allow R9-P4-08 multi-line for loop with quotes and git push dev
+for b in imjohnkoo/a imjohnkoo/b; do
+  git push origin "$b" 2>&1 | tail -1
+  echo "pushed $b — not prod"
+done
+=== allow R9-P4-09 node heredoc patch writing markdown with template literal and command text
+node <<'EOF'
+const fs = require('fs');
+const p = '.claude/rules/claude-code-assets.md';
+let s = fs.readFileSync(p, 'utf8');
+s = s.replace('(ALLOW 22 / BLOCK 15, 37케이스)', `(1829판정 — \`git push origin prod\` 등)`);
+fs.writeFileSync(p, s);
+console.log("it's done");
+EOF
+=== allow R9-P4-10 python heredoc with multi-line string containing commands in quotes only
+python3 - <<'PY'
+import pathlib
+p = pathlib.Path('AGENTS.md')
+s = p.read_text()
+old = "- ⚠️ 훅 수정 시 **회귀 테스트 필수**"
+new = ("- ⚠️ 훅 수정 시 **회귀 테스트 필수** — "
+       "`git push origin prod` · `docker push` 는 막힌다")
+assert old in s, "anchor missing — don't patch"
+p.write_text(s.replace(old, new, 1))
+PY
+=== allow R9-P4-11 ssh read logs with quoted remote command mentioning prod image
+ssh ec2-client "docker ps --filter ancestor=imjohnkoo/nomacom-client:prod --format '{{.ID}} {{.Status}}'"
+=== allow R9-P4-12 gh api read with jq containing pipes and prod
+gh api repos/imjohnkoo/nomacom-frontend/commits/prod --jq '.sha + " " + (.commit.message | split("\n")[0])'
+=== allow R9-P4-13 grep for push lines across cases with -E alternation
+grep -n -E 'git push|docker push|reset --hard' .claude/hooks/guard-prod-push.cases.txt | head -5
+=== allow R9-P4-14 subshell cd then cat heredoc to file (data)
+(cd /tmp/qa && cat > notes.md <<'EOF'
+배포는 git push origin HEAD:prod — 사용자 승인 뒤
+EOF
+)
+=== allow R9-P4-15 bash -c running tests whose output mentions prod
+bash -c 'cd /tmp/qa && echo "prod 차단 테스트" && ls'
+=== allow R9-P4-16 weekly notify with --note inline
+python3 "$NOMACOM_MANAGER/scripts/weekly-notify.py" --repo frontend --track HOOK --event qa --ref "PR #12" --note "QA ⑥ 9회차 — git push origin prod 차단 확인"
+=== allow R9-P4-17 make a script via heredoc then run with bash -n only (syntax)
+cat > /tmp/qa/x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -n /tmp/qa/x.sh
+=== allow R9-P4-18 jq with --arg containing heredoc body
+jq -n --arg body "$(cat <<'EOF'
+git push origin prod 는 막힌다
+EOF
+)" '{body: $body}' > /tmp/qa/body.json
+=== allow R9-P4-19 gh issue comment body-file heredoc
+gh issue comment 12 --body-file - <<'EOF'
+`git reset --hard` · `aws ssm put-parameter` 는 훅이 막는다.
+EOF
+=== allow R9-P4-20 git log with format containing prod and pipe
+git log --oneline origin/prod..origin/dev | head -20 && git rev-parse origin/prod
+=== block R9-P5-01 bash>log redirect attached then heredoc
+bash>/tmp/qa/run.log 2>&1 <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-02 quoted command name "/bin/bash" heredoc
+"/bin/bash" -s <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-03 docker exec "bash" heredoc
+docker exec -i nomacom-dev "bash" <<'EOF'
+git reset --hard origin/dev
+EOF
+=== block R9-P5-04 kubectl exec -- "/bin/sh"
+kubectl exec -i pod-1 -- "/bin/sh" <<'EOF'
+docker push imjohnkoo/nomacom-client:prod
+EOF
+=== block R9-P5-05 sudo -u deploy bash -l (control)
+sudo -u deploy bash -l <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-06 git commit -F - inside subshell piped... (cd && git commit) then bash? control: (cd && bash -s) with space
+(cd /tmp && bash -s ) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-07 { bash; } 2>&1 heredoc
+{ bash; } 2>&1 <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-08 time ( bash ) heredoc
+time (bash) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-09 nohup bash& background with heredoc
+nohup bash <<'EOF' &
+git push origin HEAD:prod
+EOF
+=== block R9-P5-11 graphql -f query=$(cat heredoc) updateRef (var subst)
+gh api graphql -f query="$(cat <<'EOF'
+mutation { updateRef(input: {refId: "REF_x", oid: "abc", force: true}) { ref { name } } }
+EOF
+)"
+=== block R9-P6-01 zsh =(…) process substitution file run by bash
+bash =(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)
+=== block R9-P6-02 control bash <(cat heredoc) (doc says handled)
+bash <(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)
+=== block R9-MK-MK-dqline unquoted heredoc body with odd double quote (inch mark) then push and later dq (kills dqline_off)
+git commit -F - <<EOF
+fix: 12" 모니터 레이아웃
+EOF
+git push origin HEAD:prod
+echo "done"
+=== block R9-MK-MK-arith long $(( )) with )) across window then heredoc-like << later? (findch overlap)
+x=$(( 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 + 15 + 16 + 17 + 18 + 1 )); y=$((x<<2)); git push origin HEAD:prod
+=== allow R9-SK-SK-01 prod-push-check render bash heredoc block
+bash <<'SH'
+set -u
+cd apps/client || exit 1
+# 확인할 커밋 = 올릴 커밋 — RC_REF(기본 origin/dev = prod 로 올라가는 ref)를 받아 와 HEAD 와 같아야 한다. ⛔ 승격에서는 RC_REF 를 주지 않는다(다른 값은 블록 자체를 시험할 때만)
+RC_REF="${RC_REF:-origin/dev}"
+case "$RC_REF" in origin/*) git fetch -q origin "${RC_REF#origin/}" || { echo "⛔ $RC_REF 받아 오기 실패"; exit 1; } ;; esac
+head="$(git rev-parse HEAD)" || { echo "⛔ git 체크아웃이 아니다"; exit 1; }
+[ "$head" = "$(git rev-parse "$RC_REF^{commit}")" ] || { echo "⛔ HEAD($head) ≠ $RC_REF — dev 가 앞서 나갔다면 Phase 1.0 부터 새 끝으로 다시(PROMOTE_SHA 를 고쳐 쓰지 않는다)"; exit 1; }
+# .output = 이 커밋의 빌드 — 저장소 전체 미커밋 · 추적 안 된 파일 0 에서 여기서 빌드한다(빌드 시각으로 판정하지 않는다).
+# turbo 는 입력 파일 해시로 캐시를 고르므로 캐시가 맞아도 같은 소스의 산출물이다
+st="$(git -C ../.. status --porcelain)" || exit 1
+[ -z "$st" ] || { echo "⛔ 미커밋 · 추적 안 된 파일 — 올릴 커밋 그대로에서만:"; printf '%s\n' "$st" | head -5; exit 1; }
+(cd ../.. && yarn turbo run build --filter=nomacom-client >/dev/null 2>&1) || { echo "⛔ 빌드 실패 — Phase 3 부터"; exit 1; }
+[ -z "$(git -C ../.. status --porcelain)" ] || { echo "⛔ 빌드가 추적 파일을 바꿨다"; exit 1; }
+PORT=3099   # 이미 누가 쓰고 있으면 중단 — 남의 서버 · 지난 빌드를 보고 통과하지 않게
+if lsof -nP -iTCP:$PORT -sTCP:LISTEN >/dev/null 2>&1; then echo "⛔ $PORT 에 이미 서버가 있다 — 다른 빈 포트로"; exit 1; fi
+want="$(sed -n 's/.*"id":"\([^"]*\)".*/\1/p' .output/public/_nuxt/builds/latest.json)"
+[ -n "$want" ] || { echo "⛔ 빌드 id 없음 — Phase 3 빌드부터"; exit 1; }
+env -i PATH="$PATH" HOME="$HOME" HOST=127.0.0.1 PORT=$PORT node .output/server/index.mjs >/dev/null 2>&1 & SRV=$!
+trap 'kill $SRV 2>/dev/null' EXIT
+B=http://127.0.0.1:$PORT
+for _ in $(seq 40); do curl -fsS -o /dev/null "$B/" 2>/dev/null && break; kill -0 $SRV 2>/dev/null || { echo "⛔ 서버가 뜨지 않았다"; exit 1; }; sleep 0.5; done
+# get <페이지> → raw(HTML 전체 — 속성 · head · 스크립트 포함) · body(head 를 뺀 화면 글자). 응답 실패(4xx · 5xx · 연결) · 다른 빌드면 실패
+# 값 자리(data-pending 표식)는 ⟦P⟧ 로 남기고 nbsp · 전각 괄호 · 공백을 정규화
+get() {
+  local html
+  html="$(curl -fsS "$B$1")" || { echo "⛔ $1 응답 실패"; return 1; }
+  printf '%s' "$html" | grep -qF "buildId:\"$want\"" || { echo "⛔ $1 이 이 빌드($want)의 응답이 아니다"; return 1; }
+  raw="$(printf '%s' "$html" | tr '\n' ' ' | sed -e 's/<[^>]*data-pending[^>]*>/⟦P⟧/g' \
+    -e 's/&nbsp;/ /g; s/&#160;/ /g; s/&#xa0;/ /g' -e $'s/\xc2\xa0/ /g' -e 's/（/(/g; s/）/)/g' \
+    -e $'s/\xc2\xad//g; s/\xe2\x80\x8b//g; s/\xe2\x80\x8c//g; s/\xe2\x80\x8d//g; s/\xe2\x81\xa0//g; s/\xe2\x81\xa1//g; s/\xe2\x81\xa2//g; s/\xe2\x81\xa3//g; s/\xe2\x81\xa4//g; s/\xef\xbb\xbf//g' -e $'s/\xe2\x80\x87/ /g; s/\xe2\x80\xaf/ /g; s/\xe3\x80\x80/ /g' | tr -s '[:space:]' ' ')"   # 보이지 않는 글자(U+00AD · 200B~D · 2060~2064 · FEFF)는 지우고 U+2007 · 202F · 3000 은 공백으로(로케일 무관) — «(확정\u200b 전)» 도 «(확정 전)»
+  body="$(printf '%s' "$raw" | sed -e 's/<head>.*<\/head>//' -e 's/<[^>]*>//g' | tr -s ' ' ' ')"
+}
+n() { printf '%s' "$1" | grep -oF -e "$2" | wc -l | tr -d ' '; }
+left=0; seen=""
+# chk <페이지> <본문 양성 대조 글자 — ; 로 여럿> [D-30 예외 자리 …] — 예외 자리 밖의 ⟦P⟧ · «(확정 전)» 은 0 · 자리마다 많아야 1
+chk() {
+  local p=$1 m s k ok_p=0 ok_d=0; local -a must; IFS=';' read -ra must <<<"$2"; shift 2
+  get "$p" || exit 1
+  local q=${p//$O/:id}; q=${q/#\/countries\/$C/\/countries\/:id}; q=${q/#\/products\/$Z/\/products\/:id}   # 동적 경로는 :id 로 센다
+  seen="$seen$q"$'\n'
+  must+=('704-24-01747')   # 모든 페이지에 푸터 사업자정보(W1-2 F-7)
+  for m in "${must[@]}"; do [ "$(n "$body" "$m")" -ge 1 ] || { echo "⛔ $p 본문에 «$m» 이 없다(양성 대조 실패 — 빈 · 오류 화면이 0건으로 통과하지 않게)"; exit 1; }; done
+  for s in "$@"; do
+    k=$(n "$body" "$s"); [ "$k" -le 1 ] || { echo "⛔ $p 예외 자리 «$s» 가 ${k}번 — 자리마다 많아야 1(D-30 은 3자리뿐)"; exit 1; }
+    ok_p=$((ok_p + k * $(n "$s" '⟦P⟧'))); ok_d=$((ok_d + k * $(n "$s" '(확정 전)'))); left=$((left + k))
+  done
+  [ "$(n "$raw" '⟦P⟧')" = "$ok_p" ] || { echo "⛔ $p 값 자리 $(n "$raw" '⟦P⟧')건 — D-30 예외 자리는 ${ok_p}건뿐"; exit 1; }
+  # 글자는 양쪽에서 센다 — raw(속성 · head) 와 body(태그를 벗긴 글자 — 렌더러가 «(확정» · «전)» 을 줄바꿈 방지 span 으로 나눠 감싼다)
+  for v in "$raw" "$body"; do
+    [ "$(n "$v" '(확정 전)')" = "$ok_d" ] || { echo "⛔ $p «(확정 전)» $(n "$raw" '(확정 전)')건(속성 · head) · $(n "$body" '(확정 전)')건(글자) — D-30 예외 자리는 ${ok_d}건뿐(D-47)"; exit 1; }
+    [ "$(n "$v" 'P9_4_PENDING')" = 0 ] || { echo "⛔ $p 에 자리표시자 이름 «P9_4_PENDING» 이 그대로 나온다"; exit 1; }
+    [ "$(n "$v" '문안을 확정하고 있어요')" = 0 ] || { echo "⛔ $p 에 확정 전 안내 문안"; exit 1; }
+  done
+}
+O=2026092300000101   # 아무 주문번호 — DB 가 없어 화면 틀만 그린다
+C=fra; Z=fra00       # 프리렌더된 아무 나라 · 상품(W1-3 catalog F-9 — 카탈로그에서 라우트 목록을 만든다)
+chk / '어느 나라로 떠나세요?;이미 구매하셨나요?;호스팅 서비스: AWS;1950 호 (경기도 광주시)'
+chk /privacy '개인정보의 처리 목적;AWS (Amazon Web Services 서울 리전);솔라피(주);쿠키 1개를 저장합니다'
+chk /terms '제1장 총칙'
+chk /refund '한눈에 보기'
+chk /supported-devices '지원하는지 확인해 주세요;갤럭시 (국내판)'
+chk /my '로그인은 준비 중이에요;고객센터;약관 및 정책'
+chk /my-esim 'eSIM 을 찾아요'
+chk /guide '설치 가이드'
+chk /search '국가 검색'
+chk /checkout-preview '구매 전 확인;(필수) 만 14세 이상입니다;결제 전 안내'
+chk /verify/$O '맞는지 확인할게요'
+chk /countries/$C '프랑스 eSIM;프랑스만 가요'
+chk /products/$Z '프랑스 eSIM;사용일수는 이렇게 계산해요;구매하기'
+# 4-step 가드(K8) — 세션 없이 오면 서버가 verify 로 302(본문 없음). 다른 코드 · 다른 곳으로 가면 중단
+guard() {
+  local r; r="$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$B$1")"
+  [ "$r" = "302 $B/verify/$O?reason=reverify" ] || { echo "⛔ $1 → «$r» — 302 $B/verify/$O?reason=reverify 여야 한다(4-step 가드)"; exit 1; }
+  seen="$seen${1//$O/:id}"$'\n'
+}
+guard /details/$O
+guard /select-date/$O
+guard /view/$O
+r="$(curl -s -o /dev/null -w '%{http_code}' "$B/business")"   # D-39 — 페이지가 없어야 한다(되살아나거나 3xx 로 돌리면 중단)
+[ "$r" = 404 ] || { echo "⛔ /business 응답 $r — 404 여야 한다(D-39)"; exit 1; }
+# 검사하지 않은 페이지가 없는가 — app/pages 의 페이지 파일(Nuxt 규칙: .vue · .js · .jsx · .mjs · .ts · .tsx · 링크 따라감 · 제외는 *.{spec,test}.{js,cts,mts,ts,jsx,tsx} 만)과 위 목록이 같아야 한다(새 페이지는 chk 줄을 먼저 넣는다)
+pages="$(cd app/pages && find -L . -type f \( -name '*.vue' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.ts' -o -name '*.tsx' \) ! \( \( -name '*.test.*' -o -name '*.spec.*' \) \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' -o -name '*.mts' -o -name '*.cts' \) \) | sed -E -e 's#^\./##' -e 's#\.(vue|m?jsx?|tsx?)$##' -e 's#^index$##' -e 's#/index$##' -e 's#\[[^]]*\]#:id#g' -e 's#^#/#' | sort)"
+[ "$pages" = "$(printf '%s' "$seen" | sort)" ] || { echo "⛔ 검사 목록과 app/pages 가 다르다 — 빠진 페이지에 chk 줄을 넣는다:"; diff <(printf '%s\n' "$pages") <(printf '%s' "$seen" | sort); exit 1; }
+echo "✓ 렌더 확인 통과 — 커밋 $head(= $RC_REF) · 예외 자리 ${left}(D-30 예외는 D-54 로 닫혔다 — 0 이어야 한다)"
+SH
+=== allow R9-SK-SK-02 prod-push-check phase 1.0
+# 1.0 올릴 SHA 를 먼저 하나로 정하고, **그 SHA 가 체크아웃된 상태에서** 모든 Phase 를 돈다 (W1-2 D-17 · QA ⑥).
+#     build · UI · paths-filter · 시크릿 검사는 HEAD 를, 게이트 · push 는 PROMOTE_SHA 를 보므로 둘이 같아야 한다.
+#     fetch 가 실패하면 멈춘다(오래된 ref 로 판정하지 않는다). client 를 올리면 PROMOTE_SHA = origin/dev 끝뿐이다 — Phase 4 렌더 확인이
+#     HEAD = origin/dev 를 요구한다(승격에서 RC_REF 를 주지 않는다). dev 의 더 앞 SHA 로 바꿔 올리는 것은 client workflow 가 트리거되지 않는 승격
+#     (Phase 2 표 — apps/client · packages/design-* · 루트 package.json · yarn.lock · deploy/scripts · appspec.yml ·
+#     .github/workflows/client-production.yml 변경 0 — 실제 판정은 그 workflow 의 paths 필터)일 때만.
+#     ⚠️ 점검 중에 dev 가 앞서 나가면(다른 세션의 머지) 고쳐 쓰지 말고 **Phase 1.0 부터** 새 끝으로 다시 — 앞 Phase(시크릿 · 게이트 · 테스트)가 새 커밋을 보지 않았다.
+git fetch origin --quiet || exit 1
+PROMOTE_SHA="$(git rev-parse origin/dev)"
+git merge-base --is-ancestor "$PROMOTE_SHA" origin/dev || { echo "⛔ origin/dev 에 없는 SHA — prod 는 dev 의 한 SHA"; exit 1; }
+[ "$(git rev-parse HEAD)" = "$PROMOTE_SHA" ] || { echo "⛔ HEAD ≠ PROMOTE_SHA — git checkout --detach $PROMOTE_SHA 뒤 다시"; exit 1; }
+echo "PROMOTE_SHA=$PROMOTE_SHA"   # 보고 템플릿에 적어 두고, 뒤 Phase 의 셸마다 이 값으로 다시 둔다(셸 변수는 이어지지 않는다)
