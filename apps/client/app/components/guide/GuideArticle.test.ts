@@ -94,18 +94,73 @@ describe.each([
     expect(alert.compareDocumentPosition(step1) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('문제 해결은 접지 않는다(D-6) — details · 숨김 0, 질문 번호 Q1…', () => {
+  it('문제 해결은 접지 않는다(D-6) — details · 숨김 · display:none 0, 질문 번호 Q1…', () => {
     expect(w.findAll('details')).toHaveLength(0)
     expect(w.findAll('[hidden]')).toHaveLength(0)
+    for (const el of w.findAll('.g-faq, .g-faq__a, .g-faq__a p')) {
+      expect((el.element as HTMLElement).style.display).not.toBe('none')
+      expect(getComputedStyle(el.element).display).not.toBe('none')
+      expect(getComputedStyle(el.element).visibility).not.toBe('hidden')
+    }
     expect(w.findAll('.g-faq__n').map((n) => n.text())).toEqual(
       content.help.faqs.map((_, i) => `Q${i + 1}`),
     )
   })
 
-  it('구간 바로가기 5개가 같은 페이지의 구간 id 를 가리킨다(F-4)', () => {
+  it('구간 바로가기 5개 — 글자 · 목적지가 spec F-4 그대로이고, 목적지 구간에 그 단계의 배지 · 제목이 있다', () => {
     const chips = w.findAll('.g-jump__chip')
-    expect(chips.map((c) => c.attributes('href'))).toEqual(GUIDE_SECTIONS.map((s) => `#${s.id}`))
-    for (const s of GUIDE_SECTIONS) expect(w.find(`#${s.id}`).exists(), s.id).toBe(true)
+    expect(chips.map((c) => [c.text(), c.attributes('href')])).toEqual([
+      ['설치 전 확인', '#check'],
+      ['STEP 1 설치', '#step1'],
+      ['STEP 2 설정', '#step2'],
+      ['STEP 3 현지', '#step3'],
+      ['문제 해결', '#help'],
+    ])
+    const sec = (id: string) => norm(w.find(`#${id}`).text())
+    expect(sec('check')).toContain('설치 전에 확인해 주세요')
+    expect(sec('check')).toContain(content.checks.alert.title)
+    for (const [id, part, step] of [
+      ['step1', content.step1, 'STEP 1'],
+      ['step2', content.step2, 'STEP 2'],
+      ['step3', content.step3, 'STEP 3'],
+    ] as const) {
+      expect(sec(id)).toContain(part.title)
+      expect(w.find(`#${id} .g-badge`).text().startsWith(step), id).toBe(true)
+    }
+    expect(w.find('#step3 .g-badge').text()).toBe('STEP 3 · 현지 도착 후')
+    expect(sec('help')).toContain('설치나 연결이 잘 안 되나요?')
+    expect(GUIDE_SECTIONS).toHaveLength(5)
+  })
+
+  it('단계 번호는 구간마다 1부터 순서대로 · n번째 단계는 n번째 문장(본문의 «7번» · «4~5번» 이 맞으려면)', () => {
+    const lists = [
+      ...content.step1.methods.map((m) => m.steps),
+      content.step2.steps,
+      content.step3.steps,
+    ]
+    const ols = w.findAll('ol.g-steps')
+    expect(ols).toHaveLength(lists.length)
+    ols.forEach((ol, k) => {
+      const items = ol.findAll('li.g-step')
+      expect(items.map((li) => li.find('.g-step__num').text().replace(/\D/g, ''))).toEqual(
+        lists[k]!.map((_, i) => String(i + 1)),
+      )
+      items.forEach((li, i) => expect(norm(li.text())).toContain(norm(guidePlainText(lists[k]![i]!.text))))
+    })
+  })
+
+  it('문의 · 흐름 글자(D-4 · 2609 판) — OS 페이지 문의 제목은 «그래도 …» · 흐름 칸에 소요 시간', () => {
+    expect(w.find('#guide-cs-title').text()).toBe('그래도 해결되지 않으면 문의해 주세요')
+    expect(text).toContain('설치 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.')
+    expect(
+      w
+        .findAll('.g-flow__item')
+        .map((li) => ['.g-flow__step', '.g-flow__title', '.g-flow__meta'].map((c) => norm(li.find(c).text()))),
+    ).toEqual([
+      ['STEP 1', '집에서 설치', '출국 전 · 5분'],
+      ['STEP 2', '회선 설정', '설치 직후 · 1분'],
+      ['STEP 3', '현지에서 켜기', '도착 후 · 1분'],
+    ])
   })
 
   it('OS 전환 — 지금 페이지만 aria-current="page", 두 링크는 /guide/ios · /guide/android', () => {

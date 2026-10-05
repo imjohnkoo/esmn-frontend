@@ -51,7 +51,7 @@ const tokens = computed(() => parseGuideInline(props.src))
 /* « › » 앞뒤 공백에서만 줄이 바뀐다 — 메뉴 이름 토막은 .g-nw */
 .g-path__sep {
   font-weight: 400;
-  color: var(--n-color-neutral-400, #a3a3a3);
+  color: var(--n-color-neutral-500, #737373);
 }
 
 .g-path__p {

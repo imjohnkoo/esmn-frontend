@@ -34,6 +34,16 @@ describe('/guide 허브', () => {
       GUIDE_FLOW.map((f) => f.title),
     )
     expect(w.text()).toContain(GUIDE_HUB.flowNote)
+    // 허브 글자(spec S-1) — 상수를 비추지 않게 글자로
+    expect(w.find('.guide-page__desc').text()).toBe(
+      '아이폰과 안드로이드 설치 방법을 출국 전 설치부터 현지에서 켜기까지 순서대로 안내해요.',
+    )
+    expect(w.find('#guide-cs-title').text()).toBe('설치가 잘 안 되면 문의해 주세요')
+    expect(w.findAll('.g-flow__meta').map((m) => m.text().replace(/\s+/g, ' ').trim())).toEqual([
+      '출국 전 · 5분',
+      '설치 직후 · 1분',
+      '도착 후 · 1분',
+    ])
     expect(w.find('a[href="/supported-devices"]').exists()).toBe(true)
     expect(w.find('#guide-cs-title').text()).toBe(GUIDE_CONTACT.hubTitle)
     expect(seo).toHaveBeenCalledWith(expect.objectContaining({ title: '설치 가이드' }))
