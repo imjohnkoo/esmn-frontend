@@ -4,6 +4,7 @@
 // 서버 호출 · 흐름 쿠키는 대역(누르지 않는 «주문 확인하기» 외에는 부르지 않는다). 라우터는 주소 · 기록만 흉내 내는 대역.
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { GUIDE_PAGES } from '~/content/guide/common'
@@ -200,5 +201,39 @@ describe('본인 확인 화면 설치 가이드 — 약관 링크 아래(D-19)',
     await settle()
     expect(route.query).toEqual({ reason: 'reverify' })
     expect(sheetOpen()).toBe(false)
+  })
+})
+
+describe('«주문 확인하기» 는 화면 아래에 붙어 있다(D-25) — 스크롤하면 내용만 움직이고 버튼은 그대로', () => {
+  it('버튼 줄은 폼 맨 끝(설치 가이드 카드 아래) — sticky 의 기준 상자가 폼이라 끝까지 내리면 제자리 · 제출 버튼은 그 안', async () => {
+    await render()
+    const form = document.body.querySelector('.verify-page__form')!
+    const cta = form.querySelector('.verify-page__cta')!
+    expect(form.lastElementChild).toBe(cta)
+    expect(cta.querySelector('button')?.getAttribute('type')).toBe('submit')
+    expect(cta.textContent?.trim()).toBe('주문 확인하기')
+    const guides = form.querySelector('.guide-cards')!
+    expect(guides.compareDocumentPosition(cta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('CSS — sticky · bottom 0 · 다른 내용 위(z-index) · 흰 바탕(위쪽 흐림) · 내용이 짧으면 맨 아래(margin-top auto) · 포커스한 입력칸 · 링크 아래 여백', () => {
+    const css = readFileSync(`${process.cwd()}/app/pages/verify/[orderId].vue`, 'utf8').split(
+      '<style scoped>',
+    )[1]!
+    const rule = (sel: string) =>
+      css.match(
+        new RegExp(`\\n${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`),
+      )?.[1] ?? ''
+    const cta = rule('.verify-page__cta')
+    expect(cta).toMatch(/position:\s*sticky/)
+    expect(cta).toMatch(/\bbottom:\s*0;/)
+    expect(cta).toMatch(/z-index:\s*[1-9]/)
+    expect(cta).toMatch(/margin:\s*auto -24px 0;/)
+    expect(cta).toMatch(
+      /background:\s*linear-gradient\(to bottom, rgb\(255 255 255 \/ 0\), #ffffff 20px\)/,
+    )
+    expect(rule('.verify-page__form :deep(:is(input, a))')).toMatch(/scroll-margin-bottom:\s*120px/)
+    // 폼이 sticky 의 기준 상자 — 폼에 overflow 를 주면 sticky 가 풀린다
+    expect(rule('.verify-page__form')).not.toMatch(/overflow/)
   })
 })

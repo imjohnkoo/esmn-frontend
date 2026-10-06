@@ -251,7 +251,7 @@ const legalSheet = ref<DocSheetKey | null>(null)
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: 20px 24px 32px;
+  padding: 20px 24px 16px;
   background: #ffffff;
 }
 
@@ -332,9 +332,21 @@ const legalSheet = ref<DocSheetKey | null>(null)
   font-weight: 700;
 }
 
+/* «주문 확인하기» 는 화면 아래에 붙어 있다(client-guide D-25) — 스크롤하면 내용만 움직이고 버튼은 그대로, 설치 가이드 카드 등
+   다른 내용 위에 겹친다. 폼 맨 끝 자리를 지키는 sticky 라 끝까지 내리면 제자리(카드 아래)에 놓이고, 내용이 짧으면 margin-top:auto 로
+   화면 맨 아래. 바탕은 페이지 좌우 여백까지 흰색 — 위쪽 20px 은 흐려지게(밑으로 지나가는 내용이 버튼에 바로 잘려 보이지 않게) */
 .verify-page__cta {
-  margin-top: auto;
-  padding-top: 32px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: auto -24px 0;
+  padding: 32px 24px calc(16px + env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, rgb(255 255 255 / 0), #ffffff 20px);
+}
+
+/* 키보드 포커스가 간 입력칸 · 링크 · 카드가 아래 붙은 버튼 밑에 숨지 않게(D-25) — 버튼 줄 높이 + 여유 */
+.verify-page__form :deep(:is(input, a)) {
+  scroll-margin-bottom: 120px;
 }
 
 .verify-page__guides {
