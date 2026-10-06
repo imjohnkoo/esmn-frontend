@@ -3,7 +3,7 @@
  * `design/install-guide/android.html` @ eb96d75 — 글자 그대로 옮기고, 바꾼 곳은 spec D-4 표만
  * (발급 화면 이름 · 버튼 글자 · 다시 조회 · 문의 링크). 표기는 inline.ts.
  */
-import { DEVICES_BARE } from './common'
+import { DEVICES_BARE, DEVICES_PAGE } from './common'
 import type { GuideContent } from './types'
 
 export const ANDROID_GUIDE: GuideContent = {
@@ -29,7 +29,7 @@ export const ANDROID_GUIDE: GuideContent = {
         icon: 'device',
         title: '지원 기기',
         body: '국내판 갤럭시는 S23 · ((Z 플립4)) · ((Z 폴드4)) 이후 모델과 일부 ((A 시리즈))가 eSIM을 지원해요. 통신사 잠금(컨트리락)도 풀려 있어야 해요.',
-        link: { to: '/supported-devices', bareTo: DEVICES_BARE, label: '지원 기기 확인하기' },
+        link: { to: DEVICES_PAGE, bareTo: DEVICES_BARE, label: '지원 기기 확인하기' },
       },
       {
         icon: 'clean',

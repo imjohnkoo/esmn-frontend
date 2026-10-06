@@ -395,6 +395,8 @@ describe('화면 스타일 고정(spec ⑤ · D-6 — happy-dom 은 컴포넌트
     expect(css('GuideArticle.vue')).toMatch(
       /\.g-article :deep\(:is\(a, button, \[tabindex\]\)\) \{\s*scroll-margin-top: calc\(var\(--g-jump-h\) \+ 4px\);\s*\}/,
     )
+    // 칩 줄 안 칩은 여백 0(sticky 칩에 포커스할 때 페이지가 밀리지 않게 — 위 규칙보다 구체적인 선택자로 덮는다)
+    expect(rule('GuideArticle.vue', '.g-article .g-jump .g-jump__chip')).toMatch(/scroll-margin-top:\s*0;/)
     const pad = readFileSync(`${process.cwd()}/app/layouts/default.vue`, 'utf8')
     expect(pad).toMatch(/scroll-padding-top: calc\(var\(--shell-header-height, 56px\) \+ 8px\)/)
   })

@@ -149,6 +149,11 @@
   scroll-margin-top: calc(var(--g-jump-h) + 4px);
 }
 
+/* 칩 줄 안의 칩은 늘 보이는 자리(sticky)라 여백을 두지 않는다 — 두면 칩에 포커스가 갈 때마다 페이지가 칩 줄 높이만큼 밀린다(QA ⑥ R9 m4) */
+.g-article .g-jump .g-jump__chip {
+  scroll-margin-top: 0;
+}
+
 .g-sec--alt {
   background: var(--n-color-neutral-50, #fafafa);
 }

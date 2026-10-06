@@ -3,9 +3,9 @@ import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { readFileSync } from 'node:fs'
-import { GUIDE_BARE_ROUTES } from '#shared/catalog/seo'
+import { GUIDE_BARE_ROUTES, STATIC_ROUTES } from '#shared/catalog/seo'
 import { isNoindexPath } from '#shared/utils/robots'
-import { DEVICES_BARE, GUIDE_BARE, GUIDE_SECTIONS } from '~/content/guide/common'
+import { DEVICES_BARE, DEVICES_PAGE, GUIDE_BARE, GUIDE_SECTIONS } from '~/content/guide/common'
 // 페이지는 파일 수집 때 import 한다(guide-pages.test.ts 와 같은 이유 — 테스트 안 동적 import 는 바쁜 기계에서 제한 시간을 넘긴다)
 import SiteDevicesPage from '../supported-devices.vue'
 import AndroidPage from './android.vue'
@@ -152,7 +152,19 @@ describe('지원 기기 전용판 /install-guide/devices(D-24)', () => {
     site.unmount()
   })
 
-  it('SEO — 제목 · 설명은 사이트판과 같고 canonical 은 /supported-devices · noindex 아님 · 주소 = DEVICES_BARE', () => {
+  it('템플릿 · 스타일이 /supported-devices 와 한 글자도 다르지 않다(여백 · 배경까지 — 사이트판만 고치면 실패)', () => {
+    const block = (f: string, tag: 'template' | 'style') =>
+      readFileSync(`${process.cwd()}/app/pages/${f}`, 'utf8').match(
+        new RegExp(`<${tag}[^>]*>[\\s\\S]*</${tag}>`),
+      )?.[0]
+    for (const tag of ['template', 'style'] as const) {
+      const site = block('supported-devices.vue', tag)
+      expect(site, tag).toBeTruthy()
+      expect(block('install-guide/devices.vue', tag), tag).toBe(site)
+    }
+  })
+
+  it('SEO — 제목 · 설명은 사이트판과 같고 canonical 은 사이트판 주소(DEVICES_PAGE = /supported-devices · 정적 라우트) · noindex 아님 · 주소 = DEVICES_BARE', () => {
     mount(DevicesPage, { global: { stubs: { NuxtLink } } }).unmount()
     expect(seo).toHaveBeenCalledTimes(1)
     const [meta, image, canonical] = seo.mock.calls[0]!
@@ -161,7 +173,9 @@ describe('지원 기기 전용판 /install-guide/devices(D-24)', () => {
       description: 'eSIM 을 쓸 수 있는 아이폰 · 갤럭시 기종을 확인해 보세요.',
     })
     expect(image).toBeUndefined()
-    expect(canonical).toBe('/supported-devices')
+    expect(canonical).toBe(DEVICES_PAGE)
+    expect(DEVICES_PAGE).toBe('/supported-devices')
+    expect(STATIC_ROUTES).toContain(DEVICES_PAGE)
     expect(DEVICES_BARE).toBe('/install-guide/devices')
     expect(isNoindexPath(DEVICES_BARE)).toBe(false)
   })

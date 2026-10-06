@@ -48,7 +48,10 @@ export const GUIDE_BARE: Record<GuideOs, string> = {
   android: '/install-guide/android',
 }
 
-/** 지원 기기 전용판(client-guide D-24) — 헤더 · 하단 탭 없이 `/supported-devices` 본문만. 가이드 전용판 · 시트의 «지원 기기 확인하기» 가 연다 · canonical 은 사이트판 */
+/** 지원 기기 사이트판(메뉴 있음) — 사이트판 가이드의 «지원 기기 확인하기» 목적지 · 전용판의 canonical */
+export const DEVICES_PAGE = '/supported-devices'
+
+/** 지원 기기 전용판(client-guide D-24) — 헤더 · 하단 탭 없이 `DEVICES_PAGE` 본문만. 가이드 전용판 · 시트의 «지원 기기 확인하기» 가 연다 · canonical 은 사이트판 */
 export const DEVICES_BARE = '/install-guide/devices'
 
 export const GUIDE_HUB = {
