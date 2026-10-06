@@ -440,7 +440,9 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
     const verify = read('app/pages/verify/[orderId].vue')
     expect(verify.match(/<GuideCards\b/g)).toHaveLength(1)
     // 개인정보처리방침 · 이용약관 링크 바로 아래 · «주문 확인하기» 위(D-19 — John 위치 지정)
-    expect(verify.indexOf('<GuideCards')).toBeGreaterThan(verify.indexOf('class="verify-page__policy"'))
+    expect(verify.indexOf('<GuideCards')).toBeGreaterThan(
+      verify.indexOf('class="verify-page__policy"'),
+    )
     expect(verify.indexOf('<GuideCards')).toBeLessThan(verify.indexOf('class="verify-page__cta"'))
   })
 
@@ -462,7 +464,9 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
     expect(rule).toMatch(/word-break: keep-all;/)
     expect(rule).toMatch(/overflow-wrap: break-word;/)
     // 머리 설명은 .view-page__heading 안의 NPageHeading 이다(선택자가 다른 칸을 가리키면 적용되지 않는다)
-    expect(read('app/pages/view/[orderId].vue')).toMatch(/<div class="view-page__heading">\s*<NPageHeading/)
+    expect(read('app/pages/view/[orderId].vue')).toMatch(
+      /<div class="view-page__heading">\s*<NPageHeading/,
+    )
   })
 
   it('바로가기 착지 — 기본 레이아웃이 헤더 높이만큼 scroll-padding-top 을 준다(앵커 머리가 헤더에 가리지 않게 · E2E-4)', () => {

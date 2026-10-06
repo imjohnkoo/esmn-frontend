@@ -31,7 +31,9 @@ const osTo = (os: GuideOs) => (props.mode === 'bare' ? GUIDE_BARE[os] : GUIDE_PA
 // 시트 판 바로가기는 구간 제목으로 포커스를 옮긴다(GuideSheet) — 그 제목만 프로그램 포커스를 받게(탭 순서에는 넣지 않는다)
 const headTab = computed(() => (props.mode === 'sheet' ? -1 : undefined))
 // 문제 해결의 «내 eSIM 조회하기» 링크는 시트에서 숨긴다 — 지금 보고 있는 발급 화면이다(D-13)
-// 확인 카드 링크(«지원 기기 확인하기» — D-22)는 시트에서 새 탭(발급 · 본인 확인 화면을 떠나지 않게), 사이트판 · 전용판은 같은 탭
+// 확인 카드 링크(«지원 기기 확인하기» — D-22)는 시트에서 새 탭(발급 · 본인 확인 화면을 떠나지 않게), 사이트판 · 전용판은 같은 탭.
+// 목적지 — 사이트판은 메뉴 있는 사이트 페이지, 전용판 · 시트(메뉴 없는 화면)는 메뉴 없는 판(D-24)
+const checkTo = (l: { to: string; bareTo?: string }) => (props.mode === 'page' ? l.to : (l.bareTo ?? l.to))
 const CHECK_ICONS = {
   wifi: WifiIcon,
   update: ArrowPathIcon,
@@ -132,13 +134,15 @@ const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
             <template v-if="c.link">
               <a
                 v-if="mode === 'sheet'"
-                :href="c.link.to"
+                :href="checkTo(c.link)"
                 class="g-check__link"
                 target="_blank"
                 rel="noopener noreferrer"
                 >{{ c.link.label }}<span class="g-check__sr">(새 창)</span></a
               >
-              <NuxtLink v-else :to="c.link.to" class="g-check__link">{{ c.link.label }}</NuxtLink>
+              <NuxtLink v-else :to="checkTo(c.link)" class="g-check__link">{{
+                c.link.label
+              }}</NuxtLink>
             </template>
           </div>
         </li>
@@ -221,6 +225,7 @@ const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
 
 <style scoped>
 .g-article {
+  --g-jump-h: 53px;
   word-break: keep-all;
   overflow-wrap: break-word;
   color: var(--n-color-neutral-900, #171717);
@@ -347,12 +352,25 @@ const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
 /* ----- 구간 ----- */
 .g-sec {
   padding: 32px 16px;
+  scroll-margin-top: var(--g-jump-h);
 }
 
-/* 칩 줄(sticky) 아래로 착지 — 앵커 이동 · 키보드 포커스가 구간 머리 · 링크를 칩 줄 밑에 숨기지 않게(D-23).
-   칩 줄 ≈ 53px(글자 두 줄이면 72px — 그때도 구간 위 여백 32px 안이라 배지는 보인다) */
-.g-article :deep(:is(section, a, button, [tabindex])) {
-  scroll-margin-top: 56px;
+/* 칩 줄(sticky) 높이 — 칩 글자 한 줄 53px · 두 줄 72px(칩 줄 폭이 모자라는 폭 350 이하 — D-21 · D-23) */
+@media (max-width: 350px) {
+  .g-article {
+    --g-jump-h: 72px;
+  }
+}
+
+/* 칩으로 이동한 구간 머리가 칩 줄 바로 아래에(D-23). 사이트판은 html 의 scroll-padding(헤더 + 8px — default 레이아웃)이
+   이미 있으니 그 8px 를 뺀다(겹치면 칩 줄과 구간 사이가 벌어져 앞 구간이 비친다 — QA ⑥ R8 m3) */
+.g-jump--under-header ~ .g-sec {
+  scroll-margin-top: calc(var(--g-jump-h) - 8px);
+}
+
+/* 키보드 포커스로 링크 · 버튼이 칩 줄 밑에 숨지 않게 — 칩 줄 높이 + 4px(두 줄이어도 — QA ⑥ R8 m2) */
+.g-article :deep(:is(a, button, [tabindex])) {
+  scroll-margin-top: calc(var(--g-jump-h) + 4px);
 }
 
 .g-sec--alt {

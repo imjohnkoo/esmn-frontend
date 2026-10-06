@@ -154,7 +154,9 @@ describe.each([
     const kids = [...w.find('article.g-article').element.children].map((e) => e.className)
     expect(kids.slice(0, 3)).toEqual(['g-hero', 'g-jump g-jump--under-header', 'g-hero__hint'])
     expect(w.find('.g-hero .g-jump').exists()).toBe(false)
-    expect(w.find('.g-hero__hint').text()).toBe('화면의 빨간 테두리는 설명이 가리키는 곳이에요. 켜고 끄는 건 설명을 따라 주세요.')
+    expect(w.find('.g-hero__hint').text()).toBe(
+      '화면의 빨간 테두리는 설명이 가리키는 곳이에요. 켜고 끄는 건 설명을 따라 주세요.',
+    )
     for (const mode of ['bare', 'sheet'] as const) {
       const m = mount(GuideArticle, { props: { content, mode }, global: { stubs } })
       expect(m.find('nav.g-jump').classes(), mode).toEqual(['g-jump'])
@@ -168,8 +170,16 @@ describe.each([
     expect(links.map((a) => [a.text(), a.attributes('href'), a.attributes('target')])).toEqual([
       ['지원 기기 확인하기', '/supported-devices', undefined],
     ])
-    expect(links[0]!.element.closest('.g-check')?.querySelector('.g-check__h')?.textContent).toBe('지원 기기')
+    expect(links[0]!.element.closest('.g-check')?.querySelector('.g-check__h')?.textContent).toBe(
+      '지원 기기',
+    )
     expect(w.findAll('.g-check__sr')).toHaveLength(0)
+    // 전용판(메뉴 없는 화면)은 메뉴 없는 지원 기기 판으로 — 같은 탭(D-24)
+    const bare = mount(GuideArticle, { props: { content, mode: 'bare' }, global: { stubs } })
+    expect(
+      bare.findAll('.g-check__link').map((a) => [a.attributes('href'), a.attributes('target')]),
+    ).toEqual([['/install-guide/devices', undefined]])
+    bare.unmount()
   })
 
   it('단계 번호는 구간마다 1부터 순서대로 · n번째 단계는 n번째 문장(본문의 «7번» · «4~5번» 이 맞으려면)', () => {
@@ -372,9 +382,21 @@ describe('화면 스타일 고정(spec ⑤ · D-6 — happy-dom 은 컴포넌트
     expect(rule('GuideArticle.vue', '.g-jump--under-header')).toMatch(
       /top:\s*var\(--shell-header-height, 56px\)/,
     )
+    // 칩 줄 높이 변수 — 한 줄 53px · 폭 350 이하(칩 글자 두 줄) 72px
+    expect(rule('GuideArticle.vue', '.g-article')).toMatch(/--g-jump-h:\s*53px/)
     expect(css('GuideArticle.vue')).toMatch(
-      /\.g-article :deep\(:is\(section, a, button, \[tabindex\]\)\) \{\s*scroll-margin-top: 56px;\s*\}/,
+      /@media \(max-width: 350px\) \{\s*\.g-article \{\s*--g-jump-h: 72px;\s*\}\s*\}/,
     )
+    // 구간 착지 = 칩 줄 높이(사이트판은 html scroll-padding 의 8px 를 뺀다 — 겹치면 틈) · 포커스 = 칩 줄 + 4px
+    expect(rule('GuideArticle.vue', '.g-sec')).toMatch(/scroll-margin-top:\s*var\(--g-jump-h\)/)
+    expect(rule('GuideArticle.vue', '.g-jump--under-header ~ .g-sec')).toMatch(
+      /scroll-margin-top:\s*calc\(var\(--g-jump-h\) - 8px\)/,
+    )
+    expect(css('GuideArticle.vue')).toMatch(
+      /\.g-article :deep\(:is\(a, button, \[tabindex\]\)\) \{\s*scroll-margin-top: calc\(var\(--g-jump-h\) \+ 4px\);\s*\}/,
+    )
+    const pad = readFileSync(`${process.cwd()}/app/layouts/default.vue`, 'utf8')
+    expect(pad).toMatch(/scroll-padding-top: calc\(var\(--shell-header-height, 56px\) \+ 8px\)/)
   })
   it('줄바꿈 금지 묶음 · 이미지 창 폭 · 이미지가 창 폭을 채움', () => {
     expect(rule('GuideText.vue', '.g-nw')).toMatch(/white-space:\s*nowrap/)

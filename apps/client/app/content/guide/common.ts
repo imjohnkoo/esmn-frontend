@@ -48,6 +48,9 @@ export const GUIDE_BARE: Record<GuideOs, string> = {
   android: '/install-guide/android',
 }
 
+/** 지원 기기 전용판(client-guide D-24) — 헤더 · 하단 탭 없이 `/supported-devices` 본문만. 가이드 전용판 · 시트의 «지원 기기 확인하기» 가 연다 · canonical 은 사이트판 */
+export const DEVICES_BARE = '/install-guide/devices'
+
 export const GUIDE_HUB = {
   title: '설치 가이드',
   desc: '아이폰과 안드로이드 설치 방법을 출국 전 설치부터 현지에서 켜기까지 순서대로 안내해요.',

@@ -51,8 +51,11 @@ export interface GuideCheck {
   icon: CheckIcon
   title: string
   body: string
-  /** 본문 아래 사이트 페이지 링크(client-guide D-22 — «지원 기기» → /supported-devices) */
-  link?: { to: string; label: string }
+  /**
+   * 본문 아래 사이트 페이지 링크(client-guide D-22 — «지원 기기» → /supported-devices).
+   * bareTo — 메뉴 없는 화면(전용판 · 시트)에서 여는 메뉴 없는 판(D-24)
+   */
+  link?: { to: string; label: string; bareTo?: string }
 }
 
 export interface GuideContent {

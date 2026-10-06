@@ -23,11 +23,16 @@ export const STATIC_ROUTES = [
 ] as const
 
 /**
- * 가이드 전용판(client-guide D-14 · S-5 — `app/content/guide/common.ts` `GUIDE_BARE` 와 같은 글자, 테스트가 대조한다).
+ * 전용판(client-guide D-14 · S-5 · D-24 — `app/content/guide/common.ts` `GUIDE_BARE` · `DEVICES_BARE` 와 같은 글자, 테스트가 대조한다).
+ * 가이드 두 OS + 지원 기기(canonical = `/supported-devices`).
  * 프리렌더만 — 사이트판 `/guide/<os>` 와 같은 글이라 canonical 은 사이트판(D-18 — noindex 없이 canonical 하나로 묶는다),
  * sitemap 에는 원본(canonical) 주소만 싣으므로 여기서 뺀다. 설명도 사이트판 것을 쓴다
  */
-export const GUIDE_BARE_ROUTES = ['/install-guide/ios', '/install-guide/android'] as const
+export const GUIDE_BARE_ROUTES = [
+  '/install-guide/ios',
+  '/install-guide/android',
+  '/install-guide/devices',
+] as const
 
 export function catalogRoutes(catalog: CatalogView): string[] {
   return [
@@ -104,7 +109,8 @@ export const STATIC_DESCRIPTIONS: Record<(typeof STATIC_ROUTES)[number], string>
   '/terms': '이심마니 해외여행 eSIM 서비스 이용약관이에요.',
   '/privacy': '이심마니가 주문 · 발급에 쓰는 개인정보와 보관 기간을 안내해요.',
   '/refund': '발급 전이면 전액 환불해 드려요. 신청 방법과 처리 기한을 안내해요.',
-  '/guide': '아이폰과 안드로이드 eSIM 설치 방법을 출국 전 설치부터 현지에서 켜기까지 순서대로 안내해요.',
+  '/guide':
+    '아이폰과 안드로이드 eSIM 설치 방법을 출국 전 설치부터 현지에서 켜기까지 순서대로 안내해요.',
   '/guide/ios':
     '아이폰 eSIM 설치 가이드 — QR 코드로 집에서 설치하고, 이어서 나오는 화면과 현지에서 여행용 eSIM 을 켜는 법을 화면과 함께 안내해요.',
   '/guide/android':

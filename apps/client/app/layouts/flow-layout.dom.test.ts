@@ -96,6 +96,7 @@ describe('푸터를 끄는 페이지는 본인 확인 화면 하나(D-20)', () =
         'checkout-preview.vue',
         'details/[orderId].vue',
         'install-guide/android.vue',
+        'install-guide/devices.vue',
         'install-guide/ios.vue',
         'select-date/[orderId].vue',
         'verify/[orderId].vue',

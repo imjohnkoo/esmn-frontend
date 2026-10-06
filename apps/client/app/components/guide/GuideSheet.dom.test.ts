@@ -176,7 +176,7 @@ describe('발급 화면을 떠나는 링크 — 숨기거나 새 탭', () => {
     await host('android')
     const links = $$<HTMLAnchorElement>('.guide-sheet a[href]')
     expect(links.map((a) => a.getAttribute('href'))).toEqual([
-      '/supported-devices',
+      '/install-guide/devices', // 메뉴 없는 지원 기기 판(D-24)
       SUPPORT_KAKAO_URL,
       SMARTSTORE_URL,
       '/my#cs',
