@@ -42,13 +42,15 @@ function switchOs(os: GuideOs) {
 
 /**
  * 구간 바로가기 — 시트 본문 스크롤 영역만 움직이고(scrollIntoView 는 뒤 페이지까지 움직일 수 있다 · 해시를 바꾸지 않는다)
- * 그 구간 제목으로 포커스를 옮긴다(키보드 · 화면낭독기도 그 구간에서 이어 읽는다 — 제목은 시트 판에서만 tabindex -1)
+ * 그 구간 제목으로 포커스를 옮긴다(키보드 · 화면낭독기도 그 구간에서 이어 읽는다 — 제목은 시트 판에서만 tabindex -1).
+ * 칩 줄은 본문 맨 위에 붙어 있으니(D-23) 그 높이만큼 덜 내려 구간 머리가 칩 줄 바로 아래에 오게 한다
  */
 function jump(id: string) {
   const box = scroller.value
   const target = box?.querySelector<HTMLElement>(`#${id}`)
   if (!box || !target) return
-  box.scrollTop += target.getBoundingClientRect().top - box.getBoundingClientRect().top
+  const bar = box.querySelector<HTMLElement>('.g-jump')?.getBoundingClientRect().height ?? 0
+  box.scrollTop += target.getBoundingClientRect().top - box.getBoundingClientRect().top - bar
   target.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
 }
 </script>

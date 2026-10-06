@@ -40,6 +40,8 @@ const CHECK_ICONS = {
 } as const
 const OS_ORDER: GuideOs[] = ['ios', 'android']
 // 바로가기 칩 4개는 늘 한 줄(D-21) — 폭이 모자라면 칩 안 글자만 «STEP 1» / «설치» 로 접는다(«STEP n» 은 붙여 둔다)
+// 칩 줄은 스크롤해도 위에 붙어 있다(D-23) — 머리 밖 칸에 둔다(머리 안이면 머리와 함께 올라간다). 사이트판(page)은 사이트 헤더 바로 아래,
+// 전용판은 화면 맨 위, 시트는 본문 스크롤 영역 맨 위(GuideSheet 의 이동 계산이 칩 줄 높이를 뺀다)
 const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
 </script>
 
@@ -83,33 +85,37 @@ const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
       </nav>
 
       <GuideFlow class="g-hero__flow" />
-
-      <nav class="g-jump" aria-label="이 페이지 안에서 이동">
-        <template v-if="mode === 'sheet'">
-          <button
-            v-for="s in GUIDE_SECTIONS"
-            :key="s.id"
-            type="button"
-            class="g-jump__chip"
-            @click="emit('jump', sid(s.id))"
-          >
-            <span class="g-jump__label"
-              ><span v-if="chipStep(s.label)" class="g-jump__step">{{ chipStep(s.label) }}</span
-              >{{ s.label.slice(chipStep(s.label).length) }}</span
-            >
-          </button>
-        </template>
-        <template v-else>
-          <a v-for="s in GUIDE_SECTIONS" :key="s.id" :href="`#${s.id}`" class="g-jump__chip"
-            ><span class="g-jump__label"
-              ><span v-if="chipStep(s.label)" class="g-jump__step">{{ chipStep(s.label) }}</span
-              >{{ s.label.slice(chipStep(s.label).length) }}</span
-            ></a
-          >
-        </template>
-      </nav>
-      <p class="g-hero__hint">{{ GUIDE_HL_HINT }}</p>
     </header>
+
+    <nav
+      class="g-jump"
+      :class="{ 'g-jump--under-header': mode === 'page' }"
+      aria-label="이 페이지 안에서 이동"
+    >
+      <template v-if="mode === 'sheet'">
+        <button
+          v-for="s in GUIDE_SECTIONS"
+          :key="s.id"
+          type="button"
+          class="g-jump__chip"
+          @click="emit('jump', sid(s.id))"
+        >
+          <span class="g-jump__label"
+            ><span v-if="chipStep(s.label)" class="g-jump__step">{{ chipStep(s.label) }}</span
+            >{{ s.label.slice(chipStep(s.label).length) }}</span
+          >
+        </button>
+      </template>
+      <template v-else>
+        <a v-for="s in GUIDE_SECTIONS" :key="s.id" :href="`#${s.id}`" class="g-jump__chip"
+          ><span class="g-jump__label"
+            ><span v-if="chipStep(s.label)" class="g-jump__step">{{ chipStep(s.label) }}</span
+            >{{ s.label.slice(chipStep(s.label).length) }}</span
+          ></a
+        >
+      </template>
+    </nav>
+    <p class="g-hero__hint">{{ GUIDE_HL_HINT }}</p>
 
     <!-- 설치 전 확인 -->
     <section :id="sid('check')" class="g-sec" :aria-labelledby="sid('check-title')">
@@ -231,7 +237,7 @@ const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
 
 /* ----- 머리 ----- */
 .g-hero {
-  padding: 28px 16px 24px;
+  padding: 28px 16px 8px;
   background: linear-gradient(180deg, var(--n-color-primary-50, #f1edff) 0%, #fff 100%);
   text-align: center;
 }
@@ -287,12 +293,24 @@ const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
   text-align: left;
 }
 
-/* 칩 4개는 늘 한 줄(D-21) — 줄을 채워 늘고, 모자라면 줄어들며 칩 안 글자만 «STEP n» 뒤에서 접힌다 */
+/* 칩 4개는 늘 한 줄(D-21) — 줄을 채워 늘고, 모자라면 줄어들며 칩 안 글자만 «STEP n» 뒤에서 접힌다.
+   스크롤해도 위에 붙어 있다(D-23 — 바탕은 머리 끝과 같은 흰색). 확대로 줄이 넘치면 왼쪽이 잘리지 않게 safe center */
 .g-jump {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   justify-content: center;
-  gap: 4px;
-  margin-top: 16px;
+  justify-content: safe center;
+  gap: 3px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--n-color-neutral-100, #f5f5f5);
+  background: #fff;
+}
+
+/* 사이트판은 사이트 헤더(sticky) 바로 아래 */
+.g-jump--under-header {
+  top: var(--shell-header-height, 56px);
 }
 
 .g-jump__chip {
@@ -300,7 +318,7 @@ const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
   flex: 1 1 auto;
   align-items: center;
   justify-content: center;
-  padding: 7px 6px;
+  padding: 7px 4px;
   text-align: center;
   word-break: keep-all;
   border: 1px solid var(--n-color-neutral-200, #e5e5e5);
@@ -317,7 +335,9 @@ const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
 }
 
 .g-hero__hint {
-  margin: 14px 0 0;
+  margin: 0;
+  padding: 6px 16px 24px;
+  text-align: center;
   font-size: 15px;
   font-weight: 600;
   line-height: 1.6;
@@ -327,6 +347,12 @@ const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
 /* ----- 구간 ----- */
 .g-sec {
   padding: 32px 16px;
+}
+
+/* 칩 줄(sticky) 아래로 착지 — 앵커 이동 · 키보드 포커스가 구간 머리 · 링크를 칩 줄 밑에 숨기지 않게(D-23).
+   칩 줄 ≈ 53px(글자 두 줄이면 72px — 그때도 구간 위 여백 32px 안이라 배지는 보인다) */
+.g-article :deep(:is(section, a, button, [tabindex])) {
+  scroll-margin-top: 56px;
 }
 
 .g-sec--alt {

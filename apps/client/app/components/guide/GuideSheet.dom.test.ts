@@ -133,6 +133,14 @@ describe('시트 안 이동 — 주소를 바꾸지 않는다', () => {
     await settle()
     expect(box.scrollTop).toBe(50 + 540)
     expect(location.hash).toBe(hash)
+    // 칩 줄이 본문 맨 위에 붙어 있으면(D-23) 그 높이만큼 덜 내려 구간 머리가 칩 줄 바로 아래에 온다
+    const bar = $('.guide-sheet .g-jump')!
+    bar.getBoundingClientRect = () => ({ top: 100, height: 53, bottom: 153 }) as DOMRect
+    box.scrollTop = 50
+    buttonByText('.guide-sheet .g-jump__chip', step3.label).click()
+    await settle()
+    expect(box.scrollTop).toBe(50 + 540 - 53)
+    expect(location.hash).toBe(hash)
     // 포커스도 그 구간 제목으로(키보드 · 화면낭독기가 그 구간에서 이어 읽는다) — 제목은 탭 순서에 없다(-1)
     expect(document.activeElement?.id).toBe('gs-step3-title')
     expect(document.activeElement?.getAttribute('tabindex')).toBe('-1')

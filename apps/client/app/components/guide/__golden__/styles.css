@@ -17,7 +17,7 @@
 
 /* ----- 머리 ----- */
 .g-hero {
-  padding: 28px 16px 24px;
+  padding: 28px 16px 8px;
   background: linear-gradient(180deg, var(--n-color-primary-50, #f1edff) 0%, #fff 100%);
   text-align: center;
 }
@@ -73,12 +73,24 @@
   text-align: left;
 }
 
-/* 칩 4개는 늘 한 줄(D-21) — 줄을 채워 늘고, 모자라면 줄어들며 칩 안 글자만 «STEP n» 뒤에서 접힌다 */
+/* 칩 4개는 늘 한 줄(D-21) — 줄을 채워 늘고, 모자라면 줄어들며 칩 안 글자만 «STEP n» 뒤에서 접힌다.
+   스크롤해도 위에 붙어 있다(D-23 — 바탕은 머리 끝과 같은 흰색). 확대로 줄이 넘치면 왼쪽이 잘리지 않게 safe center */
 .g-jump {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   justify-content: center;
-  gap: 4px;
-  margin-top: 16px;
+  justify-content: safe center;
+  gap: 3px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--n-color-neutral-100, #f5f5f5);
+  background: #fff;
+}
+
+/* 사이트판은 사이트 헤더(sticky) 바로 아래 */
+.g-jump--under-header {
+  top: var(--shell-header-height, 56px);
 }
 
 .g-jump__chip {
@@ -86,7 +98,7 @@
   flex: 1 1 auto;
   align-items: center;
   justify-content: center;
-  padding: 7px 6px;
+  padding: 7px 4px;
   text-align: center;
   word-break: keep-all;
   border: 1px solid var(--n-color-neutral-200, #e5e5e5);
@@ -103,7 +115,9 @@
 }
 
 .g-hero__hint {
-  margin: 14px 0 0;
+  margin: 0;
+  padding: 6px 16px 24px;
+  text-align: center;
   font-size: 15px;
   font-weight: 600;
   line-height: 1.6;
@@ -113,6 +127,12 @@
 /* ----- 구간 ----- */
 .g-sec {
   padding: 32px 16px;
+}
+
+/* 칩 줄(sticky) 아래로 착지 — 앵커 이동 · 키보드 포커스가 구간 머리 · 링크를 칩 줄 밑에 숨기지 않게(D-23).
+   칩 줄 ≈ 53px(글자 두 줄이면 72px — 그때도 구간 위 여백 32px 안이라 배지는 보인다) */
+.g-article :deep(:is(section, a, button, [tabindex])) {
+  scroll-margin-top: 56px;
 }
 
 .g-sec--alt {

@@ -150,6 +150,19 @@ describe.each([
     expect(GUIDE_SECTIONS).toHaveLength(4)
   })
 
+  it('칩 줄은 머리 밖 칸(D-23 — 머리 안이면 sticky 가 머리와 함께 올라간다) · 머리 → 칩 줄 → 빨간 테두리 안내 줄 순서 · 사이트판만 «헤더 아래» 표시', () => {
+    const kids = [...w.find('article.g-article').element.children].map((e) => e.className)
+    expect(kids.slice(0, 3)).toEqual(['g-hero', 'g-jump g-jump--under-header', 'g-hero__hint'])
+    expect(w.find('.g-hero .g-jump').exists()).toBe(false)
+    expect(w.find('.g-hero__hint').text()).toBe('화면의 빨간 테두리는 설명이 가리키는 곳이에요. 켜고 끄는 건 설명을 따라 주세요.')
+    for (const mode of ['bare', 'sheet'] as const) {
+      const m = mount(GuideArticle, { props: { content, mode }, global: { stubs } })
+      expect(m.find('nav.g-jump').classes(), mode).toEqual(['g-jump'])
+      expect(m.find('.g-hero .g-jump').exists(), mode).toBe(false)
+      m.unmount()
+    }
+  })
+
   it('확인 «지원 기기» 카드에만 «지원 기기 확인하기» → /supported-devices — 같은 탭(사이트판 · D-22)', () => {
     const links = w.findAll('.g-check__link')
     expect(links.map((a) => [a.text(), a.attributes('href'), a.attributes('target')])).toEqual([
@@ -348,6 +361,20 @@ describe('화면 스타일 고정(spec ⑤ · D-6 — happy-dom 은 컴포넌트
     expect(chip).toMatch(/word-break:\s*keep-all/)
     expect(chip).not.toMatch(/white-space|min-width:\s*0/)
     expect(rule('GuideArticle.vue', '.g-jump__step')).toMatch(/white-space:\s*nowrap/)
+  })
+  it('칩 줄은 스크롤해도 위에 붙는다(D-23) — sticky · 전용판 · 시트 top 0 · 사이트판 헤더 높이 · 흰 바탕 · 칩으로 이동한 구간이 칩 줄 밑에 숨지 않는 착지 여백', () => {
+    const jump = rule('GuideArticle.vue', '.g-jump')
+    expect(jump).toMatch(/position:\s*sticky/)
+    expect(jump).toMatch(/\btop:\s*0;/)
+    expect(jump).toMatch(/background:\s*#fff/)
+    expect(jump).toMatch(/z-index:\s*\d+/)
+    expect(jump).toMatch(/justify-content:\s*safe center/)
+    expect(rule('GuideArticle.vue', '.g-jump--under-header')).toMatch(
+      /top:\s*var\(--shell-header-height, 56px\)/,
+    )
+    expect(css('GuideArticle.vue')).toMatch(
+      /\.g-article :deep\(:is\(section, a, button, \[tabindex\]\)\) \{\s*scroll-margin-top: 56px;\s*\}/,
+    )
   })
   it('줄바꿈 금지 묶음 · 이미지 창 폭 · 이미지가 창 폭을 채움', () => {
     expect(rule('GuideText.vue', '.g-nw')).toMatch(/white-space:\s*nowrap/)
