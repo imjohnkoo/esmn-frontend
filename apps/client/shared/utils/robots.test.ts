@@ -23,6 +23,9 @@ describe('isNoindexPath', () => {
     '/checkout-preview?paymentId=pv-1&code=FAILURE',
     '/search',
     '/search?q=fr',
+    '/install-guide/ios',
+    '/install-guide/android',
+    '/install-guide',
   ])('%s 는 noindex', (path) => {
     expect(isNoindexPath(path)).toBe(true)
   })
@@ -33,6 +36,8 @@ describe('isNoindexPath', () => {
     '/privacy',
     '/refund',
     '/guide',
+    '/guide/ios',
+    '/guide/android',
     '/supported-devices',
     '/countries/fra',
     '/products/cze00',
@@ -82,7 +87,7 @@ describe('buildRobotsRouteRules', () => {
 })
 
 describe('robots.txt', () => {
-  it('Disallow 는 접두가 겹치지 않는 7줄', () => {
+  it('Disallow 는 접두가 겹치지 않는 8줄', () => {
     expect(robotsDisallowPrefixes()).toEqual([
       '/verify/',
       '/details/',
@@ -91,6 +96,7 @@ describe('robots.txt', () => {
       '/my',
       '/checkout-preview',
       '/search',
+      '/install-guide/',
     ])
   })
 
@@ -106,6 +112,7 @@ describe('robots.txt', () => {
       '/my-esim',
       '/checkout-preview',
       '/search',
+      '/install-guide/ios',
     ]
     for (const path of samples) {
       expect(prefixes.some((prefix) => path.startsWith(prefix))).toBe(true)
@@ -115,7 +122,7 @@ describe('robots.txt', () => {
   it('본문 형식', () => {
     const txt = buildRobotsTxt()
     expect(txt).toContain('User-agent: *\n')
-    expect(txt.match(/^Disallow: /gm)).toHaveLength(7)
+    expect(txt.match(/^Disallow: /gm)).toHaveLength(8)
     expect(txt).toContain('\nSitemap: https://esimmany.com/sitemap.xml\n')
     expect(txt.endsWith('\n')).toBe(true)
   })

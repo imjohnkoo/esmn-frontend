@@ -6,6 +6,7 @@ import {
   HOME_META,
   STATIC_DESCRIPTIONS,
   STATIC_ROUTES,
+  GUIDE_BARE_ROUTES,
   buildSitemapXml,
   canonicalUrl,
   catalogRoutes,
@@ -72,22 +73,29 @@ describe('정적 페이지 결선 — 각 페이지가 자기 경로의 설명�
 })
 
 describe('프리렌더 · sitemap (catalog spec F-9 · E2E-15)', () => {
-  it('프리렌더 = 홈 · 검색 · 국가 전수 · 상품 전수 · 정적 7 — 전부 소문자 · 중복 없음', () => {
+  it('프리렌더 = 홈 · 검색 · 국가 전수 · 상품 전수 · 정적 7 · 가이드 전용판 2 — 전부 소문자 · 중복 없음', () => {
     const routes = prerenderRoutes(catalog)
     expect(routes).toHaveLength(
-      2 + countriesOf(catalog).length + catalog.zones.length + STATIC_ROUTES.length,
+      2 + countriesOf(catalog).length + catalog.zones.length + STATIC_ROUTES.length + 2,
     )
+    expect(routes.slice(-2)).toEqual(['/install-guide/ios', '/install-guide/android'])
+    expect(routes.slice(-2)).toEqual([...GUIDE_BARE_ROUTES])
     expect(new Set(routes).size).toBe(routes.length)
     for (const r of routes) expect(r).toBe(r.toLowerCase())
     expect(routes).toContain('/countries/fra')
     expect(routes).toContain('/products/eu340')
   })
 
-  it('sitemap = 프리렌더 − noindex — /search 는 프리렌더하지만 sitemap 에는 없다', () => {
+  it('sitemap = 프리렌더 − noindex — /search · 가이드 전용판은 프리렌더하지만 sitemap 에는 없다(client-guide D-14)', () => {
     const paths = sitemapPaths(catalog)
     expect(prerenderRoutes(catalog)).toContain('/search')
     expect(isNoindexPath('/search')).toBe(true)
     expect(paths).not.toContain('/search')
+    for (const bare of GUIDE_BARE_ROUTES) {
+      expect(prerenderRoutes(catalog)).toContain(bare)
+      expect(isNoindexPath(bare), bare).toBe(true)
+      expect(paths).not.toContain(bare)
+    }
     for (const p of paths) {
       expect(isNoindexPath(p), p).toBe(false)
       expect(p).not.toMatch(/^\/(verify|details|select-date|view|my|checkout-preview)/)

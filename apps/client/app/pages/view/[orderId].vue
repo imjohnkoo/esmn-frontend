@@ -9,7 +9,9 @@ import {
   NLinkCard,
   NButton,
 } from '@imjohnkoo/design-vue'
+import GuideSheet from '~/components/guide/GuideSheet.vue'
 import { GUIDE_PAGES } from '~/content/guide/common'
+import type { GuideOs } from '~/content/guide/types'
 import { useOrderStore } from '~/stores/order'
 
 const route = useRoute()
@@ -17,6 +19,8 @@ const router = useRouter()
 const orderStore = useOrderStore()
 
 const orderId = computed(() => Number(route.params.orderId))
+// 설치 가이드 시트에 열 OS(null = 닫힘) — 새 탭 대신 이 화면 위 하단 시트(client-guide D-13)
+const guideOs = ref<GuideOs | null>(null)
 const order = computed(() => orderStore.singleOrder)
 
 // 다발 발급 케이스: 2개 이상이면 accordion 으로 1번만 펼쳐서 시작
@@ -258,16 +262,16 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
         </li>
       </ul>
 
-      <!-- 공통 설치 가이드 — single/multi 둘 다 1회만. 사이트 안 가이드(client-guide F-6) · 새 탭(D-5 — QR 화면을 닫지 않는다) -->
+      <!-- 공통 설치 가이드 — single/multi 둘 다 1회만. 카드 = 하단 시트를 여는 버튼(client-guide F-6 · D-13 — QR 화면을 떠나지 않는다) -->
       <div class="view-page__divider"><span>설치 가이드</span></div>
 
       <div class="view-page__guides">
         <NLinkCard
           :label="GUIDE_PAGES.ios.label"
           :sub="GUIDE_PAGES.ios.sub"
-          :href="GUIDE_PAGES.ios.to"
-          :aria-label="`${GUIDE_PAGES.ios.label} — ${GUIDE_PAGES.ios.sub} (새 창)`"
-          external
+          :aria-label="`${GUIDE_PAGES.ios.label} — ${GUIDE_PAGES.ios.sub}`"
+          aria-haspopup="dialog"
+          @click="guideOs = 'ios'"
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#111827">
@@ -280,9 +284,9 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
         <NLinkCard
           :label="GUIDE_PAGES.android.label"
           :sub="GUIDE_PAGES.android.sub"
-          :href="GUIDE_PAGES.android.to"
-          :aria-label="`${GUIDE_PAGES.android.label} — ${GUIDE_PAGES.android.sub} (새 창)`"
-          external
+          :aria-label="`${GUIDE_PAGES.android.label} — ${GUIDE_PAGES.android.sub}`"
+          aria-haspopup="dialog"
+          @click="guideOs = 'android'"
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#3ddc84">
@@ -293,6 +297,7 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
           </template>
         </NLinkCard>
       </div>
+      <GuideSheet v-model="guideOs" />
     </template>
 
     <div v-else class="view-page__empty">

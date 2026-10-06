@@ -5,7 +5,11 @@ import { ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { GUIDE_CONTACT } from '~/content/guide/common'
 import { supportRows } from '~/content/support'
 
-const props = withDefaults(defineProps<{ title?: string }>(), { title: GUIDE_CONTACT.title })
+// moreNewTab — 발급 화면 시트에서는 «고객센터 전체 보기» 를 새 탭으로(QR 화면을 떠나지 않게 — client-guide D-13)
+const props = withDefaults(defineProps<{ title?: string; moreNewTab?: boolean }>(), {
+  title: GUIDE_CONTACT.title,
+  moreNewTab: false,
+})
 const rows = supportRows().filter((r) => r.key === 'kakao' || r.key === 'naver')
 </script>
 
@@ -34,7 +38,15 @@ const rows = supportRows().filter((r) => r.key === 'kakao' || r.key === 'naver')
         </component>
       </li>
     </ul>
-    <NuxtLink to="/my#cs" class="g-cs__more">{{ GUIDE_CONTACT.more }}</NuxtLink>
+    <a
+      v-if="props.moreNewTab"
+      href="/my#cs"
+      class="g-cs__more"
+      target="_blank"
+      rel="noopener noreferrer"
+      >{{ GUIDE_CONTACT.more }}<span class="g-cs__sr">(새 창)</span></a
+    >
+    <NuxtLink v-else to="/my#cs" class="g-cs__more">{{ GUIDE_CONTACT.more }}</NuxtLink>
   </section>
 </template>
 

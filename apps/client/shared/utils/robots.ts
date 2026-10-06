@@ -24,6 +24,8 @@ export const NOINDEX_ROUTES = [
   '/checkout-preview',
   // 국가 검색 — 입력으로 그리는 얇은 페이지(catalog spec D-12). 국가 · 상품 페이지가 색인 대상이다
   '/search',
+  // 가이드 전용판 — /guide/<os> 와 같은 글(사이트 밖 링크용 · client-guide D-14). 색인은 사이트판 하나(canonical 도 그쪽)
+  '/install-guide/**',
 ] as const
 
 /** noindex 중에서 응답 캐시까지 금지할 경로 — 고객 주문 정보를 렌더하는 4-step */

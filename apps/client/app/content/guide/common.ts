@@ -40,6 +40,12 @@ export const GUIDE_PAGES: Record<
   },
 }
 
+/** 가이드 전용 페이지(client-guide D-14 · S-5) — 헤더 · 하단 탭 없이 본문만. 검색 제외 · canonical 은 사이트판(`GUIDE_PAGES[os].to`) */
+export const GUIDE_BARE: Record<GuideOs, string> = {
+  ios: '/install-guide/ios',
+  android: '/install-guide/android',
+}
+
 export const GUIDE_HUB = {
   title: '설치 가이드',
   desc: '아이폰과 안드로이드 설치 방법을 출국 전 설치부터 현지에서 켜기까지 순서대로 안내해요.',

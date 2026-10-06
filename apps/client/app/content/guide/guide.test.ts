@@ -409,7 +409,7 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
       expect(STATIC_ROUTES as readonly string[]).toContain(page.to)
   })
 
-  it('발급 화면 카드가 사이트 안 OS 가이드를 새 탭으로 연다(D-5) — 아이폰 카드(사과 아이콘)는 ios · 안드로이드 카드는 android', () => {
+  it('발급 화면 카드 = 하단 시트를 여는 버튼(D-13 — 링크 · 새 탭 아님) — 아이폰 카드(사과 아이콘)는 ios · 안드로이드 카드는 android', () => {
     const view = read('app/pages/view/[orderId].vue')
     const icon = { ios: 'fill="#111827"', android: 'fill="#3ddc84"' } as const
     for (const os of ['ios', 'android'] as const) {
@@ -420,15 +420,21 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
       )?.[0]
       expect(card, os).toBeTruthy()
       expect(card).toContain(`:sub="GUIDE_PAGES.${os}.sub"`)
-      expect(card).toContain(`:href="GUIDE_PAGES.${os}.to"`)
-      expect(card).toMatch(/\sexternal\s/)
+      // href 가 없으면 NLinkCard 는 <button> — 누르면 이 화면의 시트 값이 그 OS 가 된다
+      expect(card).not.toMatch(/\shref=|:href=/)
+      expect(card).not.toMatch(/\sexternal(\s|>)/)
+      expect(card).toContain(`@click="guideOs = '${os}'"`)
+      expect(card).toContain('aria-haspopup="dialog"')
       expect(card).toContain(icon[os])
-      // 화면낭독기가 읽는 이름 = 그 카드의 이름 — 설명 (새 창)(다른 OS 이름으로 읽히면 실패)
+      // 화면낭독기가 읽는 이름 = 그 카드의 이름 — 설명(새 창이 아니다)
       expect(card).toContain(
-        ':aria-label="`${GUIDE_PAGES.' + os + '.label} — ${GUIDE_PAGES.' + os + '.sub} (새 창)`"',
+        ':aria-label="`${GUIDE_PAGES.' + os + '.label} — ${GUIDE_PAGES.' + os + '.sub}`"',
       )
     }
-    expect(view).not.toMatch(/Universal Link 자동 설치|Galaxy · Pixel · QR 등록/)
+    // 카드가 바꾸는 값 = 시트의 v-model(같은 화면에 한 번)
+    expect(view.match(/<GuideSheet v-model="guideOs" \/>/g)).toHaveLength(1)
+    expect(view).toMatch(/^const guideOs = ref<GuideOs \| null>\(null\)$/m)
+    expect(view).not.toMatch(/Universal Link 자동 설치|Galaxy · Pixel · QR 등록|\(새 창\)/)
   })
 
   it('발급 화면 카드 설명 — 명암비 4.5:1(#737373) · 13px · 어절 줄바꿈 · 줄간격 1.6(spec ⑤ · QA ⑦)', () => {

@@ -22,6 +22,12 @@ export const STATIC_ROUTES = [
   '/supported-devices',
 ] as const
 
+/**
+ * 가이드 전용판(client-guide D-14 · S-5 — `app/content/guide/common.ts` `GUIDE_BARE` 와 같은 글자, 테스트가 대조한다).
+ * 프리렌더만 — noindex(`shared/utils/robots.ts`)라 sitemap 에서 빠지고, 설명 · canonical 은 사이트판 `/guide/<os>` 것을 쓴다
+ */
+export const GUIDE_BARE_ROUTES = ['/install-guide/ios', '/install-guide/android'] as const
+
 export function catalogRoutes(catalog: CatalogView): string[] {
   return [
     ...countriesOf(catalog).map((c) => `/countries/${c.iso3.toLowerCase()}`),
@@ -29,9 +35,9 @@ export function catalogRoutes(catalog: CatalogView): string[] {
   ]
 }
 
-/** nitro.prerender.routes — 홈 · 검색(noindex 지만 payload 를 고정한다) · 카탈로그 · 정적 */
+/** nitro.prerender.routes — 홈 · 검색(noindex 지만 payload 를 고정한다) · 카탈로그 · 정적 · 가이드 전용판(noindex) */
 export function prerenderRoutes(catalog: CatalogView): string[] {
-  return ['/', '/search', ...catalogRoutes(catalog), ...STATIC_ROUTES]
+  return ['/', '/search', ...catalogRoutes(catalog), ...STATIC_ROUTES, ...GUIDE_BARE_ROUTES]
 }
 
 /** sitemap = 프리렌더한 페이지 − noindex(`/search` 등 — noindex 목록 단일 출처로 거른다) */

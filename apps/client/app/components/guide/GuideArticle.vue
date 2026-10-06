@@ -8,7 +8,7 @@ import {
   PowerIcon,
   WifiIcon,
 } from '@heroicons/vue/24/outline'
-import { GUIDE_HL_HINT, GUIDE_PAGES, GUIDE_SECTIONS } from '~/content/guide/common'
+import { GUIDE_BARE, GUIDE_HL_HINT, GUIDE_PAGES, GUIDE_SECTIONS } from '~/content/guide/common'
 import type { GuideContent, GuideOs } from '~/content/guide/types'
 import GuideContact from './GuideContact.vue'
 import GuideFlow from './GuideFlow.vue'
@@ -17,7 +17,17 @@ import GuideShot from './GuideShot.vue'
 import GuideSteps from './GuideSteps.vue'
 import GuideText from './GuideText.vue'
 
-defineProps<{ content: GuideContent }>()
+// 쓰는 곳(client-guide D-13 · D-14) — page: 사이트 /guide/<os>(DOM 은 골든 그대로) · bare: 전용판 /install-guide/<os> ·
+// sheet: 발급 화면 시트(OS 전환 · 바로가기 = 버튼 — 주소를 바꾸지 않는다 · 발급 화면을 떠나는 링크는 숨기거나 새 탭)
+type GuideMode = 'page' | 'bare' | 'sheet'
+const props = withDefaults(defineProps<{ content: GuideContent; mode?: GuideMode }>(), {
+  mode: 'page',
+})
+const emit = defineEmits<{ os: [os: GuideOs]; jump: [id: string] }>()
+// 시트 판은 발급 화면과 한 문서라 id 에 접두를 붙인다(겹침 방지) — 페이지 · 전용판은 그대로
+const sid = (id: string) => (props.mode === 'sheet' ? `gs-${id}` : id)
+const osTo = (os: GuideOs) => (props.mode === 'bare' ? GUIDE_BARE[os] : GUIDE_PAGES[os].to)
+// 문제 해결의 «내 eSIM 조회하기» 링크는 시트에서 숨긴다 — 지금 보고 있는 발급 화면이다(D-13)
 const CHECK_ICONS = {
   wifi: WifiIcon,
   update: ArrowPathIcon,
@@ -39,31 +49,59 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
       </p>
 
       <nav class="g-os" aria-label="기기 종류">
-        <NuxtLink
-          v-for="os in OS_ORDER"
-          :key="os"
-          :to="GUIDE_PAGES[os].to"
-          class="g-os__tab"
-          :class="{ 'g-os__tab--on': os === content.os }"
-          :aria-current="os === content.os ? 'page' : undefined"
-        >
-          {{ GUIDE_PAGES[os].short }}
-        </NuxtLink>
+        <template v-if="mode === 'sheet'">
+          <button
+            v-for="os in OS_ORDER"
+            :key="os"
+            type="button"
+            class="g-os__tab"
+            :class="{ 'g-os__tab--on': os === content.os }"
+            :aria-pressed="os === content.os"
+            @click="emit('os', os)"
+          >
+            {{ GUIDE_PAGES[os].short }}
+          </button>
+        </template>
+        <template v-else>
+          <NuxtLink
+            v-for="os in OS_ORDER"
+            :key="os"
+            :to="osTo(os)"
+            class="g-os__tab"
+            :class="{ 'g-os__tab--on': os === content.os }"
+            :aria-current="os === content.os ? 'page' : undefined"
+          >
+            {{ GUIDE_PAGES[os].short }}
+          </NuxtLink>
+        </template>
       </nav>
 
       <GuideFlow class="g-hero__flow" />
 
       <nav class="g-jump" aria-label="이 페이지 안에서 이동">
-        <a v-for="s in GUIDE_SECTIONS" :key="s.id" :href="`#${s.id}`" class="g-jump__chip">{{
-          s.label
-        }}</a>
+        <template v-if="mode === 'sheet'">
+          <button
+            v-for="s in GUIDE_SECTIONS"
+            :key="s.id"
+            type="button"
+            class="g-jump__chip"
+            @click="emit('jump', sid(s.id))"
+          >
+            {{ s.label }}
+          </button>
+        </template>
+        <template v-else>
+          <a v-for="s in GUIDE_SECTIONS" :key="s.id" :href="`#${s.id}`" class="g-jump__chip">{{
+            s.label
+          }}</a>
+        </template>
       </nav>
       <p class="g-hero__hint">{{ GUIDE_HL_HINT }}</p>
     </header>
 
     <!-- 설치 전 확인 -->
-    <section id="check" class="g-sec" aria-labelledby="check-title">
-      <h2 id="check-title" class="g-sec__title">설치 전에 확인해 주세요</h2>
+    <section :id="sid('check')" class="g-sec" :aria-labelledby="sid('check-title')">
+      <h2 :id="sid('check-title')" class="g-sec__title">설치 전에 확인해 주세요</h2>
       <p class="g-sec__lede"><GuideText :src="content.checks.lede" /></p>
       <ul class="g-checks">
         <li v-for="c in content.checks.items" :key="c.title" class="g-check">
@@ -86,9 +124,9 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
     </section>
 
     <!-- STEP 1 -->
-    <section id="step1" class="g-sec g-sec--alt" aria-labelledby="step1-title">
+    <section :id="sid('step1')" class="g-sec g-sec--alt" :aria-labelledby="sid('step1-title')">
       <span class="g-badge">{{ content.step1.badge }}</span>
-      <h2 id="step1-title" class="g-sec__title">{{ content.step1.title }}</h2>
+      <h2 :id="sid('step1-title')" class="g-sec__title">{{ content.step1.title }}</h2>
       <p class="g-sec__lede"><GuideText :src="content.step1.lede" /></p>
       <div
         v-for="m in content.step1.methods"
@@ -115,23 +153,23 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
         { id: 'step2', data: content.step2 },
         { id: 'step3', data: content.step3 },
       ]"
-      :id="sec.id"
+      :id="sid(sec.id)"
       :key="sec.id"
       class="g-sec"
       :class="{ 'g-sec--alt': sec.id === 'step3' }"
-      :aria-labelledby="`${sec.id}-title`"
+      :aria-labelledby="sid(`${sec.id}-title`)"
     >
       <span class="g-badge">{{ sec.data.badge }}</span>
-      <h2 :id="`${sec.id}-title`" class="g-sec__title">{{ sec.data.title }}</h2>
+      <h2 :id="sid(`${sec.id}-title`)" class="g-sec__title">{{ sec.data.title }}</h2>
       <p class="g-sec__lede"><GuideText :src="sec.data.lede" /></p>
       <GuideSteps :steps="sec.data.steps" class="g-sec__steps" />
       <GuideNote v-for="(n, i) in sec.data.notes" :key="i" :note="n" />
     </section>
 
     <!-- 문제 해결 -->
-    <section id="help" class="g-sec" aria-labelledby="help-title">
+    <section :id="sid('help')" class="g-sec" :aria-labelledby="sid('help-title')">
       <span class="g-badge">{{ content.help.badge }}</span>
-      <h2 id="help-title" class="g-sec__title">{{ content.help.title }}</h2>
+      <h2 :id="sid('help-title')" class="g-sec__title">{{ content.help.title }}</h2>
       <p class="g-sec__lede"><GuideText :src="content.help.lede" /></p>
       <div class="g-faqs">
         <div v-for="(f, i) in content.help.faqs" :key="f.q" class="g-faq">
@@ -140,14 +178,14 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
           </h3>
           <div class="g-faq__a">
             <p v-for="(a, j) in f.a" :key="j"><GuideText :src="a" /></p>
-            <NuxtLink v-if="f.link" :to="f.link.to" class="g-faq__link">{{
+            <NuxtLink v-if="f.link && mode !== 'sheet'" :to="f.link.to" class="g-faq__link">{{
               f.link.label
             }}</NuxtLink>
           </div>
           <GuideShot v-if="f.figure" :figure="f.figure" class="g-faq__shot" />
         </div>
       </div>
-      <GuideContact />
+      <GuideContact :more-new-tab="mode === 'sheet'" />
     </section>
   </article>
 </template>
