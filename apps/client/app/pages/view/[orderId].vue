@@ -19,12 +19,43 @@ const router = useRouter()
 const orderStore = useOrderStore()
 
 const orderId = computed(() => Number(route.params.orderId))
-// 설치 가이드 시트에 열 OS(null = 닫힘) — 새 탭 대신 이 화면 위 하단 시트(client-guide D-13)
-const guideOs = ref<GuideOs | null>(null)
-// 누른 카드에 포커스를 먼저 준다 — Safari 는 버튼을 눌러도 포커스를 주지 않아, 시트가 «연 요소» 를 body 로 기억하고 닫힌 뒤 포커스를 잃는다(S-4)
+// 설치 가이드 시트에 열 OS(null = 닫힘) — 새 탭 대신 이 화면 위 하단 시트(client-guide D-13).
+// 주소의 ?guide=<os> 가 상태다(D-15) — 휴대폰 뒤로 가기가 시트만 닫고 QR 화면에 남는다. 같은 경로라 스크롤 · 4-step 가드(저장소 주문)는 그대로
+const guideOs = computed<GuideOs | null>({
+  get: () => {
+    const q = route.query.guide
+    return q === 'ios' || q === 'android' ? q : null
+  },
+  set: (os) => setGuide(os),
+})
+// 이 화면에서 연 시트면 기록 한 칸이 있다 — 닫을 때 그 칸을 되돌린다(뒤로 가기와 같은 결과 · 기록이 쌓이지 않게)
+let openedHere = false
+watch(guideOs, (os) => {
+  if (!os) openedHere = false // 뒤로 가기 · 다른 이동으로 닫혔다
+})
+function setGuide(os: GuideOs | null) {
+  const query = { ...route.query }
+  if (os) {
+    query.guide = os
+    if (guideOs.value) return router.replace({ query }) // 시트 안 OS 전환 — 기록을 늘리지 않는다
+    openedHere = true
+    return router.push({ query })
+  }
+  if (!guideOs.value) return
+  if (openedHere) {
+    openedHere = false
+    return router.back()
+  }
+  delete query.guide // 주소로 바로 열린 시트(새로 고침 등) — 되돌릴 칸이 없다
+  return router.replace({ query })
+}
+// 카드 = 사이트판 링크(새 탭)이고 보조키 없는 클릭만 시트로(D-17 — 화면 준비 전 · 보조키 · 가운데 클릭은 링크 그대로).
+// 누른 카드에 포커스를 먼저 준다 — Safari 는 눌러도 포커스를 주지 않아, 시트가 «연 요소» 를 body 로 기억하고 닫힌 뒤 포커스를 잃는다(S-4)
 const openGuide = (os: GuideOs, e: MouseEvent) => {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+  e.preventDefault()
   ;(e.currentTarget as HTMLElement | null)?.focus()
-  guideOs.value = os
+  setGuide(os)
 }
 const order = computed(() => orderStore.singleOrder)
 
@@ -267,13 +298,15 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
         </li>
       </ul>
 
-      <!-- 공통 설치 가이드 — single/multi 둘 다 1회만. 카드 = 하단 시트를 여는 버튼(client-guide F-6 · D-13 — QR 화면을 떠나지 않는다) -->
+      <!-- 공통 설치 가이드 — single/multi 둘 다 1회만. 카드 = 사이트판 링크 + 하단 시트(client-guide F-6 · D-13 · D-17 — QR 화면을 떠나지 않는다) -->
       <div class="view-page__divider"><span>설치 가이드</span></div>
 
       <div class="view-page__guides">
         <NLinkCard
           :label="GUIDE_PAGES.ios.label"
           :sub="GUIDE_PAGES.ios.sub"
+          :href="GUIDE_PAGES.ios.to"
+          external
           :aria-label="`${GUIDE_PAGES.ios.label} — ${GUIDE_PAGES.ios.sub}`"
           aria-haspopup="dialog"
           @click="openGuide('ios', $event)"
@@ -289,6 +322,8 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
         <NLinkCard
           :label="GUIDE_PAGES.android.label"
           :sub="GUIDE_PAGES.android.sub"
+          :href="GUIDE_PAGES.android.to"
+          external
           :aria-label="`${GUIDE_PAGES.android.label} — ${GUIDE_PAGES.android.sub}`"
           aria-haspopup="dialog"
           @click="openGuide('android', $event)"

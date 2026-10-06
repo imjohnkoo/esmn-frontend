@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
-// 발급 완료 화면의 설치 가이드 카드(client-guide spec F-6 · D-13 · S-4 · DoD 6) — 화면을 실제로 마운트해 카드를 누르면 그 OS 시트가 열리는가.
+// 발급 완료 화면의 설치 가이드 카드(client-guide spec F-6 · D-13 · D-15 · D-17 · S-4 · DoD 6 · 8) — 화면을 실제로 마운트해
+// «카드 = 사이트판 링크 · 보조키 없는 클릭은 그 OS 시트 · 상태는 주소 ?guide=<os> · 뒤로 가기 = 시트 닫기» 를 본다.
 // eSIM 1건(단일 화면) · 여러 건(아코디언 화면) 둘 다 — 시트가 한쪽 분기 안에만 있으면 다른 화면에서는 눌러도 열리지 않는다.
-// 진입 가드(order-flow) · 서버 호출은 없다 — 화면은 저장소의 주문만 그린다. QR 그림은 대역(그리기 라이브러리 · canvas 없음).
+// 진입 가드(order-flow) · 서버 호출은 없다 — 화면은 저장소의 주문만 그린다. 라우터는 주소 상태 · 기록만 흉내 내는 대역, QR 그림도 대역.
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { computed, defineComponent, h, nextTick, ref, watch } from 'vue'
+import { computed, defineComponent, h, nextTick, reactive, ref, watch } from 'vue'
 import { GUIDE_PAGES } from '~/content/guide/common'
 import { useOrderStore } from '~/stores/order'
 import type { Esim, Order } from '~/types/order'
@@ -20,18 +21,42 @@ vi.mock('qrcode-vue3', () => ({
 
 // Nuxt 자동 import 대신
 Object.assign(globalThis, { ref, computed, watch, nextTick })
-const push = vi.fn()
+
+type Query = Record<string, string>
+// 주소(같은 경로의 query)와 기록만 흉내 낸다 — push 는 한 칸 쌓고 replace 는 바꿔 끼우고 back 은 한 칸 되돌린다
+const route = reactive({ params: { orderId: '2026092300000101' }, query: {} as Query })
+let history: Query[] = []
+const router = {
+  push: vi.fn(async (to: string | { query: Query }) => {
+    if (typeof to === 'string') return // «주문 목록으로» 같은 다른 화면 이동 — 이 테스트에서는 일어나지 않아야 한다
+    history.push({ ...route.query })
+    route.query = { ...to.query }
+  }),
+  replace: vi.fn(async (to: { query: Query }) => {
+    route.query = { ...to.query }
+  }),
+  back: vi.fn(() => {
+    const prev = history.pop()
+    if (prev) route.query = prev
+  }),
+}
+
 beforeEach(() => {
-  push.mockClear()
   setActivePinia(createPinia())
+  route.query = {}
+  history = []
+  router.push.mockClear()
+  router.replace.mockClear()
+  router.back.mockClear()
   vi.stubGlobal('definePageMeta', vi.fn())
-  vi.stubGlobal('useRoute', () => ({ params: { orderId: '2026092300000101' } }))
-  vi.stubGlobal('useRouter', () => ({ push }))
+  vi.stubGlobal('useRoute', () => route)
+  vi.stubGlobal('useRouter', () => router)
 })
 afterEach(() => vi.unstubAllGlobals())
 enableAutoUnmount(afterEach)
 
 const settle = async () => {
+  await nextTick()
   await nextTick()
   await nextTick()
 }
@@ -52,76 +77,142 @@ const order = (count: number) =>
     esims: Array.from({ length: count }, (_, i) => esim(i + 1)),
   }) as unknown as Order
 
-const render = async (count: number) => {
+const render = async (count: number, query: Query = {}) => {
+  route.query = { ...query }
   useOrderStore().singleOrder = order(count)
-  const w = mount(ViewPage, {
-    attachTo: document.body,
-    global: {
-      stubs: {
-        NuxtLink: defineComponent({
-          setup:
-            (_, { slots }) =>
-            () =>
-              h('a', slots.default?.()),
-        }),
-      },
-    },
-  })
+  const w = mount(ViewPage, { attachTo: document.body })
   await settle()
   return w
 }
-const cards = () => [
-  ...document.body.querySelectorAll<HTMLButtonElement>('.view-page__guides > button'),
-]
+const cards = () => [...document.body.querySelectorAll<HTMLAnchorElement>('.view-page__guides > a')]
+const sheetOpen = () => !!document.body.querySelector('.n-bottom-sheet__content')
 const title = () => document.body.querySelector('.n-bottom-sheet__title')?.textContent?.trim()
 const shots = () => document.body.querySelectorAll('.guide-sheet img.g-shot__img').length
+/** 카드를 누른다 — 기본 동작(새 탭 이동)이 막혔는지 돌려준다 */
+const press = (card: HTMLElement, init: MouseEventInit = {}) => {
+  const ev = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ...init })
+  card.dispatchEvent(ev)
+  return ev.defaultPrevented
+}
 
 describe.each([
   ['eSIM 1건(단일 화면)', 1],
   ['eSIM 여러 건(아코디언 화면)', 2],
 ] as const)('%s', (_, count) => {
-  it('카드 2 = 버튼(링크 · 새 탭 아님) · 시트는 닫혀 있다', async () => {
+  it('카드 2 = 사이트판 링크(새 탭 — 화면 준비 전에도 열린다) · 시트를 연다고 알린다 · 시트는 닫혀 있다', async () => {
     await render(count)
     expect(
-      cards().map((b) => [
-        b.tagName,
-        b.getAttribute('href'),
-        b.getAttribute('target'),
-        b.getAttribute('aria-haspopup'),
+      cards().map((a) => [
+        a.getAttribute('href'),
+        a.getAttribute('target'),
+        a.getAttribute('rel'),
+        a.getAttribute('aria-haspopup'),
       ]),
     ).toEqual([
-      ['BUTTON', null, null, 'dialog'],
-      ['BUTTON', null, null, 'dialog'],
+      [GUIDE_PAGES.ios.to, '_blank', 'noopener noreferrer', 'dialog'],
+      [GUIDE_PAGES.android.to, '_blank', 'noopener noreferrer', 'dialog'],
     ])
-    expect(document.body.querySelector('.n-bottom-sheet__content')).toBeNull()
+    expect(sheetOpen()).toBe(false)
   })
 
-  it('아이폰 카드 → 아이폰 시트(이미지 24) · 닫고 안드로이드 카드 → 안드로이드 시트(17) — 화면 이동 0', async () => {
+  it('보조키 없는 클릭 → 링크 이동을 막고 그 OS 시트(주소 ?guide=<os> 한 칸) — 아이폰 24 · 안드로이드 17', async () => {
     await render(count)
-    cards()[0]!.click()
+    expect(press(cards()[0]!)).toBe(true)
     await settle()
+    expect(router.push).toHaveBeenCalledTimes(1)
+    expect(route.query).toEqual({ guide: 'ios' })
     expect(title()).toBe(GUIDE_PAGES.ios.label)
     expect(shots()).toBe(24)
-    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+    // 뒤로 가기 = 시트 닫기 — 화면(QR · 코드)은 그대로
+    router.back()
     await settle()
-    expect(document.body.querySelector('.n-bottom-sheet__content')).toBeNull()
-    cards()[1]!.click()
+    expect(sheetOpen()).toBe(false)
+    expect(document.body.querySelector('.view-page__guides')).toBeTruthy()
+    expect(press(cards()[1]!)).toBe(true)
     await settle()
+    expect(route.query).toEqual({ guide: 'android' })
     expect(title()).toBe(GUIDE_PAGES.android.label)
     expect(shots()).toBe(17)
-    expect(push).not.toHaveBeenCalled()
   })
 
-  it('누른 카드에 포커스가 가고(Safari 대비), 닫으면 그 카드로 돌아온다', async () => {
+  it('보조키 · 가운데 버튼 클릭은 링크 그대로(시트 · 주소 변화 0)', async () => {
+    await render(count)
+    for (const init of [
+      { ctrlKey: true },
+      { metaKey: true },
+      { shiftKey: true },
+      { altKey: true },
+      { button: 1 },
+    ]) {
+      expect(press(cards()[0]!, init), JSON.stringify(init)).toBe(false)
+    }
+    await settle()
+    expect(router.push).not.toHaveBeenCalled()
+    expect(sheetOpen()).toBe(false)
+  })
+
+  it('이 화면에서 연 시트를 X 로 닫으면 기록 한 칸 뒤로(뒤로 가기와 같은 결과 · 기록이 쌓이지 않는다) — 포커스는 누른 카드', async () => {
     await render(count)
     const android = cards()[1]!
-    android.click()
+    press(android)
     await settle()
-    expect(title()).toBe(GUIDE_PAGES.android.label)
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
     await settle()
     await new Promise((r) => setTimeout(r, 0))
-    expect(document.body.querySelector('.n-bottom-sheet__content')).toBeNull()
+    expect(router.back).toHaveBeenCalledTimes(1)
+    expect(router.replace).not.toHaveBeenCalled()
+    expect(route.query).toEqual({})
+    expect(history).toEqual([])
+    expect(sheetOpen()).toBe(false)
     expect(document.activeElement).toBe(android)
+  })
+
+  it('시트 안 OS 전환은 주소의 ?guide 만 바꾸고 기록을 늘리지 않는다', async () => {
+    await render(count)
+    press(cards()[0]!)
+    await settle()
+    ;[...document.body.querySelectorAll<HTMLButtonElement>('.guide-sheet .g-os__tab')]
+      .find((b) => b.textContent?.trim() === GUIDE_PAGES.android.short)!
+      .click()
+    await settle()
+    expect(router.push).toHaveBeenCalledTimes(1)
+    expect(router.replace).toHaveBeenCalledWith({ query: { guide: 'android' } })
+    expect(title()).toBe(GUIDE_PAGES.android.label)
+    // 이어서 닫으면 처음 연 한 칸만 되돌린다
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await settle()
+    expect(router.back).toHaveBeenCalledTimes(1)
+    expect(route.query).toEqual({})
+  })
+
+  it('주소로 바로 열린 시트(?guide=android — 새로 고침)는 열려 있고, 닫으면 되돌릴 칸이 없으니 ?guide 를 지운다', async () => {
+    await render(count, { guide: 'android' })
+    expect(title()).toBe(GUIDE_PAGES.android.label)
+    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+    await settle()
+    expect(router.back).not.toHaveBeenCalled()
+    expect(router.replace).toHaveBeenCalledWith({ query: {} })
+    expect(sheetOpen()).toBe(false)
+  })
+
+  it('모르는 ?guide 값은 시트를 열지 않는다', async () => {
+    await render(count, { guide: 'windows' })
+    expect(sheetOpen()).toBe(false)
+  })
+
+  it('뒤로 가기로 닫은 뒤 X 로 다시 닫을 일이 생겨도 기록을 한 칸 더 되돌리지 않는다(뒤로 가기가 그 칸을 이미 썼다)', async () => {
+    await render(count)
+    press(cards()[0]!)
+    await settle()
+    router.back() // 휴대폰 뒤로 가기
+    await settle()
+    expect(sheetOpen()).toBe(false)
+    // 주소로 다시 열린 것처럼(앞으로 가기 등) — 이 화면에서 연 칸이 아니다
+    route.query = { guide: 'ios' }
+    await settle()
+    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+    await settle()
+    expect(router.back).toHaveBeenCalledTimes(1) // 위의 휴대폰 뒤로 가기 한 번뿐
+    expect(router.replace).toHaveBeenCalledWith({ query: {} })
   })
 })

@@ -5,6 +5,7 @@
  *  1. `<meta name="robots">` — `app.vue` 가 `isNoindexPath(route.path)` 로 판정
  *  2. `X-Robots-Tag` 응답 헤더 — `nuxt.config.ts` 의 `routeRules` (`buildRobotsRouteRules`)
  *  3. `/robots.txt` Disallow — `server/routes/robots.txt.ts` (`buildRobotsTxt`)
+ * `NOINDEX_CRAWL_ROUTES` 는 1 · 2 만 — 크롤은 열어 두어 noindex · canonical 을 읽게 한다(client-guide D-16).
  *
  * 게스트 발급 4-step 은 SSR 복원 시 HTML 페이로드에 주문 정보가 실리므로 `Cache-Control: no-store` 를
  * 함께 건다 — CloudFront 캐시 도입(K4) 뒤에도 공유 캐시가 잡으면 안 된다(Proposal P9-16).
@@ -12,7 +13,7 @@
 
 import { SITE_ORIGIN } from './site'
 
-/** 패턴 문법: 정확히 일치하는 경로 또는 `/<prefix>/**`(그 경로 자체 + 하위 전부) */
+/** 패턴 문법: 정확히 일치하는 경로 또는 `/<prefix>/**`(그 경로 자체 + 하위 전부). 세 출력 모두(meta · 헤더 · Disallow) */
 export const NOINDEX_ROUTES = [
   '/verify/**',
   '/details/**',
@@ -24,9 +25,14 @@ export const NOINDEX_ROUTES = [
   '/checkout-preview',
   // 국가 검색 — 입력으로 그리는 얇은 페이지(catalog spec D-12). 국가 · 상품 페이지가 색인 대상이다
   '/search',
-  // 가이드 전용판 — /guide/<os> 와 같은 글(사이트 밖 링크용 · client-guide D-14). 색인은 사이트판 하나(canonical 도 그쪽)
-  '/install-guide/**',
 ] as const
+
+/**
+ * noindex 이지만 크롤은 막지 않는 경로 — meta · `X-Robots-Tag` 만(robots.txt Disallow 없음).
+ * 막으면 크롤러가 noindex · canonical 을 읽지 못해, 밖에서 거는 링크에서 주소만 «정보 없음» 으로 색인될 수 있다.
+ * 가이드 전용판 — /guide/<os> 와 같은 글(사이트 밖 링크용 · client-guide D-14 · D-16). 색인은 사이트판 하나(canonical 도 그쪽)
+ */
+export const NOINDEX_CRAWL_ROUTES = ['/install-guide/**'] as const
 
 /** noindex 중에서 응답 캐시까지 금지할 경로 — 고객 주문 정보를 렌더하는 4-step */
 export const NO_STORE_ROUTES = ['/verify/**', '/details/**', '/select-date/**', '/view/**'] as const
@@ -48,12 +54,12 @@ function matchesRoute(pattern: string, path: string): boolean {
 }
 
 export function isNoindexPath(path: string): boolean {
-  return NOINDEX_ROUTES.some((pattern) => matchesRoute(pattern, path))
+  return [...NOINDEX_ROUTES, ...NOINDEX_CRAWL_ROUTES].some((pattern) => matchesRoute(pattern, path))
 }
 
 export function buildRobotsRouteRules(): Record<string, { headers: Record<string, string> }> {
   const rules: Record<string, { headers: Record<string, string> }> = {}
-  for (const pattern of NOINDEX_ROUTES) {
+  for (const pattern of [...NOINDEX_ROUTES, ...NOINDEX_CRAWL_ROUTES]) {
     rules[pattern] = { headers: { 'X-Robots-Tag': ROBOTS_VALUE } }
   }
   for (const pattern of NO_STORE_ROUTES) {
