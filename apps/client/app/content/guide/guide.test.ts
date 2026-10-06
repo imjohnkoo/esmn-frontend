@@ -409,11 +409,11 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
       expect(STATIC_ROUTES as readonly string[]).toContain(page.to)
   })
 
-  it('발급 화면 카드 = 사이트판 링크(새 탭) + 하단 시트(D-13 · D-17) — 아이폰 카드(사과 아이콘)는 ios · 안드로이드 카드는 android', () => {
-    const view = read('app/pages/view/[orderId].vue')
+  it('설치 가이드 카드 = 사이트판 링크(새 탭) + 하단 시트(D-13 · D-17) — 아이폰 카드(사과 아이콘)는 ios · 안드로이드 카드는 android', () => {
+    const cards = read('app/components/guide/GuideCards.vue')
     const icon = { ios: 'fill="#111827"', android: 'fill="#3ddc84"' } as const
     for (const os of ['ios', 'android'] as const) {
-      const card = view.match(
+      const card = cards.match(
         new RegExp(
           `<NLinkCard[^>]*:label="GUIDE_PAGES\\.${os}\\.label"[^>]*>[\\s\\S]*?</NLinkCard>`,
         ),
@@ -431,16 +431,22 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
         ':aria-label="`${GUIDE_PAGES.' + os + '.label} — ${GUIDE_PAGES.' + os + '.sub}`"',
       )
     }
-    // 카드가 바꾸는 값 = 시트의 v-model(같은 화면에 한 번)
-    expect(view.match(/<GuideSheet v-model="guideOs" \/>/g)).toHaveLength(1)
-    expect(view).toMatch(/^const guideOs = computed<GuideOs \| null>\(\{$/m)
-    // 누른 동작 자체(카드 → 그 OS 시트 · 1건 · 여러 건 화면)는 pages/view/view-guide-sheet.dom.test.ts
-    expect(view).not.toMatch(/Universal Link 자동 설치|Galaxy · Pixel · QR 등록|\(새 창\)/)
+    // 카드가 바꾸는 값 = 시트의 v-model(컴포넌트 안에 한 번)
+    expect(cards.match(/<GuideSheet v-model="guideOs" \/>/g)).toHaveLength(1)
+    expect(cards).toMatch(/^const guideOs = computed<GuideOs \| null>\(\{$/m)
+    expect(cards).not.toMatch(/Universal Link 자동 설치|Galaxy · Pixel · QR 등록|\(새 창\)/)
+    // 쓰는 곳 — 발급 완료 화면(D-13)과 본인 확인 화면 약관 링크 아래(D-19)에 한 번씩. 누른 동작은 pages/view · pages/verify 의 *.dom.test.ts
+    expect(read('app/pages/view/[orderId].vue').match(/<GuideCards\b/g)).toHaveLength(1)
+    const verify = read('app/pages/verify/[orderId].vue')
+    expect(verify.match(/<GuideCards\b/g)).toHaveLength(1)
+    // 개인정보처리방침 · 이용약관 링크 바로 아래 · «주문 확인하기» 위(D-19 — John 위치 지정)
+    expect(verify.indexOf('<GuideCards')).toBeGreaterThan(verify.indexOf('class="verify-page__policy"'))
+    expect(verify.indexOf('<GuideCards')).toBeLessThan(verify.indexOf('class="verify-page__cta"'))
   })
 
-  it('발급 화면 카드 설명 — 명암비 4.5:1(#737373) · 13px · 어절 줄바꿈 · 줄간격 1.6(spec ⑤ · QA ⑦)', () => {
-    const css = read('app/pages/view/[orderId].vue').split('<style scoped>')[1] ?? ''
-    const rule = css.match(/\.view-page__guides :deep\(\.n-link-card__sub\) \{([^}]*)\}/)?.[1] ?? ''
+  it('설치 가이드 카드 설명 — 명암비 4.5:1(#737373) · 13px · 어절 줄바꿈 · 줄간격 1.6(spec ⑤ · QA ⑦)', () => {
+    const css = read('app/components/guide/GuideCards.vue').split('<style scoped>')[1] ?? ''
+    const rule = css.match(/\.guide-cards__list :deep\(\.n-link-card__sub\) \{([^}]*)\}/)?.[1] ?? ''
     expect(rule).toMatch(/color: var\(--n-color-neutral-500, #737373\);/)
     expect(rule).toMatch(/font-size: 13px;/)
     expect(rule).toMatch(/line-height: 1\.6;/)

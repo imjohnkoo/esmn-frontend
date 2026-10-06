@@ -87,6 +87,8 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 import type { DocSheetKey } from '~/components/legal/DocSheet.vue'
 // 시트는 페이지와 함께 싣는다 — 따로 불러오면 배포 뒤 묶음 이름이 바뀐 화면에서 불러오기가 실패해 링크가 먹통이 된다(링크는 일반 클릭을 막는다 · QA ⑥ m2)
 import DocSheet from '~/components/legal/DocSheet.vue'
+// 설치 가이드 카드 · 시트(client-guide D-19) — 발급 화면과 같은 컴포넌트. 시트라 입력한 이름 · 전화를 잃지 않는다
+import GuideCards from '~/components/guide/GuideCards.vue'
 
 const legalSheet = ref<DocSheetKey | null>(null)
 </script>
@@ -176,6 +178,9 @@ const legalSheet = ref<DocSheetKey | null>(null)
         >
       </p>
       <DocSheet v-model="legalSheet" />
+
+      <!-- 설치 가이드(client-guide D-19) — 약관 링크 바로 아래 · «주문 확인하기» 위. 발급 전에 설치 방법을 미리 본다(하단 시트 · 뒤로 가기 = 시트 닫기 · 입력 그대로) -->
+      <GuideCards class="verify-page__guides" />
 
       <div class="verify-page__cta">
         <NButton type="submit" variant="primary" size="xl" full-width :disabled="isSubmitting">
@@ -329,6 +334,10 @@ const legalSheet = ref<DocSheetKey | null>(null)
 .verify-page__cta {
   margin-top: auto;
   padding-top: 32px;
+}
+
+.verify-page__guides {
+  margin-top: 4px;
 }
 
 .verify-page__dialog-desc {

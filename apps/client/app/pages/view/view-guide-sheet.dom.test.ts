@@ -98,7 +98,7 @@ const render = async (count: number, query: Query = {}) => {
   await settle()
   return w
 }
-const cards = () => [...document.body.querySelectorAll<HTMLAnchorElement>('.view-page__guides > a')]
+const cards = () => [...document.body.querySelectorAll<HTMLAnchorElement>('.guide-cards__list > a')]
 const sheetOpen = () => !!document.body.querySelector('.n-bottom-sheet__content')
 const title = () => document.body.querySelector('.n-bottom-sheet__title')?.textContent?.trim()
 const shots = () => document.body.querySelectorAll('.guide-sheet img.g-shot__img').length
@@ -153,7 +153,7 @@ describe.each([
     router.back()
     await settle()
     expect(sheetOpen()).toBe(false)
-    expect(document.body.querySelector('.view-page__guides')).toBeTruthy()
+    expect(document.body.querySelector('.guide-cards')).toBeTruthy()
     expect(press(cards()[1]!)).toBe(true)
     await settle()
     expect(route.query).toEqual({ guide: 'android' })
