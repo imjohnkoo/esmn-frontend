@@ -9,6 +9,7 @@ import {
   NAlertDialog,
   NLoaderDialog,
 } from '@imjohnkoo/design-vue'
+import { nextTick } from 'vue'
 import { useOrderStore } from '~/stores/order'
 import { useApi } from '~/composables/useApi'
 import { useFlowSession } from '~/composables/useFlowSession'
@@ -28,6 +29,7 @@ const isReverify = computed(() => route.query.reason === 'reverify')
 const fullName = ref('')
 const phoneNumber = ref('')
 const errors = ref<{ fullName?: string; phoneNumber?: string }>({})
+const formEl = ref<HTMLFormElement | null>(null)
 
 const isSubmitting = ref(false)
 const isAlertVisible = ref(false)
@@ -51,7 +53,14 @@ const validate = () => {
 }
 
 const onSubmit = async () => {
-  if (!validate()) return
+  if (!validate()) {
+    // 첫 오류 칸으로 포커스 — 아래 붙은 «주문 확인하기»(client-guide D-25) 밑에 오류 문구가 숨지 않게 그 칸을 화면 안으로
+    // (낮은 화면 · 가로 모드 · 키보드가 화면을 줄이는 브라우저 — QA ⑥ R11 m3). 칸 아래 여백은 scroll-margin-bottom
+    await nextTick()
+    const inputs = formEl.value?.querySelectorAll<HTMLInputElement>('.verify-page__field input')
+    inputs?.[errors.value.fullName ? 0 : 1]?.focus()
+    return
+  }
   isSubmitting.value = true
   await new Promise((resolve) => setTimeout(resolve, 1200))
   try {
@@ -132,7 +141,7 @@ const legalSheet = ref<DocSheetKey | null>(null)
       이어서 보려면 본인 확인을 다시 해 주세요.
     </p>
 
-    <form class="verify-page__form" @submit.prevent="onSubmit">
+    <form id="verify-form" ref="formEl" class="verify-page__form" @submit.prevent="onSubmit">
       <div class="verify-page__field">
         <NInput v-model="fullName" variant="underline" label="이름" :error="!!errors.fullName" />
         <p v-if="errors.fullName" class="verify-page__err">{{ errors.fullName }}</p>
@@ -182,13 +191,21 @@ const legalSheet = ref<DocSheetKey | null>(null)
 
       <!-- 설치 가이드(client-guide D-19) — 약관 링크 바로 아래 · «주문 확인하기» 위. 발급 전에 설치 방법을 미리 본다(하단 시트 · 뒤로 가기 = 시트 닫기 · 입력 그대로) -->
       <GuideCards class="verify-page__guides" />
-
-      <div class="verify-page__cta">
-        <NButton type="submit" variant="primary" size="xl" full-width :disabled="isSubmitting">
-          주문 확인하기
-        </NButton>
-      </div>
     </form>
+
+    <!-- «주문 확인하기» 는 화면 아래에 붙어 있다(client-guide D-25) — 폼 밖 · 페이지 맨 끝에 두어 sticky 가 화면 높이와 상관없이 붙는다(form 속성으로 폼에 이어진다) -->
+    <div class="verify-page__cta">
+      <NButton
+        type="submit"
+        form="verify-form"
+        variant="primary"
+        size="xl"
+        full-width
+        :disabled="isSubmitting"
+      >
+        주문 확인하기
+      </NButton>
+    </div>
 
     <NLoaderDialog
       v-model="isSubmitting"
@@ -333,7 +350,8 @@ const legalSheet = ref<DocSheetKey | null>(null)
 }
 
 /* «주문 확인하기» 는 화면 아래에 붙어 있다(client-guide D-25) — 스크롤하면 내용만 움직이고 버튼은 그대로, 설치 가이드 카드 등
-   다른 내용 위에 겹친다. 폼 맨 끝 자리를 지키는 sticky 라 끝까지 내리면 제자리(카드 아래)에 놓이고, 내용이 짧으면 margin-top:auto 로
+   다른 내용 위에 겹친다. 페이지 맨 끝(폼 바로 뒤)의 sticky — 기준 상자가 페이지라 화면이 낮아도(가로 모드 · 키보드) 붙고,
+   끝까지 내리면 제자리(카드 아래)에 놓이며, 내용이 짧으면 margin-top:auto 로
    화면 맨 아래. 바탕은 페이지 좌우 여백까지 흰색 — 위쪽 20px 은 흐려지게(밑으로 지나가는 내용이 버튼에 바로 잘려 보이지 않게) */
 .verify-page__cta {
   position: sticky;
@@ -342,6 +360,12 @@ const legalSheet = ref<DocSheetKey | null>(null)
   margin: auto -24px 0;
   padding: 32px 24px calc(16px + env(safe-area-inset-bottom));
   background: linear-gradient(to bottom, rgb(255 255 255 / 0), #ffffff 20px);
+  /* 흐림 · 여백은 누름을 밑의 내용(카드 가장자리 등)으로 넘긴다 — 버튼만 받는다(QA ⑥ R11 m4) */
+  pointer-events: none;
+}
+
+.verify-page__cta > * {
+  pointer-events: auto;
 }
 
 /* 키보드 포커스가 간 입력칸 · 링크 · 카드가 아래 붙은 버튼 밑에 숨지 않게(D-25) — 버튼 줄 높이 + 여유 */

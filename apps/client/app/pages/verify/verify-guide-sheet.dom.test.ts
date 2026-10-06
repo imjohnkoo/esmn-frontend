@@ -205,15 +205,27 @@ describe('본인 확인 화면 설치 가이드 — 약관 링크 아래(D-19)',
 })
 
 describe('«주문 확인하기» 는 화면 아래에 붙어 있다(D-25) — 스크롤하면 내용만 움직이고 버튼은 그대로', () => {
-  it('버튼 줄은 폼 맨 끝(설치 가이드 카드 아래) — sticky 의 기준 상자가 폼이라 끝까지 내리면 제자리 · 제출 버튼은 그 안', async () => {
+  it('버튼 줄은 페이지 맨 끝(폼 바로 뒤 · 설치 가이드 카드 아래) — sticky 의 기준 상자가 페이지라 화면이 낮아도 붙는다 · 제출 버튼은 form 속성으로 폼에 이어진다', async () => {
     await render()
-    const form = document.body.querySelector('.verify-page__form')!
-    const cta = form.querySelector('.verify-page__cta')!
-    expect(form.lastElementChild).toBe(cta)
-    expect(cta.querySelector('button')?.getAttribute('type')).toBe('submit')
+    const page = document.body.querySelector('.verify-page')!
+    const form = page.querySelector<HTMLFormElement>('.verify-page__form')!
+    const cta = page.querySelector('.verify-page__cta')!
+    expect(cta.parentElement).toBe(page)
+    expect(form.nextElementSibling).toBe(cta)
+    expect(form.contains(cta)).toBe(false)
+    const button = cta.querySelector('button')!
+    expect(button.getAttribute('type')).toBe('submit')
+    expect(form.id).toBe('verify-form')
+    expect(button.getAttribute('form')).toBe(form.id)
     expect(cta.textContent?.trim()).toBe('주문 확인하기')
     const guides = form.querySelector('.guide-cards')!
     expect(guides.compareDocumentPosition(cta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // 버튼 뒤로는 화면에 그려지는 형제가 없다(대화상자는 body 로 옮겨진다) — 버튼이 늘 맨 끝
+    let next = cta.nextElementSibling
+    while (next) {
+      expect(next.tagName, next.className).toBe('TEMPLATE')
+      next = next.nextElementSibling
+    }
   })
 
   it('CSS — sticky · bottom 0 · 다른 내용 위(z-index) · 흰 바탕(위쪽 흐림) · 내용이 짧으면 맨 아래(margin-top auto) · 포커스한 입력칸 · 링크 아래 여백', () => {
@@ -233,7 +245,48 @@ describe('«주문 확인하기» 는 화면 아래에 붙어 있다(D-25) — �
       /background:\s*linear-gradient\(to bottom, rgb\(255 255 255 \/ 0\), #ffffff 20px\)/,
     )
     expect(rule('.verify-page__form :deep(:is(input, a))')).toMatch(/scroll-margin-bottom:\s*120px/)
-    // 폼이 sticky 의 기준 상자 — 폼에 overflow 를 주면 sticky 가 풀린다
-    expect(rule('.verify-page__form')).not.toMatch(/overflow/)
+    // 흐림 · 여백은 누름을 밑으로 넘기고 버튼만 받는다(QA ⑥ R11 m4)
+    expect(cta).toMatch(/pointer-events:\s*none/)
+    expect(rule('.verify-page__cta > *')).toMatch(/pointer-events:\s*auto/)
+    // sticky 를 푸는 것 — 버튼과 화면 사이 조상(페이지 · flow 레이아웃 · 앱 프레임 — 폼도 덤으로)의 overflow · transform · contain(QA ⑥ R11 m1)
+    const forbidden = /overflow|transform|contain:/
+    expect(rule('.verify-page__form')).not.toMatch(forbidden)
+    expect(rule('.verify-page')).not.toMatch(forbidden)
+    const styleOf = (f: string) =>
+      readFileSync(`${process.cwd()}/app/${f}`, 'utf8').split(/<style[^>]*>/)[1] ?? ''
+    expect(styleOf('layouts/flow.vue')).not.toMatch(forbidden)
+    expect(styleOf('app.vue')).not.toMatch(forbidden)
+    // 버튼이 늘 위 — 본인 확인 화면 · 카드 CSS 에 버튼보다 위로 올라오는 쌓임이 없다
+    const z = [...css.matchAll(/z-index:\s*(\d+)/g)].map((m) => Number(m[1]))
+    expect(z).toEqual([2])
+    expect(styleOf('components/guide/GuideCards.vue')).not.toMatch(/z-index|position:/)
+  })
+})
+
+describe('제출 검증 실패 — 첫 오류 칸으로 포커스(D-25 · QA ⑥ R11 m3 — 아래 붙은 버튼 밑에 오류가 숨지 않게)', () => {
+  const submit = async () => {
+    document.body.querySelector<HTMLFormElement>('.verify-page__form')!.requestSubmit()
+    await settle()
+  }
+
+  it('둘 다 비면 이름 칸 · 이름만 넣으면 전화 칸으로 포커스 · 오류 문구가 보인다 · 서버 호출 0', async () => {
+    await render()
+    await submit()
+    expect(document.activeElement).toBe(inputs()[0])
+    expect(document.body.querySelectorAll('.verify-page__err')).toHaveLength(2)
+    await typeInto(inputs()[0]!, '테스트고객')
+    await submit()
+    expect(document.activeElement).toBe(inputs()[1])
+    expect(document.body.querySelector('.verify-page__err')?.textContent).toContain('전화번호')
+    expect(verifyOrder).not.toHaveBeenCalled()
+  })
+
+  it('카드를 누를 때 카드 포커스는 스크롤 없이(QA ⑥ R11 m4 — 반쯤 가린 카드를 누르면 뒤 페이지가 밀리던 것)', async () => {
+    await render()
+    const card = cards()[0]!
+    const focus = vi.spyOn(card, 'focus')
+    press(card)
+    await settle()
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
   })
 })

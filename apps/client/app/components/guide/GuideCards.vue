@@ -50,11 +50,12 @@ function setGuide(os: GuideOs | null) {
   return router.replace({ query })
 }
 // 카드 = 사이트판 링크(새 탭)이고 보조키 없는 클릭만 시트로(D-17 — 화면 준비 전 · 보조키 · 가운데 클릭은 링크 그대로).
-// 누른 카드에 포커스를 먼저 준다 — Safari 는 눌러도 포커스를 주지 않아, 시트가 «연 요소» 를 body 로 기억하고 닫힌 뒤 포커스를 잃는다(S-4)
+// 누른 카드에 포커스를 먼저 준다 — Safari 는 눌러도 포커스를 주지 않아, 시트가 «연 요소» 를 body 로 기억하고 닫힌 뒤 포커스를 잃는다(S-4).
+// 스크롤은 하지 않는다 — 본인 확인 화면의 아래 붙은 버튼(D-25) 여백 때문에 반쯤 가린 카드를 누르면 뒤 페이지가 밀린다(QA ⑥ R11 m4)
 const openGuide = (os: GuideOs, e: MouseEvent) => {
   if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
   e.preventDefault()
-  ;(e.currentTarget as HTMLElement | null)?.focus()
+  ;(e.currentTarget as HTMLElement | null)?.focus({ preventScroll: true })
   setGuide(os)
 }
 </script>
