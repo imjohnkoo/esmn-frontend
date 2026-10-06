@@ -447,6 +447,18 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
     expect(rule).toMatch(/word-break: keep-all;/)
   })
 
+  it('발급 화면 머리 설명 · FAQ — 어절 단위 줄바꿈(«연결/돼요» 처럼 어절 중간에서 끊지 않는다 · QA ⑦ walk 2)', () => {
+    const css = read('app/pages/view/[orderId].vue').split('<style scoped>')[1] ?? ''
+    const rule =
+      css.match(
+        /\.view-page__heading :deep\(\.n-page-heading__desc\),\s*\.view-page__faq-q,\s*\.view-page__faq-a \{([^}]*)\}/,
+      )?.[1] ?? ''
+    expect(rule).toMatch(/word-break: keep-all;/)
+    expect(rule).toMatch(/overflow-wrap: break-word;/)
+    // 머리 설명은 .view-page__heading 안의 NPageHeading 이다(선택자가 다른 칸을 가리키면 적용되지 않는다)
+    expect(read('app/pages/view/[orderId].vue')).toMatch(/<div class="view-page__heading">\s*<NPageHeading/)
+  })
+
   it('바로가기 착지 — 기본 레이아웃이 헤더 높이만큼 scroll-padding-top 을 준다(앵커 머리가 헤더에 가리지 않게 · E2E-4)', () => {
     const layout = read('app/layouts/default.vue')
     expect(layout).toContain("useHead({ htmlAttrs: { class: 'has-shell-chrome' } })")

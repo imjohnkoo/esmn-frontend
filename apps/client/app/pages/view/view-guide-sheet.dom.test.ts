@@ -34,6 +34,11 @@ const route = reactive({ params: { orderId: '2026092300000101' }, query: {} as Q
 let stack: Query[] = []
 const syncState = () =>
   window.history.replaceState({ back: stack.length ? fullPathOf(stack[stack.length - 1]!) : null }, '')
+const backNow = () => {
+  const prev = stack.pop()
+  if (prev) route.query = prev
+  syncState()
+}
 const router = {
   push: vi.fn(async (to: string | { query: Query }) => {
     if (typeof to === 'string') return // «주문 목록으로» 같은 다른 화면 이동 — 이 테스트에서는 일어나지 않아야 한다
@@ -45,11 +50,7 @@ const router = {
     route.query = { ...to.query }
     syncState()
   }),
-  back: vi.fn(() => {
-    const prev = stack.pop()
-    if (prev) route.query = prev
-    syncState()
-  }),
+  back: vi.fn(() => backNow()),
   resolve: (to: { query: Query }) => ({ fullPath: fullPathOf(to.query) }),
 }
 
@@ -210,7 +211,7 @@ describe.each([
     expect(route.query).toEqual({})
   })
 
-  it('주소로 바로 열린 시트(?guide=android — 새로 고침)는 열려 있고, 닫으면 되돌릴 칸이 없으니 ?guide 를 지운다', async () => {
+  it('?guide 주소로 처음 들어온 시트(앞 칸 없음 — 새 탭 · 밖 링크)는 열려 있고, 닫으면 되돌릴 칸이 없으니 ?guide 를 지운다', async () => {
     await render(count, { guide: 'android' })
     expect(title()).toBe(GUIDE_PAGES.android.label)
     document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
@@ -277,5 +278,57 @@ describe.each([
     await settle()
     expect(router.back).not.toHaveBeenCalled()
     expect(router.replace).toHaveBeenCalledWith({ query: {} })
+  })
+  it('새로 고침 뒤에도 앞 칸(이 화면)이 남아 있으면 X 는 기록 한 칸 뒤로', async () => {
+    window.history.replaceState({ back: VIEW }, '')
+    await render(count, { guide: 'ios' })
+    window.history.replaceState({ back: VIEW }, '')
+    stack.push({})
+    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+    await settle()
+    expect(router.back).toHaveBeenCalledTimes(1)
+    expect(router.replace).not.toHaveBeenCalled()
+  })
+
+  it.each([`${VIEW}/`, `${VIEW}#top`, `${VIEW}/#top`])(
+    '앞 칸 주소 끝에 / · # 가 붙어 있어도(%s) 같은 화면으로 보고 기록 한 칸 뒤로',
+    async (back) => {
+      await render(count)
+      press(cards()[0]!)
+      await settle()
+      window.history.replaceState({ back }, '')
+      document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+      await settle()
+      expect(router.back).toHaveBeenCalledTimes(1)
+      expect(router.replace).not.toHaveBeenCalled()
+    },
+  )
+
+  it('닫기가 연달아 들어와도(뒤로 가기가 끝나기 전 X 두 번 · Esc) 기록은 한 칸만 되돌린다 — 발급 화면에 남는다', async () => {
+    await render(count)
+    press(cards()[0]!)
+    await settle()
+    // 실제 브라우저처럼 뒤로 가기가 조금 뒤에 끝난다
+    router.back.mockImplementation(() => {
+      setTimeout(backNow, 30)
+    })
+    try {
+      const x = document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!
+      x.click()
+      x.click()
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await new Promise((r) => setTimeout(r, 80))
+      await settle()
+      expect(router.back).toHaveBeenCalledTimes(1)
+      expect(route.query).toEqual({})
+      expect(stack).toEqual([])
+      expect(sheetOpen()).toBe(false)
+      // 닫힌 뒤에는 다시 열고 닫을 수 있다
+      press(cards()[1]!)
+      await settle()
+      expect(title()).toBe(GUIDE_PAGES.android.label)
+    } finally {
+      router.back.mockImplementation(() => backNow())
+    }
   })
 })

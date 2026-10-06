@@ -28,10 +28,22 @@ const guideOs = computed<GuideOs | null>({
   },
   set: (os) => setGuide(os),
 })
-// 바로 앞 기록 칸이 이 주소인가 — vue-router 가 history.state.back 에 앞 칸 주소를 적어 둔다(새로 고침에도 남는다)
-const backIs = (fullPath: string) =>
-  typeof window !== 'undefined' &&
-  (window.history.state as { back?: unknown } | null)?.back === fullPath
+// 바로 앞 기록 칸이 이 주소인가 — vue-router 가 history.state.back 에 앞 칸 주소를 적어 둔다(새로 고침에도 남는다).
+// 끝 «/» · «#…» 는 빼고 비교한다(vue-router 는 들어온 주소 그대로 적고, resolve 는 다시 만들어 그 둘이 빠진다)
+const samePage = (a: string, b: string) => {
+  const norm = (p: string) => p.replace(/#.*$/, '').replace(/\/(?=\?|$)/, '')
+  return norm(a) === norm(b)
+}
+const backIs = (fullPath: string) => {
+  if (typeof window === 'undefined') return false
+  const back = (window.history.state as { back?: unknown } | null)?.back
+  return typeof back === 'string' && samePage(back, fullPath)
+}
+// 닫는 중 — 앞 칸으로 돌아가는 이동이 끝나기 전에 닫기가 또 오면(두 번 누름 · Esc 여러 번) 한 번만 처리한다(발급 화면을 떠나지 않게)
+let closing = false
+watch(guideOs, (os) => {
+  if (!os) closing = false
+})
 function setGuide(os: GuideOs | null) {
   const query = { ...route.query }
   if (os) {
@@ -39,10 +51,11 @@ function setGuide(os: GuideOs | null) {
     if (guideOs.value) return router.replace({ query }) // 시트 안 OS 전환 — 기록을 늘리지 않는다
     return router.push({ query })
   }
-  if (!guideOs.value) return
+  if (!guideOs.value || closing) return
+  closing = true
   delete query.guide
-  // 앞 칸이 «?guide 없는 이 화면» 이면 그 칸으로 돌아간다(이 화면에서 연 시트 · 앞으로 가기로 다시 연 시트 — 기록이 쌓이지 않게).
-  // 아니면(주소로 바로 열린 시트) 되돌릴 칸이 없으니 ?guide 만 지운다
+  // 앞 칸이 «?guide 없는 이 화면» 이면 그 칸으로 돌아간다(이 화면에서 연 시트 · 앞으로 가기로 다시 연 시트 · 그 뒤 새로 고침 — 기록이 쌓이지 않게).
+  // 아니면(?guide 주소로 처음 들어온 시트 — 새 탭 · 밖 링크) 되돌릴 칸이 없으니 ?guide 만 지운다
   if (backIs(router.resolve({ query }).fullPath)) return router.back()
   return router.replace({ query })
 }
