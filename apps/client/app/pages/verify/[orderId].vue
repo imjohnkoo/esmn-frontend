@@ -81,7 +81,8 @@ const onSubmit = async () => {
   }
 }
 // 게스트 발급 4-step 은 헤더 · 하단 탭 없는 flow 레이아웃 (spec D-2) · 가드는 order-flow 미들웨어 (K8)
-definePageMeta({ layout: 'flow', middleware: 'order-flow' })
+// 사업자정보 푸터 없음(client-guide D-20 — 법정 링크는 화면 안 시트로 그대로)
+definePageMeta({ layout: 'flow', middleware: 'order-flow', siteFooter: false })
 
 // 개인정보처리방침 · 이용약관 하단 시트(spec D-46 · John 2026-10-03) — 새 탭 대신(입력한 이름 · 전화를 잃지 않는다)
 import type { DocSheetKey } from '~/components/legal/DocSheet.vue'

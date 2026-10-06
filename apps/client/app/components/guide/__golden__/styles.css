@@ -73,16 +73,22 @@
   text-align: left;
 }
 
+/* 칩 4개는 늘 한 줄(D-21) — 줄을 채워 늘고, 모자라면 줄어들며 칩 안 글자만 «STEP n» 뒤에서 접힌다 */
 .g-jump {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   margin-top: 16px;
 }
 
 .g-jump__chip {
-  padding: 7px 12px;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 6px;
+  text-align: center;
+  word-break: keep-all;
   border: 1px solid var(--n-color-neutral-200, #e5e5e5);
   border-radius: var(--n-radius-full, 9999px);
   background: #fff;
@@ -90,6 +96,10 @@
   font-weight: 600;
   color: var(--n-color-neutral-700, #404040);
   text-decoration: none;
+}
+
+.g-jump__step {
+  white-space: nowrap;
 }
 
 .g-hero__hint {
@@ -192,6 +202,26 @@
   font-size: 15px;
   line-height: 1.6;
   color: var(--n-color-neutral-600, #525252);
+}
+
+.g-check__link {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--n-color-primary-600, #5025e8);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* «(새 창)» — 화면에는 숨기고 낭독기만 읽는다(시트 스크롤 영역이 위치 기준 — GuideSheet) */
+.g-check__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .g-alert {

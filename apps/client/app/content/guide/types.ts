@@ -51,6 +51,8 @@ export interface GuideCheck {
   icon: CheckIcon
   title: string
   body: string
+  /** 본문 아래 사이트 페이지 링크(client-guide D-22 — «지원 기기» → /supported-devices) */
+  link?: { to: string; label: string }
 }
 
 export interface GuideContent {

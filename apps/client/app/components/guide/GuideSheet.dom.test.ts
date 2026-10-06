@@ -101,12 +101,22 @@ describe('시트 안 이동 — 주소를 바꾸지 않는다', () => {
     ).toBe('true')
   })
 
-  it('구간 바로가기 5 = spec 글자 · 버튼 — 누르면 시트 본문만 그 구간 머리로 움직인다(해시 그대로)', async () => {
+  it('구간 바로가기 4 = spec 글자 · 버튼(D-21 — «설치 전 확인» 없음 · 사이트판과 같은 칩) — 누르면 시트 본문만 그 구간 머리로 움직인다(해시 그대로)', async () => {
     await host('ios')
     const chips = $$<HTMLButtonElement>('.guide-sheet .g-jump__chip')
-    expect(chips.map((c) => [c.tagName, c.textContent?.trim()])).toEqual(
-      GUIDE_SECTIONS.map((s) => ['BUTTON', s.label]),
-    )
+    expect(chips.map((c) => [c.tagName, c.textContent?.trim()])).toEqual([
+      ['BUTTON', 'STEP 1 설치'],
+      ['BUTTON', 'STEP 2 설정'],
+      ['BUTTON', 'STEP 3 현지'],
+      ['BUTTON', '문제 해결'],
+    ])
+    expect(chips.map((c) => c.querySelector('.g-jump__step')?.textContent ?? null)).toEqual([
+      'STEP 1',
+      'STEP 2',
+      'STEP 3',
+      null,
+    ])
+    expect($('#gs-check'), '설치 전 확인 구간은 그대로').toBeTruthy()
     // 시트 판 구간 id 는 접두(gs-) — 발급 화면 문서의 다른 id 와 겹치지 않게 · 맨 id 는 없다
     for (const s of GUIDE_SECTIONS) {
       expect($(`#gs-${s.id}`), s.id).toBeTruthy()
@@ -154,10 +164,23 @@ describe('발급 화면을 떠나는 링크 — 숨기거나 새 탭', () => {
     }
   })
 
-  it('«고객센터 전체 보기» = /my#cs 새 탭 · 카카오톡 · 네이버 톡톡 = 고객센터 정의 값 새 탭', async () => {
+  it('«지원 기기 확인하기»(D-22) · «고객센터 전체 보기» = 새 탭 «(새 창)» · 카카오톡 · 네이버 톡톡 = 고객센터 정의 값 새 탭 — 시트 안 링크는 전부 새 탭', async () => {
     await host('android')
-    const hrefs = $$<HTMLAnchorElement>('.guide-sheet a[href]').map((a) => a.getAttribute('href'))
-    expect(hrefs).toEqual([SUPPORT_KAKAO_URL, SMARTSTORE_URL, '/my#cs'])
+    const links = $$<HTMLAnchorElement>('.guide-sheet a[href]')
+    expect(links.map((a) => a.getAttribute('href'))).toEqual([
+      '/supported-devices',
+      SUPPORT_KAKAO_URL,
+      SMARTSTORE_URL,
+      '/my#cs',
+    ])
+    for (const a of links) {
+      expect(a.target, a.href).toBe('_blank')
+      expect(a.rel, a.href).toContain('noopener')
+    }
+    const devices = $$<HTMLAnchorElement>('.guide-sheet a.g-check__link')
+    expect(devices.map((a) => a.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+      '지원 기기 확인하기(새 창)',
+    ])
     const more = $$<HTMLAnchorElement>('.guide-sheet a.g-cs__more')
     expect(more).toHaveLength(1)
     expect(more[0]!.textContent?.replace(/\s+/g, ' ').trim()).toBe('고객센터 전체 보기(새 창)')

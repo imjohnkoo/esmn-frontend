@@ -10,9 +10,11 @@ export const GUIDE_FLOW = [
   { step: 'STEP 3', title: '현지에서 켜기', meta: '도착 후 · 1분' },
 ] as const
 
-/** OS 페이지 구간 바로가기(F-4) — id 는 본문 구간 앵커와 같다 */
+/**
+ * OS 페이지 구간 바로가기(F-4 · D-21) — id 는 본문 구간 앵커와 같다. 칩 4개는 늘 한 줄.
+ * «설치 전 확인» 은 칩이 없다(그 구간은 머리 바로 아래 — 구간 `check` 는 그대로, John 2026-10-06)
+ */
 export const GUIDE_SECTIONS = [
-  { id: 'check', label: '설치 전 확인' },
   { id: 'step1', label: 'STEP 1 설치' },
   { id: 'step2', label: 'STEP 2 설정' },
   { id: 'step3', label: 'STEP 3 현지' },

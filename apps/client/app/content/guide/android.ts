@@ -28,6 +28,7 @@ export const ANDROID_GUIDE: GuideContent = {
         icon: 'device',
         title: '지원 기기',
         body: '국내판 갤럭시는 S23 · ((Z 플립4)) · ((Z 폴드4)) 이후 모델과 일부 ((A 시리즈))가 eSIM을 지원해요. 통신사 잠금(컨트리락)도 풀려 있어야 해요.',
+        link: { to: '/supported-devices', label: '지원 기기 확인하기' },
       },
       {
         icon: 'clean',

@@ -31,6 +31,7 @@ const osTo = (os: GuideOs) => (props.mode === 'bare' ? GUIDE_BARE[os] : GUIDE_PA
 // 시트 판 바로가기는 구간 제목으로 포커스를 옮긴다(GuideSheet) — 그 제목만 프로그램 포커스를 받게(탭 순서에는 넣지 않는다)
 const headTab = computed(() => (props.mode === 'sheet' ? -1 : undefined))
 // 문제 해결의 «내 eSIM 조회하기» 링크는 시트에서 숨긴다 — 지금 보고 있는 발급 화면이다(D-13)
+// 확인 카드 링크(«지원 기기 확인하기» — D-22)는 시트에서 새 탭(발급 · 본인 확인 화면을 떠나지 않게), 사이트판 · 전용판은 같은 탭
 const CHECK_ICONS = {
   wifi: WifiIcon,
   update: ArrowPathIcon,
@@ -38,6 +39,8 @@ const CHECK_ICONS = {
   clean: PowerIcon,
 } as const
 const OS_ORDER: GuideOs[] = ['ios', 'android']
+// 바로가기 칩 4개는 늘 한 줄(D-21) — 폭이 모자라면 칩 안 글자만 «STEP 1» / «설치» 로 접는다(«STEP n» 은 붙여 둔다)
+const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
 </script>
 
 <template>
@@ -90,13 +93,19 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
             class="g-jump__chip"
             @click="emit('jump', sid(s.id))"
           >
-            {{ s.label }}
+            <span class="g-jump__label"
+              ><span v-if="chipStep(s.label)" class="g-jump__step">{{ chipStep(s.label) }}</span
+              >{{ s.label.slice(chipStep(s.label).length) }}</span
+            >
           </button>
         </template>
         <template v-else>
-          <a v-for="s in GUIDE_SECTIONS" :key="s.id" :href="`#${s.id}`" class="g-jump__chip">{{
-            s.label
-          }}</a>
+          <a v-for="s in GUIDE_SECTIONS" :key="s.id" :href="`#${s.id}`" class="g-jump__chip"
+            ><span class="g-jump__label"
+              ><span v-if="chipStep(s.label)" class="g-jump__step">{{ chipStep(s.label) }}</span
+              >{{ s.label.slice(chipStep(s.label).length) }}</span
+            ></a
+          >
         </template>
       </nav>
       <p class="g-hero__hint">{{ GUIDE_HL_HINT }}</p>
@@ -114,6 +123,17 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
           <div>
             <h3 class="g-check__h">{{ c.title }}</h3>
             <p class="g-check__body"><GuideText :src="c.body" /></p>
+            <template v-if="c.link">
+              <a
+                v-if="mode === 'sheet'"
+                :href="c.link.to"
+                class="g-check__link"
+                target="_blank"
+                rel="noopener noreferrer"
+                >{{ c.link.label }}<span class="g-check__sr">(새 창)</span></a
+              >
+              <NuxtLink v-else :to="c.link.to" class="g-check__link">{{ c.link.label }}</NuxtLink>
+            </template>
           </div>
         </li>
       </ul>
@@ -267,16 +287,22 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
   text-align: left;
 }
 
+/* 칩 4개는 늘 한 줄(D-21) — 줄을 채워 늘고, 모자라면 줄어들며 칩 안 글자만 «STEP n» 뒤에서 접힌다 */
 .g-jump {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   margin-top: 16px;
 }
 
 .g-jump__chip {
-  padding: 7px 12px;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 6px;
+  text-align: center;
+  word-break: keep-all;
   border: 1px solid var(--n-color-neutral-200, #e5e5e5);
   border-radius: var(--n-radius-full, 9999px);
   background: #fff;
@@ -284,6 +310,10 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
   font-weight: 600;
   color: var(--n-color-neutral-700, #404040);
   text-decoration: none;
+}
+
+.g-jump__step {
+  white-space: nowrap;
 }
 
 .g-hero__hint {
@@ -386,6 +416,26 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
   font-size: 15px;
   line-height: 1.6;
   color: var(--n-color-neutral-600, #525252);
+}
+
+.g-check__link {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--n-color-primary-600, #5025e8);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* «(새 창)» — 화면에는 숨기고 낭독기만 읽는다(시트 스크롤 영역이 위치 기준 — GuideSheet) */
+.g-check__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .g-alert {

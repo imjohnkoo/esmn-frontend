@@ -100,11 +100,20 @@ describe.each([
     expect(isNoindexPath(site)).toBe(false)
   })
 
-  it('문제 해결 «내 eSIM 조회하기» · «고객센터 전체 보기» 는 사이트 페이지로 같은 탭(전용판은 발급 화면이 아니다)', () => {
+  it('문제 해결 «내 eSIM 조회하기» · «고객센터 전체 보기» · 확인 «지원 기기 확인하기»(D-22) 는 사이트 페이지로 같은 탭(전용판은 발급 화면이 아니다)', () => {
     const w = render()
     const links = w.findAll('a[data-nuxt-link]').map((a) => a.attributes('href'))
     expect(links).toContain('/my-esim')
     expect(links).toContain('/my#cs')
+    expect(links).toContain('/supported-devices')
+    expect(w.find('a.g-check__link').attributes('target')).toBeUndefined()
+    // 바로가기 칩 4개(D-21) — «설치 전 확인» 없음
+    expect(w.findAll('.g-jump__chip').map((c) => c.text())).toEqual([
+      'STEP 1 설치',
+      'STEP 2 설정',
+      'STEP 3 현지',
+      '문제 해결',
+    ])
     const more = w.find('a.g-cs__more')
     expect(more.attributes('target')).toBeUndefined()
     w.unmount()
@@ -116,9 +125,9 @@ describe('전용판 경로 · 레이아웃(D-14)', () => {
     expect([GUIDE_BARE.ios, GUIDE_BARE.android]).toEqual([...GUIDE_BARE_ROUTES])
   })
 
-  it('flow 레이아웃 = 사이트 헤더 · 하단 탭 없음 · 사업자정보 푸터(작은 판) 있음(K5)', () => {
+  it('flow 레이아웃 = 사이트 헤더 · 하단 탭 없음 · 사업자정보 푸터(작은 판) 있음(K5 — 전용판은 끄지 않는다 · D-20 은 본인 확인 화면만)', () => {
     const layout = readFileSync(`${process.cwd()}/app/layouts/flow.vue`, 'utf8')
     expect(layout).not.toMatch(/ShellHeader|BottomTabBar/)
-    expect(layout).toMatch(/<SiteFooter compact \/>/)
+    expect(layout).toMatch(/<SiteFooter v-if="showFooter" compact \/>/)
   })
 })

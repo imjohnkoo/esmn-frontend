@@ -128,14 +128,34 @@ describe('본인 확인 화면 설치 가이드 — 약관 링크 아래(D-19)',
     expect(sheetOpen()).toBe(false)
   })
 
-  it('카드를 눌러도 폼이 제출되지 않는다(서버 호출 0 — 카드는 링크, 시트 안 버튼은 type=button)', async () => {
+  it('입력을 채운 채 카드 · 시트 안 버튼 · X 를 눌러도 폼 제출(submit) 0 · 로딩 0 · 서버 호출 0 — 카드는 링크, 시트는 폼 밖(body)', async () => {
     await render()
+    const [name, phone] = inputs()
+    await typeInto(name!, '테스트고객')
+    await typeInto(phone!, '01000000001')
+    const form = document.body.querySelector<HTMLFormElement>('.verify-page__form')!
+    let submits = 0
+    form.addEventListener('submit', () => submits++)
     press(cards()[0]!)
     await settle()
+    const sheet = document.body.querySelector('.n-bottom-sheet__content')!
+    expect(form.contains(sheet)).toBe(false)
     for (const b of document.body.querySelectorAll<HTMLButtonElement>('.guide-sheet button')) {
-      expect(b.type).toBe('button')
+      b.click()
+      await settle()
     }
+    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')?.click()
+    await settle()
+    press(cards()[1]!)
+    await settle()
+    expect(submits).toBe(0)
+    expect(document.body.querySelector('.n-loader-dialog__content')).toBeNull()
     expect(verifyOrder).not.toHaveBeenCalled()
+    // 대조 — 같은 폼을 진짜로 제출하면 이 검사가 잡는다(검사가 비어 있지 않다). 입력을 비워 검증에서 멈추게 —
+    // 다음 테스트로 넘어가는 지연 호출을 남기지 않는다
+    await typeInto(name!, '')
+    form.requestSubmit()
+    expect(submits).toBe(1)
   })
 
   it('입력한 채 카드 → 시트(?guide=ios) · 뒤로 가기 → 시트만 닫히고 입력은 그대로 · 서버 호출 0', async () => {

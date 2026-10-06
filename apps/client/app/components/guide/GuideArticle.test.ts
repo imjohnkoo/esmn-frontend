@@ -118,15 +118,22 @@ describe.each([
     )
   })
 
-  it('구간 바로가기 5개 — 글자 · 목적지가 spec F-4 그대로이고, 목적지 구간에 그 단계의 배지 · 제목이 있다', () => {
+  it('구간 바로가기 4개(D-21) — 글자 · 목적지가 spec F-4 그대로 · «설치 전 확인» 칩 없음(구간은 그대로) · 목적지 구간에 그 단계의 배지 · 제목이 있다', () => {
     const chips = w.findAll('.g-jump__chip')
     expect(chips.map((c) => [c.text(), c.attributes('href')])).toEqual([
-      ['설치 전 확인', '#check'],
       ['STEP 1 설치', '#step1'],
       ['STEP 2 설정', '#step2'],
       ['STEP 3 현지', '#step3'],
       ['문제 해결', '#help'],
     ])
+    // «STEP n» 은 한 덩어리(줄바꿈 금지) — 좁은 폭에서 칩 안 글자는 그 뒤에서만 접힌다(D-21)
+    expect(chips.map((c) => c.findAll('.g-jump__step').map((x) => x.text()))).toEqual([
+      ['STEP 1'],
+      ['STEP 2'],
+      ['STEP 3'],
+      [],
+    ])
+    expect(w.findAll('a[href="#check"]')).toHaveLength(0)
     const sec = (id: string) => norm(w.find(`#${id}`).text())
     expect(sec('check')).toContain('설치 전에 확인해 주세요')
     expect(sec('check')).toContain(content.checks.alert.title)
@@ -140,7 +147,16 @@ describe.each([
     }
     expect(w.find('#step3 .g-badge').text()).toBe('STEP 3 · 현지 도착 후')
     expect(sec('help')).toContain('설치나 연결이 잘 안 되나요?')
-    expect(GUIDE_SECTIONS).toHaveLength(5)
+    expect(GUIDE_SECTIONS).toHaveLength(4)
+  })
+
+  it('확인 «지원 기기» 카드에만 «지원 기기 확인하기» → /supported-devices — 같은 탭(사이트판 · D-22)', () => {
+    const links = w.findAll('.g-check__link')
+    expect(links.map((a) => [a.text(), a.attributes('href'), a.attributes('target')])).toEqual([
+      ['지원 기기 확인하기', '/supported-devices', undefined],
+    ])
+    expect(links[0]!.element.closest('.g-check')?.querySelector('.g-check__h')?.textContent).toBe('지원 기기')
+    expect(w.findAll('.g-check__sr')).toHaveLength(0)
   })
 
   it('단계 번호는 구간마다 1부터 순서대로 · n번째 단계는 n번째 문장(본문의 «7번» · «4~5번» 이 맞으려면)', () => {
@@ -323,6 +339,16 @@ describe('화면 스타일 고정(spec ⑤ · D-6 — happy-dom 은 컴포넌트
     css(f).match(
       new RegExp(`(^|\\n)${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`),
     )?.[2] ?? ''
+  it('바로가기 칩 줄은 한 줄(D-21) — 줄넘김(flex-wrap) 없음 · 칩은 줄을 채우고 줄어든다 · «STEP n» 줄바꿈 금지 · 칩 안 어절 단위', () => {
+    const jump = rule('GuideArticle.vue', '.g-jump')
+    expect(jump).toMatch(/display:\s*flex/)
+    expect(jump).not.toMatch(/flex-wrap/)
+    const chip = rule('GuideArticle.vue', '.g-jump__chip')
+    expect(chip).toMatch(/flex:\s*1 1 auto/)
+    expect(chip).toMatch(/word-break:\s*keep-all/)
+    expect(chip).not.toMatch(/white-space|min-width:\s*0/)
+    expect(rule('GuideArticle.vue', '.g-jump__step')).toMatch(/white-space:\s*nowrap/)
+  })
   it('줄바꿈 금지 묶음 · 이미지 창 폭 · 이미지가 창 폭을 채움', () => {
     expect(rule('GuideText.vue', '.g-nw')).toMatch(/white-space:\s*nowrap/)
     expect(rule('GuideShot.vue', '.g-shot')).toMatch(/max-width:\s*calc\(368px \+ 10px\)/)
