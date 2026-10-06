@@ -9,7 +9,8 @@ import {
   NAlertDialog,
   NLoaderDialog,
 } from '@imjohnkoo/design-vue'
-import { nextTick } from 'vue'
+import { nextTick, watch } from 'vue'
+import { keepScrollAfterClose } from '~/utils/keep-scroll'
 import { useOrderStore } from '~/stores/order'
 import { useApi } from '~/composables/useApi'
 import { useFlowSession } from '~/composables/useFlowSession'
@@ -58,7 +59,10 @@ const onSubmit = async () => {
     // (낮은 화면 · 가로 모드 · 키보드가 화면을 줄이는 브라우저 — QA ⑥ R11 m3). 칸 아래 여백은 scroll-margin-bottom
     await nextTick()
     const inputs = formEl.value?.querySelectorAll<HTMLInputElement>('.verify-page__field input')
-    inputs?.[errors.value.fullName ? 0 : 1]?.focus()
+    const first = inputs?.[errors.value.fullName ? 0 : 1]
+    first?.focus()
+    // 이미 그 칸에 포커스가 있으면(Enter 제출) focus() 는 움직이지 않는다 — 화면 안으로 직접(아래 여백까지 · QA ⑥ R13 m2)
+    first?.scrollIntoView?.({ block: 'nearest' })
     return
   }
   isSubmitting.value = true
@@ -101,6 +105,10 @@ import DocSheet from '~/components/legal/DocSheet.vue'
 import GuideCards from '~/components/guide/GuideCards.vue'
 
 const legalSheet = ref<DocSheetKey | null>(null)
+// 약관 시트를 닫을 때 페이지가 움직이지 않게 — reka 가 링크로 포커스를 돌려주며 아래 여백(D-25) 때문에 스크롤하는 것을 되돌린다(QA ⑥ R13 m3)
+watch(legalSheet, (open, prev) => {
+  if (!open && prev && typeof window !== 'undefined') keepScrollAfterClose()
+})
 </script>
 
 <template>

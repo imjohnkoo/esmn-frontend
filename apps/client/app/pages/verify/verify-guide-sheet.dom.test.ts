@@ -267,8 +267,13 @@ describe('«주문 확인하기» 는 화면 아래에 붙어 있다(D-25) — �
       `${process.cwd()}/../../packages/design-vue/src/styles/base.css`,
     ]) {
       const g = readFileSync(f, 'utf8')
-      for (const m of g.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
-        if (/(^|[\s,])(html|body|#__nuxt)\b/.test(m[1]!))
+      // 가장 안쪽 블록(@media 안 규칙 포함) — 버튼과 화면 사이 조상(html · body · #__nuxt · 앱 프레임 · flow 레이아웃 · 페이지)(R13 m4)
+      for (const m of g.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        if (
+          /(^|[\s,])(html|body|#__nuxt|\.app-bg|\.app-frame|\.layout-flow(__main)?|\.verify-page)\b/.test(
+            m[1]!,
+          )
+        )
           expect(m[2], `${f} ${m[1]!.trim()}`).not.toMatch(forbidden)
       }
     }
@@ -307,25 +312,73 @@ describe('제출 검증 실패 — 첫 오류 칸으로 포커스(D-25 · QA ⑥
   })
 })
 
-describe('시트를 닫을 때 페이지가 움직이지 않는다(S-4 · QA ⑥ R12 m1 — 카드로 포커스가 돌아올 때 아래 여백을 잠시 끈다)', () => {
-  it('닫히는 순간 «돌아오는 중» 표시 → 카드가 포커스를 받은 다음 차례에 풀린다 · 그 동안 카드 여백 0(CSS)', async () => {
+describe('시트를 닫을 때 페이지가 움직이지 않는다(S-4 · QA ⑥ R12 m1 · R13 m1 · m3 — 포커스 복귀가 만든 스크롤을 되돌린다)', () => {
+  // 브라우저가 포커스를 돌려주며 스크롤한 것처럼 — 위치를 바꾸고 scroll 이벤트
+  const browserScroll = (y: number) => {
+    window.scrollTo(0, y)
+    window.dispatchEvent(new Event('scroll'))
+  }
+  const closeBy = {
+    X: () => document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click(),
+    뒤로가기: () => router.back(),
+  }
+
+  it.each(Object.keys(closeBy) as (keyof typeof closeBy)[])(
+    '설치 가이드 시트 — %s 로 닫은 뒤 생긴 스크롤은 닫을 때 자리로 · 사용자가 움직이면 그 뒤는 그대로',
+    async (how) => {
+      await render()
+      press(cards()[1]!)
+      await settle()
+      window.scrollTo(0, 338)
+      closeBy[how]()
+      await settle()
+      browserScroll(366.5)
+      expect(window.scrollY).toBe(338)
+      window.dispatchEvent(new Event('wheel'))
+      browserScroll(500)
+      expect(window.scrollY).toBe(500)
+    },
+  )
+
+  it('약관 시트(개인정보처리방침) — 닫은 뒤 생긴 스크롤은 닫을 때 자리로', async () => {
     await render()
-    press(cards()[0]!)
+    document.body.querySelector<HTMLAnchorElement>('.verify-page__policy-link--privacy')!.click()
     await settle()
-    const root = document.body.querySelector('.verify-page .guide-cards')!
-    expect(root.classList.contains('guide-cards--returning')).toBe(false)
+    expect(document.body.querySelector('.n-bottom-sheet__content')).toBeTruthy()
+    window.scrollTo(0, 100)
     document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
     await settle()
-    expect(root.classList.contains('guide-cards--returning')).toBe(true)
-    cards()[0]!.focus({ preventScroll: true })
-    await new Promise((r) => setTimeout(r, 50))
+    browserScroll(140.5)
+    expect(window.scrollY).toBe(100)
+    window.dispatchEvent(new Event('touchstart'))
+  })
+})
+
+describe('폼 밖 «주문 확인하기» 가 폼을 제출한다(D-25 — form 속성)', () => {
+  it('버튼의 폼 소유자 = 본인 확인 폼(form 속성) · 그 버튼을 제출자로 내면 submit 1회 · 빈 칸이면 검증에서 멈춘다(서버 호출 0)', async () => {
+    // happy-dom 은 form 속성 버튼의 «클릭 → 제출» 을 구현하지 않는다 — 소유자 연결과 제출자 제출로 본다(실제 클릭 제출은 Chromium 실측 — plan as-built)
+    await render()
+    const form = document.body.querySelector<HTMLFormElement>('.verify-page__form')!
+    const button = document.body.querySelector<HTMLButtonElement>('.verify-page__cta button')!
+    expect(button.form).toBe(form)
+    let submits = 0
+    form.addEventListener('submit', () => submits++)
+    form.requestSubmit(button)
     await settle()
-    expect(root.classList.contains('guide-cards--returning')).toBe(false)
-    const css = readFileSync(`${process.cwd()}/app/components/guide/GuideCards.vue`, 'utf8').split(
-      '<style scoped>',
-    )[1]!
-    expect(css).toMatch(
-      /\.guide-cards--returning \.guide-cards__list > a \{\s*scroll-margin-bottom: 0;\s*\}/,
-    )
+    expect(submits).toBe(1)
+    expect(document.body.querySelectorAll('.verify-page__err')).toHaveLength(2)
+    expect(verifyOrder).not.toHaveBeenCalled()
+  })
+
+  it('이미 포커스된 칸에서 검증이 실패해도(Enter 제출) 그 칸을 화면 안으로 — scrollIntoView(nearest)(QA ⑥ R13 m2)', async () => {
+    await render()
+    const [name] = inputs()
+    name!.focus()
+    const into = vi.fn()
+    name!.scrollIntoView = into
+    document.body.querySelector<HTMLFormElement>('.verify-page__form')!.requestSubmit()
+    await settle()
+    expect(document.activeElement).toBe(name)
+    expect(into).toHaveBeenCalledWith({ block: 'nearest' })
   })
 })
