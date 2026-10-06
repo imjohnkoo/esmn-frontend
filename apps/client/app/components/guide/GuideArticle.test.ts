@@ -396,9 +396,14 @@ describe('화면 스타일 고정(spec ⑤ · D-6 — happy-dom 은 컴포넌트
       /\.g-article :deep\(:is\(a, button, \[tabindex\]\)\) \{\s*scroll-margin-top: calc\(var\(--g-jump-h\) \+ 4px\);\s*\}/,
     )
     // 칩 줄 안 칩은 여백 0(sticky 칩에 포커스할 때 페이지가 밀리지 않게 — 위 규칙보다 구체적인 선택자로 덮는다)
-    expect(rule('GuideArticle.vue', '.g-article .g-jump .g-jump__chip')).toMatch(/scroll-margin-top:\s*0;/)
+    expect(rule('GuideArticle.vue', '.g-article .g-jump .g-jump__chip')).toMatch(
+      /scroll-margin-top:\s*0;/,
+    )
     const pad = readFileSync(`${process.cwd()}/app/layouts/default.vue`, 'utf8')
     expect(pad).toMatch(/scroll-padding-top: calc\(var\(--shell-header-height, 56px\) \+ 8px\)/)
+    // 사이트판 칩에 포커스해도 페이지가 밀리지 않는 조건 — 칩 줄 위 여백(8px) = html scroll-padding 의 «헤더 + 8px» 의 8px.
+    // 한쪽만 바꾸면 칩 위쪽이 스크롤 여백 밖으로 나가 포커스 때마다 다시 밀린다(QA ⑥ R10)
+    expect(jump).toMatch(/\bpadding:\s*8px 12px;/)
   })
   it('줄바꿈 금지 묶음 · 이미지 창 폭 · 이미지가 창 폭을 채움', () => {
     expect(rule('GuideText.vue', '.g-nw')).toMatch(/white-space:\s*nowrap/)
