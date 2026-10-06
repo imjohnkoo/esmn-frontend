@@ -123,6 +123,9 @@ describe('시트 안 이동 — 주소를 바꾸지 않는다', () => {
     await settle()
     expect(box.scrollTop).toBe(50 + 540)
     expect(location.hash).toBe(hash)
+    // 포커스도 그 구간 제목으로(키보드 · 화면낭독기가 그 구간에서 이어 읽는다) — 제목은 탭 순서에 없다(-1)
+    expect(document.activeElement?.id).toBe('gs-step3-title')
+    expect(document.activeElement?.getAttribute('tabindex')).toBe('-1')
   })
 
   it('구간 머리 · 이름 연결도 접두 id 로(aria-labelledby → 실제 제목)', async () => {
@@ -203,6 +206,8 @@ describe('시트 모양(S-4)', () => {
   it('본문만 스크롤 · 시트 높이 90% 안 · 본문 제목 줄(h1)은 시트 제목과 겹쳐 숨김', () => {
     const box = css.match(/\.guide-sheet \{([^}]*)\}/)?.[1] ?? ''
     expect(box).toMatch(/overflow-y: auto;/)
+    // 위치 기준 — 화면낭독용 숨김 글자(absolute)가 시트 틀이 아니라 이 영역 안에 놓이게(없으면 시트 틀이 따로 스크롤 — QA ⑥ R1 M1 · 실측은 walk)
+    expect(box).toMatch(/position: relative;/)
     expect(box).toMatch(/max-height: calc\(90dvh - 112px\);/)
     expect(css).toMatch(/\.guide-sheet :deep\(\.g-hero__title\) \{\s*display: none;\s*\}/)
   })

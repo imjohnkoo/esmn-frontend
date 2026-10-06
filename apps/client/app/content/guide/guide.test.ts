@@ -423,7 +423,7 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
       // href 가 없으면 NLinkCard 는 <button> — 누르면 이 화면의 시트 값이 그 OS 가 된다
       expect(card).not.toMatch(/\shref=|:href=/)
       expect(card).not.toMatch(/\sexternal(\s|>)/)
-      expect(card).toContain(`@click="guideOs = '${os}'"`)
+      expect(card).toContain(`@click="openGuide('${os}', $event)"`)
       expect(card).toContain('aria-haspopup="dialog"')
       expect(card).toContain(icon[os])
       // 화면낭독기가 읽는 이름 = 그 카드의 이름 — 설명(새 창이 아니다)
@@ -434,6 +434,7 @@ describe('사이트 연결 (spec F-6 · F-7 · F-8)', () => {
     // 카드가 바꾸는 값 = 시트의 v-model(같은 화면에 한 번)
     expect(view.match(/<GuideSheet v-model="guideOs" \/>/g)).toHaveLength(1)
     expect(view).toMatch(/^const guideOs = ref<GuideOs \| null>\(null\)$/m)
+    // 누른 동작 자체(카드 → 그 OS 시트 · 1건 · 여러 건 화면)는 pages/view/view-guide-sheet.dom.test.ts
     expect(view).not.toMatch(/Universal Link 자동 설치|Galaxy · Pixel · QR 등록|\(새 창\)/)
   })
 

@@ -21,6 +21,11 @@ const orderStore = useOrderStore()
 const orderId = computed(() => Number(route.params.orderId))
 // 설치 가이드 시트에 열 OS(null = 닫힘) — 새 탭 대신 이 화면 위 하단 시트(client-guide D-13)
 const guideOs = ref<GuideOs | null>(null)
+// 누른 카드에 포커스를 먼저 준다 — Safari 는 버튼을 눌러도 포커스를 주지 않아, 시트가 «연 요소» 를 body 로 기억하고 닫힌 뒤 포커스를 잃는다(S-4)
+const openGuide = (os: GuideOs, e: MouseEvent) => {
+  ;(e.currentTarget as HTMLElement | null)?.focus()
+  guideOs.value = os
+}
 const order = computed(() => orderStore.singleOrder)
 
 // 다발 발급 케이스: 2개 이상이면 accordion 으로 1번만 펼쳐서 시작
@@ -271,7 +276,7 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
           :sub="GUIDE_PAGES.ios.sub"
           :aria-label="`${GUIDE_PAGES.ios.label} — ${GUIDE_PAGES.ios.sub}`"
           aria-haspopup="dialog"
-          @click="guideOs = 'ios'"
+          @click="openGuide('ios', $event)"
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#111827">
@@ -286,7 +291,7 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
           :sub="GUIDE_PAGES.android.sub"
           :aria-label="`${GUIDE_PAGES.android.label} — ${GUIDE_PAGES.android.sub}`"
           aria-haspopup="dialog"
-          @click="guideOs = 'android'"
+          @click="openGuide('android', $event)"
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#3ddc84">

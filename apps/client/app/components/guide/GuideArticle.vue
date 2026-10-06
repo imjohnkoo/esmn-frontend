@@ -8,6 +8,7 @@ import {
   PowerIcon,
   WifiIcon,
 } from '@heroicons/vue/24/outline'
+import { computed } from 'vue'
 import { GUIDE_BARE, GUIDE_HL_HINT, GUIDE_PAGES, GUIDE_SECTIONS } from '~/content/guide/common'
 import type { GuideContent, GuideOs } from '~/content/guide/types'
 import GuideContact from './GuideContact.vue'
@@ -27,6 +28,8 @@ const emit = defineEmits<{ os: [os: GuideOs]; jump: [id: string] }>()
 // 시트 판은 발급 화면과 한 문서라 id 에 접두를 붙인다(겹침 방지) — 페이지 · 전용판은 그대로
 const sid = (id: string) => (props.mode === 'sheet' ? `gs-${id}` : id)
 const osTo = (os: GuideOs) => (props.mode === 'bare' ? GUIDE_BARE[os] : GUIDE_PAGES[os].to)
+// 시트 판 바로가기는 구간 제목으로 포커스를 옮긴다(GuideSheet) — 그 제목만 프로그램 포커스를 받게(탭 순서에는 넣지 않는다)
+const headTab = computed(() => (props.mode === 'sheet' ? -1 : undefined))
 // 문제 해결의 «내 eSIM 조회하기» 링크는 시트에서 숨긴다 — 지금 보고 있는 발급 화면이다(D-13)
 const CHECK_ICONS = {
   wifi: WifiIcon,
@@ -101,7 +104,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
 
     <!-- 설치 전 확인 -->
     <section :id="sid('check')" class="g-sec" :aria-labelledby="sid('check-title')">
-      <h2 :id="sid('check-title')" class="g-sec__title">설치 전에 확인해 주세요</h2>
+      <h2 :id="sid('check-title')" class="g-sec__title" :tabindex="headTab">설치 전에 확인해 주세요</h2>
       <p class="g-sec__lede"><GuideText :src="content.checks.lede" /></p>
       <ul class="g-checks">
         <li v-for="c in content.checks.items" :key="c.title" class="g-check">
@@ -126,7 +129,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
     <!-- STEP 1 -->
     <section :id="sid('step1')" class="g-sec g-sec--alt" :aria-labelledby="sid('step1-title')">
       <span class="g-badge">{{ content.step1.badge }}</span>
-      <h2 :id="sid('step1-title')" class="g-sec__title">{{ content.step1.title }}</h2>
+      <h2 :id="sid('step1-title')" class="g-sec__title" :tabindex="headTab">{{ content.step1.title }}</h2>
       <p class="g-sec__lede"><GuideText :src="content.step1.lede" /></p>
       <div
         v-for="m in content.step1.methods"
@@ -160,7 +163,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
       :aria-labelledby="sid(`${sec.id}-title`)"
     >
       <span class="g-badge">{{ sec.data.badge }}</span>
-      <h2 :id="sid(`${sec.id}-title`)" class="g-sec__title">{{ sec.data.title }}</h2>
+      <h2 :id="sid(`${sec.id}-title`)" class="g-sec__title" :tabindex="headTab">{{ sec.data.title }}</h2>
       <p class="g-sec__lede"><GuideText :src="sec.data.lede" /></p>
       <GuideSteps :steps="sec.data.steps" class="g-sec__steps" />
       <GuideNote v-for="(n, i) in sec.data.notes" :key="i" :note="n" />
@@ -169,7 +172,7 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
     <!-- 문제 해결 -->
     <section :id="sid('help')" class="g-sec" :aria-labelledby="sid('help-title')">
       <span class="g-badge">{{ content.help.badge }}</span>
-      <h2 :id="sid('help-title')" class="g-sec__title">{{ content.help.title }}</h2>
+      <h2 :id="sid('help-title')" class="g-sec__title" :tabindex="headTab">{{ content.help.title }}</h2>
       <p class="g-sec__lede"><GuideText :src="content.help.lede" /></p>
       <div class="g-faqs">
         <div v-for="(f, i) in content.help.faqs" :key="f.q" class="g-faq">

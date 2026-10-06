@@ -40,12 +40,16 @@ function switchOs(os: GuideOs) {
   })
 }
 
-/** 구간 바로가기 — 시트 본문 스크롤 영역만 움직인다(scrollIntoView 는 뒤 페이지까지 움직일 수 있다 · 해시를 바꾸지 않는다) */
+/**
+ * 구간 바로가기 — 시트 본문 스크롤 영역만 움직이고(scrollIntoView 는 뒤 페이지까지 움직일 수 있다 · 해시를 바꾸지 않는다)
+ * 그 구간 제목으로 포커스를 옮긴다(키보드 · 화면낭독기도 그 구간에서 이어 읽는다 — 제목은 시트 판에서만 tabindex -1)
+ */
 function jump(id: string) {
   const box = scroller.value
   const target = box?.querySelector<HTMLElement>(`#${id}`)
   if (!box || !target) return
   box.scrollTop += target.getBoundingClientRect().top - box.getBoundingClientRect().top
+  target.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
 }
 </script>
 
@@ -61,6 +65,9 @@ function jump(id: string) {
 <style scoped>
 .guide-sheet {
   /* 본문만 스크롤 — 제목 · X 는 시트 위에 남는다. 시트 최대 높이(90%) 안에 머리(손잡이 · 제목 · X ≈ 100px)까지 */
+  /* 위치 기준 — 화면낭독용 숨김 글자(position: absolute — 단계 «번.» · «(새 창)»)가 시트 틀이 아니라 이 영역 안에 놓이게.
+     없으면 그 글자들이 본문 길이만큼 아래에 놓여 시트 틀(overflow: auto)이 따로 스크롤되고 제목 · X 가 밀려 올라간다(QA ⑥ R1 M1) */
+  position: relative;
   max-height: calc(90vh - 112px);
   max-height: calc(90dvh - 112px);
   margin: 0 -20px;
@@ -105,5 +112,16 @@ function jump(id: string) {
 .guide-sheet :deep(button:focus-visible) {
   outline: 2px solid #6239ff;
   outline-offset: 2px;
+}
+
+/* 바로가기로 옮긴 구간 제목 포커스 — 키보드일 때만 테두리 */
+.guide-sheet :deep(.g-sec__title:focus) {
+  outline: none;
+}
+
+.guide-sheet :deep(.g-sec__title:focus-visible) {
+  outline: 2px solid #6239ff;
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 </style>
