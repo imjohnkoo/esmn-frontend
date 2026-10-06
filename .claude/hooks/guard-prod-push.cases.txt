@@ -1,0 +1,4820 @@
+=== block B01 @:prod
+git push origin @:prod
+=== block B02 HEAD:heads/prod (git resolves heads/prod -> refs/heads/prod)
+git push origin HEAD:heads/prod
+=== block B03 cmd-subst source $(...):prod
+git push origin $(git rev-parse HEAD):prod
+=== block B04 cmd-subst quoted "$(...):refs/heads/prod"
+git push origin "$(git rev-parse origin/dev)":refs/heads/prod
+=== block B05 redirect attached prod>/dev/null
+git push origin prod>/dev/null
+=== block B06 redirect attached HEAD:prod>log 2>&1
+git push origin HEAD:prod>push.log 2>&1
+=== block B07 backtick wrap
+out=`git push origin prod`
+=== block B08 git -P global opt
+git -P push origin prod
+=== block B09 git --no-optional-locks
+git --no-optional-locks push origin prod
+=== block B10 git -c quoted value w/ space
+git -c "user.name=John Koo" push origin prod
+=== block B11 git -C quoted path w/ space
+git -C "/Users/someone/My Work/nomacom" push origin HEAD:prod
+=== block B12 tab between git and push
+git	push origin prod
+=== block B13 -c remote push refspec config
+git -c remote.origin.push=+HEAD:refs/heads/prod push origin
+=== block B14 gh api lowercase -X delete
+gh api -X delete repos/o/r/git/refs/heads/prod
+=== block B15 gh api --method=Delete mixed case
+gh api --method=Delete repos/o/r/git/refs/heads/prod
+=== block B16 gh api attached field -fsha
+gh api -X patch repos/o/r/git/refs/heads/prod -fsha=abc
+=== block B17 gh api attached field create -fref=
+gh api repos/o/r/git/refs -fref=refs/heads/prod -fsha=abc
+=== block B18 REST merges API base=prod (moves prod)
+gh api repos/o/r/merges -f base=prod -f head=dev
+=== block B19 graphql mergeBranch base prod
+gh api graphql -f query='mutation { mergeBranch(input: {repositoryId: "R", base: "prod", head: "dev"}) { mergeCommit { oid } } }'
+=== block B20 graphql updateRef by refId (no literal name)
+gh api graphql -f query='mutation { updateRef(input: {refId: "REF_kwDOabc", oid: "abc", force: true}) { ref { name } } }'
+=== block B21 graphql flags before endpoint
+gh api -f query='mutation { createRef(input: {name: "refs/heads/prod", oid: "abc", repositoryId: "R"}) { ref { name } } }' graphql
+=== block B22 gh pr new alias --base prod
+gh pr new --base prod --title x --body y
+=== block B23 gh pr create -Bprod attached
+gh pr create -Bprod --title x
+=== block B24 gh api PATCH pulls base=prod (retarget)
+gh api -X PATCH repos/o/r/pulls/12 -f base=prod
+=== block B25 gh api create PR base=prod
+gh api repos/o/r/pulls -f base=prod -f head=dev -f title=x
+=== block B26 workflow_dispatch deploy (default ref = dev)
+gh workflow run client-production.yml
+=== block B27 workflow_dispatch deploy --ref dev
+gh workflow run admin-production.yml --ref dev
+=== block B28 piped json --input create ref
+echo '{"ref":"refs/heads/prod","sha":"abc"}' | gh api repos/o/r/git/refs --input -
+=== block B29 heredoc delimiter with hyphen swallows rest
+cat > note.md <<'END-NOTE'
+memo
+END-NOTE
+git push origin prod
+=== block B30 herestring treated as heredoc
+grep -c ok <<< "done"
+git push origin prod
+=== block B31 refs/heads/prod trailing slash gh api
+gh api -X DELETE repos/o/r/git/refs/heads/prod/
+=== block B32 force-with-lease prod
+git push --force-with-lease origin prod
+=== block B33 quoted +refspec mid
+git push origin '+refs/heads/dev:refs/heads/prod'
+=== block B34 delete -d prod
+git push origin -d prod
+=== block B35 :refs/heads/prod delete
+git push origin :refs/heads/prod
+=== block B36 upstream remote
+git push upstream HEAD:prod
+=== block B37 URL remote
+git push git@github.com:imjohnkoo/nomacom-frontend.git HEAD:prod
+=== block B38 line continuation
+git push origin \
+  HEAD:prod
+=== block B39 bash -c
+bash -c 'git push origin HEAD:prod'
+=== block B40 --repo + -u
+git push --repo=origin -u prod
+=== block B41 git -C then -c then push
+git -C ~/orca/workspaces/nomacom-frontend/x -c push.default=current push origin HEAD:refs/heads/prod
+=== block B42 gh api -XDELETE attached
+gh api -XDELETE repos/o/r/git/refs/heads/prod
+=== block B43 gh api --method 따옴표 DELETE · 따옴표 경로 refs/heads/prod
+gh api --method 'DELETE' 'repos/{owner}/{repo}/git/refs/heads/prod'
+=== block B44 xargs
+echo prod | xargs git push origin
+=== block B45 prod with comment after
+git push origin prod # deploy
+=== block B46 gh api graphql updateRefs name
+gh api graphql -f query='mutation { updateRefs(input: {repositoryId: "R", refUpdates: [{name: "refs/heads/prod", afterOid: "abc", force: true}]}) { clientMutationId } }'
+=== block B47 gh pr edit --base=prod
+gh pr edit 12 --base=prod
+=== block B48 git push --mirror=
+git push --mirror=
+=== block B49 git push -f at end
+git push origin feat/x -f
+=== block B50 git push -nf bundle
+git push -nf origin feat/x
+=== allow A01 multiline push then ls glob
+git push -u origin imjohnkoo/issuer-legal-links
+ls apps/*/package.json
+=== allow A02 multiline push then rm -rf
+git push origin imjohnkoo/x
+rm -rf apps/client/.output
+=== allow A03 multiline push then chmod +x
+git push origin imjohnkoo/x
+chmod +x .claude/hooks/guard-prod-push.sh
+=== allow A04 multiline push then curl -fsSL
+git push origin imjohnkoo/x
+curl -fsSL https://example.com/health
+=== allow A05 multiline push then git log --all
+git push origin imjohnkoo/x
+git log --all --oneline -5
+=== allow A06 multiline push then commit --allow-empty
+git push origin imjohnkoo/x
+git commit --allow-empty -m "ci: retrigger"
+=== allow A07 multiline push then gh pr create inline body w/ markdown bold
+git push -u origin imjohnkoo/x
+gh pr create --base dev --title "fix: hook" --body "**요약** 훅 구멍 수정"
+=== allow A08 multiline push then tar -xzf
+git push origin imjohnkoo/x
+tar -xzf out.tgz
+=== allow A09 multiline push then grep -rf? (grep -F pattern)
+git push origin imjohnkoo/x
+grep -rnF "TODO" apps/client/app
+=== allow A10 multiline push then yarn turbo run build --filter
+git push origin imjohnkoo/x
+yarn turbo run build --filter=nomacom-client
+=== allow A11 single-line push then && with glob
+git push origin imjohnkoo/x && ls apps/*/package.json
+=== allow A12 push then ; git diff with + (diff +line)
+git push origin imjohnkoo/x; echo "+1 done"
+=== allow A13 multiline push then echo with +
+git push origin imjohnkoo/x
+echo "+1 커밋 push 완료"
+=== allow A14 gh api GET contents at prod with -X GET -f ref=prod
+gh api -X GET repos/o/r/contents/apps/client/package.json -f ref=prod
+=== allow A15 gh api GET contents ?ref=prod
+gh api 'repos/o/r/contents/apps/client/package.json?ref=prod' --jq .sha
+=== allow A16 gh api compare prod...dev
+gh api repos/o/r/compare/prod...dev --jq .ahead_by
+=== allow A17 gh api branches/prod/protection GET
+gh api repos/o/r/branches/prod/protection
+=== allow A18 gh api -X GET matching-refs heads/prod with -f per_page
+gh api -X GET repos/o/r/git/matching-refs/heads/prod -f per_page=5
+=== allow A19 gh api read prod then PATCH dev newline
+gh api repos/o/r/git/refs/heads/prod --jq .object.sha
+gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc
+=== allow A20 gh pr create body mentions --base prod inline (doc of this hook)
+gh pr create --base dev --title "fix(hook): prod base PR 차단" --body "gh pr create --base prod 를 막는다"
+=== allow A21 gh pr list --base prod
+gh pr list --base prod --state merged
+=== allow A22 gh pr create body heredoc mentioning prod push
+gh pr create --base dev --title "fix: hook" --body "$(cat <<'EOF'
+## 요약
+- git push origin HEAD:refs/heads/prod 를 막는다
+- gh api repos/o/r/git/refs -f ref=refs/heads/prod 도
+- **+refspec** · `-fu` · --mirror · --all · refs/heads/*
+EOF
+)"
+=== allow A23 commit -m inline mentioning force push words
+git commit -m "fix(hook): +refspec, -fu, --mirror, --all 차단"
+=== allow A24 grep for prod push in hook
+grep -n "git push origin prod" .claude/hooks/guard-prod-push.sh
+=== allow A25 git push branch named prod-hotfix
+git push origin prod-hotfix
+=== allow A26 git push branch hotfix-prod
+git push -u origin imjohnkoo/hotfix-prod
+=== allow A27 git push tag v1.0-fix
+git push origin v1.0-fix
+=== allow A28 git push from prod to backup branch
+git push origin origin/prod:refs/heads/backup/prod-2026-10-05
+=== allow A29 git push --dry-run feat (with -n)
+git push -n origin imjohnkoo/x
+=== allow A30 git push -o ci.skip
+git push -o ci.skip origin imjohnkoo/x
+=== allow A31 gh api graphql read prod ref
+gh api graphql -f query='query { repository(owner: "o", name: "r") { ref(qualifiedName: "refs/heads/prod") { target { oid } } } }'
+=== allow A32 gh run list prod + gh api
+gh run list --branch prod --limit 3 --json databaseId,headSha
+=== allow A33 git push dev with -C orca path
+git -C /Users/someone/orca/workspaces/nomacom-frontend/issuer-legal-links push -u origin imjohnkoo/issuer-legal-links
+=== allow A34 git push then newline git status -sb (no f)
+git push origin imjohnkoo/x
+git status -sb
+=== allow A35 git push with commit msg -F file afterwards newline
+git push origin imjohnkoo/x
+git commit -F msg.txt
+=== allow A36 gh api PATCH dev ref (prod 아님 · force 없음)
+gh api repos/o/r/git/refs/heads/dev -X PATCH -f sha=abc
+=== allow A37 git push origin HEAD:refs/heads/imjohnkoo/prod
+git push origin HEAD:refs/heads/imjohnkoo/prod
+=== allow A38 gh api branches/prod-backup rename? (other branch)
+gh api -X POST repos/o/r/branches/prod-backup/rename -f new_name=prod-backup-old
+=== allow A39 gh api ref=production field
+gh api repos/o/r/git/refs -f ref=refs/heads/production-notes -f sha=abc
+=== allow A40 multiline push then git push --tags? (tags only)
+git push origin imjohnkoo/x
+git push origin --tags
+=== allow R01 grep quoted push-prod string
+grep -rn "git push origin prod" .claude/
+=== allow R02 rg single-quoted
+rg -n 'git push origin HEAD:prod' .claude/rules
+=== allow R03 commit -m ending in prod"
+git commit -m "fix(hook): block git push origin prod"
+=== allow R04 echo forbidden example
+echo "금지: git push origin prod"
+=== allow R05 grep refs/heads/prod example
+grep -n "git push origin HEAD:refs/heads/prod" .claude/hooks/guard-prod-push.test.sh
+=== allow R06 gh pr create inline body with gh api example
+gh pr create --base dev --title "fix(hook)" --body "막는 것: gh pr create -B prod"
+=== allow R07 printf in test file
+printf '%s\n' "run block 'git push origin prod'"
+=== allow R08 sed print lines mentioning push prod
+sed -n '/git push origin prod/p' .claude/rules/deployment.md
+=== block C01 unbalanced double quote
+git push origin "prod
+=== block C02 unbalanced single quote
+git push origin 'HEAD:prod
+=== block C03 percent and backslashes
+printf '%s\n' "a\\b" ; git push origin HEAD:prod
+=== block C04 CRLF line endings
+git add -A
+git push origin prod
+=== block C05 brackets and regex chars around
+[[ -n "$x" ]] && git push origin prod
+=== block C06 leading dash segment
+-x ; git push origin prod
+=== block C07 heredoc with interpreter keeps body
+bash <<'EOF'
+git push origin prod
+EOF
+=== block C08 heredoc then push on later line
+cat > a.txt <<'EOF'
+hello
+EOF
+git push origin HEAD:prod
+=== block C09 dollar-single-quote ANSI
+git push origin $'prod'
+=== block C10 graphql deleteRef mutation 인라인(따옴표 쿼리 · 주석 글자 포함)
+gh api graphql -f query='mutation { deleteRef(input: {refId: "x"}) { clientMutationId } } # refs/heads/prod'
+=== block C11 prod after many spaces/tabs
+git push origin			prod
+=== block C12 env prefix
+GIT_TRACE=1 git push origin prod
+=== block C13 sudo/command prefix
+command git push origin prod
+=== block C14 git push with = form --delete=prod? (not valid but) and -- separator
+git push origin -- prod
+=== allow C15 empty-ish whitespace
+
+=== allow C16 only comment
+# git push origin prod
+=== block E01 skill-style promote with var
+git push origin "$PROMOTE_SHA":prod
+=== block E02 skill-style promote with cmd subst inside quotes
+git push origin "$(git rev-parse origin/dev):prod"
+=== allow E03 newline-joined pr create then pr list --base prod
+gh pr create --base dev --title x
+gh pr list --base prod
+=== block K01 if/then keyword before push
+if git diff --quiet origin/prod origin/dev; then echo same; else git push origin origin/dev:prod; fi
+=== block K02 then on its own
+if true; then git push origin HEAD:prod; fi
+=== block K03 retry until loop
+until git push origin HEAD:prod; do sleep 5; done
+=== block K04 while ! retry
+while ! git push origin HEAD:prod; do sleep 2; done
+=== block K05 brace group
+{ git push origin HEAD:prod; } 2>&1 | tail -3
+=== block K06 negation
+! git push origin HEAD:prod
+=== block K07 if git push directly
+if git push origin HEAD:prod; then echo ok; fi
+=== block K08 timeout wrapper
+timeout 120 git push origin HEAD:prod
+=== block K09 absolute git path
+/usr/bin/git push origin HEAD:prod
+=== block K10 homebrew git path
+/opt/homebrew/bin/git push origin prod
+=== block K11 nice wrapper
+nice git push origin prod
+=== block K12 caffeinate
+caffeinate -i git push origin prod
+=== block K13 env with -u option
+env -u GIT_DIR git push origin prod
+=== block K14 env var with quoted space value
+GIT_SSH_COMMAND="ssh -i ~/.ssh/id_work" git push origin HEAD:prod
+=== block K15 git -c value with quote mid-token (space)
+git -c core.sshCommand="ssh -i ~/.ssh/id_work" push origin HEAD:prod
+=== block K16 git -c user.name="John Koo"
+git -c user.name="John Koo" push origin prod
+=== block K17 /bin/bash -c
+/bin/bash -c 'git push origin HEAD:prod'
+=== block K18 bash --norc -c
+bash --norc -c 'git push origin HEAD:prod'
+=== block K19 do body in for loop with literal
+for i in 1 2; do git push origin HEAD:prod && break; sleep 3; done
+=== block K20 else branch
+git diff --quiet || echo diff; if false; then :; else git push origin prod; fi
+=== block K21 elif
+if false; then :; elif true; then git push origin prod; fi
+=== block K22 gh pr create in then
+if true; then gh pr create --base prod --title x --body y; fi
+=== block K23 gh api in then
+if true; then gh api -X PATCH repos/o/r/git/refs/heads/prod -f sha=abc; fi
+=== block K24 gh workflow run in do
+for w in client-production.yml; do gh workflow run $w; done
+=== block K25 time with -p
+time -p git push origin prod
+=== block K26 sudo -u
+sudo -u john git push origin prod
+=== block K27 sh heredoc no leading space
+sh <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block K28 cat heredoc piped to sh
+cat <<'EOF' | sh
+git push origin HEAD:prod
+EOF
+=== block K30 gh workflow run by display name
+gh workflow run "Client Production"
+=== block K31 multiline inline body then --base prod at end
+gh pr create --title "fix" --body "line1
+line2" --base prod
+=== block K32 gh api pulls multiline body then base=prod
+gh api repos/o/r/pulls -f title=x -f body="line1
+line2" -f base=prod -f head=dev
+=== block K33 PROMOTE style with ${}
+git push origin "${PROMOTE_SHA}:refs/heads/prod"
+=== block K34 git push --set-upstream origin prod
+git push --set-upstream origin prod
+=== block K35 git push two refspecs
+git push origin dev prod
+=== block K36 gh pr create --base "prod" quoted
+gh pr create --base "prod" --title "fix: x" --body "y"
+=== block K37 pr create with title apostrophes both sides
+gh pr create --title "John's" --base prod --body "Bob's"
+=== block K38 gh api PATCH with quoted path and $(...)
+gh api -X PATCH "repos/{owner}/{repo}/git/refs/heads/prod" -f sha="$(git rev-parse origin/dev)"
+=== block K39 git push in && chain after cd with orca path
+cd /Users/someone/orca/workspaces/nomacom-frontend/issuer-legal-links && git push origin HEAD:prod 2>&1 | tail -5
+=== block K40 push prod via exec
+exec git push origin prod
+=== allow F01 commit -m multiline inline with command line at start
+git commit -m "fix(hook): prod 차단 구멍
+
+git push origin HEAD:prod 형태를 막는다"
+=== allow F02 pr create multiline inline body with command line
+gh pr create --base dev --title "fix(hook): prod 구멍" --body "## 요약
+git push origin HEAD:refs/heads/prod 를 막는다
+gh pr create --base prod 도 막는다"
+=== allow F03 single-quoted body with backticks (literal)
+gh pr create --base dev --title x --body 'Fixes `git push origin prod` 차단'
+=== allow F04 single-quoted $(...) literal
+echo 'example: $(git push origin prod)'
+=== allow F05 commit -m with semicolon inside quotes
+git commit -m "fix(hook): 줄바꿈 경계; git push origin prod 차단"
+=== allow F06 grep alternation with pipe inside quotes
+grep -nE "force|git push origin prod" .claude/hooks/guard-prod-push.test.sh
+=== allow F07 trailing comment mentions prod
+git push -u origin imjohnkoo/issuer-legal-links  # prod 는 건드리지 않음
+=== allow F08 grep for graphql mutation names in hook
+grep -nE "gh api graphql|createRef|updateRef" .claude/hooks/guard-prod-push.sh
+=== allow F09 commit -m mentions gh api graphql mergeBranch
+git commit -m "fix(hook): gh api graphql mergeBranch · updateRef 차단"
+=== allow F10 gh pr create body mentions gh api graphql createRef
+gh pr create --base dev --title "fix(hook)" --body "막는 것: gh api graphql createRef / updateRef"
+=== allow F11 graphql read with variable name=refs/heads/prod
+gh api graphql -F name=refs/heads/prod -f query='query($name: String!) { repository(owner: "o", name: "r") { ref(qualifiedName: $name) { target { oid } } } }'
+=== allow F12 title with paren then command text
+gh pr create --base dev --title "막는 형태(QA) git push origin HEAD:prod" --body x
+=== allow F13 commit -m mentions --input refs/heads/prod
+git commit -m "fix(hook): gh api --input 으로 refs/heads/prod 생성 차단"
+=== allow F14 heredoc with <<\EOF backslash form
+git commit -F - <<\EOF
+fix: hook
+
+git push origin prod
+EOF
+=== allow F15 long multi-line script typical
+cd /Users/someone/orca/workspaces/nomacom-frontend/issuer-legal-links
+git status -sb
+git add -A
+git commit -m "$(cat <<'EOF'
+fix(hook): x
+
+- git push origin HEAD:prod
+EOF
+)"
+git push -u origin imjohnkoo/issuer-legal-links 2>&1 | tail -5
+gh pr create --base dev --title "fix(hook): x" --body "$(cat <<'EOF'
+## 요약
+- gh pr create --base prod 차단
+- gh workflow run client-production.yml 차단
+EOF
+)"
+=== allow F16 git push with -o ci options
+git push -o ci.skip -o merge_request.create origin imjohnkoo/x
+=== allow F17 git push --follow-tags
+git push --follow-tags origin imjohnkoo/x
+=== allow F18 git log prod range in $(...) inside echo
+echo "ahead: $(git rev-list --count origin/prod..origin/dev)"
+=== allow F19 gh api GET pulls base=prod
+gh api -X GET repos/o/r/pulls -f base=prod -f state=closed
+=== allow F20 gh api actions runs list on production workflow
+gh api repos/o/r/actions/workflows/client-production.yml/runs --jq '.workflow_runs[0].head_sha'
+=== allow F21 gh run list workflow production
+gh run list --workflow client-production.yml --limit 3
+=== allow F22 gh workflow view production
+gh workflow view client-production.yml
+=== allow F23 diff with origin/prod in subshell
+(cd apps/client && git diff --stat origin/prod..HEAD)
+=== allow F24 git push dev in if/then
+if git diff --quiet; then git push origin HEAD:dev; fi
+=== allow F25 for loop pushing feature branches
+for b in imjohnkoo/a imjohnkoo/b; do git push origin "$b"; done
+=== allow F26 git fetch prod
+git fetch origin prod:refs/remotes/origin/prod
+=== allow F27 git merge-base with prod
+git merge-base --is-ancestor origin/prod origin/dev && echo ff-ok
+=== allow F28 python heredoc not mentioning commands
+python3 - <<'PY'
+import json
+print(json.dumps({"ok": True}))
+PY
+=== allow F29 jq with pipe in single quotes
+gh api repos/o/r/branches/prod | jq -r '.commit.sha | .[0:7]'
+=== allow F30 git push with HEAD:dev and comment containing prod refspec
+git push origin HEAD:dev
+# 다음 단계: git push origin HEAD:prod (사용자 승인 후)
+=== allow F31 echo in double quotes mentions prod-push-check (prod 단어 경계)
+echo "next: run nomacomfe-prod-push-check"
+=== allow F32 printf multi-line var
+printf '%s\n' "line1" "git push origin prod 는 금지"
+=== allow F33 gh pr create body inline mentions -B prod
+gh pr create --base dev --title "x" --body "-B prod 막음"
+=== allow F34 gh pr create --base dev --body mentions --base prod on new line
+gh pr create --base dev --title "x" --body "요약
+--base prod 는 막는다"
+=== allow F35 git -C path with spaces quoted then push dev
+git -C "/Users/someone/My Work/x" push origin HEAD:dev
+=== allow F36 git push tags only with -f in message? no — push --tags
+git push origin --tags
+=== allow F37 gh api PATCH dev with force=false
+gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc -F force=false
+=== allow F38 docker build tag prod (not push)
+docker build -t imjohnkoo/nomacom-client:prod-local .
+=== allow F39 multiline commit msg with -f word
+git commit -m "chore: x
+-f 옵션 설명"
+=== allow F40 here-string with prod word into grep
+grep -c prod <<< "$(git branch -r)"
+=== block G01 force in then
+if true; then git push -f origin imjohnkoo/x; fi
+=== block G02 force --force in until retry
+until git push --force origin imjohnkoo/x; do sleep 1; done
+=== block G03 -C double-quoted var
+git -C "$WT" push origin HEAD:prod
+=== block G04 --git-dir quoted
+git --git-dir="$W/.git" push origin prod
+=== block G05 subshell
+(git push origin HEAD:prod)
+=== block G06 || true
+git push origin HEAD:prod || true
+=== block G07 x=$(...)
+x=$(git push origin HEAD:prod 2>&1)
+=== block G08 nested $(...)
+echo "$(echo "$(git push origin HEAD:prod)")"
+=== block G09 subst with parens inside
+out=$( (git push origin prod) )
+=== block G10 glob chars in subst before push (bash3.2 pattern replace)
+ls $(echo apps/*/package.json) && git push origin HEAD:prod
+=== block G11 bracket chars in subst
+echo $(echo [a]) ; git push origin HEAD:prod
+=== block G12 question mark in backtick
+echo `echo ?` ; git push origin HEAD:prod
+=== block G13 gh pr create inside $(...)
+url=$(gh pr create --base prod --fill)
+=== block G14 gh pr edit no number
+gh pr edit --base prod
+=== block G15 gh pr create --repo then base
+gh pr create --repo imjohnkoo/nomacom-frontend --head dev --base prod --fill
+=== block G16 gh api leading slash path
+gh api --method PATCH /repos/o/r/git/refs/heads/prod -f sha=x
+=== block G17 gh api quoted field ref
+gh api -X POST repos/o/r/git/refs -f "ref=refs/heads/prod" -f "sha=$SHA"
+=== block G18 gh api raw-field merges
+gh api -X POST repos/o/r/merges --raw-field base=prod --raw-field head=dev
+=== block G19 dispatch via api w/o method
+gh api repos/o/r/actions/workflows/client-production.yml/dispatches -f ref=dev
+=== block G20 workflow run name no ext
+gh workflow run client-production
+=== block G21 workflow run -r
+gh workflow run admin-production.yml -r prod
+=== block G22 heredoc-looking text in commit msg swallows later lines
+git commit -m "fix: heredoc <<EOF 처리"
+git push origin HEAD:prod
+=== block G23 heredoc delimiter with space quoted
+cat > x.md <<'END NOTE'
+memo
+END NOTE
+git push origin HEAD:prod
+=== block G24 push prod then comment w/o space
+git push origin prod#deploy
+=== block G25 git push HEAD:prod with trailing semicolon no space
+git push origin HEAD:prod;echo ok
+=== block G26 git push origin prod with backslash-continued options
+git push \
+  --no-verify \
+  origin \
+  HEAD:refs/heads/prod
+=== block G27 eval with double quotes and var
+eval "git push origin HEAD:prod"
+=== block G28 gh api PATCH -F force=true dev (rewind)
+gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc -F force=true
+=== block G29 gh api refs/heads/prod PATCH lowercase flag --method patch
+gh api --method patch repos/o/r/git/refs/heads/prod -f sha=abc
+=== block G30 git push origin HEAD:prod with ANSI-C and space? ok
+git push origin $'HEAD:prod'
+=== block G31 git push to prod with -q and ref with ^{commit}
+git push -q origin "$(git rev-parse 'origin/dev^{commit}')":refs/heads/prod
+=== block G32 git push origin dev:prod via `git -C` + tabs
+git	-C	/x	push	origin	dev:prod
+=== block G33 git push origin 'HEAD:prod' with -o "a b"
+git push -o "ci skip note" origin 'HEAD:prod'
+=== block G34 mirror via quoted refspec glob
+git push origin "refs/heads/*"
+=== block G35 xargs -I
+printf 'prod\n' | xargs -I{} git push origin {}
+=== block G36 gh api graphql via heredoc file input
+gh api graphql -F query=@- <<'EOF'
+mutation { updateRef(input: {refId: "x", oid: "y"}) { clientMutationId } }
+EOF
+=== block G37 git push origin prod --dry-run=false? (no)
+git push origin prod --porcelain
+=== allow G38 git push origin prod-hotfix:prod-hotfix
+git push origin prod-hotfix:prod-hotfix
+=== allow G39 git push origin HEAD:refs/heads/prodx
+git push origin HEAD:refs/heads/prodx
+=== allow G40 gh api read refs/heads/prod with -H header
+gh api -H "Accept: application/vnd.github+json" repos/o/r/git/refs/heads/prod
+=== allow G41 gh api read refs/heads/prod paginated with -q
+gh api repos/o/r/git/refs/heads/prod -q .object.sha
+=== allow G42 gh api compare with field-like query in URL (GET)
+gh api "repos/o/r/pulls?base=prod&state=closed" --jq '.[].number'
+=== allow G43 gh api -X GET 에 -f sha=prod(조회 — 쓰기 아님)
+gh api -X GET repos/o/r/commits -f sha=prod -f per_page=3
+=== block H01 backslash inside $(...)
+echo $(printf '%s' 'a\b') ; git push origin HEAD:prod
+=== block H02 backslash inside backticks
+echo `printf '%s' a\\b` ; git push origin HEAD:prod
+=== block H03 ampersand inside $(...)
+echo $(echo a && echo b) ; git push origin HEAD:prod
+=== block H04 empty $()
+echo $() ; git push origin HEAD:prod
+=== block H05 unterminated $(
+echo $(echo a ; git push origin HEAD:prod
+=== block H06 unterminated backtick
+echo `echo a ; git push origin HEAD:prod
+=== block H07 $(...) containing SUBST literal text
+echo $(echo SUBST) $(echo SUBST) ; git push origin HEAD:prod
+=== block H08 same $(...) repeated
+echo $(date) $(date) $(date) ; git push origin HEAD:prod
+=== block H09 nested backtick in $()
+echo $(echo `echo x`) ; git push origin HEAD:prod
+=== block H10 NBSP-free unicode emoji
+echo "🚀 배포" ; git push origin HEAD:prod
+=== block H11 only CR newlines (old mac)
+echo agit push origin HEAD:prod
+=== block H12 percent-s in segment
+printf '%s %d %n' ; git push origin HEAD:prod
+=== block H13 dash-n first word
+-n ; git push origin HEAD:prod
+=== block H14 starts with = sign
+=x ; git push origin HEAD:prod
+=== block H15 bracket glob-like token in git args
+git push origin HEAD:prod '[x]'
+=== block H16 very long branch-like token before prod
+git push origin aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:feat HEAD:prod
+=== block H17 bash -c with nested quotes depth 2
+bash -c "bash -c 'git push origin HEAD:prod'"
+=== block H18 eval of single quoted then && other
+eval 'git push origin HEAD:prod' && echo done
+=== block Q01 escaped quotes in title then --base prod
+gh pr create --title "fix \"hook\" now" --base prod --body "x y"
+=== block Q02 escaped quote pair in body before base
+gh pr create --body "say \"hi\"" --base prod --title t
+=== block Q03 push with -o escaped quotes
+git push -o "msg=\"a b\"" origin HEAD:prod
+=== block Q04 apostrophe in double-quoted title, base after
+gh pr create --title "John's fix" --base prod --body "it's done"
+=== block Q05 mixed quotes concatenated refspec
+git push origin "HEAD":'prod'
+=== block Q06 push with -o value containing apostrophe
+git push -o "note=it's" origin 'HEAD:prod' -o "x=it's"
+=== allow Q07 dev push with -o containing prod
+git push origin HEAD:dev -o "ci.variable=TARGET=prod"
+=== allow Q08 push to prod-preview
+git push origin feat/x:prod-preview
+=== allow Q09 commit -m containing 'prod' single-quoted one word then push dev
+git commit -m 'prod' && git push origin HEAD:dev
+=== allow Q10 gh pr create base dev with body containing -B prod one-word quoted
+gh pr create --base dev --title x --body "-Bprod"
+=== block M01 multi-line if block (push on its own line)
+if git merge-base --is-ancestor origin/prod "$PROMOTE_SHA"; then
+  git push origin "$PROMOTE_SHA":prod
+fi
+=== block M02 one-line promote with ff check (skill-shaped)
+if git merge-base --is-ancestor origin/prod "$PROMOTE_SHA"; then git push origin "$PROMOTE_SHA":prod; else echo "not ff"; fi
+=== block M03 && chain promote (control)
+git merge-base --is-ancestor origin/prod "$PROMOTE_SHA" && git push origin "$PROMOTE_SHA":prod
+=== block M04 noglob zsh precommand
+noglob git push origin HEAD:prod
+=== block M05 then on same line as newline-if
+if true
+then git push origin HEAD:prod
+fi
+=== block R4-X01 bash -o pipefail -c
+bash -o pipefail -c 'git push origin HEAD:prod'
+=== block R4-X02 bash -euo pipefail -c
+bash -euo pipefail -c 'git push origin HEAD:prod 2>&1 | tail -3'
+=== block R4-X03 sh -c with -- then string? (sh -c -- 'cmd')
+sh -c -- 'git push origin HEAD:prod'
+=== block R4-X04 bash --login -c
+bash --login -c 'git push origin HEAD:prod'
+=== block R4-X05 bash -O extglob -c
+bash -O extglob -c 'git push origin HEAD:prod'
+=== block R4-X06 watch runs via sh -c
+watch -n 5 'git push origin HEAD:prod'
+=== block R4-X07 backslash-escaped letter in prod
+git push origin HEAD:pr\od
+=== block R4-X08 backslash before git
+\git push origin HEAD:prod
+=== block R4-X09 quoted --force
+git push "--force" origin imjohnkoo/x
+=== block R4-X10 quoted -f
+git push origin imjohnkoo/x '-f'
+=== block R4-X11 quoted --force-with-lease=
+git push "--force-with-lease" origin dev
+=== block R4-X12 gh pr create quoted "--base" prod
+gh pr create "--base" prod --title x
+=== block R4-X13 gh pr create "--base=prod"
+gh pr create "--base=prod" --title x
+=== block R4-X14 git --no-advice global opt
+git --no-advice push origin HEAD:prod
+=== block R4-X15 git --attr-source global opt
+git --attr-source=HEAD push origin HEAD:prod
+=== block R4-X16 git -c with quoted name=value one word
+git -c "push.default=current" push origin HEAD:prod
+=== block R4-X19 default-in-var ${X:-prod}
+git push origin "HEAD:${TARGET:-prod}"
+=== block R4-X20 multi-line commit msg w/ <<EOF line then push prod
+git commit -m "fix(hook): heredoc
+- <<EOF 시작 줄 판정
+" && git push origin HEAD:prod
+=== block R4-X21 comment ending with backslash then push prod
+# 경로 C:\
+git push origin HEAD:prod
+=== block R4-X22 arithmetic shift x<<y then next line push
+echo $((x<<y))
+git push origin HEAD:prod
+=== block R4-X23 heredoc to /bin/sh
+cat <<'EOF' | /bin/sh
+git push origin HEAD:prod
+EOF
+=== block R4-X24 gh run rerun (re-deploy old run)
+gh run rerun 12345678
+=== block R4-X25 gh api contents PUT branch=prod (commit to prod)
+gh api -X PUT repos/o/r/contents/README.md -f message=x -f content=eA== -f branch=prod -f sha=abc
+=== block R4-X26 gh api merge-upstream branch=prod
+gh api repos/o/r/merge-upstream -f branch=prod
+=== block R4-X27 json file written then --input merges base prod
+cat > m.json <<'EOF'
+{"base":"prod","head":"dev"}
+EOF
+gh api repos/o/r/merges --input m.json
+=== block R4-X28 gh api /graphql REST path mutation
+gh api /graphql -f query='mutation { createRef(input: {name: "refs/heads/prod", oid: "abc", repositoryId: "R"}) { ref { name } } }'
+=== block R4-X29 git push in $( ) inside single-quoted bash -c
+bash -c 'out=$(git push origin HEAD:prod)'
+=== block R4-X30 push with ref in braces ${SHA}:prod no quotes
+git push origin ${SHA}:prod
+=== block R4-X31 git push origin @:refs/heads/prod
+git push origin @:refs/heads/prod
+=== block R4-X32 push with -- and :prod
+git push origin -- :prod
+=== block R4-X33 nohup bash -c
+nohup bash -c "git push origin HEAD:prod" > /dev/null 2>&1 &
+=== block R4-X34 eval with $() string
+eval "$(echo git push origin HEAD:prod)"
+=== block R4-X35 single quoted git, double-quoted push
+'git' "push" origin HEAD:prod
+=== block R4-X36 ANSI-C 따옴표 안 줄바꿈 뒤 prod push
+git push origin $'HEAD:dev\n'; git push origin $'HEAD:prod'
+=== block R4-X37 git push via env -S
+env -S 'git push origin HEAD:prod'
+=== block R4-X38 force push tag-ish +refs/tags/x
+git push origin +refs/tags/v1
+=== block R4-X39 gh pr create base via env GH? (-B "prod")
+gh pr create -B "prod" --fill
+=== block R4-X40 gh pr create --base prod after $(...) title
+gh pr create --title "$(git log -1 --format=%s)" --base prod --fill
+=== block R4-X41 gh pr edit -B prod
+gh pr edit 3 -B prod
+=== block R4-X42 workflow run quoted name
+gh workflow run 'client-production.yml'
+=== block R4-X43 workflow run with --repo first
+gh workflow run --repo imjohnkoo/nomacom-frontend client-production.yml
+=== block R4-X44 gh api dispatch with -X POST and quoted path
+gh api -X POST "/repos/{owner}/{repo}/actions/workflows/admin-production.yml/dispatches" -f ref=dev
+=== block R4-X45 CR 만 있는 줄 뒤 prod push
+
+git push origin HEAD:prod
+=== block R4-X46 sh -c double-quoted with inner single
+sh -c "git push origin 'HEAD:prod'"
+=== block R4-X47 git push --force-with-lease=prod:abc
+git push --force-with-lease=prod:abc origin prod
+=== block R4-X50 gh api with --method patch upper after path and --field=
+gh api repos/o/r/git/refs/heads/prod --method=PATCH --field=sha=abc
+=== allow R4-N01 push -u origin HEAD
+git push -u origin HEAD
+=== allow R4-N02 push delete old branch
+git push origin --delete imjohnkoo/old-branch
+=== allow R4-N03 push :old
+git push origin :imjohnkoo/old
+=== allow R4-N04 push porcelain grep with + in quoted regex
+git push --porcelain origin imjohnkoo/x 2>&1 | grep -E "^(\+|-|!)"
+=== allow R4-N05 commit then bare git push
+git commit -m "fix: x" && git push
+=== allow R4-N06 push current branch via subst
+git push -u origin "$(git branch --show-current)"
+=== allow R4-N07 tail -n +1 after push
+git push origin imjohnkoo/x 2>&1 | tail -n +1
+=== allow R4-N08 log format with quotes after push
+git push origin imjohnkoo/x; git log --oneline -1 --format='%h %s'
+=== allow R4-N09 gh api comment body mentions prod push (double quoted)
+gh api repos/o/r/issues/12/comments -f body="git push origin HEAD:prod 는 훅이 막는다"
+=== allow R4-N10 gh api comment body single quoted
+gh api repos/o/r/issues/12/comments -f body='LGTM — prod 배포는 prod-push-check 뒤'
+=== allow R4-N11 gh api create PR base dev
+gh api repos/o/r/pulls -f title=x -f head=imjohnkoo/x -f base=dev
+=== allow R4-N12 gh pr create head named prod-fix
+gh pr create --base dev --head imjohnkoo/prod-fix --fill
+=== allow R4-N13 gh pr view baseRefName
+gh pr view 12 --json baseRefName -q .baseRefName
+=== allow R4-N14 gh workflow run ci with --ref
+gh workflow run ci.yml --ref imjohnkoo/x
+=== allow R4-N15 gh run view log grep
+gh run view 123 --log-failed | grep -i error
+=== allow R4-N16 gh api actions runs list prod branch
+gh api 'repos/o/r/actions/runs?branch=prod&per_page=3' --jq '.workflow_runs[].conclusion'
+=== allow R4-N17 git stash push -u -m tag (env instructions)
+git stash push -u -m "qa-tag-123"
+=== allow R4-N18 git stash push -m prod word
+git stash push -m prod
+=== allow R4-N19 grep cases count
+grep -c '^=== block' .claude/hooks/guard-prod-push.cases.txt
+=== allow R4-N20 hook test via jq rawfile pipe
+jq -n --rawfile c cmd.txt '{tool_input:{command:$c}}' | bash .claude/hooks/guard-prod-push.sh
+=== allow R4-N21 docker build tag
+docker build -t nomacom-client:p62-verify -f apps/client/Dockerfile .
+=== allow R4-N22 docker compose up
+docker compose -f docker-compose.yml up -d postgres
+=== allow R4-N23 git reset --keep
+git reset --keep origin/dev
+=== allow R4-N24 git worktree add
+git worktree add ../x -b imjohnkoo/x origin/dev
+=== allow R4-N25 python heredoc with quotes (kept body)
+python3 - <<'PY'
+import subprocess, json
+out = subprocess.run(["git", "log", "-1", "origin/prod"], capture_output=True, text=True).stdout
+print(json.dumps({"prod": out.strip(), "note": "git push origin prod 는 금지"}))
+PY
+=== allow R4-N26 node -e with quotes
+node -e 'console.log("git push origin prod is blocked")'
+=== allow R4-N27 gh api graphql addComment mutation
+gh api graphql -f query='mutation { addComment(input: {subjectId: "X", body: "prod 배포 완료"}) { clientMutationId } }'
+=== allow R4-N28 gh api graphql read PR baseRefName prod
+gh api graphql -f query='query { repository(owner: "o", name: "r") { pullRequests(baseRefName: "prod", first: 5) { nodes { number } } } }'
+=== allow R4-N29 git log -S search for push text unquoted? (quoted)
+git log -S"git push origin prod" --oneline
+=== allow R4-N30 git commit --amend --no-edit then push feature with lease? (no force) plain
+git commit --amend --no-edit && git push origin imjohnkoo/x
+=== allow R4-N31 git push origin HEAD:refs/heads/imjohnkoo/x -o ci.skip quoted
+git push origin HEAD:refs/heads/imjohnkoo/x -o "ci.skip"
+=== allow R4-N32 gh pr comment with body mentioning --base prod
+gh pr comment 12 --body "다음: gh pr create --base prod 는 막힌다"
+=== allow R4-N33 gh api pulls list base=prod via -X GET -F
+gh api -X GET repos/o/r/pulls -F base=prod
+=== allow R4-N34 multi-line echo with apostrophe then push feature
+echo "John's change"
+git push origin imjohnkoo/x
+=== allow R4-N35 git push feature then gh api read prod sha in $()
+git push origin imjohnkoo/x && echo "prod=$(gh api repos/o/r/git/refs/heads/prod --jq .object.sha)"
+=== allow R4-N36 orca cli terminal send text with push example? (data)
+orca terminal send --text "git status"
+=== allow R4-N37 git push with --signed=false? nah -- push to dev via full URL
+git push https://github.com/imjohnkoo/nomacom-frontend.git HEAD:dev
+=== allow R4-N38 cat of hook test file via sed range containing prod
+sed -n '/=== block B01/,/=== block B05/p' .claude/hooks/guard-prod-push.cases.txt
+=== allow R4-N39 awk program mentioning git push prod
+awk '/git push origin prod/ {n++} END {print n}' .claude/hooks/guard-prod-push.cases.txt
+=== allow R4-N40 printf with %s and prod one-word quoted
+printf '%s\n' 'prod' && git push origin imjohnkoo/x
+=== block R4-D01 docker image push
+docker image push imjohnkoo/nomacom-client:prod
+=== block R4-D02 docker buildx --push prod tag
+docker buildx build --push -t imjohnkoo/nomacom-client:prod -f apps/client/Dockerfile .
+=== block R4-D03 git reset -q --hard
+git reset -q --hard HEAD~1
+=== block R4-D04 git reset HEAD~1 --hard
+git reset HEAD~1 --hard
+=== block R4-D05 git reset double space --hard (base squeezed spaces)
+git reset  --hard HEAD~1
+=== block R4-D06 aws --profile before ssm
+aws --profile nomacom ssm put-parameter --name /nomacom/x --value y --type String --overwrite
+=== block R4-D07 aws --region before ssm
+aws --region ap-northeast-2 ssm delete-parameter --name /nomacom/x
+=== block R4-D08 docker push double space
+docker  push imjohnkoo/nomacom-client:prod
+=== block R4-D09 환경변수 접두(AWS_PROFILE=…) 뒤 aws ssm put-parameter
+AWS_PROFILE=nomacom aws ssm put-parameter --name /nomacom/x --value y --overwrite
+=== block R4-D10 aws ssm label-parameter-version? no -> delete-parameters (plural)
+aws ssm delete-parameters --names /nomacom/a /nomacom/b
+=== block R4-S01 '\'' idiom then push
+git commit -m 'it'\''s done' && git push origin HEAD:prod
+=== block R4-S02 unbalanced ) in single quotes inside $() then later quote
+n=$(grep -c ')' file.txt); git push origin HEAD:prod; echo 'done'
+=== block R4-S03 unbalanced ) in double quotes inside $() then later quote
+x=$(echo ")"); git push origin HEAD:prod; echo "done"
+=== block R4-S04 sed with \) inside $() inside double quotes
+v="$(printf '%s' "$x" | sed 's/)$//')"; git push origin HEAD:prod; echo "ok"
+=== block R4-S05 ANSI-C escaped quote then later quote
+echo $'it\'s'; git push origin HEAD:prod; echo 'x'
+=== block R4-S07 unbalanced ( in quotes inside $() (fail-safe?)
+x=$(echo "("); git push origin HEAD:prod; echo "done"
+=== block R4-S08 backtick containing quoted backtick-free ) then push
+x=`echo ")"`; git push origin HEAD:prod; echo "done"
+=== block R4-S09 $( ) with case pattern paren then push
+x=$(case a in a) echo y;; esac); git push origin HEAD:prod; echo "z"
+=== block R4-S10 comment with quote char then push next line
+# John's note
+git push origin HEAD:prod
+=== block R4-S11 comment with unbalanced double quote then push next line
+# "quoted
+git push origin HEAD:prod
+=== block R4-S12 trailing comment with apostrophe then push next line
+git status # it's fine
+git push origin HEAD:prod
+=== block R4-S13 escaped double quote outside quotes then push and later quote pair
+echo \"; git push origin HEAD:prod; echo "a b"
+=== block R4-S14 $(( )) arithmetic with quotes then push
+echo $(( 1 + 2 )) "a b"; git push origin HEAD:prod
+=== block R4-S15 here-string with quotes then push
+read -r x <<< "a b"; git push origin HEAD:prod
+=== block R4-S16 heredoc delimiter quoted with double quotes and dash
+cat > n.md <<-"EOF"
+	memo
+	EOF
+git push origin HEAD:prod
+=== block R4-S17 two heredocs same line
+cat <<A <<B
+a
+A
+b
+B
+git push origin HEAD:prod
+=== block R4-S18 $(cat <<EOF … EOF) 다음 줄의 ) 뒤 prod push
+x=$(cat <<'EOF'
+memo
+EOF
+); git push origin HEAD:prod
+=== block R4-S19 닫는 줄 없는 heredoc 본문의 push — 되살려 본다(알고 두는 오탐 · 안전 쪽)
+cat <<'EOF'
+git push origin HEAD:prod
+=== block R4-S20 heredoc never closed then push (bash treats rest as body) — 알고 두는 오탐(닫는 줄 없는 heredoc 은 되살려 본다 · 안전 쪽)
+cat > x.md <<'EOF'
+memo
+git push origin HEAD:prod
+=== block R4-S21 apostrophe inside double-quoted multi-line commit msg then push
+git commit -m "fix: John's hook
+second line" && git push origin HEAD:prod
+=== block R4-S22 multi-line single-quoted msg containing double quote then push
+git commit -m 'fix: say "hi
+there' && git push origin HEAD:prod
+=== block R4-S23 very deep nested $( )
+echo $(echo $(echo $(echo $(echo $(echo $(echo $(echo $(echo x)))))))) ; git push origin HEAD:prod
+=== block R4-S24 deep bash -c nesting (depth 3)
+bash -c "bash -c \"bash -c 'git push origin HEAD:prod'\""
+=== block R4-S25 eval nested in bash -c
+bash -c 'eval "git push origin HEAD:prod"'
+=== block R4-S26 backslash-newline inside double quotes then push
+echo "a \
+b"; git push origin HEAD:prod
+=== block R4-S27 줄 중간 CR
+git push originHEAD:prod
+=== block R4-S28 줄 이음 «\» 뒤 공백 — bash 는 잇지 않지만 훅은 이어 본다(알고 두는 오탐 · 안전 쪽)
+git push origin \   
+HEAD:prod
+=== allow R4-S29 heredoc body word 'eval' path false positive (doc writing)
+cat > notes/evaluation.md <<'EOF'
+- git push origin prod 금지
+EOF
+=== allow R4-S30 commit via -C worktree path containing node
+git -C ~/orca/workspaces/nomacom-frontend/node-22-upgrade commit -F - <<'EOF'
+chore: node 22
+
+- git push origin HEAD:prod 는 사용자 승인 뒤
+EOF
+=== allow R4-S31 gh api comment via heredoc body mentioning prod push
+gh api repos/o/r/issues/12/comments -F body=@- <<'EOF'
+배포 순서: git push origin HEAD:prod (사용자 승인 뒤)
+EOF
+=== allow R4-S32 gh pr create body-file heredoc mentioning prod push
+gh pr create --base dev --title x --body-file - <<'EOF'
+- git push origin HEAD:prod 차단
+EOF
+=== allow R4-S33 grep pattern with unbalanced paren single-quoted
+grep -n 'run block (' .claude/hooks/guard-prod-push.test.sh
+=== allow R4-S34 echo with $'..\n..' containing prod words
+printf $'line1\ngit push origin prod\n'
+=== block R4-S35 git push after $'...' with \' escape (fail-safe tail?)
+echo $'a\'b' ; git push origin HEAD:prod
+=== block R4-S36 prod push inside if with heredoc-ish arithmetic << in [[ ]]? use (( ))
+(( 1 << 2 ))
+git push origin HEAD:prod
+=== block R4-S37 heredoc start inside single-line single-quoted string containing << but line also has real heredoc later lines
+echo 'a <<X' && git push origin HEAD:prod
+=== block R4-S38 NBSP 앞뒤 일반 공백 — 목적지는 보통 공백 뒤 prod
+git push origin x HEAD:prod
+=== block R4-J01 node heredoc with apostrophe in // comment, then push and quoted echo
+node <<'EOF'
+// don't forget
+console.log('x')
+EOF
+git push origin HEAD:prod && echo 'ok'
+=== block R4-J02 python heredoc with apostrophe in ''' docstring then push and quoted echo
+python3 - <<'PY'
+s = '''it's fine'''
+print(s)
+PY
+git push origin HEAD:prod && echo 'ok'
+=== block R4-J03 python heredoc with odd quotes in regex then push with -o quoted
+python3 - <<'PY'
+import re
+print(re.sub(r"[\"']", "", "a'b"))
+PY
+git push origin HEAD:prod -o "ci skip"
+=== block R4-J04 python line with shift << var swallows rest (kept body)
+python3 - <<'PY'
+mask = 1 << bits
+PY
+git push origin HEAD:prod
+=== block R4-J05 node -e script with apostrophe comment then push (single line)
+node -e "// don't" ; git push origin HEAD:prod ; echo 'x'
+=== allow R4-J06 python heredoc with prod words in strings
+python3 - <<'PY'
+print("git push origin prod")
+PY
+=== block R4-J07 heredoc to bash with -o pipefail
+bash -o pipefail <<'SH'
+git push origin HEAD:prod
+SH
+=== block R4-J08 kept heredoc (python) then cat heredoc (stripped) then push
+python3 - <<'PY'
+print(1)
+PY
+cat > x.md <<'EOF'
+memo
+EOF
+git push origin HEAD:prod
+=== block R4-J09 ruby heredoc 닫힌 뒤 본문 밖 prod push
+ruby <<'RB'
+puts 1
+RB
+git push origin HEAD:prod
+=== block R4-J10 commit msg multi-line containing '<<' + word in middle of line then push
+git commit -m "docs: heredoc 처리
+cat <<EOF 같은 줄
+" && git push origin HEAD:prod
+=== block R4-J11 multi-line double-quoted with apostrophe-only line then push and later quote
+git commit -m "fix
+John's
+" && git push origin HEAD:prod && echo 'ok'
+=== block R4-J12 single-line double-quoted with $( ) containing ) in quotes then push
+git commit -m "$(printf 'fix: a)')" && git push origin HEAD:prod && echo "ok"
+=== block R4-G01 graphql minified updateRef (single-quoted, no spaces)
+gh api graphql -f query='mutation{updateRef(input:{refId:"REF_x",oid:"abc",force:true}){ref{name}}}'
+=== block R4-G02 graphql minified mergeBranch base prod
+gh api graphql -f query='mutation{mergeBranch(input:{repositoryId:"R",base:"prod",head:"dev"}){mergeCommit{oid}}}'
+=== block R4-G03 graphql minified createRef refs/heads/prod (double-quoted)
+gh api graphql -f query="mutation{createRef(input:{name:\"refs/heads/prod\",oid:\"abc\",repositoryId:\"R\"}){ref{name}}}"
+=== block R4-G04 graphql minified createPullRequest base prod
+gh api graphql -f query='mutation{createPullRequest(input:{repositoryId:"R",baseRefName:"prod",headRefName:"dev",title:"x"}){pullRequest{number}}}'
+=== allow R4-G06 wiki push with -C var
+git -C $NOMACOM_WIKI pull --rebase && git -C $NOMACOM_WIKI push origin main
+=== allow R4-G07 wiki push with -C quoted var
+git -C "$NOMACOM_WIKI" push
+=== allow R4-G08 push -o with = prod
+git push origin imjohnkoo/x -o 'ci.var=prod'
+=== allow R4-G09 orca worktree create
+orca worktree create imjohnkoo/x --base dev --setup run
+=== allow R4-G10 gh api search with -X GET and q containing base:prod
+gh api -X GET search/issues -f q='repo:o/r base:prod is:pr is:merged' --jq '.total_count'
+=== allow R4-G11 git branch delete merged with for loop push --delete
+for b in $(git branch -r --merged origin/dev | grep 'origin/imjohnkoo/' | sed 's#origin/##'); do git push origin --delete "$b"; done
+=== allow R4-G12 gh pr merge dev PR (out of scope, allowed)
+gh pr merge 12 --squash --delete-branch
+=== allow R4-G13 python heredoc that writes json with refs/heads/prod for docs (kept body, no gh api)
+python3 - <<'PY'
+import json
+print(json.dumps({"ref": "refs/heads/prod"}))
+PY
+=== allow R4-G14 jq filter with refs/heads/prod and --input-ish word
+jq -r '.[] | select(.ref == "refs/heads/prod") | .object.sha' refs.json
+=== allow R4-G15 gh api graphql read with spaces-free query
+gh api graphql -f query='query{repository(owner:"o",name:"r"){ref(qualifiedName:"refs/heads/prod"){target{oid}}}}'
+=== block R5-T01 공백 든 JSON force:true 를 --input 으로(ref 되감기)
+echo '{"sha": "abc", "force": true}' | gh api -X PATCH repos/o/r/git/refs/heads/dev --input -
+=== block R5-T02 heredoc 본문 JSON force(flat 판정)
+gh api -X PATCH repos/o/r/git/refs/heads/dev --input - <<'EOF'
+{"sha": "abc",
+ "force": true}
+EOF
+=== block R5-T03 git push --branches
+git push --branches origin
+=== block R5-T04 git push --mirr(고유 접두)
+git push --mirr origin
+=== allow R5-T05 push-option 값의 prod 글자
+git push origin imjohnkoo/x -o 'prod'
+=== allow R5-T06 docker exec 안의 dev push 는 docker push 가 아니다
+docker exec -it web git push origin imjohnkoo/x
+=== block R5-c1-H1 multi-line commit msg with <<EOF text, push prod, later real heredoc EOF
+git commit -m "fix(hook): heredoc
+- <<EOF 시작 줄 판정
+" && git push origin HEAD:prod
+cat > x.md <<'EOF'
+memo
+EOF
+=== block R5-c1-H2 comment mentions <<EOF then push prod then real heredoc
+# PR 본문은 heredoc(<<EOF) 으로
+git push origin HEAD:prod
+gh pr create --base dev --title x --body "$(cat <<'EOF'
+body
+EOF
+)"
+=== block R5-c1-H3 comment with <<'EOF' then push, then commit heredoc
+# 메시지: git commit -F - <<'EOF'
+git push origin HEAD:prod
+git commit -F - <<'EOF'
+msg
+EOF
+=== block R5-c1-H4 multi-line single-quoted string with <<EOF, push prod, later heredoc
+python3 -c 'print("""
+cat <<EOF
+""")' && git push origin HEAD:prod
+cat > y.md <<'EOF'
+z
+EOF
+=== block R5-c1-H5 quoted --mirror
+git push "--mirror" origin
+=== block R5-c1-H6 quoted --all
+git push '--all' origin
+=== block R5-c1-H7 brace expansion dev,prod
+git push origin {dev,prod}
+=== block R5-c1-H8 brace expansion HEAD:{dev,prod}
+git push origin HEAD:{dev,prod}
+=== block R5-c1-H9 locale string $"prod"
+git push origin $"prod"
+=== block R5-c1-H10 bash -c -x option after -c
+bash -c -x 'git push origin HEAD:prod'
+=== block R5-c1-H11 graphql createCommitOnBranch prod
+gh api graphql -f query='mutation { createCommitOnBranch(input: {branch: {repositoryNameWithOwner: "o/r", branchName: "prod"}, message: {headline: "x"}, expectedHeadOid: "abc", fileChanges: {additions: []}}) { commit { oid } } }'
+=== block R5-c1-H12 REST rerun of run
+gh api -X POST repos/o/r/actions/runs/123/rerun
+=== block R5-c1-H14 git push origin "prod" with -- separator quoted
+git push origin -- "prod"
+=== block R5-c1-H15 git push --repo origin prod (공백 꼴)
+git push --repo origin prod
+=== block R5-c1-H16 su -c
+su john -c 'git push origin HEAD:prod'
+=== block R5-c1-H17 git alias via -c
+git -c alias.pp='push origin HEAD:prod' pp
+=== block R5-c1-H18 heredoc delimiter appears quoted in later command
+cat > a.md <<EOF
+memo
+EOF
+git push origin HEAD:prod
+=== block R5-c1-H19 double-quoted string containing newline then <<EOF in it then later EOF heredoc
+gh pr create --base dev --title x --body "요약
+cat <<EOF 형태 설명
+" ; git push origin HEAD:prod
+git commit -F - <<EOF
+m
+EOF
+=== block R5-c1-H21 git push origin HEAD:prod with time keyword and redirect
+time git push origin HEAD:prod
+=== block R5-c1-H22 git push origin prod with GIT_DIR env on same line and -C
+GIT_DIR=.git git -C . push origin prod
+=== block R5-c1-H23 command -p git
+command -p git push origin prod
+=== block R5-c1-H24 exec -a
+exec -a foo git push origin prod
+=== block R5-c1-H25 builtin
+builtin command git push origin prod
+=== block R5-c1-H26 git push origin +prod quoted
+git push origin "+prod"
+=== block R5-c1-H27 refspec with ^0 commit-ish
+git push origin HEAD^0:prod
+=== block R5-c1-H28 refspec with ~
+git push origin HEAD~0:refs/heads/prod
+=== block R5-c1-H29 refspec origin/dev:prod
+git push origin origin/dev:prod
+=== block R5-c1-H30 git push with --push-option then prod
+git push --push-option=x origin prod
+=== block R5-c1-H31 git push -o x prod
+git push -o x origin prod
+=== block R5-c1-H32 git push --recurse-submodules=no prod
+git push --recurse-submodules=no origin prod
+=== block R5-c1-H33 git push --atomic dev prod
+git push --atomic origin dev prod
+=== block R5-c1-H34 git push prod refspec with trailing tab
+git push origin prod	
+=== block R5-c1-H35 bash -c with ANSI-C string
+bash -c $'git push origin HEAD:prod'
+=== block R5-c1-H37 eval with unquoted words
+eval git push origin HEAD:prod
+=== block R5-c1-H38 eval with $'..'
+eval $'git push origin HEAD:prod'
+=== block R5-c1-H39 subshell paren around git push quoted args
+( git push "origin" "HEAD:prod" )
+=== block R5-c1-H40 coproc
+coproc git push origin HEAD:prod
+=== block R5-c2-J1 echo pretty JSON create ref prod via --input -
+echo '{"ref": "refs/heads/prod", "sha": "abc"}' | gh api repos/o/r/git/refs --input -
+=== block R5-c2-J2 printf pretty JSON merges base prod
+printf '%s' '{"base": "prod", "head": "dev"}' | gh api repos/o/r/merges --input -
+=== block R5-c2-J3 here-string pretty JSON
+gh api repos/o/r/git/refs --input - <<< '{"ref": "refs/heads/prod", "sha": "abc"}'
+=== block R5-c2-J4 jq -n built JSON with spaces
+jq -n '{ref: "refs/heads/prod", sha: "abc"}' | gh api repos/o/r/git/refs --input -
+=== block R5-c2-J5 PATCH prod ref via --input pretty (path names prod)
+echo '{"sha": "abc"}' | gh api -X PATCH repos/o/r/git/refs/heads/prod --input -
+=== block R5-c2-J6 PR retarget base prod via --input pretty
+echo '{"base": "prod"}' | gh api -X PATCH repos/o/r/pulls/12 --input -
+=== block R5-c2-J7 double-quoted pretty JSON
+echo "{\"ref\": \"refs/heads/prod\", \"sha\": \"abc\"}" | gh api repos/o/r/git/refs --input -
+=== block R5-c2-J9 rename branch dev -> prod via --input pretty
+echo '{"new_name": "prod"}' | gh api repos/o/r/branches/dev/rename --input -
+=== block R5-c2-J10 contents PUT to prod via --input pretty
+echo '{"message": "x", "content": "eA==", "branch": "prod"}' | gh api -X PUT repos/o/r/contents/README.md --input -
+=== allow R5-c2-J11 control: pretty JSON to dev
+echo '{"ref": "refs/heads/imjohnkoo/x", "sha": "abc"}' | gh api repos/o/r/git/refs --input -
+=== block R5-c2-J12 -c remote push via quoted spaced value? (quoted single word)
+git -c 'remote.origin.push=HEAD:refs/heads/prod' push origin
+=== block R5-c2-J13 gh pr create '-B' prod quoted short opt
+gh pr create '-B' prod --fill
+=== block R5-c2-J14 git subtree push prod
+git subtree push --prefix=apps/client origin prod
+=== block R5-c2-J15 git send-pack plumbing
+git send-pack origin HEAD:refs/heads/prod
+=== block R5-c2-J16 contents PUT branch=prod via -F
+gh api -X PUT repos/o/r/contents/README.md -F message=x -F content=eA== -F branch=prod
+=== block R5-c2-J17 graphql mutation via -F query with spaces and variables, var name ref
+gh api graphql -F oid=abc -F name=refs/heads/prod -f query='mutation($name: String!, $oid: GitObjectID!) { createRef(input: {repositoryId: "R", name: $name, oid: $oid}) { ref { name } } }'
+=== block R5-c3-U1 unquoted heredoc commit msg with markdown backticks (executes)
+git commit -F - <<EOF
+fix(hook): `git push origin HEAD:prod` 차단
+EOF
+=== block R5-c3-U2 unquoted heredoc PR body with $( ) push
+gh pr create --base dev --title x --body "$(cat <<EOF
+배포: $(git push origin HEAD:prod 2>&1 | tail -1)
+EOF
+)"
+=== block R5-c3-U3 unquoted heredoc in cat > file with backtick push
+cat > notes.md <<EOF
+- `git push origin HEAD:prod`
+EOF
+=== allow R5-c3-U4 control quoted heredoc with backticks (data)
+git commit -F - <<'EOF'
+fix(hook): `git push origin HEAD:prod` 차단
+EOF
+=== allow R5-c3-U5 control unquoted heredoc with escaped backticks (data)
+git commit -F - <<EOF
+fix(hook): \`git push origin HEAD:prod\` 차단
+EOF
+=== block R5-c3-U6 unquoted heredoc gh api force via $( )
+cat <<EOF
+$(gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc -F force=true)
+EOF
+=== block R5-c3-U7 unquoted heredoc docker push in backticks
+cat <<EOF
+`docker push imjohnkoo/nomacom-client:prod`
+EOF
+=== allow R5-c4-N01 push feature then tail
+git push -u origin imjohnkoo/client-guide 2>&1 | tail -5
+=== allow R5-c4-N02 PR create standard Claude template
+gh pr create --base dev --title "feat(client): 설치 가이드" --body "$(cat <<'EOF'
+## Summary
+- /guide 허브 추가
+- `git push origin HEAD:prod` 는 사용자 승인 뒤
+
+## Test plan
+- [ ] yarn turbo run test
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+=== allow R5-c4-N03 commit standard Claude template
+git commit -m "$(cat <<'EOF'
+fix(hook): 따옴표 스캐너
+
+- git push origin prod · gh api -X PATCH .../refs/heads/prod 차단
+- docker push · git reset --hard · aws ssm put-parameter 차단
+EOF
+)"
+=== allow R5-c4-N04 run watch
+gh run watch 123456 --exit-status
+=== allow R5-c4-N05 api runs list dev
+gh api 'repos/imjohnkoo/nomacom-frontend/actions/runs?branch=dev&per_page=5' --jq '.workflow_runs[] | [.name, .conclusion] | @tsv'
+=== allow R5-c4-N06 docker run test container
+docker run --rm -v "$PWD":/w -w /w ubuntu:22.04 bash -c 'bash .claude/hooks/guard-prod-push.test.sh'
+=== allow R5-c4-N07 docker compose logs
+docker compose -f docker-compose.yml logs --tail 50 postgres
+=== allow R5-c4-N08 wiki pull/push no dest
+git -C "$NOMACOM_WIKI" pull --rebase && git -C "$NOMACOM_WIKI" add wiki/frontend && git -C "$NOMACOM_WIKI" commit -m "docs: plan" && git -C "$NOMACOM_WIKI" push
+=== allow R5-c4-N09 stash push
+git stash push -u -m "qa-hook-r5-$(date +%s)"
+=== allow R5-c4-N10 diff prod dev
+git diff --stat origin/prod...origin/dev -- apps/client
+=== allow R5-c4-N11 pr checks
+gh pr checks 12 --watch --interval 30
+=== allow R5-c4-N12 python heredoc with apostrophe and command text in string
+python3 - <<'PY'
+msg = "don't run git push origin prod here"
+print(msg)
+PY
+=== allow R5-c4-N13 node heredoc with template literal
+node <<'JS'
+const x = `prod ${1+1}`;
+console.log(x);
+JS
+=== allow R5-c4-N14 grep in hook for docker push
+grep -n "docker push" .claude/hooks/guard-prod-push.sh | head
+=== allow R5-c4-N15 sed script on file with prod
+sed -i '' 's/origin\/prod/origin\/dev/g' docs/x.md
+=== allow R5-c4-N16 awk with $ fields
+awk -F'\t' '{print $1, $NF}' data.tsv | sort | uniq -c | sort -rn | head
+=== allow R5-c4-N17 find exec
+find apps -name "*.vue" -exec grep -l "prod" {} +
+=== allow R5-c4-N18 for loop with $(...) and quotes
+for f in $(git diff --name-only origin/dev...HEAD); do echo "== $f"; done
+=== allow R5-c4-N19 curl with JSON body containing prod word
+curl -s -X POST http://localhost:3000/api/v1/x -H 'Content-Type: application/json' -d '{"env": "prod", "ref": "refs/heads/prod"}'
+=== allow R5-c4-N20 gh api comment with JSON --input mentioning prod (other segment)
+gh api repos/o/r/issues/12/comments --input - <<'EOF'
+{"body": "prod 배포는 사용자 승인 뒤"}
+EOF
+=== allow R5-c4-N21 docker build with label push
+docker build -t nomacom-client:local --label stage=push-test .
+=== allow R5-c4-N24 git push with redirect file named prod.log
+git push origin imjohnkoo/x > prod.log 2>&1
+=== allow R5-c4-N25 git push feature and echo glob in same segment via &&? no — via -o
+git push origin imjohnkoo/x -o ci.variable="GLOB=*.ts"
+=== allow R5-c4-N26 git push --push-option "+1"
+git push origin imjohnkoo/x --push-option "+1"
+=== allow R5-c4-N27 gh api search q base:prod with -X GET
+gh api -X GET search/issues -f q='repo:imjohnkoo/nomacom-frontend is:pr base:prod' --jq .total_count
+=== allow R5-c4-N28 gh pr list base prod json
+gh pr list --base prod --state all --json number,title,mergedAt
+=== allow R5-c4-N29 yarn turbo
+yarn turbo run lint typecheck test --filter=nomacom-client
+=== allow R5-c4-N30 typical multi-step script w/ comments and quotes
+cd /Users/someone/orca/workspaces/nomacom-frontend/x
+# 1) 상태
+git status -sb
+# 2) 빌드 (it's slow)
+yarn turbo run build --filter=nomacom-client 2>&1 | tail -20
+# 3) 결과
+echo "done: $(date '+%H:%M')"
+=== allow R5-c4-N31 heredoc to file containing <<EOF text in body
+cat > docs/heredoc.md <<'MD'
+cat <<EOF 형태는 데이터다
+git push origin HEAD:prod
+MD
+=== allow R5-c4-N32 git log with format containing quotes and ;
+git log -5 --format='%h %s; %an' origin/prod
+=== allow R5-c4-N33 jq program with refs/heads/prod and spaces
+gh api repos/o/r/git/matching-refs/heads --jq '.[] | select(.ref == "refs/heads/prod") | .object.sha'
+=== allow R5-c4-N34 echo with backslash-escaped dollar and quotes
+echo "cost: \$5 — \"prod\" label"
+=== allow R5-c4-N35 printf with %b and \n
+printf '%b\n' 'a\tb' "c d"
+=== allow R5-c4-N36 git push feature w/ force-if-includes? (no force) — plain push with -o merge
+git push -o merge_request.create -o merge_request.target=dev origin imjohnkoo/x
+=== allow R5-c4-N37 python -c with quotes and prod words
+python3 -c 'import sys; print("refs/heads/prod" in sys.argv)' x
+=== allow R5-c4-N38 bash -c running tests (contains git push word in grep)
+bash -c 'grep -c "git push origin prod" .claude/hooks/guard-prod-push.cases.txt'
+=== allow R5-c4-N39 gh workflow list/view
+gh workflow list --all && gh workflow view admin-production.yml --yaml | head -20
+=== allow R5-c4-N40 git fetch + rev-parse prod
+git fetch origin prod dev && git rev-parse origin/prod origin/dev
+=== allow R5-c4-N41 multi-line gh pr comment body inline with apostrophes
+gh pr comment 12 --body "LGTM — it's fine.
+다음: git push origin HEAD:prod 는 사용자 승인 뒤"
+=== allow R5-c4-N42 eval of ssh-agent
+eval "$(ssh-agent -s)" && ssh-add -l
+=== allow R5-c4-N43 git push current branch explicitly named with HEAD
+git push origin HEAD:imjohnkoo/client-guide
+=== allow R5-c4-N44 heredoc unquoted with plain vars (data) mentioning prod push
+cat > /tmp/x.md <<EOF
+작성자: $USER
+git push origin HEAD:prod 금지
+EOF
+=== allow R5-c4-N45 node -e with arrow function and >
+node -e 'const f = (a) => a > 1; console.log(f(2))'
+=== allow R5-c4-N46 commit -m with -f flag mention unquoted? (quoted)
+git commit -m "chore: rm -rf 정리 · git push -f 금지"
+=== allow R5-c4-N47 gh api PATCH PR title (no base)
+gh api -X PATCH repos/o/r/pulls/12 -f title="fix(hook): prod 구멍" -f body="본문"
+=== allow R5-c4-N48 gh api create PR base dev with title mentioning prod
+gh api repos/o/r/pulls -f title="prod 승격 준비" -f head=imjohnkoo/x -f base=dev
+=== allow R5-c4-N49 git branch -D with prod in name
+git branch -D imjohnkoo/prod-push-check && git push origin --delete imjohnkoo/prod-push-check
+=== allow R5-c4-N50 watch gh run list
+watch -n 30 'gh run list --limit 5'
+=== block R5-c5-M1 graphql mutation via --field query=@- heredoc
+gh api graphql --field query=@- <<'EOF'
+mutation { updateRef(input: {refId: "x", oid: "y", force: true}) { clientMutationId } }
+EOF
+=== block R5-c5-M2 graphql mutation via --field=query=@- heredoc
+gh api graphql --field=query=@- <<'EOF'
+mutation { deleteRef(input: {refId: "x"}) { clientMutationId } }
+EOF
+=== block R5-c5-M3 contents PUT branch prod via --input heredoc JSON
+gh api -X PUT repos/o/r/contents/README.md --input - <<'EOF'
+{"message": "x", "content": "eA==", "branch": "prod"}
+EOF
+=== block R5-c5-M4 merge-upstream branch prod via --input heredoc
+gh api repos/o/r/merge-upstream --input - <<'EOF'
+{"branch": "prod"}
+EOF
+=== block R5-c5-M5 here-string to bash
+bash <<< 'git push origin HEAD:prod'
+=== block R5-c5-M6 orca terminal send push
+orca terminal send --text "git push origin HEAD:prod" --enter
+=== block R5-c5-M7 bash -c depth 4
+bash -c "bash -c \"bash -c 'bash -c \\\"git push origin HEAD:prod\\\"'\""
+=== block R5-c5-M8 refs/heads/prod in --input via jq with spaces in heredoc? (bodies ok)
+gh api repos/o/r/git/refs --input - <<'EOF'
+{ "ref" : "refs/heads/prod", "sha" : "abc" }
+EOF
+=== block R5-c5-M10 docker push via sudo
+sudo docker push imjohnkoo/nomacom-client:prod
+=== block R5-c5-M11 docker --context x push
+docker --context prod push imjohnkoo/nomacom-client:prod
+=== block R5-c5-M12 reset hard with git -C quoted space path
+git -C "/Users/someone/My Work" reset --hard HEAD~1
+=== block R5-c5-M13 aws ssm put-parameter via --cli-input-json
+aws ssm put-parameter --cli-input-json file://p.json
+=== block R5-c5-M14 aws ssm put via env and quoted
+AWS_PROFILE=nomacom aws "ssm" "put-parameter" --name /x --value y
+=== block R5-c5-M15 git push prod via shell function definition and call
+p() { git push origin HEAD:prod; }; p
+=== block R5-c5-M16 git push in case body
+case x in x) git push origin HEAD:prod ;; esac
+=== block R5-c5-M17 git push in arithmetic-free select? (while true) with break
+while true; do git push origin HEAD:prod && break; done
+=== block R5-c5-M18 push refspec quoted with leading colon delete
+git push origin ':prod'
+=== block R5-c5-M19 push with refs/heads/prod in double-quoted var default
+git push origin "HEAD:${T:=prod}"
+=== block R5-c5-M20 push origin with heads/prod quoted
+git push origin 'heads/prod'
+=== block R5-c6-E1 heredoc-written script then bash it
+cat > /tmp/promote.sh <<'EOF'
+set -e
+git fetch origin
+git push origin origin/dev:prod
+EOF
+bash /tmp/promote.sh
+=== block R5-c6-E2 heredoc-written script chmod and run on same line
+cat > /tmp/p.sh <<'EOF' && chmod +x /tmp/p.sh && /tmp/p.sh
+git push origin HEAD:prod
+EOF
+=== block R5-c6-E3 heredoc-written script then source
+cat > /tmp/p.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+. /tmp/p.sh
+=== block R5-c6-E4 su -c with trailing words (old caught)
+su -c 'git push origin HEAD:prod && echo ok' john
+=== block R5-c6-E5 tmux new-window string (old caught)
+tmux new-window 'git push origin HEAD:prod; read'
+=== block R5-c6-E6 git rebase -x string (old caught)
+git rebase -x 'git push origin HEAD:prod || true' origin/dev
+=== block R5-c6-E7 trap string (old caught)
+trap 'git push origin HEAD:prod; echo bye' EXIT
+=== block R5-c6-E8 fish -c (old caught)
+fish -c 'git push origin HEAD:prod; echo'
+=== block R5-c6-E9 npx -c (old caught)
+npx -c 'git push origin HEAD:prod && echo ok'
+=== block R5-c6-E10 ssh remote (old caught)
+ssh build 'cd repo && git push origin HEAD:prod'
+=== block R5-c6-E12 tee to script then sh
+tee /tmp/p.sh >/dev/null <<'EOF'
+git push origin HEAD:prod
+EOF
+sh /tmp/p.sh
+=== block R5-c6-E13 git submodule foreach (old caught)
+git submodule foreach 'git push origin HEAD:prod || :'
+=== block R5-c6-E14 xargs sh -c (control)
+echo x | xargs sh -c 'git push origin HEAD:prod'
+=== block R5-c6-E15 time bash -c (control)
+time bash -c 'git push origin HEAD:prod'
+=== block R5-c6-E16 docker buildx --output type=registry
+docker buildx build --output type=registry -t imjohnkoo/nomacom-client:prod .
+=== block R5-c6-E17 docker buildx -o type=image,push=true
+docker buildx build -o type=image,name=imjohnkoo/nomacom-client:prod,push=true .
+=== block R5-c6-E18 gh pr create -dB prod combined shorthand
+gh pr create -dB prod --fill
+=== block R5-c6-E19 git reset --har abbreviation
+git reset --har HEAD~1
+=== block R5-c7-R1 redirect 2>&1 before refspec
+git push origin 2>&1 HEAD:prod
+=== block R5-c7-R2 redirect &>/dev/null before refspec
+git push origin &>/dev/null HEAD:prod
+=== block R5-c7-R3 gh api field after 2>&1 (no -X)
+gh api repos/o/r/git/refs/heads/prod 2>&1 -f sha=abc
+=== block R5-c7-R4 comment <<EOF w/o later heredoc (control: restored)
+# 예: <<EOF
+git push origin HEAD:prod
+=== block R5-c7-R5 single-line comment <<EOF then later heredoc with other delim (control)
+# 예: <<EOF
+git push origin HEAD:prod
+git commit -F - <<'MSG'
+m
+MSG
+=== block R5-c7-R6 typical promote — dq commit msg mentions <<'EOF', push, then PR heredoc
+git commit -m "chore(hook): 문서
+heredoc 은 <<'EOF' 로 연다" && git push origin HEAD:prod && gh pr create --base dev --title x --body "$(cat <<'EOF'
+본문
+EOF
+)"
+=== block R6-T01 앞 줄 gh run watch 뒤 승격 push(따옴표 목적지) — 래퍼 판정은 같은 줄만
+gh run watch 33599247862 --exit-status
+git push origin "origin/dev:prod"
+=== block R6-T02 앞 줄 gh pr checks --watch 뒤 따옴표 prod push
+gh pr checks 12 --watch --interval 30
+git push origin "origin/dev:prod"
+=== block R6-T03 앞 줄 ssh 뒤 prod 삭제
+ssh admin-ec2 'sudo docker ps'
+git push origin --delete "prod"
+=== block R6-T04 앞 줄 gh run watch 뒤 gh api prod ref PATCH(따옴표 경로)
+gh run watch 1
+gh api -X PATCH "repos/o/r/git/refs/heads/prod" -f sha="$(git rev-parse origin/dev)"
+=== block R6-T05 한 줄 watch 인자의 따옴표 목적지
+watch -n 60 git push origin "HEAD:prod"
+=== allow R6-T06 앞 줄 ls *.sh 뒤 grep 문자열
+ls .claude/hooks/*.sh
+grep -c "git push origin HEAD:prod" .claude/hooks/guard-prod-push.sh
+=== allow R6-T07 앞 줄 gh run watch 뒤 echo 안내 문장
+gh run watch 123 --exit-status
+echo "다음: gh workflow run client-production.yml 은 막힌다"
+=== block R6-T08 docker build --push
+docker build --push -t imjohnkoo/nomacom-client:prod -f apps/client/Dockerfile .
+=== block R6-T09 docker builder build -o type=registry
+docker builder build -o type=registry -t imjohnkoo/nomacom-client:prod .
+=== allow R6-T10 docker compose exec 안의 drizzle-kit push
+docker compose exec admin npx drizzle-kit push
+=== allow R6-T11 gh workflow run --ref x ci.yml
+gh workflow run --ref imjohnkoo/x ci.yml
+=== block R6-T12 heredoc 으로 쓴 스크립트를 bash -x 로 실행
+cat > promote.sh <<'EOF'
+git push origin origin/dev:prod
+EOF
+bash -x promote.sh
+=== block R6-T13 줄 끝 파이프 heredoc 을 다음 줄 bash 로
+cat <<'EOF' |
+git push origin HEAD:prod
+EOF
+bash
+=== block R6-T14 curl 로 GitHub API 직접 prod ref PATCH
+curl -X PATCH -H "Authorization: token $(gh auth token)" https://api.github.com/repos/o/r/git/refs/heads/prod -d '{"sha": "abc"}'
+=== block R6-T15 따옴표 친 git reset "--hard"
+git reset "--hard" HEAD~1
+=== block R6-p1-P01 git push origin HEAD:prod with -C relative
+git -C ../x push origin HEAD:prod
+=== block R6-p1-P02 push prod with --no-verify after
+git push origin HEAD:prod --no-verify
+=== block R6-p1-P03 push with -u 와 리터럴 목적지
+git push -u origin HEAD:prod
+=== block R6-p1-P04 git push --force-if-includes
+git push --force-if-includes origin dev
+=== block R6-p1-P05 git push --force-with-lease=dev:abc dev
+git push --force-with-lease=dev:abc origin dev
+=== block R6-p1-P06 gh api -X PATCH refs/heads/prod with quoted -f "sha=..."
+gh api -X PATCH repos/o/r/git/refs/heads/prod -f "sha=$(git rev-parse origin/dev)"
+=== block R6-p1-P07 gh api with --method PATCH after path, field --field sha
+gh api repos/{owner}/{repo}/git/refs/heads/prod --method PATCH --field sha=abc
+=== block R6-p1-P08 gh api PATCH heads/prod path with ':owner/:repo'
+gh api -X PATCH repos/:owner/:repo/git/refs/heads/prod -f sha=abc
+=== block R6-p1-P09 gh pr create --base=prod
+gh pr create --base=prod --fill
+=== block R6-p1-P10 gh pr create -B=prod
+gh pr create -B=prod --fill
+=== block R6-p1-P11 docker push in && chain
+docker build -t a . && docker push a
+=== block R6-p1-P12 git reset --hard origin/dev
+git reset --hard origin/dev
+=== block R6-p1-P13 git -C path reset --hard
+git -C /x reset --hard
+=== block R6-p1-P14 aws ssm put-parameter with --profile at end
+aws ssm put-parameter --name /x --value y --profile nomacom
+=== block R6-p1-P15 git push origin prod 2>/dev/null
+git push origin prod 2>/dev/null
+=== block R6-p1-P16 git push origin prod|tee
+git push origin prod|tee log
+=== block R6-p1-P17 git push origin prod&&echo
+git push origin prod&&echo ok
+=== block R6-p1-P19 git push origin "refs/heads/prod"
+git push origin "refs/heads/prod"
+=== block R6-p1-P20 git push origin dev:refs/heads/prod with -q
+git push -q origin dev:refs/heads/prod
+=== block R6-p1-P21 gh api -X DELETE refs/heads/prod quoted path
+gh api -X DELETE "repos/o/r/git/refs/heads/prod"
+=== block R6-p1-P22 gh api PATCH prod with --raw-field
+gh api -X PATCH repos/o/r/git/refs/heads/prod --raw-field sha=abc
+=== block R6-p1-P23 git push origin HEAD:prod  with trailing spaces
+git push origin HEAD:prod   
+=== block R6-p1-P24 git push origin HEAD:prod;
+git push origin HEAD:prod;
+=== block R6-p1-P25 git push origin $(echo HEAD):prod
+git push origin $(echo HEAD):prod
+=== block R6-p1-P26 git push origin `git rev-parse HEAD`:prod
+git push origin `git rev-parse HEAD`:prod
+=== block R6-p1-P27 git push origin ${SHA}:refs/heads/prod
+git push origin ${SHA}:refs/heads/prod
+=== block R6-p1-P28 git push origin "$SHA:prod"
+git push origin "$SHA:prod"
+=== block R6-p1-P29 git push "origin" "prod"
+git push "origin" "prod"
+=== block R6-p1-P30 git push origin 'dev:prod'
+git push origin 'dev:prod'
+=== block R6-p1-P31 multi-line script promote
+set -euo pipefail
+SHA=$(git rev-parse origin/dev)
+git push origin "$SHA:refs/heads/prod"
+=== block R6-p1-P32 git push origin HEAD:prod with GIT_TRACE and -c
+GIT_TRACE=1 git -c http.postBuffer=524288000 push origin HEAD:prod
+=== block R6-p1-P33 gh pr create --base prod with heredoc body
+gh pr create --base prod --title x --body "$(cat <<'EOF'
+body
+EOF
+)"
+=== block R6-p1-P34 gh pr create body-file heredoc then base prod
+gh pr create --title x --body-file - --base prod <<'EOF'
+body
+EOF
+=== block R6-p1-P35 commit msg heredoc then push prod same line
+git commit -F - <<'EOF' && git push origin HEAD:prod
+msg
+EOF
+=== block R6-p1-P36 heredoc in $() then push prod after
+git commit -m "$(cat <<'EOF'
+msg
+EOF
+)" && git push origin HEAD:prod
+=== block R6-p1-P37 heredoc <<- with tab indented closing then push
+cat <<-EOF > x
+	memo
+	EOF
+git push origin HEAD:prod
+=== block R6-p1-P38 닫는 줄 뒤 공백 — bash 도 닫지 않는다(끝까지 본문) · 훅은 닫히지 않은 heredoc 을 되살려 명령으로 본다(안전 쪽)
+cat <<'EOF' > x
+memo
+EOF 
+git push origin HEAD:prod
+=== allow R6-p1-P39 commit heredoc unquoted delim, body with $VAR only
+git commit -F - <<EOF
+fix: $BRANCH
+git push origin prod
+EOF
+=== allow R6-p1-P40 gh api create comment with JSON containing "ref": "refs/heads/prod" via -f body
+gh api repos/o/r/issues/1/comments -f body='{"ref": "refs/heads/prod"}'
+=== allow R6-p1-P41 git push dev then gh api read prod with --jq containing ==
+git push origin HEAD:dev && gh api repos/o/r/git/refs/heads/prod --jq '.object.sha == "x"'
+=== allow R6-p1-P42 normal commit with message containing --force
+git commit -m "docs: --force 금지"
+=== allow R6-p1-P43 git push to dev with --force-with-lease in commit message before
+git commit -m "x --force" && git push origin HEAD:dev
+=== allow R6-p1-P44 docker compose push? no — docker compose build
+docker compose build web
+=== allow R6-p1-P45 docker logs push-worker
+docker logs push-worker --tail 20
+=== allow R6-p1-P46 docker run image named push
+docker run --rm alpine echo push
+=== allow R6-p1-P47 docker exec container push
+docker exec web push
+=== allow R6-p1-P48 git reset --soft then echo hard
+git reset --soft HEAD~1 && echo "--hard 아님"
+=== allow R6-p1-P49 aws ssm get-parameters-by-path
+aws ssm get-parameters-by-path --path /nomacom/client --recursive --with-decryption --query 'Parameters[].Name'
+=== allow R6-p1-P50 git config push.default
+git config push.default current
+=== allow R6-p2-W01 ls *.sh newline grep -c quoted push text (tail regex spans newline)
+ls .claude/hooks/*.sh
+grep -c "git push origin HEAD:prod" .claude/hooks/guard-prod-push.cases.txt
+=== allow R6-p2-W02 gh run watch newline pr comment body mentions prod push
+gh run watch 33599247862 --exit-status
+gh pr comment 12 --body "CI 통과. 다음 단계 git push origin HEAD:prod 는 사용자 승인 뒤"
+=== allow R6-p2-W03 ls ~/.ssh newline commit msg mentions prod push
+ls ~/.ssh
+git commit -m "docs: git push origin prod 금지 명시"
+=== allow R6-p2-W04 npx prettier newline grep -c
+npx prettier --check .claude/rules
+grep -c "git push origin prod" .claude/rules/deployment.md
+=== allow R6-p2-W05 bash test newline commit (no -c) control
+bash .claude/hooks/guard-prod-push.test.sh
+git commit -m "fix(hook): git push origin prod 차단 보강"
+=== allow R6-p2-W06 tmux word earlier newline commit
+tmux ls
+git commit -m "docs: git push origin HEAD:prod 금지"
+=== allow R6-p2-W07 watch word in path then newline commit
+ls apps/client/app/composables/watch
+git commit -m "docs: git push origin HEAD:prod 금지"
+=== allow R6-p2-W08 single line: ssh-keygen then && commit? (&& breaks) control
+ssh-keygen -l -f ~/.ssh/id_ed25519.pub && git commit -m "docs: git push origin prod 금지"
+=== allow R6-p2-W09 run test.sh newline grep -c via jq -c
+bash .claude/hooks/guard-prod-push.test.sh
+jq -c '.' x.json
+grep -c "docker push imjohnkoo/nomacom-client:prod" .claude/hooks/guard-prod-push.cases.txt
+=== block R6-p2-X02 docker image build --push
+docker image build --push -t imjohnkoo/nomacom-client:prod .
+=== block R6-p2-X03 docker builder build --push
+docker builder build --push -t imjohnkoo/nomacom-client:prod .
+=== block R6-p2-X04 docker build -o type=registry
+docker build -o type=registry -t imjohnkoo/nomacom-client:prod .
+=== allow R6-p2-X06 docker compose run git push feature (not docker push)
+docker compose run --rm tools git push origin imjohnkoo/x
+=== allow R6-p2-X08 gh workflow run --repo r ci.yml
+gh workflow run --repo imjohnkoo/nomacom-frontend ci.yml
+=== block R6-p2-X11 heredoc-written script run with sh -e relative
+cat > promote.sh <<'EOF'
+git push origin origin/dev:prod
+EOF
+sh -e promote.sh
+=== block R6-p2-X13 ssh heredoc remote push
+ssh build <<'EOF'
+cd repo && git push origin HEAD:prod
+EOF
+=== block R6-p2-X15 graphql enablePullRequestAutoMerge
+gh api graphql -f query='mutation { enablePullRequestAutoMerge(input: {pullRequestId: "PR_x"}) { clientMutationId } }'
+=== block R6-p2-X17 docker buildx bake --push
+docker buildx bake --push
+=== block R6-p2-X19 fish heredoc
+fish <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R6-p2-X20 git push -- refspec quoted with spaces? no: push with --repo=URL then prod
+git push --repo=https://github.com/imjohnkoo/nomacom-frontend.git HEAD:prod
+=== block R6-p2-X21 gh api -F 로 prod ref 쓰기(메서드 없이 — 필드가 있으면 POST)
+gh api repos/o/r/git/refs/heads/prod -F sha=abc
+=== block R6-p2-X22 git push origin HEAD:prod inside $(()) ? no — inside process substitution
+cat <(git push origin HEAD:prod)
+=== block R6-p2-X23 process substitution >()
+git log > >(git push origin HEAD:prod)
+=== block R6-p2-X24 gh pr create --base prod via --base= quoted value "prod"
+gh pr create --base="prod" --fill
+=== block R6-p2-X25 gh pr create -B 'prod' with title containing spaces before
+gh pr create --title "release: dev to prod" -B 'prod' --body "승격"
+=== block R6-p2-X26 git push with --no-verify --atomic origin dev prod split lines
+git push --atomic origin \
+  dev \
+  prod
+=== block R6-p2-X27 gh api merges via --raw-field=
+gh api repos/o/r/merges --raw-field=base=prod --raw-field=head=dev
+=== block R6-p2-X28 push refspec with refs/heads/prod and trailing comma? (no) — quoted dq with $var inside prefix
+git push origin "${SHA:?}:refs/heads/prod"
+=== block R6-p2-X29 PROMOTE via git -C wt with quoted var and && chain
+git -C "$WT" fetch origin && git -C "$WT" push origin "origin/dev:prod"
+=== block R6-p2-X30 git push using full remote URL with refs and quoted
+git push "https://github.com/imjohnkoo/nomacom-frontend.git" "origin/dev:refs/heads/prod"
+=== allow R6-p3-Y01 push-option with glob bracket value
+git push origin imjohnkoo/x -o 'a[1]'
+=== allow R6-p3-Y02 push-option with backslash value
+git push origin imjohnkoo/x -o 'a\b'
+=== allow R6-p3-Y03 push-option with star only
+git push origin imjohnkoo/x -o '*'
+=== allow R6-p3-Y04 push-option with question mark
+git push origin imjohnkoo/x -o '?'
+=== allow R6-p3-Y05 push-option with double slash and braces
+git push origin imjohnkoo/x -o 'x={a,b}'
+=== allow R6-p3-Y06 push-option repeated identical
+git push origin imjohnkoo/x -o ci.skip -o ci.skip -o ci.skip
+=== allow R6-p3-Y07 push-option value with ${} text
+git push origin imjohnkoo/x -o 'v=${X}'
+=== allow R6-p3-Y08 push-option value with % and #
+git push origin imjohnkoo/x -o 'a%#b'
+=== block R6-p3-Y10 process-subst --input with prod base JSON one word
+gh api repos/o/r/merges --input <(echo '{"base":"prod","head":"dev"}')
+=== block R6-p3-Y12 bash continuation then -s heredoc
+bash \
+  -s <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R6-p3-Y14 curl to GitHub API PATCH prod ref with gh token
+curl -X PATCH -H "Authorization: token $(gh auth token)" https://api.github.com/repos/o/r/git/refs/heads/prod -d '{"sha":"abc"}'
+=== allow R6-p3-Y15 gh api -X GET with --method later overriding? (GET read) path prod
+gh api repos/o/r/git/refs/heads/prod -X GET -f x=1
+=== block R6-p3-Y16 gh api write then -X GET in jq string? no — -X POST and later --jq 'get'
+gh api -X POST repos/o/r/git/refs -f ref=refs/heads/prod -f sha=abc --jq '.ref | test("get")'
+=== block R6-p3-Y17 gh api -X GET then --method POST (last wins)
+gh api -X GET --method POST repos/o/r/git/refs -f ref=refs/heads/prod -f sha=abc
+=== block R6-p3-Y18 gh api create ref prod with -f and --method=post lower in quotes
+gh api --method="post" repos/o/r/git/refs -f ref=refs/heads/prod -f sha=abc
+=== allow R6-p3-Y19 commit message with literal $(...) in single quotes then push dev
+git commit -m 'docs: $(git push origin HEAD:prod) 는 예시' && git push origin HEAD:dev
+=== allow R6-p3-Y20 gh pr create dq body with escaped backticks
+gh pr create --base dev --title x --body "막는 것: \`git push origin HEAD:prod\`"
+=== allow R6-p3-Y21 git log grep option prod
+git log --grep="prod" --oneline -5
+=== allow R6-p3-Y22 git push dev with commit message heredoc unquoted with $(date)
+git commit -F - <<EOF && git push origin HEAD:dev
+chore: $(date +%F) 정리
+EOF
+=== allow R6-p3-Y23 python -c string mentions push prod (documented gap side: should allow)
+python3 -c "print('git push origin HEAD:prod')"
+=== allow R6-p3-Y24 node script heredoc with template literal ${}
+node - <<'JS'
+const b = "prod";
+console.log(`git push origin HEAD:${b}`);
+JS
+=== allow R6-p3-Y25 sed in-place replace text containing docker push
+sed -i '' 's/docker push/docker image push/g' .claude/rules/deployment.md
+=== allow R6-p3-Y26 echo with $'...' newline then gh pr create dev
+printf $'a\nb\n' && gh pr create --base dev --fill
+=== allow R6-p3-Y27 git push dev branch named with refs/heads prefix quoted
+git push origin "HEAD:refs/heads/imjohnkoo/x"
+=== allow R6-p3-Y28 gh api PATCH PR base dev
+gh api -X PATCH repos/o/r/pulls/12 -f base=dev
+=== allow R6-p3-Y29 gh api create ref feature
+gh api repos/o/r/git/refs -f ref=refs/heads/imjohnkoo/x -f sha=abc
+=== allow R6-p3-Y30 gh api delete feature ref
+gh api -X DELETE repos/o/r/git/refs/heads/imjohnkoo/old
+=== allow R6-p3-Y31 watch command is gh run list (single line) control
+watch -n 30 'gh run list --limit 5 --branch prod'
+=== allow R6-p3-Y32 ssh to host reading prod log (no push)
+ssh admin-ec2 'docker logs nomacom-admin --tail 50 | grep prod'
+=== allow R6-p3-Y33 tmux send-keys yarn dev
+tmux send-keys -t dev 'yarn workspace nomacom-client dev' Enter
+=== allow R6-p3-Y34 bash -c test runner mention
+bash -c 'cd apps/client && yarn vitest run'
+=== allow R6-p3-Y35 orca terminal send text yarn
+orca terminal send --text "yarn turbo run build --filter=nomacom-client" --enter
+=== allow R6-p3-Y36 git rebase -x yarn test
+git rebase -x 'yarn turbo run test --filter=nomacom-client' origin/dev
+=== allow R6-p3-Y37 eval with dq containing mention in echo
+eval "echo 'git push origin prod 는 금지'"
+=== allow R6-p3-Y38 gh pr create title containing "docker push" phrase
+gh pr create --base dev --title "chore: docker push 경로 문서화" --body "x"
+=== allow R6-p3-Y39 커밋 메시지 heredoc 뒤 gh pr view
+git commit -F - <<'EOF'
+fix: x
+EOF
+gh pr view 12 --json number
+=== allow R6-p3-Y40 gh api graphql query with variables -F and query file? (read) inline
+gh api graphql -F owner=o -F name=r -f query='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){defaultBranchRef{name}}}'
+=== block R6-p4-H02 ssh earlier line then quoted HEAD:prod
+ssh admin-ec2 'docker ps --format "{{.Names}}"'
+git push origin "HEAD:prod"
+=== block R6-p4-H03 tmux earlier line then single-quoted refspec
+tmux ls
+git push origin 'HEAD:prod'
+=== block R6-p4-H04 gh run watch then skill-style "$(...):prod"
+gh run watch 33599247862 --exit-status
+git push origin "$(git rev-parse origin/dev):prod"
+=== block R6-p4-H05 gh run watch then gh pr create --base "prod"
+gh run watch 33599247862 --exit-status
+gh pr create --base "prod" --head dev --fill
+=== block R6-p4-H06 gh run watch then gh api PATCH quoted path prod
+gh run watch 33599247862 --exit-status
+gh api -X PATCH "repos/imjohnkoo/nomacom-frontend/git/refs/heads/prod" -f sha="$(git rev-parse origin/dev)"
+=== block R6-p4-H07 ls ~/.ssh then quoted refspec
+ls ~/.ssh
+git push origin "HEAD:refs/heads/prod"
+=== block R6-p4-H08 single line: watch word then quoted refspec (no ;&|)
+gh run watch 1 --exit-status && git push origin "HEAD:prod"
+=== block R6-p4-H09 gh run watch then quoted "--force" feature
+gh run watch 1 --exit-status
+git push "--force" origin imjohnkoo/x
+=== block R6-p4-H10 gh run watch then quoted -B prod
+gh run watch 1
+gh pr edit 12 -B "prod"
+=== block R6-p4-H11 control: gh run watch then unquoted refspec
+gh run watch 33599247862 --exit-status
+git push origin origin/dev:prod
+=== block R6-p4-H12 gh run watch then git -c alias quoted? (alias value)
+gh run watch 1
+git -c alias.pp='push origin HEAD:prod' pp
+=== block R6-p4-H13 npx line then quoted refspec (npx needs -c — control)
+npx vitest run
+git push origin "HEAD:prod"
+=== block R6-p4-H14 watch then gh api graphql mutation (marker lost?)
+gh run watch 1
+gh api graphql -f query='mutation { updateRef(input: {refId: "x", oid: "y", force: true}) { clientMutationId } }'
+=== block R6-p4-H15 watch then gh api --input pretty json prod
+gh run watch 1
+echo '{"ref": "refs/heads/prod", "sha": "abc"}' | gh api repos/o/r/git/refs --input -
+=== block R6-p4-H16 watch then gh api -X PATCH ref dev with quoted force JSON-ish field
+gh run watch 1
+gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc -F 'force=true'
+=== block R6-p5-I02 vitest --watch word then quoted refspec
+yarn vitest run --watch
+git push origin "HEAD:prod"
+=== block R6-p5-I04 gh run watch then git commit then push quoted (3 lines)
+gh run watch 33599247862 --exit-status
+git commit --allow-empty -m "chore: retrigger"
+git push origin "HEAD:prod"
+=== block R6-p5-I05 300 chars after watch (window)
+gh run watch 33599247862 --exit-status
+echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+git push origin "HEAD:prod"
+=== block R6-p5-I07 gh run watch then docker push quoted image
+gh run watch 1
+docker push "imjohnkoo/nomacom-client:prod"
+=== block R6-p5-I08 gh run watch then reset quoted --hard
+gh run watch 1
+git reset "--hard" origin/dev
+=== block R6-p5-I09 gh run watch then aws ssm put quoted
+gh run watch 1
+aws ssm put-parameter --name "/nomacom/client/X" --value "y z" --overwrite
+=== block R6-p5-I10 gh run watch then gh workflow run quoted production
+gh run watch 1
+gh workflow run "client-production.yml"
+=== block R6-p6-Z02 git reset single-quoted --hard
+git reset '--hard'
+=== block R6-p6-Z03 gh api quoted -f field on prod ref (implicit POST)
+gh api repos/o/r/git/refs/heads/prod "-f" sha=abc
+=== block R6-p6-Z04 docker quoted push subcommand
+docker "push" imjohnkoo/nomacom-client:prod
+=== block R6-p6-Z05 git quoted push subcommand and -C
+git -C "$WT" "push" origin "HEAD:prod"
+=== block R6-p6-Z06 gh api quoted --method value
+gh api --method "PATCH" repos/o/r/git/refs/heads/prod -f sha=abc
+=== allow R6-p6-Z08 gh run watch then git push feature quoted
+gh run watch 1 --exit-status
+git push -u origin "imjohnkoo/x"
+=== block R6-p6-Z09 git push via sudo -u quoted
+sudo -u john git push origin 'HEAD:prod'
+=== block R6-p6-Z10 two-line: cd quoted path then push quoted
+cd "/Users/someone/My Work/x"
+git push origin "HEAD:prod"
+=== block R6-p6-Z11 env var line then quoted
+export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_work"
+git push origin "HEAD:prod"
+=== block R6-p6-Z12 git config core.sshCommand then quoted
+git config core.sshCommand "ssh -i ~/.ssh/id_work"
+git push origin "HEAD:prod"
+=== block R7-B01 앞 명령 bash x.sh 뒤 커밋 heredoc 본문의 don't — 닫는 줄 뒤 prod push(7회차 B1)
+bash .claude/hooks/guard-prod-push.test.sh && git commit -F - <<'EOF'
+fix(hook): don't treat commit bodies as commands
+EOF
+git push origin HEAD:prod && gh run list --branch prod --limit 1 --json status -q '.[0].status'
+=== block R7-B02 같은 꼴 — amend 뒤 force-with-lease
+bash .claude/hooks/guard-prod-push.test.sh && git commit --amend -F - <<'EOF'
+fix(hook): don't treat commit bodies as commands
+EOF
+git push --force-with-lease origin imjohnkoo/x && gh pr view --json url -q '.url'
+=== block R7-B03 같은 꼴 — reset --hard
+bash .claude/hooks/guard-prod-push.test.sh && git commit -F - <<'EOF'
+fix: it's done
+EOF
+git reset --hard origin/dev && echo 'reset'
+=== block R7-B04 들여 쓴 닫는 줄은 닫지 않는다(bash 실측) — 진짜 닫는 줄 뒤 prod push
+cat > docs/heredoc.md <<'EOF'
+예시는 아래처럼 닫는다:
+    EOF
+it's the closing line
+EOF
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B05 python 본문의 이스케이프 따옴표(개수는 짝수 · 셸 기준 짝 없음)
+python3 - <<'PY'
+x = 'a\'b\'c'
+PY
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B06 ssh heredoc 본문의 won't — 닫는 줄 뒤 prod push
+ssh admin-ec2 <<'EOF'
+echo deploy won't start
+EOF
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B07 cat heredoc | bash 본문의 it's — 닫는 줄 뒤 prod push
+cat <<'EOF' | bash
+echo it's fine
+EOF
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B08 시작 줄 앞 명령 ssh '…' · 본문의 인치 표기 — 닫는 줄 뒤 prod push
+ssh admin-ec2 'sudo docker ps' && cat > notes.md <<'EOF'
+12" 모니터
+EOF
+git push origin HEAD:prod && echo "ok"
+=== block R7-B09 셸 본문 안의 prod push 는 따로 봐도 막힌다(뒤에 짝 없는 따옴표)
+ssh admin-ec2 <<'EOF'
+git push origin HEAD:prod
+echo won't
+EOF
+=== block R7-B10 $(…) 안 bash heredoc 본문의 prod push
+out="$(bash <<'EOF'
+git push origin HEAD:prod
+EOF
+)"
+=== block R7-B11 줄 끝 «\» 뒤 heredoc — 본문은 논리 줄 뒤부터(이어진 줄의 prod push · 7회차 minor 2)
+git commit -F - <<'EOF' && \
+  git push origin HEAD:prod
+fix: msg
+EOF
+=== block R7-B12 줄 끝 «\» 뒤 heredoc — 이어진 줄의 --base prod
+gh pr create --title x --body-file - <<'EOF' \
+  --base prod
+body
+EOF
+=== block R7-B13 here-string <<< 뒤 줄은 본문이 아니다(7회차 minor 3)
+tr a-z A-Z <<< done
+git push origin HEAD:prod
+done
+=== block R7-B14 한 줄에 heredoc 둘 — 둘째 본문의 it's 가 뒤 명령을 숨기지 않는다
+cat <<'A' > a.md && cat <<'B' > b.md
+first
+A
+it's second
+B
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B15 <<- 는 앞 탭만 지우고 닫는다 — 닫는 줄 뒤 prod push
+cat <<-'EOF' > x.md
+	don't
+	EOF
+git push origin HEAD:prod && echo 'ok'
+=== block R7-B16 ruby 본문의 백틱 명령(셸이 실행)
+ruby <<'RB'
+puts `git push origin HEAD:prod`
+RB
+=== block R7-B17 줄 이음 뒤 | bash 로 받는 heredoc
+cat <<'EOF' | \
+  bash
+git push origin HEAD:prod
+EOF
+=== allow R7-B18 bash x.sh 뒤 커밋 heredoc 본문의 명령 글자(데이터)
+bash .claude/hooks/guard-prod-push.test.sh && git commit -F - <<'EOF'
+fix(hook): don't run git push origin HEAD:prod by hand
+EOF
+=== allow R7-B19 들여 쓴 EOF 가 든 문서 heredoc — 진짜 닫는 줄까지 데이터
+cat > docs/heredoc.md <<'EOF'
+    EOF
+git push origin HEAD:prod 는 John 이
+EOF
+=== block R7-B20 한글 7KB 한 줄 커밋 메시지 뒤 prod push(창 경계가 글자 중간)
+git commit -m "가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" 가나다라 마바사 아자차카 \"타파하\" "
+git push origin HEAD:prod
+=== allow R7-B21 한글 7KB 따옴표 없는 heredoc 본문(큰따옴표 · 명령 글자 포함)
+git commit -F - <<EOF
+가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하" 가나다라 마바사 아자차카 "타파하"
+git push origin HEAD:prod 예시
+EOF
+=== allow R7-M01 git add . 뒤 커밋 메시지 heredoc 의 prod 언급(7회차 M1)
+git add .
+git commit -m "$(cat <<'EOF'
+fix(hook): x
+
+- git push origin HEAD:prod 차단
+EOF
+)"
+=== allow R7-M02 문서 heredoc 뒤 npx prettier --check .
+cat > /tmp/runbook.md <<'EOF'
+1. git push origin <sha>:prod (John 승인)
+EOF
+npx prettier --check . >/dev/null
+=== allow R7-M03 finish-branch Option 2 — 게이트 스크립트 실행 뒤 PR 본문 heredoc
+DRAFT="--draft"
+if env -u CONTENT_GATE_ROOT bash .github/scripts/content-pending-gate.sh >/dev/null 2>&1; then DRAFT=""; fi
+gh pr create --base dev $DRAFT --title "fix(hook): x" --body "$(cat <<'EOF'
+## Summary
+- git push origin HEAD:refs/heads/prod 를 막는다
+- gh workflow run client-production.yml 도 막는다
+EOF
+)"
+=== allow R7-M04 source ~/.nvm/nvm.sh 뒤 커밋 heredoc
+source ~/.nvm/nvm.sh && git commit -F - <<'EOF'
+docs: git push origin HEAD:prod 는 John 이
+EOF
+=== allow R7-M05 heredoc 으로 쓴 파일과 다른 스크립트 실행
+cat > notes.md <<'EOF'
+git push origin HEAD:prod
+EOF
+bash .claude/hooks/guard-prod-push.test.sh
+=== block R7-M06 heredoc 으로 쓴 그 파일을 ./ 로 실행
+cat > promote.sh <<'EOF'
+git push origin origin/dev:prod
+EOF
+chmod +x promote.sh && ./promote.sh
+=== block R7-M07 heredoc 으로 쓴 그 파일을 sh 로(리다이렉트가 뒤에 · 절대 경로)
+cat <<'EOF' > /tmp/p.sh
+git push origin HEAD:prod
+EOF
+sh /tmp/p.sh
+=== block R7-M08 tee 로 쓴 파일을 source
+tee deploy.sh >/dev/null <<'EOF'
+git push origin HEAD:prod
+EOF
+source deploy.sh
+=== block R7-M09 따옴표 친 파일 이름으로 쓰고 실행
+cat > "run me.sh" <<'EOF'
+git push origin HEAD:prod
+EOF
+cat > "p2.sh" <<'EOF'
+git push origin HEAD:prod
+EOF
+bash "p2.sh"
+=== block R7-m01 줄 이음 뒤 bash -c 문자열(7회차 minor 1)
+bash -c \
+  'git push origin HEAD:prod'
+=== block R7-m01b 줄 이음 뒤 eval 문자열
+eval \
+  "git push origin HEAD:prod"
+=== block R7-m04 docker compose -f 값 뒤 push(7회차 minor 4)
+docker compose -f docker-compose.prod.yml push
+=== block R7-m04b docker compose -p 값 뒤 push
+docker compose -p nomacom push
+=== block R7-m04c docker-compose push
+docker-compose -f docker-compose.yml push
+=== allow R7-m04d docker compose -f 값 뒤 exec 안의 drizzle-kit push
+docker compose -f docker-compose.yml exec admin npx drizzle-kit push
+=== allow R7-m05 curl 로 prod 브랜치 조회(GET · 7회차 minor 5)
+curl -s -H "Authorization: token $(gh auth token)" https://api.github.com/repos/imjohnkoo/nomacom-frontend/branches/prod | jq -r .commit.sha
+=== block R7-m05b curl --request PATCH prod ref
+curl --request PATCH https://api.github.com/repos/o/r/git/refs/heads/prod --data '{"sha":"abc"}'
+=== block R7-m05c curl -d 로 merges
+curl -d '{"base":"prod","head":"dev"}' https://api.github.com/repos/o/r/merges
+=== block R7-m05d httpie PATCH prod ref
+http PATCH https://api.github.com/repos/o/r/git/refs/heads/prod sha=abc
+=== block R7-m06 변수에 담은 graphql mutation(7회차 minor 6)
+QUERY='mutation { updateRef(input: {refId: "REF_x", oid: "abc", force: true}) { ref { name } } }'
+gh api graphql -f query="$QUERY"
+=== allow R7-m06b 변수에 담은 graphql 조회
+QUERY='query { repository(owner: "o", name: "r") { ref(qualifiedName: "refs/heads/prod") { target { oid } } } }'
+gh api graphql -f query="$QUERY"
+=== block R7-m07 orca --text= 붙여 쓴 꼴(7회차 minor 7)
+orca terminal send --text="git push origin HEAD:prod" --enter
+=== block R7-m08 buildx imagetools create 로 :prod 재태그(7회차 minor 8)
+docker buildx imagetools create -t imjohnkoo/nomacom-client:prod imjohnkoo/nomacom-client:sha-abc
+=== block R7-m09 줄 이음 직후 # 는 주석이 아니다(7회차 minor 9)
+echo a\
+#; git push origin HEAD:prod
+=== allow R7-m09b 줄 이음 앞이 공백이면 주석이다
+echo a \
+# git push origin HEAD:prod
+=== allow R7-Y39 데이터 heredoc 의 refs/heads/prod 글자 + 이슈 댓글 gh api --input(ref 엔드포인트가 아니다 — 8회차에 오탐 해소)
+git commit -F - <<'EOF'
+docs: refs/heads/prod 는 John 만 민다
+EOF
+gh api repos/o/r/issues/1/comments --input comment.json
+=== block R7-H15 git push --repo= 꼴
+git push --repo=origin prod
+=== block R7-X21 gh api --method PATCH prod ref -F
+gh api --method PATCH repos/o/r/git/refs/heads/prod -F sha=abc
+=== block R8-P1-01 $'..\'..' commit msg, then PR heredoc body w/ apostrophe, then prod push, then later sq
+git commit -m $'fix(hook): don\'t swallow lines\n\nQA round 8'
+gh pr create --base dev --title "fix(hook)" --body-file - <<'EOF'
+## Summary
+- it's fixed
+EOF
+git push origin HEAD:prod
+gh pr view --json url -q '.url'
+=== block R8-P1-02 same, minimal
+echo $'it\'s'
+cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P1-03 $'..\'..' then reset --hard hidden
+echo $'it\'s'
+cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git reset --hard origin/dev
+echo 'done'
+=== block R8-P1-04 $'..\'..' then gh pr create --base prod hidden
+printf '%s\n' $'won\'t'
+git commit -F - <<'EOF'
+fix: can't
+EOF
+gh pr create --base prod --fill
+gh pr view --json url -q '.url'
+=== block R8-P1-06 while read eval loop fed by heredoc
+while read -r c; do eval "$c"; done <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P1-07 brace group piped to bash
+{ cat <<'EOF'; } | bash
+git push origin HEAD:prod
+EOF
+=== block R8-P1-08 subshell piped to bash
+(cat <<'EOF') | bash
+git push origin HEAD:prod
+EOF
+=== block R8-P1-09 backslash bash heredoc receiver
+\bash <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P1-10 quoted "$SHELL" heredoc receiver
+"$SHELL" -s <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P1-11 dot-source stdin
+. /dev/stdin <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P1-12 cat heredoc 2>&1 | bash
+cat <<'EOF' 2>&1 | bash
+git push origin HEAD:prod
+EOF
+=== block R8-P1-13 orca --text heredoc in $()
+orca terminal send --text "$(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)"
+=== block R8-P1-14 tmux send-keys heredoc in $()
+tmux send-keys -t main "$(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)" Enter
+=== block R8-P1-15 curl dispatch production workflow
+curl -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/nomacom-frontend/actions/workflows/client-production.yml/dispatches -d '{"ref":"dev"}'
+=== block R8-P1-16 gh api dispatch by workflow id
+gh api repos/imjohnkoo/nomacom-frontend/actions/workflows/123456789/dispatches -f ref=dev
+=== block R8-P1-17 curl rerun run
+curl -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/o/r/actions/runs/123/rerun
+=== block R8-P1-19 $SHELL -c reset --hard (dev blocks)
+$SHELL -c 'git reset --hard origin/dev'
+=== block R8-P1-20 parallel push (dev blocks)
+parallel 'git push origin {}' ::: prod
+=== block R8-P1-23 aws deploy create-deployment (direct prod deploy)
+aws deploy create-deployment --application-name nomacom-client --deployment-group-name prod --github-location repository=imjohnkoo/nomacom-frontend,commitId=abc
+=== allow R8-P1-24 node quoted heredoc template literal log mentioning docker push
+node - <<'JS'
+const img = "imjohnkoo/nomacom-client:prod";
+console.log(`next: docker push ${img} is done by CI`);
+JS
+=== allow R8-P1-25 gh api comment via -F body=@- heredoc mentioning database: prod
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments -F body=@- <<'EOF'
+배포 확인 — database: prod 연결 정상
+EOF
+=== allow R8-P1-26 gh api comment via -F body=@- heredoc mentioning refs/heads/prod
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments -F body=@- <<'EOF'
+dev → refs/heads/prod fast-forward 는 사용자 승인 뒤
+EOF
+=== allow R8-P1-27 git add . then commit heredoc
+git add . scripts/x.sh && git commit -F - <<'EOF'
+fix: x
+EOF
+=== allow R8-P1-28 write file then git add . file path
+cat > scripts/x.sh <<'EOF'
+git push origin prod
+EOF
+git add . scripts/x.sh
+=== block R8-P2-C1 control: no $'' line
+cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C2 $'' line, no later sq
+echo $'it\'s'
+cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+=== block R8-P2-C3 $'' line, body w/o apostrophe, later sq
+echo $'it\'s'
+cat > /tmp/n.md <<'EOF'
+hello
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C4 idiom 'it'$'\''s' then heredoc w/ apostrophe
+echo 'it'$'\''s ok'
+git commit -F - <<'EOF'
+fix: don't break
+EOF
+git push origin HEAD:prod
+gh pr view --json url -q '.url'
+=== block R8-P2-C5 commit $'..\n..' with apostrophe, PR heredoc, promote
+git commit -m $'fix(client): it\'s done\n\n- detail'
+git push -u origin imjohnkoo/x
+gh pr create --base dev --title "fix(client)" --body "$(cat <<'EOF'
+## Summary
+- the guide's images
+EOF
+)"
+git push origin imjohnkoo/x:prod
+echo 'ok'
+=== block R8-P2-C6 dq string with nested dq in ${//} then heredoc
+echo "${x//"/}"
+cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C7 heredoc delim with colon
+cat > /tmp/n.md <<'EOF:1'
+don't
+EOF:1
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C8 heredoc delim with bang
+cat > /tmp/n.md <<'END!'
+don't
+END!
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C9 $'' in same line before heredoc
+git commit -m $'fix: it\'s' -F - <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P2-C10 $'' with \' in heredoc start line of different cmd
+printf $'a\'b\n' > /tmp/x; cat > /tmp/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R8-P3-01 bash -s 2>&1 before heredoc
+bash -s 2>&1 <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P3-02 ssh 2>&1 before heredoc (remote shell)
+ssh -T ec2-prod 2>&1 <<'EOF'
+cd /app/nomacom-frontend && git push origin HEAD:prod
+EOF
+=== block R8-P3-03 bash &> log before heredoc
+bash &>/tmp/qa.log <<'EOF'
+git reset --hard origin/dev
+EOF
+=== block R8-P3-04 bash > log 2>&1 before heredoc, then tail
+bash -x > /tmp/qa.log 2>&1 <<'EOF'
+docker push imjohnkoo/nomacom-client:prod
+EOF
+tail -5 /tmp/qa.log
+=== block R8-P3-05 control: bash heredoc then redirect after
+bash -s <<'EOF' > /tmp/qa.log 2>&1
+git push origin HEAD:prod
+EOF
+=== block R8-P3-06 sudo bash 2>&1
+sudo bash 2>&1 <<'EOF'
+aws ssm put-parameter --name /nomacom/client/X --value y --overwrite
+EOF
+=== block R8-P3-07 python 2>&1 - heredoc 닫힌 뒤 본문 밖 prod push
+python3 2>&1 - <<'PY'
+import os
+PY
+git push origin HEAD:prod
+=== block R8-P3-08 trap heredoc in $()
+trap "$(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)" EXIT
+=== block R8-P3-09 watch heredoc in $()
+watch -n 60 "$(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)"
+=== allow R8-P3-10 bash -n syntax check of written script (not executed)
+cat > /tmp/qa/promote.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -n /tmp/qa/promote.sh && echo syntax-ok
+=== block R8-P3-11 알고 두는 오탐(안전 쪽) — | ssh 뒤 따옴표 원격 명령은 읽지 못해 셸 본문으로 본다
+cat <<'EOF' | ssh ec2 'cat > /tmp/notes.md'
+배포 메모: git push origin HEAD:prod 는 사용자 승인 뒤
+EOF
+=== allow R8-P3-12 gh workflow run path form of ci
+gh workflow run .github/workflows/ci.yml --ref imjohnkoo/x
+=== block R8-P4-01 bash -s -- ${BR} heredoc (brace var after receiver)
+bash -s -- ${BR} <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P4-02 ssh ${HOST} heredoc
+ssh ${EC2_HOST} <<'EOF'
+cd /app/nomacom-frontend && git reset --hard origin/prod
+EOF
+=== block R8-P4-03 ssh -i ${KEY} user@${IP} 'bash -s' heredoc
+ssh -i ${KEY} ec2-user@${IP} 'bash -s' <<'EOF'
+docker push imjohnkoo/nomacom-client:prod
+EOF
+=== block R8-P4-04 control ssh "$HOST" heredoc
+ssh "${EC2_HOST}" <<'EOF'
+cd /app/nomacom-frontend && git reset --hard origin/prod
+EOF
+=== block R8-P4-05 bash with brace-expansion arg then heredoc
+bash -s {a,b} <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R8-P4-06 sh -s ${X} 따옴표 없는 heredoc 본문의 $(…) prod push
+sh -s ${X} <<EOF
+$(git push origin HEAD:prod)
+EOF
+=== block R8-P5-01 ssh with long options (>256 chars before string) remote reset --hard
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -i ~/.ssh/nomacom-prod-admin.pem ec2-user@ec2-3-34-123-45.ap-northeast-2.compute.amazonaws.com 'cd /app/nomacom-frontend && git reset --hard origin/prod'
+=== block R8-P5-02 docker run long options then sh -c docker push (string > 256 after docker? no, sh -c is adjacent) control
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD":/w -w /w -e DOCKER_CONFIG=/w/.docker -e A=1 -e B=2 -e C=3 -e D=4 -e E=5 -e F=6 docker:27-cli sh -c 'docker push imjohnkoo/nomacom-client:prod'
+=== block R8-P5-03 bash -c with long option list before -c (> 256)
+bash --norc --noprofile -o pipefail -o errexit -o nounset -O extglob -O globstar -O nullglob -O dotglob -O failglob -O lastpipe -O inherit_errexit -O checkwinsize -O cdspell -O dirspell -O direxpand -O histappend -O cmdhist -O lithist -c 'git push origin HEAD:prod'
+=== block R8-P5-04 long line prefix before ssh on same line (window is tail of line)
+echo "$(date) ................................................................................................................................................................................................................................................." ; ssh ec2 'git push origin HEAD:prod'
+=== block R8-P5-05 kubectl exec long then sh -c
+kubectl --context arn:aws:eks:ap-northeast-2:059265294529:cluster/nomacom-prod-cluster-2026 --namespace nomacom-production-workloads exec -it deploy/nomacom-client-frontend-deployment-v2 --container nomacom-client-frontend -- sh -c 'git push origin HEAD:prod'
+=== block R8-P5b-01 ssh with long options (>256 chars before string) remote reset --hard
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o LogLevel=ERROR -o IdentitiesOnly=yes -i ~/.ssh/nomacom-prod-admin.pem ec2-user@ec2-3-34-123-45.ap-northeast-2.compute.amazonaws.com 'cd /app/nomacom-frontend && git reset --hard origin/prod'
+=== block R8-P5b-02 ssh long options then docker push remote
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o LogLevel=ERROR -o IdentitiesOnly=yes -i ~/.ssh/nomacom-prod-admin.pem ec2-user@ec2-3-34-123-45.ap-northeast-2.compute.amazonaws.com 'docker tag a b && docker push imjohnkoo/nomacom-client:prod'
+=== block R8-P6-01 ruby body: escaped apostrophe line before backtick command (intra-body neut)
+ruby <<'RB'
+puts 'it\'s'
+puts `git push origin HEAD:prod`
+puts 'x'
+RB
+=== block R8-P6-02 unquoted python heredoc: $(...) on a shell-unbalanced line (bash executes it while building the body)
+python3 - <<PY
+print('it\'s', "$(git push origin HEAD:prod)")
+PY
+=== block R8-P6-03 ssh with 120-char options then quoted command (wrapper window between 32 and 256)
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/nomacom-prod.pem ec2-user@ec2-3-34-1-2.compute.amazonaws.com 'git reset --hard origin/prod'
+=== allow R8-D01 wiki commit flow with heredoc msg mentioning prod push
+W="${NOMACOM_WIKI:-$HOME/dev/current-projects/nomacom-wiki}"
+git -C "$W" pull --rebase -q
+git -C "$W" add wiki/frontend/plans/2026-10-05-hook.md
+git -C "$W" commit -q -F - <<'EOF'
+docs(frontend): hook plan — git push origin HEAD:prod · gh workflow run client-production.yml 차단 정리
+
+it's the 8th QA round; don't merge before ack.
+EOF
+git -C "$W" push -q
+=== allow R8-D02 python patch of markdown with Korean + apostrophes + command text in strings
+python3 - <<'PY'
+from pathlib import Path
+p = Path("docs/x.md")
+s = p.read_text()
+s = s.replace("git push origin prod", "git push origin dev")  # don't touch others
+s = s.replace('it\'s', "it is")
+p.write_text(s)
+print("ok — 'prod' 언급 정리")
+PY
+=== allow R8-D03 PR create with heredoc body full of blocked-command text then view url
+gh pr create --base dev --title "fix(hook): QA ⑥ 8회차" --body "$(cat <<'EOF'
+## Summary
+- `git push origin HEAD:prod` · `git reset --hard` · `docker push x:prod` · `aws ssm put-parameter` 를 막는다
+- it's a hook; don't bypass
+
+## Test plan
+- [x] bash .claude/hooks/guard-prod-push.test.sh
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+gh pr view --json url -q '.url'
+=== allow R8-D04 ssh multi-line read-only check
+ssh -i ~/.ssh/nomacom.pem ec2-user@client-origin.esimmany.com "
+docker ps --format '{{.Names}} {{.Image}}'
+docker logs --tail 50 nomacom-client 2>&1 | grep -c ERROR
+"
+=== block R8-D05 ssh multi-line dq with reset --hard
+ssh ec2 "
+cd /app/nomacom-frontend
+git reset --hard origin/prod
+"
+=== allow R8-D06 weekly notify with message mentioning prod
+python3 "$NOMACOM_MANAGER/scripts/weekly-notify.py" --event wiki --msg "frontend: guard hook 8회차 — prod push 차단 유지"
+=== allow R8-D07 orca terminal send yarn dev
+orca terminal send --terminal client-dev --text "yarn workspace nomacom-client dev" --enter
+=== allow R8-D08 cat heredoc to file w/ unquoted delim containing $VAR and escaped backticks
+cat > /tmp/qa/note.md <<EOF
+# $USER 메모
+- \`git push origin HEAD:prod\` 는 사용자 승인 뒤
+EOF
+=== allow R8-D09 gh api PR review comment reply inline -f body with prod mention
+gh api repos/imjohnkoo/nomacom-frontend/pulls/12/comments/123/replies -f body="dev → prod 승격은 사용자 승인 뒤 — git push origin dev:prod 는 훅이 막는다"
+=== allow R8-D10 gh api comment via --input JSON file built by jq with body mentioning base: prod
+jq -n --arg b "PR base: prod 금지 — base 는 dev" '{body: $b}' > /tmp/qa/c.json
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments --input /tmp/qa/c.json
+=== allow R8-D11 node heredoc writing html with template literal and $(
+node - <<'JS'
+const fs = require('fs');
+const html = `<script>$(function(){ $('#a').text("it's ok"); });</script>`;
+fs.writeFileSync('/tmp/qa/a.html', html);
+JS
+=== allow R8-D12 git log grep and diff prod..dev summary
+git fetch -q origin && git log --oneline origin/prod..origin/dev | head -20 && git diff --stat origin/prod origin/dev -- apps/client | tail -3
+=== allow R8-D13 docker compose local db + psql
+docker compose -f docker-compose.local.yml up -d db && docker compose -f docker-compose.local.yml exec -T db psql -U postgres -c "select now()"
+=== allow R8-D14 gh run watch then gh run view log
+gh run watch 33599247862 --exit-status || gh run view 33599247862 --log-failed | tail -50
+=== allow R8-D15 finish-branch: push feature + PR + checks watch
+git push -u origin imjohnkoo/hook-prod-refspec 2>&1 | tail -3
+gh pr checks 12 --watch --fail-fast
+gh pr view 12 --json mergeable,mergeStateStatus -q '.mergeable + " " + .mergeStateStatus'
+=== block R8-M2b ruby 본문 — 따옴표 개수는 짝수 · 셸 기준 짝 없음(이스케이프 판정을 빼면 샌다)
+ruby <<'RB'
+x = 'a\'b\'c'
+puts `git push origin HEAD:prod`
+puts 'y'
+RB
+=== block R9-M1a ANSI-C 안 \' 두 개(하나만이면 처리를 지워도 짝이 우연히 맞는다) 뒤 heredoc · prod push
+git commit -m $'fix: it\'s Claude\'s fix'
+cat > /tmp/qa/n.md <<'EOF'
+don't
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R9-M1b 열린 큰따옴표가 다음 줄에서 닫힌 뒤 본문 시작
+cat <<'EOF' > /tmp/qa/x.txt; echo "a
+b"
+body
+EOF
+git push origin HEAD:prod
+echo "done"
+=== block R9-M1c 따옴표 없는 heredoc 본문의 큰따옴표(인치 표기) 뒤 prod push
+git commit -F - <<EOF
+fix: 12" 모니터
+EOF
+git push origin HEAD:prod
+echo "done"
+=== block R9-M1d 셸 본문 안의 셸 본문(2단)의 reset --hard
+ssh ec2-admin <<'EOF'
+bash <<'IN'
+git reset --hard origin/dev
+IN
+EOF
+=== allow R9-m1 heredoc 으로 쓴 파일을 jq 로 감싸 스크립트에 파이프(| bash <스크립트> 의 표준 입력은 데이터)
+cat > /tmp/qa/probe.txt <<'EOF'
+git push origin HEAD:prod
+EOF
+jq -Rs '{tool_input:{command:.}}' /tmp/qa/probe.txt | bash .claude/hooks/guard-prod-push.sh
+=== allow R9-m1b python 스크립트 파일에 넘기는 데이터 heredoc
+python3 scripts/apply.py <<'EOF'
+git push origin HEAD:prod 는 John 이
+EOF
+=== block R9-m2 gh pr -R o/r create --base prod
+gh pr -R o/r create --base prod --fill
+=== block R9-m2b gh workflow -R o/r run client-production.yml
+gh workflow -R o/r run client-production.yml
+=== block R9-m2c gh run -R o/r rerun
+gh run -R o/r rerun 123
+=== block R9-m3 curl 본문을 heredoc 으로 — refs/heads/prod
+curl -X POST -H "Authorization: token $(gh auth token)" https://api.github.com/repos/o/r/git/refs -d @- <<'EOF'
+{"ref": "refs/heads/prod", "sha": "abc"}
+EOF
+=== block R9-m4 graphql createPullRequest 의 base 를 변수로
+gh api graphql -f query='mutation($b: String!) { createPullRequest(input: {repositoryId: "R", baseRefName: $b, headRefName: "dev", title: "x"}) { pullRequest { url } } }' -f b=prod
+=== block R9-m5 git config remote.origin.push 에 prod 뒤 맨 push
+git config remote.origin.push refs/heads/dev:refs/heads/prod && git push origin
+=== block R9-m7 npm exec -c 문자열
+npm exec -c 'git push origin HEAD:prod'
+=== block R9-m7b $(which bash) -c 문자열
+$(which bash) -c 'git reset --hard origin/dev'
+=== block R9-m7c ${SHELL:-bash} -c 문자열
+${SHELL:-bash} -c 'git push origin HEAD:prod'
+=== block R9-m7d heredoc 으로 쓴 스크립트를 env X=1 경로로 실행
+cat > /tmp/qa/p.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+env X=1 /tmp/qa/p.sh
+=== block R9-m7e heredoc 으로 쓴 스크립트를 bash -- 로 실행
+cat > p.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -- p.sh
+=== block R9-P1-01 cat heredoc piped to while-read eval loop
+cat <<'EOF' | while read -r c; do eval "$c"; done
+git push origin HEAD:prod
+EOF
+=== block R9-P1-03 gh pr -R before create
+gh pr -R imjohnkoo/nomacom-frontend create --base prod --fill
+=== block R9-P1-04 gh workflow -R before run
+gh workflow -R imjohnkoo/nomacom-frontend run client-production.yml
+=== block R9-P1-05 gh run -R before rerun
+gh run -R imjohnkoo/nomacom-frontend rerun 123456
+=== block R9-P1-06 curl create ref prod with heredoc body
+curl -sS -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/nomacom-frontend/git/refs -d @- <<'EOF'
+{"ref": "refs/heads/prod", "sha": "abc123"}
+EOF
+=== block R9-P1-07 written script run via bash --
+cat > /tmp/qa/p.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -- /tmp/qa/p.sh
+=== block R9-P1-08 git commit -m "$(bash <<EOF)" — inner receiver is bash, outer git
+git commit -m "$(bash <<'EOF'
+git push origin HEAD:prod
+echo msg
+EOF
+)"
+=== block R9-P1-09 diff <(ssh host <<EOF) process subst receiver
+diff <(ssh ec2-admin <<'EOF'
+cd /app && git reset --hard origin/dev
+EOF
+) /tmp/local.txt
+=== block R9-P1-10 tee >(bash) heredoc
+tee >(bash) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P1-11 standard commit then && promote on close line
+git commit -m "$(cat <<'EOF'
+chore: release
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)" && git push origin HEAD:dev && gh run watch && git push origin "$(git rev-parse HEAD)":prod
+=== block R9-P1-12 gh run watch multi-line then promote quoted
+gh run watch "$RUN_ID" --exit-status
+git push origin "${PROMOTE_SHA}:prod"
+=== allow R9-P1-13 python patch with backtick command text in dq string
+python3 - <<'PY'
+from pathlib import Path
+p = Path('.claude/rules/deployment.md')
+s = p.read_text()
+s = s.replace("- `git push origin prod` 는 차단", "- `git push origin prod` 는 훅이 차단한다 — don't")
+p.write_text(s)
+PY
+=== allow R9-P1-14 weekly-notify python with message heredoc mentioning prod push (receiver is cat)
+python3 "$NOMACOM_MANAGER/scripts/weekly-notify.py" --event wiki --message "$(cat <<'EOF'
+frontend: 훅 개정 — git push origin prod 와 gh pr create --base prod 를 막는다
+EOF
+)"
+=== allow R9-P1-15 node script reading stdin with message heredoc via $(cat)
+node scripts/notify.mjs "$(cat <<'EOF'
+git push origin prod 는 막힌다
+EOF
+)"
+=== allow R9-P1-16 gh api comment with body via $(cat heredoc) mentioning commands
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments -f body="$(cat <<'EOF'
+QA 9회차: `git push origin prod` · `docker push` · `git reset --hard` 는 막힌다.
+EOF
+)"
+=== allow R9-P1-17 ssh read-only multi-line heredoc
+ssh ec2-admin <<'EOF'
+docker ps
+tail -n 50 /var/log/app.log
+EOF
+=== allow R9-P1-18 orca terminal send yarn command
+orca terminal send --terminal t1 --text "yarn workspace nomacom-client dev"
+=== allow R9-P1-19 cat > notes containing prod push in body, then git add -A
+cat > /tmp/qa/notes.md <<'EOF'
+배포: git push origin HEAD:prod (사용자 승인 뒤)
+EOF
+git add -A && git status -sb
+=== block R9-P2-01 cat heredoc | (cd && bash) subshell receiver
+cat <<'EOF' | (cd /tmp && bash)
+git push origin HEAD:prod
+EOF
+=== block R9-P2-05 cat heredoc piped to parallel (runs each line)
+cat <<'EOF' | parallel
+git push origin HEAD:prod
+EOF
+=== block R9-P2-06 cat heredoc piped to at now
+cat <<'EOF' | at now
+git push origin HEAD:prod
+EOF
+=== block R9-P2-07 $(which bash) -c string
+$(which bash) -c 'git push origin HEAD:prod --no-verify'
+=== block R9-P2-08 npm exec -c
+npm exec -c 'git push origin HEAD:prod --no-verify'
+=== block R9-P2-09 cat heredoc | xargs -0 -I{} sh -c {} (control)
+cat <<'EOF' | xargs -I{} sh -c '{}'
+git push origin HEAD:prod
+EOF
+=== block R9-P2-10 gh codespace ssh heredoc (gh is data consumer)
+gh codespace ssh -c my-cs <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P2-11 written script executed via bash with $S var path
+S=/tmp/qa; cat > "$S/promote.sh" <<'EOF'
+git push origin "$1:prod"
+EOF
+bash "$S/promote.sh" abc123
+=== block R9-P2-12 written script executed via "$S"/x.sh form
+S=/tmp/qa; cat > "$S/promote.sh" <<'EOF'
+git push origin HEAD:prod
+EOF
+bash "$S"/promote.sh
+=== block R9-P2-13 heredoc to shell via bash -s with 3 heredocs, third is shell
+cat > /tmp/qa/a.txt <<'A'
+a
+A
+cat > /tmp/qa/b.txt <<'B'
+b
+B
+bash -s <<'C'
+git push origin HEAD:prod
+C
+=== block R9-P2-14 kind 3 body with $(...) push inside commit heredoc (bash executes)
+git commit -F - <<EOF
+release $(git push origin HEAD:prod)
+EOF
+=== allow R9-P2-16 python3 script.py <<EOF data stdin (body is data for script)
+python3 scripts/render.py > /tmp/qa/out.html <<'EOF'
+# 배포 메모
+git push origin HEAD:prod 는 사용자 승인 뒤
+EOF
+=== allow R9-P2-17 node script.mjs < heredoc data
+node scripts/md2html.mjs <<'EOF'
+- docker push 는 금지
+- git reset --hard 도 금지
+EOF
+=== block R9-P2-18 heredoc delimiter partially quoted E'OF' (bash: delim EOF quoted)
+cat <<E'OF' > /tmp/qa/x.txt
+it's data
+EOF
+git push origin HEAD:prod
+echo 'done'
+=== block R9-P3-01 subshell (cd && bash) <<EOF
+(cd /Users/johnkoo/orca/workspaces/nomacom-frontend/client-shell && bash) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P3-02 brace group { cd; bash; } <<EOF
+{ cd /tmp/qa; bash; } <<'EOF'
+git reset --hard origin/dev
+EOF
+=== block R9-P3-03 (bash) <<EOF
+(bash) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P3-04 (cd && sudo bash) <<EOF with 2>&1 after
+(cd /app && sudo bash) 2>&1 <<'EOF'
+docker push imjohnkoo/nomacom-client:prod
+EOF
+=== block R9-P3-05 (cd && ssh host) <<EOF
+(cd /tmp && ssh ec2-admin) <<'EOF'
+cd /app/nomacom-frontend && git reset --hard origin/dev
+EOF
+=== block R9-P3-06 control bash <<EOF after cd &&
+cd /tmp/qa && bash <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P3-07 (cd && python3) <<PY — interp kind lost
+(cd /tmp && python3) <<'PY'
+import os
+PY
+git push origin HEAD:prod
+=== block R9-P3-08 sh; inside brace without space-sep
+{ sh;} <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P3-09 bash|tee? (bash first in pipeline, receiver bash)
+bash 2>&1 <<'EOF' | tee /tmp/qa/log.txt
+git push origin HEAD:prod
+EOF
+=== block R9-P3-10 time (cd && bash) <<EOF with quoted body apostrophe and later push
+(cd /tmp && bash) <<'EOF'
+echo "it's fine"
+EOF
+git push origin HEAD:prod
+=== allow R9-P4-01 PR create with code fences and blocked-command text in quoted heredoc body
+gh pr create --base dev --head imjohnkoo/hook-prod-refspec --title "fix(hook): prod refspec 구멍 · 오탐" --body "$(cat <<'EOF'
+## Summary
+- `git push origin <sha>:prod` · `gh workflow run client-production.yml` · `docker push` 를 막는다
+- 커밋 메시지 · PR 본문의 명령 글자는 막지 않는다
+
+## Test plan
+```bash
+bash .claude/hooks/guard-prod-push.test.sh   # pass=1829 fail=0
+echo '{"tool_input":{"command":"git push origin prod"}}' | bash .claude/hooks/guard-prod-push.sh
+```
+- [ ] it's fine — don't worry about "quotes"
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+=== allow R9-P4-02 commit heredoc with apostrophes, backticks, and prod words then push feature
+git add -A && git commit -m "$(cat <<'EOF'
+fix(hook): don't treat `git push origin prod` in messages as commands
+
+- gh api -X PATCH repos/o/r/git/refs/heads/prod -f sha=abc 는 예시
+- 12" 모니터에서도 it's ok
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)" && git push -u origin imjohnkoo/hook-prod-refspec
+=== allow R9-P4-03 hook probe via echo json pipe
+echo '{"tool_input":{"command":"git push origin prod"}}' | bash .claude/hooks/guard-prod-push.sh
+=== allow R9-P4-05 docker exec psql heredoc SQL with comment mentioning push
+docker exec -i nomacom-db psql -U postgres -d esimmany <<'SQL'
+-- git push origin prod 전에 확인
+SELECT count(*) FROM orders WHERE status = 'paid';
+SQL
+=== allow R9-P4-06 wiki update flow
+git -C "$NOMACOM_WIKI" pull --rebase && git -C "$NOMACOM_WIKI" add wiki/frontend/plans/2026-10-05-hook.md && git -C "$NOMACOM_WIKI" commit -m "frontend: hook plan — prod 차단 · git push origin prod 예시" && git -C "$NOMACOM_WIKI" push
+=== allow R9-P4-08 multi-line for loop with quotes and git push dev
+for b in imjohnkoo/a imjohnkoo/b; do
+  git push origin "$b" 2>&1 | tail -1
+  echo "pushed $b — not prod"
+done
+=== allow R9-P4-09 node heredoc patch writing markdown with template literal and command text
+node <<'EOF'
+const fs = require('fs');
+const p = '.claude/rules/claude-code-assets.md';
+let s = fs.readFileSync(p, 'utf8');
+s = s.replace('(ALLOW 22 / BLOCK 15, 37케이스)', `(1829판정 — \`git push origin prod\` 등)`);
+fs.writeFileSync(p, s);
+console.log("it's done");
+EOF
+=== allow R9-P4-10 python heredoc with multi-line string containing commands in quotes only
+python3 - <<'PY'
+import pathlib
+p = pathlib.Path('AGENTS.md')
+s = p.read_text()
+old = "- ⚠️ 훅 수정 시 **회귀 테스트 필수**"
+new = ("- ⚠️ 훅 수정 시 **회귀 테스트 필수** — "
+       "`git push origin prod` · `docker push` 는 막힌다")
+assert old in s, "anchor missing — don't patch"
+p.write_text(s.replace(old, new, 1))
+PY
+=== allow R9-P4-11 ssh read logs with quoted remote command mentioning prod image
+ssh ec2-client "docker ps --filter ancestor=imjohnkoo/nomacom-client:prod --format '{{.ID}} {{.Status}}'"
+=== allow R9-P4-12 gh api read with jq containing pipes and prod
+gh api repos/imjohnkoo/nomacom-frontend/commits/prod --jq '.sha + " " + (.commit.message | split("\n")[0])'
+=== allow R9-P4-13 grep for push lines across cases with -E alternation
+grep -n -E 'git push|docker push|reset --hard' .claude/hooks/guard-prod-push.cases.txt | head -5
+=== allow R9-P4-14 subshell cd then cat heredoc to file (data)
+(cd /tmp/qa && cat > notes.md <<'EOF'
+배포는 git push origin HEAD:prod — 사용자 승인 뒤
+EOF
+)
+=== allow R9-P4-15 bash -c running tests whose output mentions prod
+bash -c 'cd /tmp/qa && echo "prod 차단 테스트" && ls'
+=== allow R9-P4-16 weekly notify with --note inline
+python3 "$NOMACOM_MANAGER/scripts/weekly-notify.py" --repo frontend --track HOOK --event qa --ref "PR #12" --note "QA ⑥ 9회차 — git push origin prod 차단 확인"
+=== allow R9-P4-17 make a script via heredoc then run with bash -n only (syntax)
+cat > /tmp/qa/x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -n /tmp/qa/x.sh
+=== allow R9-P4-18 jq with --arg containing heredoc body
+jq -n --arg body "$(cat <<'EOF'
+git push origin prod 는 막힌다
+EOF
+)" '{body: $body}' > /tmp/qa/body.json
+=== allow R9-P4-19 gh issue comment body-file heredoc
+gh issue comment 12 --body-file - <<'EOF'
+`git reset --hard` · `aws ssm put-parameter` 는 훅이 막는다.
+EOF
+=== allow R9-P4-20 git log with format containing prod and pipe
+git log --oneline origin/prod..origin/dev | head -20 && git rev-parse origin/prod
+=== block R9-P5-01 bash>log redirect attached then heredoc
+bash>/tmp/qa/run.log 2>&1 <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-02 quoted command name "/bin/bash" heredoc
+"/bin/bash" -s <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-03 docker exec "bash" heredoc
+docker exec -i nomacom-dev "bash" <<'EOF'
+git reset --hard origin/dev
+EOF
+=== block R9-P5-04 kubectl exec -- "/bin/sh"
+kubectl exec -i pod-1 -- "/bin/sh" <<'EOF'
+docker push imjohnkoo/nomacom-client:prod
+EOF
+=== block R9-P5-05 sudo -u deploy bash -l (control)
+sudo -u deploy bash -l <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-06 git commit -F - inside subshell piped... (cd && git commit) then bash? control: (cd && bash -s) with space
+(cd /tmp && bash -s ) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-07 { bash; } 2>&1 heredoc
+{ bash; } 2>&1 <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-08 time ( bash ) heredoc
+time (bash) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R9-P5-09 nohup bash& background with heredoc
+nohup bash <<'EOF' &
+git push origin HEAD:prod
+EOF
+=== block R9-P5-11 graphql -f query=$(cat heredoc) updateRef (var subst)
+gh api graphql -f query="$(cat <<'EOF'
+mutation { updateRef(input: {refId: "REF_x", oid: "abc", force: true}) { ref { name } } }
+EOF
+)"
+=== block R9-P6-01 zsh =(…) process substitution file run by bash
+bash =(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)
+=== block R9-P6-02 control bash <(cat heredoc) (doc says handled)
+bash <(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)
+=== block R9-MK-MK-dqline unquoted heredoc body with odd double quote (inch mark) then push and later dq (kills dqline_off)
+git commit -F - <<EOF
+fix: 12" 모니터 레이아웃
+EOF
+git push origin HEAD:prod
+echo "done"
+=== block R9-MK-MK-arith long $(( )) with )) across window then heredoc-like << later? (findch overlap)
+x=$(( 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 + 15 + 16 + 17 + 18 + 1 )); y=$((x<<2)); git push origin HEAD:prod
+=== allow R9-SK-SK-01 prod-push-check render bash heredoc block
+bash <<'SH'
+set -u
+cd apps/client || exit 1
+# 확인할 커밋 = 올릴 커밋 — RC_REF(기본 origin/dev = prod 로 올라가는 ref)를 받아 와 HEAD 와 같아야 한다. ⛔ 승격에서는 RC_REF 를 주지 않는다(다른 값은 블록 자체를 시험할 때만)
+RC_REF="${RC_REF:-origin/dev}"
+case "$RC_REF" in origin/*) git fetch -q origin "${RC_REF#origin/}" || { echo "⛔ $RC_REF 받아 오기 실패"; exit 1; } ;; esac
+head="$(git rev-parse HEAD)" || { echo "⛔ git 체크아웃이 아니다"; exit 1; }
+[ "$head" = "$(git rev-parse "$RC_REF^{commit}")" ] || { echo "⛔ HEAD($head) ≠ $RC_REF — dev 가 앞서 나갔다면 Phase 1.0 부터 새 끝으로 다시(PROMOTE_SHA 를 고쳐 쓰지 않는다)"; exit 1; }
+# .output = 이 커밋의 빌드 — 저장소 전체 미커밋 · 추적 안 된 파일 0 에서 여기서 빌드한다(빌드 시각으로 판정하지 않는다).
+# turbo 는 입력 파일 해시로 캐시를 고르므로 캐시가 맞아도 같은 소스의 산출물이다
+st="$(git -C ../.. status --porcelain)" || exit 1
+[ -z "$st" ] || { echo "⛔ 미커밋 · 추적 안 된 파일 — 올릴 커밋 그대로에서만:"; printf '%s\n' "$st" | head -5; exit 1; }
+(cd ../.. && yarn turbo run build --filter=nomacom-client >/dev/null 2>&1) || { echo "⛔ 빌드 실패 — Phase 3 부터"; exit 1; }
+[ -z "$(git -C ../.. status --porcelain)" ] || { echo "⛔ 빌드가 추적 파일을 바꿨다"; exit 1; }
+PORT=3099   # 이미 누가 쓰고 있으면 중단 — 남의 서버 · 지난 빌드를 보고 통과하지 않게
+if lsof -nP -iTCP:$PORT -sTCP:LISTEN >/dev/null 2>&1; then echo "⛔ $PORT 에 이미 서버가 있다 — 다른 빈 포트로"; exit 1; fi
+want="$(sed -n 's/.*"id":"\([^"]*\)".*/\1/p' .output/public/_nuxt/builds/latest.json)"
+[ -n "$want" ] || { echo "⛔ 빌드 id 없음 — Phase 3 빌드부터"; exit 1; }
+env -i PATH="$PATH" HOME="$HOME" HOST=127.0.0.1 PORT=$PORT node .output/server/index.mjs >/dev/null 2>&1 & SRV=$!
+trap 'kill $SRV 2>/dev/null' EXIT
+B=http://127.0.0.1:$PORT
+for _ in $(seq 40); do curl -fsS -o /dev/null "$B/" 2>/dev/null && break; kill -0 $SRV 2>/dev/null || { echo "⛔ 서버가 뜨지 않았다"; exit 1; }; sleep 0.5; done
+# get <페이지> → raw(HTML 전체 — 속성 · head · 스크립트 포함) · body(head 를 뺀 화면 글자). 응답 실패(4xx · 5xx · 연결) · 다른 빌드면 실패
+# 값 자리(data-pending 표식)는 ⟦P⟧ 로 남기고 nbsp · 전각 괄호 · 공백을 정규화
+get() {
+  local html
+  html="$(curl -fsS "$B$1")" || { echo "⛔ $1 응답 실패"; return 1; }
+  printf '%s' "$html" | grep -qF "buildId:\"$want\"" || { echo "⛔ $1 이 이 빌드($want)의 응답이 아니다"; return 1; }
+  raw="$(printf '%s' "$html" | tr '\n' ' ' | sed -e 's/<[^>]*data-pending[^>]*>/⟦P⟧/g' \
+    -e 's/&nbsp;/ /g; s/&#160;/ /g; s/&#xa0;/ /g' -e $'s/\xc2\xa0/ /g' -e 's/（/(/g; s/）/)/g' \
+    -e $'s/\xc2\xad//g; s/\xe2\x80\x8b//g; s/\xe2\x80\x8c//g; s/\xe2\x80\x8d//g; s/\xe2\x81\xa0//g; s/\xe2\x81\xa1//g; s/\xe2\x81\xa2//g; s/\xe2\x81\xa3//g; s/\xe2\x81\xa4//g; s/\xef\xbb\xbf//g' -e $'s/\xe2\x80\x87/ /g; s/\xe2\x80\xaf/ /g; s/\xe3\x80\x80/ /g' | tr -s '[:space:]' ' ')"   # 보이지 않는 글자(U+00AD · 200B~D · 2060~2064 · FEFF)는 지우고 U+2007 · 202F · 3000 은 공백으로(로케일 무관) — «(확정\u200b 전)» 도 «(확정 전)»
+  body="$(printf '%s' "$raw" | sed -e 's/<head>.*<\/head>//' -e 's/<[^>]*>//g' | tr -s ' ' ' ')"
+}
+n() { printf '%s' "$1" | grep -oF -e "$2" | wc -l | tr -d ' '; }
+left=0; seen=""
+# chk <페이지> <본문 양성 대조 글자 — ; 로 여럿> [D-30 예외 자리 …] — 예외 자리 밖의 ⟦P⟧ · «(확정 전)» 은 0 · 자리마다 많아야 1
+chk() {
+  local p=$1 m s k ok_p=0 ok_d=0; local -a must; IFS=';' read -ra must <<<"$2"; shift 2
+  get "$p" || exit 1
+  local q=${p//$O/:id}; q=${q/#\/countries\/$C/\/countries\/:id}; q=${q/#\/products\/$Z/\/products\/:id}   # 동적 경로는 :id 로 센다
+  seen="$seen$q"$'\n'
+  must+=('704-24-01747')   # 모든 페이지에 푸터 사업자정보(W1-2 F-7)
+  for m in "${must[@]}"; do [ "$(n "$body" "$m")" -ge 1 ] || { echo "⛔ $p 본문에 «$m» 이 없다(양성 대조 실패 — 빈 · 오류 화면이 0건으로 통과하지 않게)"; exit 1; }; done
+  for s in "$@"; do
+    k=$(n "$body" "$s"); [ "$k" -le 1 ] || { echo "⛔ $p 예외 자리 «$s» 가 ${k}번 — 자리마다 많아야 1(D-30 은 3자리뿐)"; exit 1; }
+    ok_p=$((ok_p + k * $(n "$s" '⟦P⟧'))); ok_d=$((ok_d + k * $(n "$s" '(확정 전)'))); left=$((left + k))
+  done
+  [ "$(n "$raw" '⟦P⟧')" = "$ok_p" ] || { echo "⛔ $p 값 자리 $(n "$raw" '⟦P⟧')건 — D-30 예외 자리는 ${ok_p}건뿐"; exit 1; }
+  # 글자는 양쪽에서 센다 — raw(속성 · head) 와 body(태그를 벗긴 글자 — 렌더러가 «(확정» · «전)» 을 줄바꿈 방지 span 으로 나눠 감싼다)
+  for v in "$raw" "$body"; do
+    [ "$(n "$v" '(확정 전)')" = "$ok_d" ] || { echo "⛔ $p «(확정 전)» $(n "$raw" '(확정 전)')건(속성 · head) · $(n "$body" '(확정 전)')건(글자) — D-30 예외 자리는 ${ok_d}건뿐(D-47)"; exit 1; }
+    [ "$(n "$v" 'P9_4_PENDING')" = 0 ] || { echo "⛔ $p 에 자리표시자 이름 «P9_4_PENDING» 이 그대로 나온다"; exit 1; }
+    [ "$(n "$v" '문안을 확정하고 있어요')" = 0 ] || { echo "⛔ $p 에 확정 전 안내 문안"; exit 1; }
+  done
+}
+O=2026092300000101   # 아무 주문번호 — DB 가 없어 화면 틀만 그린다
+C=fra; Z=fra00       # 프리렌더된 아무 나라 · 상품(W1-3 catalog F-9 — 카탈로그에서 라우트 목록을 만든다)
+chk / '어느 나라로 떠나세요?;이미 구매하셨나요?;호스팅 서비스: AWS;1950 호 (경기도 광주시)'
+chk /privacy '개인정보의 처리 목적;AWS (Amazon Web Services 서울 리전);솔라피(주);쿠키 1개를 저장합니다'
+chk /terms '제1장 총칙'
+chk /refund '한눈에 보기'
+chk /supported-devices '지원하는지 확인해 주세요;갤럭시 (국내판)'
+chk /my '로그인은 준비 중이에요;고객센터;약관 및 정책'
+chk /my-esim 'eSIM 을 찾아요'
+chk /guide '설치 가이드'
+chk /search '국가 검색'
+chk /checkout-preview '구매 전 확인;(필수) 만 14세 이상입니다;결제 전 안내'
+chk /verify/$O '맞는지 확인할게요'
+chk /countries/$C '프랑스 eSIM;프랑스만 가요'
+chk /products/$Z '프랑스 eSIM;사용일수는 이렇게 계산해요;구매하기'
+# 4-step 가드(K8) — 세션 없이 오면 서버가 verify 로 302(본문 없음). 다른 코드 · 다른 곳으로 가면 중단
+guard() {
+  local r; r="$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$B$1")"
+  [ "$r" = "302 $B/verify/$O?reason=reverify" ] || { echo "⛔ $1 → «$r» — 302 $B/verify/$O?reason=reverify 여야 한다(4-step 가드)"; exit 1; }
+  seen="$seen${1//$O/:id}"$'\n'
+}
+guard /details/$O
+guard /select-date/$O
+guard /view/$O
+r="$(curl -s -o /dev/null -w '%{http_code}' "$B/business")"   # D-39 — 페이지가 없어야 한다(되살아나거나 3xx 로 돌리면 중단)
+[ "$r" = 404 ] || { echo "⛔ /business 응답 $r — 404 여야 한다(D-39)"; exit 1; }
+# 검사하지 않은 페이지가 없는가 — app/pages 의 페이지 파일(Nuxt 규칙: .vue · .js · .jsx · .mjs · .ts · .tsx · 링크 따라감 · 제외는 *.{spec,test}.{js,cts,mts,ts,jsx,tsx} 만)과 위 목록이 같아야 한다(새 페이지는 chk 줄을 먼저 넣는다)
+pages="$(cd app/pages && find -L . -type f \( -name '*.vue' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.ts' -o -name '*.tsx' \) ! \( \( -name '*.test.*' -o -name '*.spec.*' \) \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' -o -name '*.mts' -o -name '*.cts' \) \) | sed -E -e 's#^\./##' -e 's#\.(vue|m?jsx?|tsx?)$##' -e 's#^index$##' -e 's#/index$##' -e 's#\[[^]]*\]#:id#g' -e 's#^#/#' | sort)"
+[ "$pages" = "$(printf '%s' "$seen" | sort)" ] || { echo "⛔ 검사 목록과 app/pages 가 다르다 — 빠진 페이지에 chk 줄을 넣는다:"; diff <(printf '%s\n' "$pages") <(printf '%s' "$seen" | sort); exit 1; }
+echo "✓ 렌더 확인 통과 — 커밋 $head(= $RC_REF) · 예외 자리 ${left}(D-30 예외는 D-54 로 닫혔다 — 0 이어야 한다)"
+SH
+=== allow R9-SK-SK-02 prod-push-check phase 1.0
+# 1.0 올릴 SHA 를 먼저 하나로 정하고, **그 SHA 가 체크아웃된 상태에서** 모든 Phase 를 돈다 (W1-2 D-17 · QA ⑥).
+#     build · UI · paths-filter · 시크릿 검사는 HEAD 를, 게이트 · push 는 PROMOTE_SHA 를 보므로 둘이 같아야 한다.
+#     fetch 가 실패하면 멈춘다(오래된 ref 로 판정하지 않는다). client 를 올리면 PROMOTE_SHA = origin/dev 끝뿐이다 — Phase 4 렌더 확인이
+#     HEAD = origin/dev 를 요구한다(승격에서 RC_REF 를 주지 않는다). dev 의 더 앞 SHA 로 바꿔 올리는 것은 client workflow 가 트리거되지 않는 승격
+#     (Phase 2 표 — apps/client · packages/design-* · 루트 package.json · yarn.lock · deploy/scripts · appspec.yml ·
+#     .github/workflows/client-production.yml 변경 0 — 실제 판정은 그 workflow 의 paths 필터)일 때만.
+#     ⚠️ 점검 중에 dev 가 앞서 나가면(다른 세션의 머지) 고쳐 쓰지 말고 **Phase 1.0 부터** 새 끝으로 다시 — 앞 Phase(시크릿 · 게이트 · 테스트)가 새 커밋을 보지 않았다.
+git fetch origin --quiet || exit 1
+PROMOTE_SHA="$(git rev-parse origin/dev)"
+git merge-base --is-ancestor "$PROMOTE_SHA" origin/dev || { echo "⛔ origin/dev 에 없는 SHA — prod 는 dev 의 한 SHA"; exit 1; }
+[ "$(git rev-parse HEAD)" = "$PROMOTE_SHA" ] || { echo "⛔ HEAD ≠ PROMOTE_SHA — git checkout --detach $PROMOTE_SHA 뒤 다시"; exit 1; }
+echo "PROMOTE_SHA=$PROMOTE_SHA"   # 보고 템플릿에 적어 두고, 뒤 Phase 의 셸마다 이 값으로 다시 둔다(셸 변수는 이어지지 않는다)
+=== block R10-A01 commit heredoc with apostrophe then push prod
+git add -A && git commit -m "$(cat <<'EOF'
+fix: don't block it's fine
+EOF
+)" && git push origin HEAD:prod
+=== allow R10-A02 commit heredoc then push dev
+git add -A && git commit -m "$(cat <<'EOF'
+fix: git push origin prod 예시는 막지 않는다
+EOF
+)" && git push -u origin HEAD
+=== allow R10-A03 pr create body heredoc mentions prod push
+gh pr create --base dev --title "fix(hook): prod refspec" --body "$(cat <<'EOF'
+## Summary
+- `git push origin prod` 는 막힌다
+- `gh pr create --base prod` 도
+EOF
+)"
+=== block R10-A04 unquoted heredoc commit msg with backtick (bash runs it)
+git commit -F - <<EOF
+`git push origin HEAD:prod`
+EOF
+=== block R10-A05 python heredoc then push on next line
+python3 - <<'PY'
+print("it's")
+PY
+git push origin HEAD:prod
+=== block R10-A06 commit body with unbalanced quote then push after closing
+git commit -F - <<'EOF'
+12" monitor, don't
+EOF
+git push origin prod
+=== block R10-A07 heredoc delim with trailing spaces in closing line (bash does not close) then real end
+cat > x.txt <<'EOF'
+body
+EOF
+git push origin prod
+=== block R10-A08 two heredocs same line
+cat <<'A' > a.txt; cat <<'B' > b.txt
+aaa
+A
+bbb
+B
+git push origin prod
+=== block R10-A09 heredoc in if-then
+if true; then cat > f.txt <<'EOF'
+x
+EOF
+fi; git push origin prod
+=== block R10-A10 heredoc <<- with tab-indented close
+cat <<-'EOF' > f.txt
+	body
+	EOF
+git push origin prod
+=== block R10-A11 heredoc delimiter quoted with double quotes
+cat > f.txt <<"EOF"
+body
+EOF
+git push origin prod
+=== block R10-A12 tee heredoc then push
+tee f.txt >/dev/null <<'EOF'
+body
+EOF
+git push origin prod
+=== block R10-A13 heredoc body run via bash script file written
+cat > /tmp/qa-x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+chmod +x /tmp/qa-x.sh && /tmp/qa-x.sh
+=== block R10-A14 written script run via bash "$PWD/x.sh"
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash "$PWD/x.sh"
+=== block R10-A15 written script run via sh $(pwd)/x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+sh "$(pwd)/x.sh"
+=== block R10-A16 written script then bash -x ./x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -x ./x.sh
+=== block R10-A17 written script then source x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+source x.sh
+=== block R10-A18 written relative dir script then bash scripts/x.sh
+mkdir -p scripts && cat > scripts/x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash scripts/x.sh
+=== block R10-A21 cat heredoc | xargs -I{} git push origin {}
+cat <<'EOF' | xargs -I{} git push origin {}
+prod
+EOF
+=== block R10-A23 orca terminal send text git push
+orca terminal send --terminal t1 --text "git push origin HEAD:prod" --enter
+=== block R10-A24 env -i git push
+env -i PATH=/usr/bin git push origin prod
+=== block R10-A28 git push in $(…) assignment
+OUT=$(git push origin HEAD:prod 2>&1)
+=== block R10-A29 git push via npx/yarn exec? no - git push inside make-like: sh -c with double quotes nested var
+sh -c "cd /tmp && git push origin HEAD:prod"
+=== block R10-A30 git push with repo URL and prod
+git push https://github.com/imjohnkoo/nomacom-frontend.git HEAD:prod
+=== block R10-A31 git push origin dev:prod
+git push origin dev:prod
+=== block R10-A32 git push origin HEAD:prod after --
+git push origin -- HEAD:prod
+=== block R10-A34 heredoc commit then push prod with -C path
+git -C /Users/johnkoo/orca/workspaces/nomacom-frontend/x commit -F - <<'EOF'
+msg
+EOF
+git -C /Users/johnkoo/orca/workspaces/nomacom-frontend/x push origin HEAD:prod
+=== block R10-A35 docker push after build
+docker build -t imjohnkoo/nomacom-client:prod . && docker push imjohnkoo/nomacom-client:prod
+=== block R10-A36 aws ssm put inside for loop
+for k in A B; do aws ssm put-parameter --name /nomacom/client/$k --value x --overwrite; done
+=== block R10-A37 aws --profile nomacom ssm put-parameter
+aws --profile nomacom --region ap-northeast-2 ssm put-parameter --name /x --value y
+=== block R10-A38 git reset --hard in subshell
+(cd /tmp/x && git reset --hard origin/dev)
+=== block R10-A39 reset --hard=? no: git reset --hard after git stash
+git stash push -u -m tag && git reset --hard HEAD
+=== block R10-A40 gh workflow run with -f before name
+gh workflow run -f x=y client-production.yml
+=== block R10-A41 gh workflow run --ref prod name later
+gh workflow run --ref dev admin-production.yml
+=== block R10-A42 gh workflow run via -R repo after run
+gh workflow run -R imjohnkoo/nomacom-frontend client-production.yml
+=== block R10-A43 gh run rerun --failed
+gh run rerun 12345 --failed
+=== block R10-A45 gh pr create base prod with heredoc body
+gh pr create --base prod --title "release" --body "$(cat <<'EOF'
+release
+EOF
+)"
+=== block R10-A46 gh pr create body heredoc then --base prod after
+gh pr create --title "release" --body "$(cat <<'EOF'
+release notes
+EOF
+)" --base prod
+=== block R10-A47 gh pr create with continuation lines
+gh pr create \
+  --title "release" \
+  --base prod \
+  --body "x"
+=== block R10-A48 git push with continuation & comment
+git push origin \
+  HEAD:prod  # deploy
+=== block R10-A49 heredoc inside bash -c string
+bash -c "$(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)"
+=== block R10-A50 ssh heredoc
+ssh ec2-user@host <<'EOF'
+cd /app && git reset --hard origin/dev
+EOF
+=== block R10-R01 same-line write + /bin/bash run
+cat > /tmp/qa/x.sh <<'EOF' && /bin/bash /tmp/qa/x.sh
+git push origin HEAD:prod
+EOF
+=== block R10-R02 separate-line write + /bin/bash run (relative)
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+/bin/bash x.sh
+=== block R10-R03 same-line write + bash -o pipefail run
+cat > x.sh <<'EOF' && bash -o pipefail x.sh
+git push origin HEAD:prod
+EOF
+=== block R10-R04 separate-line write + bash -euo pipefail run
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash -euo pipefail x.sh
+=== block R10-R05 write + bash x.sh>log attached redirect
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash x.sh>/tmp/qa/log 2>&1
+=== block R10-R06 write + "$BASH" x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+"$BASH" x.sh
+=== block R10-R07 write + bash -c "$(cat x.sh)" same line
+cat > /tmp/qa/x.sh <<'EOF' && bash -c "$(cat /tmp/qa/x.sh)"
+git push origin HEAD:prod
+EOF
+=== block R10-R08 write + bash "$(pwd)/x.sh"
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash "$(pwd)/x.sh"
+=== block R10-R09 write + /usr/bin/env bash x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+/usr/bin/env bash x.sh
+=== block R10-R10 write + env bash x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+env bash x.sh
+=== block R10-R11 write + /bin/sh -e x.sh
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+/bin/sh -e x.sh
+=== block R10-R12 write + bash ~/x.sh tilde path
+cat > ~/qa-x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash ~/qa-x.sh
+=== block R10-R13 write to "$T" then bash "$T"
+T=$(mktemp); cat > "$T" <<'EOF'
+git push origin HEAD:prod
+EOF
+bash "$T"
+=== block R10-R14 heredoc to bash via /opt/homebrew/bin/bash -s
+/opt/homebrew/bin/bash -s <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-R15 write file via tee -a then bash
+tee -a x.sh >/dev/null <<'EOF'
+git push origin HEAD:prod
+EOF
+bash x.sh
+=== block R10-R16 write file via cat >| then bash
+cat >| x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+bash x.sh
+=== block R10-R17 heredoc to sudo bash
+sudo bash <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-R18 heredoc to sudo -u deploy -H bash -l
+sudo -u deploy -H bash -l <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-R19 heredoc into docker exec -i ctr sh
+docker exec -i ctr sh <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-R21 heredoc body into ssh with -T and host and command bash -s
+ssh -T ec2-user@1.2.3.4 'bash -s' <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-R22 heredoc to command bash (command prefix)
+command bash <<'EOF'
+git push origin HEAD:prod
+EOF
+=== allow R10-R26 commit heredoc then bash test.sh same line (data consumer git)
+git commit -F - <<'EOF' && bash scripts/check.sh
+msg: git push origin prod 예시
+EOF
+=== allow R10-R27 cat > md heredoc then bash lint on next line
+cat > docs/x.md <<'EOF'
+- git push origin prod 는 막힌다
+EOF
+bash scripts/lint.sh docs/x.md
+=== allow R10-R28 python with script arg heredoc stdin data
+python3 scripts/patch.py <<'EOF'
+git push origin prod
+EOF
+=== allow R10-R29 jq heredoc
+jq . <<'EOF'
+{"cmd": "git push origin prod"}
+EOF
+=== allow R10-R30 gh issue comment body heredoc
+gh issue comment 12 --body-file - <<'EOF'
+`git push origin prod` 를 막는다
+EOF
+=== allow R10-R31 PR body with ssh mention in title short quoted
+gh pr create --base dev --title "ssh" --body "$(cat <<'EOF'
+git push origin prod 예시
+EOF
+)"
+=== allow R10-R32 commit message with "bash" one-word title then heredoc body
+git commit -m "bash" -m "$(cat <<'EOF'
+git push origin prod 예시
+EOF
+)"
+=== allow R10-R33 commit -m heredoc preceded by bash test in same line
+bash scripts/test.sh && git commit -m "$(cat <<'EOF'
+docs: git push origin prod 예시
+EOF
+)"
+=== allow R10-R34 cat heredoc piped to git commit -F -
+cat <<'EOF' | git commit -F -
+docs: git push origin prod 예시
+EOF
+=== allow R10-R35 heredoc to yarn prettier --stdin then echo bash
+yarn prettier --stdin-filepath x.md <<'EOF' ; echo "use bash"
+git push origin prod 예시
+EOF
+=== allow R10-R36 heredoc to wc after sh word in path
+wc -l <<'EOF' # see ./sh/notes
+git push origin prod 예시
+EOF
+=== block R10-L01 push-option value with backslash then prod
+git push -o 'a\b' origin HEAD:prod
+=== block R10-L02 push-option value with glob star then prod
+git push -o 'a*b' origin HEAD:prod
+=== block R10-L03 push-option value with bracket then prod
+git push -o '[x' origin HEAD:prod
+=== block R10-L04 push-option value with lone backslash
+git push -o '\' origin HEAD:prod
+=== block R10-L05 push-option value with question mark
+git push -o 'a?b' origin HEAD:prod
+=== block R10-L07 gh -R value with backslash
+gh pr -R 'o/r\x' create --base prod
+=== block R10-L08 gh -R value with star
+gh pr -R 'o/r*' create --base prod
+=== block R10-L09 gh -R value with bracket
+gh -R '[o/r' pr create --base prod
+=== block R10-L10 gh -R value with lone backslash
+gh pr -R '\' create --base prod
+=== block R10-L11 push-option value contains -o again
+git push -o -o -o x origin HEAD:prod
+=== block R10-L12 push-option equals with backslash star
+git push --push-option='\*' origin HEAD:prod
+=== block R10-L13 gh -R value with double backslash
+gh pr -R 'a\\b' create --base prod
+=== block R10-L14 gh -R repeated
+gh pr -R a -R b -R c create --base prod
+=== block R10-Q01 bash -s with short quoted arg containing ;cat (qclose injection)
+bash -s -- 'a;cat' <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q02 ssh host short quoted remote cmd with |tee
+ssh host 'x|tee' <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q03 bash -s arg "(cat)"
+bash -s "(cat)" <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q04 sh -s quoted arg with && git
+sh -s -- "x&&git" <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q05 bash heredoc with quoted label arg "release;tee"
+bash -s "release;tee" <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q06 bash -s quoted arg {cat} braces
+bash -s -- "}" cat <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q07 bash <<EOF where line also has quoted path with ; and git
+cd "/tmp/a;git" && bash <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q08 bash with redirect target quoted w/ semicolon
+bash > "log;cat" <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q09 bash heredoc with -o pipefail args after
+bash -o pipefail -s <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R10-Q10 heredoc receiver after time + quoted short arg
+time bash -s "x" <<'EOF'
+git push origin HEAD:prod
+EOF
+=== allow R10-Q11 cat heredoc with quoted path containing bash word one-word
+cat > "bash.md" <<'EOF'
+git push origin prod 예시
+EOF
+=== allow R10-Q12 git commit -F - with --author "ssh" (short word)
+git commit --author "bot" -F - <<'EOF'
+docs: git push origin prod 예시
+EOF
+=== allow R10-Q13 tee to a quoted path with sh in it
+tee "docs/sh-notes.md" >/dev/null <<'EOF'
+git push origin prod 예시
+EOF
+=== allow R10-Q14 cat heredoc to file named "eval"
+cat > "eval" <<'EOF'
+git push origin prod 예시
+EOF
+=== allow R10-Q15 commit -m short quoted subject "watch" + body heredoc
+git commit -m "watch" -m "$(cat <<'EOF'
+docs: git push origin prod 예시
+EOF
+)"
+=== allow R10-Q16 gh issue create --label "sh" body heredoc
+gh issue create --title t --label "sh" --body "$(cat <<'EOF'
+git push origin prod 예시
+EOF
+)"
+=== block R10-T01 heredoc | tee x.sh then bash x.sh
+cat <<'EOF' | tee x.sh >/dev/null
+git push origin HEAD:prod
+EOF
+bash x.sh
+=== block R10-T04 cat <<EOF | sudo tee x.sh then sh x.sh
+cat <<'EOF' | sudo tee /tmp/qa/x.sh
+git push origin HEAD:prod
+EOF
+sh /tmp/qa/x.sh
+=== block R10-T05 written via cat > then run with bash -e -o pipefail
+cat > /tmp/qa/deploy.sh <<'EOF'
+set -e
+git push origin dev:prod
+EOF
+bash -e -o pipefail /tmp/qa/deploy.sh
+=== block R10-T06 written then run via zsh path /bin/zsh
+cat > /tmp/qa/deploy.sh <<'EOF'
+git push origin dev:prod
+EOF
+/bin/zsh /tmp/qa/deploy.sh
+=== block R10-T07 written then run via chmod and relative path without ./ in subdir (scripts/x.sh)
+cat > scripts/deploy.sh <<'EOF'
+git push origin dev:prod
+EOF
+chmod +x scripts/deploy.sh && scripts/deploy.sh
+=== block R10-T08 written then run by bash with redirect before filename
+cat > /tmp/qa/d.sh <<'EOF'
+git push origin dev:prod
+EOF
+bash 2>&1 /tmp/qa/d.sh
+=== block R10-T09 written then nohup bash path &
+cat > /tmp/qa/d.sh <<'EOF'
+git push origin dev:prod
+EOF
+nohup bash /tmp/qa/d.sh > /tmp/qa/d.log 2>&1 &
+=== block R10-T10 written then bash "$SP/d.sh" quoted var path
+SP=/tmp/qa
+cat > "$SP/d.sh" <<'EOF'
+git push origin dev:prod
+EOF
+bash "$SP/d.sh"
+=== block R10-T11 written then bash ${SP}/d.sh brace var
+cat > ${SP}/d.sh <<'EOF'
+git push origin dev:prod
+EOF
+bash ${SP}/d.sh
+=== block R10-T12 written then source with path ./
+cat > ./env.sh <<'EOF'
+git push origin dev:prod
+EOF
+source ./env.sh
+=== block R10-S01 same line write && /bin/bash f
+cat > /tmp/qa/d.sh <<'EOF' && /bin/bash /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S02 same line write && /bin/sh f
+cat > /tmp/qa/d.sh <<'EOF' && /bin/sh /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S03 same line write && /bin/zsh f
+cat > /tmp/qa/d.sh <<'EOF' && /bin/zsh /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S04 same line write && bash -o pipefail f
+cat > /tmp/qa/d.sh <<'EOF' && bash -o pipefail /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S05 same line write && bash 2>&1 f
+cat > /tmp/qa/d.sh <<'EOF' && bash 2>&1 /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S06 same line write && bash f>log
+cat > /tmp/qa/d.sh <<'EOF' && bash /tmp/qa/d.sh>/tmp/qa/d.log
+git push origin dev:prod
+EOF
+=== block R10-S07 same line write && eval "$(cat f)"
+cat > /tmp/qa/d.sh <<'EOF' && eval "$(cat /tmp/qa/d.sh)"
+git push origin dev:prod
+EOF
+=== block R10-S08 same line write && bash -c "$(cat f)"
+cat > /tmp/qa/d.sh <<'EOF' && bash -c "$(cat /tmp/qa/d.sh)"
+git push origin dev:prod
+EOF
+=== block R10-S09 same line write ; bash -O extglob f
+cat > /tmp/qa/d.sh <<'EOF'; bash -O extglob /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S10 same line write && bash "$PWD/d.sh"
+cat > d.sh <<'EOF' && bash "$PWD/d.sh"
+git push origin dev:prod
+EOF
+=== block R10-S11 same line tee -a f >/dev/null && /bin/bash f
+tee /tmp/qa/d.sh >/dev/null <<'EOF' && /bin/bash /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-S12 same line write && sh -e f (control: handled)
+cat > /tmp/qa/d.sh <<'EOF' && sh -e /tmp/qa/d.sh
+git push origin dev:prod
+EOF
+=== block R10-G01 env assign with spaced quote before git push
+GIT_SSH_COMMAND="ssh -i ~/.ssh/k -o IdentitiesOnly=yes" git push origin HEAD:prod
+=== block R10-G02 env assign single quotes + quoted dest
+GIT_SSH_COMMAND='ssh -o X=1' git push origin 'HEAD:prod'
+=== block R10-G03 while ! push loop
+while ! git push origin HEAD:prod; do sleep 1; done
+=== block R10-G04 test || push
+test -f x || git push origin HEAD:prod
+=== block R10-G05 echo y | push
+echo y | git push origin HEAD:prod
+=== block R10-G06 push with trailing comment containing quote
+git push origin HEAD:prod # don't forget
+=== block R10-G07 push "HEAD":"prod"
+git push origin "HEAD":"prod"
+=== block R10-G08 -o attached -oci.skip
+git push -oci.skip origin HEAD:prod
+=== block R10-G09 push after cd quoted var
+cd "$WT" && git push origin HEAD:prod
+=== block R10-G10 multiple refspecs second prod
+git push origin HEAD:dev HEAD:prod
+=== block R10-G11 time with -p
+time -p git push origin HEAD:prod
+=== block R10-G12 heredoc to git push itself (stdin unused)
+git push origin HEAD:prod <<'EOF'
+EOF
+=== block R10-G13 push in function def then call
+deploy() { git push origin HEAD:prod; }; deploy
+=== block R10-G14 push inside multi-line if with heredoc commit before
+if git diff --cached --quiet; then
+  echo nothing
+else
+  git commit -F - <<'EOF'
+release: don't wait
+EOF
+  git push origin HEAD:prod
+fi
+=== block R10-G15 push inside $(...) inside double-quoted echo with apostrophe text
+echo "result: $(git push origin HEAD:prod 2>&1) — it's done"
+=== block R10-G16 push inside backticks in double quotes
+echo "`git push origin HEAD:prod`"
+=== block R10-G17 push after python heredoc with triple-quoted string
+python3 - <<'PY'
+s = """
+it's a "doc"
+"""
+print(s)
+PY
+git push origin HEAD:prod
+=== block R10-G18 push after node heredoc with template literal
+node <<'JS'
+const s = `it's ${1}`;
+console.log(s)
+JS
+git push origin HEAD:prod
+=== block R10-G19 push after jq with complex filter
+jq -r '.items[] | "\(.name)\t\(.v // "n/a")"' x.json
+git push origin HEAD:prod
+=== block R10-G20 push after awk program with # and quotes
+awk -F'\t' '{ # col
+  print $1 "x" }' f.tsv
+git push origin HEAD:prod
+=== block R10-G21 push after sed with escaped quote
+sed -i '' -e "s/it\'s/it is/" f.md
+git push origin HEAD:prod
+=== block R10-G22 push after perl one-liner with q()
+perl -pi -e 's/a/b/' f && git push origin HEAD:prod
+=== block R10-G23 push after printf with %
+printf '%s\n' "it's" "a \"b\"" && git push origin HEAD:prod
+=== block R10-G24 push after grep -E with parens in quotes
+grep -nE "(a|b)'" f.txt; git push origin HEAD:prod
+=== block R10-G25 push after heredoc to gh api comment with apostrophes
+gh api repos/o/r/issues/1/comments -F body=@- <<'EOF'
+it's "quoted" and `ticked`
+EOF
+git push origin HEAD:prod
+=== block R10-G26 push after case statement
+case "$x" in
+  a|b) echo "it's $x" ;;
+  *) echo other ;;
+esac
+git push origin HEAD:prod
+=== block R10-G27 push after arithmetic with << shift
+x=$(( 1 << 3 ))
+git push origin HEAD:prod
+=== block R10-G28 push after (( )) with << shift and a later line equal to 3
+(( y = 1 << 3 ))
+git push origin HEAD:prod
+3
+=== block R10-G29 push after [[ =~ ]] with quote in regex
+[[ "$x" =~ ^it\'s$ ]] && echo y
+git push origin HEAD:prod
+=== block R10-G30 push after ${var//\'/}
+y=${x//\'/}
+git push origin HEAD:prod
+echo 'z'
+=== block R10-G31 push after ${x:-'}'}
+echo ${x:-'}'}
+git push origin HEAD:prod
+echo 'done'
+=== block R10-G32 push after ${x#\#}
+y=${x#\#} ; git push origin HEAD:prod
+=== block R10-G33 push after $"…" locale string
+echo $"it's"
+git push origin HEAD:prod
+=== block R10-G34 workflow run with path and quotes
+gh workflow run ".github/workflows/client-production.yml" --ref dev
+=== block R10-G35 docker push after multi-line build continuation
+docker build \
+  -t imjohnkoo/nomacom-admin:prod \
+  . && docker push imjohnkoo/nomacom-admin:prod
+=== block R10-V01 default JSON in ${…:-'{}'} then push then later quote
+BODY=${BODY:-'{}'}
+git push origin HEAD:prod
+echo 'done'
+=== block R10-V02 ${X:-"{}"} unquoted default then push and later dq
+X=${X:-"{}"}
+git push origin HEAD:prod
+echo "done"
+=== block R10-V03 "${X:-{}}" inside dq (control)
+X="${X:-{}}"
+git push origin HEAD:prod
+echo "done"
+=== block R10-V04 ${X:-'a}b'} default with brace
+echo ${X:-'a}b'}; git push origin HEAD:prod; echo 'x'
+=== block R10-V05 ${#arr[@]} then push
+n=${#arr[@]}; git push origin HEAD:prod
+=== block R10-V06 ${X/\}/} then push and later quote
+y=${X/\}/}
+git push origin HEAD:prod
+echo 'x'
+=== block R10-V07 ${X:-$(cat <<'EOF' … )} default heredoc (rare)
+X=${X:-$(cat <<'EOF'
+a
+EOF
+)}
+git push origin HEAD:prod
+=== allow R10-N01 nrm: commit heredoc with 2>&1 then bash check on same line (data)
+git commit -F - 2>&1 <<'EOF' && bash scripts/check.sh
+docs: git push origin prod 예시
+EOF
+=== allow R10-N02 nrm: ${VAR} path consumer cat then bash later same line
+cat > ${OUT}/note.md <<'EOF' && bash scripts/lint.sh
+git push origin prod 예시
+EOF
+=== allow R10-N03 lastseg brace: { git commit -F -; } heredoc then bash on same line
+{ git commit -F - ; } <<'EOF' && bash scripts/check.sh
+docs: git push origin prod 예시
+EOF
+=== allow R10-N04 nrm &> before heredoc to git
+git commit -F - &>/dev/null <<'EOF' ; bash scripts/check.sh
+docs: git push origin prod 예시
+EOF
+=== block R10-X01 unquoted git -c alias.p=push p origin prod
+git -c alias.p=push p origin HEAD:prod
+=== block R10-X02 graphql enablePullRequestAutoMerge via --input heredoc (quoted form is blocked)
+gh api graphql --input - <<'EOF'
+{"query": "mutation { enablePullRequestAutoMerge(input: {pullRequestId: \"PR_x\"}) { clientMutationId } }"}
+EOF
+=== block R10-X04 git config set (git 2.46 syntax) remote.origin.push prod
+git config set remote.origin.push HEAD:refs/heads/prod
+=== block R10-DOS heredoc 으로 쓰는 파일 201개 — 판정 불가로 막는다(파일마다 전체를 훑느라 600초를 넘겨 판정 없이 통과하지 않게)
+cat > /tmp/qa/n0.md <<'EOF'
+note 0
+EOF
+cat > /tmp/qa/n1.md <<'EOF'
+note 1
+EOF
+cat > /tmp/qa/n2.md <<'EOF'
+note 2
+EOF
+cat > /tmp/qa/n3.md <<'EOF'
+note 3
+EOF
+cat > /tmp/qa/n4.md <<'EOF'
+note 4
+EOF
+cat > /tmp/qa/n5.md <<'EOF'
+note 5
+EOF
+cat > /tmp/qa/n6.md <<'EOF'
+note 6
+EOF
+cat > /tmp/qa/n7.md <<'EOF'
+note 7
+EOF
+cat > /tmp/qa/n8.md <<'EOF'
+note 8
+EOF
+cat > /tmp/qa/n9.md <<'EOF'
+note 9
+EOF
+cat > /tmp/qa/n10.md <<'EOF'
+note 10
+EOF
+cat > /tmp/qa/n11.md <<'EOF'
+note 11
+EOF
+cat > /tmp/qa/n12.md <<'EOF'
+note 12
+EOF
+cat > /tmp/qa/n13.md <<'EOF'
+note 13
+EOF
+cat > /tmp/qa/n14.md <<'EOF'
+note 14
+EOF
+cat > /tmp/qa/n15.md <<'EOF'
+note 15
+EOF
+cat > /tmp/qa/n16.md <<'EOF'
+note 16
+EOF
+cat > /tmp/qa/n17.md <<'EOF'
+note 17
+EOF
+cat > /tmp/qa/n18.md <<'EOF'
+note 18
+EOF
+cat > /tmp/qa/n19.md <<'EOF'
+note 19
+EOF
+cat > /tmp/qa/n20.md <<'EOF'
+note 20
+EOF
+cat > /tmp/qa/n21.md <<'EOF'
+note 21
+EOF
+cat > /tmp/qa/n22.md <<'EOF'
+note 22
+EOF
+cat > /tmp/qa/n23.md <<'EOF'
+note 23
+EOF
+cat > /tmp/qa/n24.md <<'EOF'
+note 24
+EOF
+cat > /tmp/qa/n25.md <<'EOF'
+note 25
+EOF
+cat > /tmp/qa/n26.md <<'EOF'
+note 26
+EOF
+cat > /tmp/qa/n27.md <<'EOF'
+note 27
+EOF
+cat > /tmp/qa/n28.md <<'EOF'
+note 28
+EOF
+cat > /tmp/qa/n29.md <<'EOF'
+note 29
+EOF
+cat > /tmp/qa/n30.md <<'EOF'
+note 30
+EOF
+cat > /tmp/qa/n31.md <<'EOF'
+note 31
+EOF
+cat > /tmp/qa/n32.md <<'EOF'
+note 32
+EOF
+cat > /tmp/qa/n33.md <<'EOF'
+note 33
+EOF
+cat > /tmp/qa/n34.md <<'EOF'
+note 34
+EOF
+cat > /tmp/qa/n35.md <<'EOF'
+note 35
+EOF
+cat > /tmp/qa/n36.md <<'EOF'
+note 36
+EOF
+cat > /tmp/qa/n37.md <<'EOF'
+note 37
+EOF
+cat > /tmp/qa/n38.md <<'EOF'
+note 38
+EOF
+cat > /tmp/qa/n39.md <<'EOF'
+note 39
+EOF
+cat > /tmp/qa/n40.md <<'EOF'
+note 40
+EOF
+cat > /tmp/qa/n41.md <<'EOF'
+note 41
+EOF
+cat > /tmp/qa/n42.md <<'EOF'
+note 42
+EOF
+cat > /tmp/qa/n43.md <<'EOF'
+note 43
+EOF
+cat > /tmp/qa/n44.md <<'EOF'
+note 44
+EOF
+cat > /tmp/qa/n45.md <<'EOF'
+note 45
+EOF
+cat > /tmp/qa/n46.md <<'EOF'
+note 46
+EOF
+cat > /tmp/qa/n47.md <<'EOF'
+note 47
+EOF
+cat > /tmp/qa/n48.md <<'EOF'
+note 48
+EOF
+cat > /tmp/qa/n49.md <<'EOF'
+note 49
+EOF
+cat > /tmp/qa/n50.md <<'EOF'
+note 50
+EOF
+cat > /tmp/qa/n51.md <<'EOF'
+note 51
+EOF
+cat > /tmp/qa/n52.md <<'EOF'
+note 52
+EOF
+cat > /tmp/qa/n53.md <<'EOF'
+note 53
+EOF
+cat > /tmp/qa/n54.md <<'EOF'
+note 54
+EOF
+cat > /tmp/qa/n55.md <<'EOF'
+note 55
+EOF
+cat > /tmp/qa/n56.md <<'EOF'
+note 56
+EOF
+cat > /tmp/qa/n57.md <<'EOF'
+note 57
+EOF
+cat > /tmp/qa/n58.md <<'EOF'
+note 58
+EOF
+cat > /tmp/qa/n59.md <<'EOF'
+note 59
+EOF
+cat > /tmp/qa/n60.md <<'EOF'
+note 60
+EOF
+cat > /tmp/qa/n61.md <<'EOF'
+note 61
+EOF
+cat > /tmp/qa/n62.md <<'EOF'
+note 62
+EOF
+cat > /tmp/qa/n63.md <<'EOF'
+note 63
+EOF
+cat > /tmp/qa/n64.md <<'EOF'
+note 64
+EOF
+cat > /tmp/qa/n65.md <<'EOF'
+note 65
+EOF
+cat > /tmp/qa/n66.md <<'EOF'
+note 66
+EOF
+cat > /tmp/qa/n67.md <<'EOF'
+note 67
+EOF
+cat > /tmp/qa/n68.md <<'EOF'
+note 68
+EOF
+cat > /tmp/qa/n69.md <<'EOF'
+note 69
+EOF
+cat > /tmp/qa/n70.md <<'EOF'
+note 70
+EOF
+cat > /tmp/qa/n71.md <<'EOF'
+note 71
+EOF
+cat > /tmp/qa/n72.md <<'EOF'
+note 72
+EOF
+cat > /tmp/qa/n73.md <<'EOF'
+note 73
+EOF
+cat > /tmp/qa/n74.md <<'EOF'
+note 74
+EOF
+cat > /tmp/qa/n75.md <<'EOF'
+note 75
+EOF
+cat > /tmp/qa/n76.md <<'EOF'
+note 76
+EOF
+cat > /tmp/qa/n77.md <<'EOF'
+note 77
+EOF
+cat > /tmp/qa/n78.md <<'EOF'
+note 78
+EOF
+cat > /tmp/qa/n79.md <<'EOF'
+note 79
+EOF
+cat > /tmp/qa/n80.md <<'EOF'
+note 80
+EOF
+cat > /tmp/qa/n81.md <<'EOF'
+note 81
+EOF
+cat > /tmp/qa/n82.md <<'EOF'
+note 82
+EOF
+cat > /tmp/qa/n83.md <<'EOF'
+note 83
+EOF
+cat > /tmp/qa/n84.md <<'EOF'
+note 84
+EOF
+cat > /tmp/qa/n85.md <<'EOF'
+note 85
+EOF
+cat > /tmp/qa/n86.md <<'EOF'
+note 86
+EOF
+cat > /tmp/qa/n87.md <<'EOF'
+note 87
+EOF
+cat > /tmp/qa/n88.md <<'EOF'
+note 88
+EOF
+cat > /tmp/qa/n89.md <<'EOF'
+note 89
+EOF
+cat > /tmp/qa/n90.md <<'EOF'
+note 90
+EOF
+cat > /tmp/qa/n91.md <<'EOF'
+note 91
+EOF
+cat > /tmp/qa/n92.md <<'EOF'
+note 92
+EOF
+cat > /tmp/qa/n93.md <<'EOF'
+note 93
+EOF
+cat > /tmp/qa/n94.md <<'EOF'
+note 94
+EOF
+cat > /tmp/qa/n95.md <<'EOF'
+note 95
+EOF
+cat > /tmp/qa/n96.md <<'EOF'
+note 96
+EOF
+cat > /tmp/qa/n97.md <<'EOF'
+note 97
+EOF
+cat > /tmp/qa/n98.md <<'EOF'
+note 98
+EOF
+cat > /tmp/qa/n99.md <<'EOF'
+note 99
+EOF
+cat > /tmp/qa/n100.md <<'EOF'
+note 100
+EOF
+cat > /tmp/qa/n101.md <<'EOF'
+note 101
+EOF
+cat > /tmp/qa/n102.md <<'EOF'
+note 102
+EOF
+cat > /tmp/qa/n103.md <<'EOF'
+note 103
+EOF
+cat > /tmp/qa/n104.md <<'EOF'
+note 104
+EOF
+cat > /tmp/qa/n105.md <<'EOF'
+note 105
+EOF
+cat > /tmp/qa/n106.md <<'EOF'
+note 106
+EOF
+cat > /tmp/qa/n107.md <<'EOF'
+note 107
+EOF
+cat > /tmp/qa/n108.md <<'EOF'
+note 108
+EOF
+cat > /tmp/qa/n109.md <<'EOF'
+note 109
+EOF
+cat > /tmp/qa/n110.md <<'EOF'
+note 110
+EOF
+cat > /tmp/qa/n111.md <<'EOF'
+note 111
+EOF
+cat > /tmp/qa/n112.md <<'EOF'
+note 112
+EOF
+cat > /tmp/qa/n113.md <<'EOF'
+note 113
+EOF
+cat > /tmp/qa/n114.md <<'EOF'
+note 114
+EOF
+cat > /tmp/qa/n115.md <<'EOF'
+note 115
+EOF
+cat > /tmp/qa/n116.md <<'EOF'
+note 116
+EOF
+cat > /tmp/qa/n117.md <<'EOF'
+note 117
+EOF
+cat > /tmp/qa/n118.md <<'EOF'
+note 118
+EOF
+cat > /tmp/qa/n119.md <<'EOF'
+note 119
+EOF
+cat > /tmp/qa/n120.md <<'EOF'
+note 120
+EOF
+cat > /tmp/qa/n121.md <<'EOF'
+note 121
+EOF
+cat > /tmp/qa/n122.md <<'EOF'
+note 122
+EOF
+cat > /tmp/qa/n123.md <<'EOF'
+note 123
+EOF
+cat > /tmp/qa/n124.md <<'EOF'
+note 124
+EOF
+cat > /tmp/qa/n125.md <<'EOF'
+note 125
+EOF
+cat > /tmp/qa/n126.md <<'EOF'
+note 126
+EOF
+cat > /tmp/qa/n127.md <<'EOF'
+note 127
+EOF
+cat > /tmp/qa/n128.md <<'EOF'
+note 128
+EOF
+cat > /tmp/qa/n129.md <<'EOF'
+note 129
+EOF
+cat > /tmp/qa/n130.md <<'EOF'
+note 130
+EOF
+cat > /tmp/qa/n131.md <<'EOF'
+note 131
+EOF
+cat > /tmp/qa/n132.md <<'EOF'
+note 132
+EOF
+cat > /tmp/qa/n133.md <<'EOF'
+note 133
+EOF
+cat > /tmp/qa/n134.md <<'EOF'
+note 134
+EOF
+cat > /tmp/qa/n135.md <<'EOF'
+note 135
+EOF
+cat > /tmp/qa/n136.md <<'EOF'
+note 136
+EOF
+cat > /tmp/qa/n137.md <<'EOF'
+note 137
+EOF
+cat > /tmp/qa/n138.md <<'EOF'
+note 138
+EOF
+cat > /tmp/qa/n139.md <<'EOF'
+note 139
+EOF
+cat > /tmp/qa/n140.md <<'EOF'
+note 140
+EOF
+cat > /tmp/qa/n141.md <<'EOF'
+note 141
+EOF
+cat > /tmp/qa/n142.md <<'EOF'
+note 142
+EOF
+cat > /tmp/qa/n143.md <<'EOF'
+note 143
+EOF
+cat > /tmp/qa/n144.md <<'EOF'
+note 144
+EOF
+cat > /tmp/qa/n145.md <<'EOF'
+note 145
+EOF
+cat > /tmp/qa/n146.md <<'EOF'
+note 146
+EOF
+cat > /tmp/qa/n147.md <<'EOF'
+note 147
+EOF
+cat > /tmp/qa/n148.md <<'EOF'
+note 148
+EOF
+cat > /tmp/qa/n149.md <<'EOF'
+note 149
+EOF
+cat > /tmp/qa/n150.md <<'EOF'
+note 150
+EOF
+cat > /tmp/qa/n151.md <<'EOF'
+note 151
+EOF
+cat > /tmp/qa/n152.md <<'EOF'
+note 152
+EOF
+cat > /tmp/qa/n153.md <<'EOF'
+note 153
+EOF
+cat > /tmp/qa/n154.md <<'EOF'
+note 154
+EOF
+cat > /tmp/qa/n155.md <<'EOF'
+note 155
+EOF
+cat > /tmp/qa/n156.md <<'EOF'
+note 156
+EOF
+cat > /tmp/qa/n157.md <<'EOF'
+note 157
+EOF
+cat > /tmp/qa/n158.md <<'EOF'
+note 158
+EOF
+cat > /tmp/qa/n159.md <<'EOF'
+note 159
+EOF
+cat > /tmp/qa/n160.md <<'EOF'
+note 160
+EOF
+cat > /tmp/qa/n161.md <<'EOF'
+note 161
+EOF
+cat > /tmp/qa/n162.md <<'EOF'
+note 162
+EOF
+cat > /tmp/qa/n163.md <<'EOF'
+note 163
+EOF
+cat > /tmp/qa/n164.md <<'EOF'
+note 164
+EOF
+cat > /tmp/qa/n165.md <<'EOF'
+note 165
+EOF
+cat > /tmp/qa/n166.md <<'EOF'
+note 166
+EOF
+cat > /tmp/qa/n167.md <<'EOF'
+note 167
+EOF
+cat > /tmp/qa/n168.md <<'EOF'
+note 168
+EOF
+cat > /tmp/qa/n169.md <<'EOF'
+note 169
+EOF
+cat > /tmp/qa/n170.md <<'EOF'
+note 170
+EOF
+cat > /tmp/qa/n171.md <<'EOF'
+note 171
+EOF
+cat > /tmp/qa/n172.md <<'EOF'
+note 172
+EOF
+cat > /tmp/qa/n173.md <<'EOF'
+note 173
+EOF
+cat > /tmp/qa/n174.md <<'EOF'
+note 174
+EOF
+cat > /tmp/qa/n175.md <<'EOF'
+note 175
+EOF
+cat > /tmp/qa/n176.md <<'EOF'
+note 176
+EOF
+cat > /tmp/qa/n177.md <<'EOF'
+note 177
+EOF
+cat > /tmp/qa/n178.md <<'EOF'
+note 178
+EOF
+cat > /tmp/qa/n179.md <<'EOF'
+note 179
+EOF
+cat > /tmp/qa/n180.md <<'EOF'
+note 180
+EOF
+cat > /tmp/qa/n181.md <<'EOF'
+note 181
+EOF
+cat > /tmp/qa/n182.md <<'EOF'
+note 182
+EOF
+cat > /tmp/qa/n183.md <<'EOF'
+note 183
+EOF
+cat > /tmp/qa/n184.md <<'EOF'
+note 184
+EOF
+cat > /tmp/qa/n185.md <<'EOF'
+note 185
+EOF
+cat > /tmp/qa/n186.md <<'EOF'
+note 186
+EOF
+cat > /tmp/qa/n187.md <<'EOF'
+note 187
+EOF
+cat > /tmp/qa/n188.md <<'EOF'
+note 188
+EOF
+cat > /tmp/qa/n189.md <<'EOF'
+note 189
+EOF
+cat > /tmp/qa/n190.md <<'EOF'
+note 190
+EOF
+cat > /tmp/qa/n191.md <<'EOF'
+note 191
+EOF
+cat > /tmp/qa/n192.md <<'EOF'
+note 192
+EOF
+cat > /tmp/qa/n193.md <<'EOF'
+note 193
+EOF
+cat > /tmp/qa/n194.md <<'EOF'
+note 194
+EOF
+cat > /tmp/qa/n195.md <<'EOF'
+note 195
+EOF
+cat > /tmp/qa/n196.md <<'EOF'
+note 196
+EOF
+cat > /tmp/qa/n197.md <<'EOF'
+note 197
+EOF
+cat > /tmp/qa/n198.md <<'EOF'
+note 198
+EOF
+cat > /tmp/qa/n199.md <<'EOF'
+note 199
+EOF
+cat > /tmp/qa/n200.md <<'EOF'
+note 200
+EOF
+=== allow R10-DOS2 heredoc 으로 쓰는 파일 3개(문턱 아래 — 일상형)
+cat > /tmp/qa/m0.md <<'EOF'
+note 0
+EOF
+cat > /tmp/qa/m1.md <<'EOF'
+note 1
+EOF
+cat > /tmp/qa/m2.md <<'EOF'
+note 2
+EOF
+=== block R11-P01 timeout bash -c "$(cat <<'EOF' ...)" quoted delim
+timeout 600 bash -c "$(cat <<'EOF'
+cd /x
+git push origin prod
+EOF
+)"
+=== block R11-P02 timeout bash -c "$(cat <<EOF ...)" unquoted delim
+timeout 600 bash -c "$(cat <<EOF
+git push origin prod
+EOF
+)"
+=== block R11-P03 docker exec sh -c "$(cat <<'EOF')"
+docker exec -i c sh -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-P04 bash -c "$(cat <<'EOF')" baseline
+bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-P05 nohup bash -c "$(cat ...)"
+nohup bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)" &
+=== block R11-P06 stdbuf bash -c
+stdbuf -oL bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-P07 at now <<EOF
+at now <<'EOF'
+git push origin prod
+EOF
+=== block R11-P08 timeout bash <<EOF
+timeout 60 bash <<'EOF'
+git push origin prod
+EOF
+=== block R11-P09 ssh -t host bash -c "$(cat)"
+ssh -t host bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-P10 xargs -0 bash -c "$(cat...)"
+caffeinate -i bash -c "$(cat <<'EOF'
+git push --force origin dev
+EOF
+)"
+=== allow R11-A01 commit $(cat <<'EOF') baseline
+git commit -m "$(cat <<'EOF'
+fix: x
+
+git push origin prod
+EOF
+)"
+=== block R11-Q01 sudo -u user bash -c "$(cat <<'EOF')"
+sudo -u deploy bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-Q02 if bash -c "$(cat <<'EOF')"; then
+if bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"; then echo ok; fi
+=== block R11-Q03 then bash -c "$(cat...)"
+if true; then bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"; fi
+=== block R11-Q04 exec bash -c
+exec bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-Q05 cd && timeout bash -c same line
+cd /x && timeout 120 bash -c "$(cat <<'EOF'
+git push origin HEAD:prod
+EOF
+)"
+=== block R11-Q06 ssh host "$(cat <<'EOF')"
+ssh host "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-Q07 timeout ssh host "$(cat)"
+timeout 30 ssh host "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-Q08 eval "$(cat <<EOF)" unquoted
+eval "$(cat <<EOF
+git push origin prod
+EOF
+)"
+=== block R11-Q09 bash -c "$(cat <<'EOF')" with -e
+set -e; bash -euo pipefail -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-Q10 docker run sh -c "$(cat)"
+docker run --rm -v "$PWD:/w" alpine/git sh -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-Q11 timeout bash -c '...' plain string (no heredoc) baseline
+timeout 600 bash -c 'git push origin prod'
+=== block R11-Q12 timeout bash -c "..." multi-line plain string
+timeout 600 bash -c "
+cd /x
+git push origin prod
+"
+=== allow R11-F01 commit heredoc + push feature branch (Claude Code standard)
+cd /Users/x/repo && git add -A && git commit -m "$(cat <<'EOF'
+fix(hook): prod 차단 — `git push origin prod` · `docker push` · `git reset --hard` 를 막는다
+
+gh pr create --base prod 도 막는다. aws ssm put-parameter 도.
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)" && git push -u origin imjohnkoo/hook-prod-refspec
+=== allow R11-F02 gh pr create body heredoc mentions everything
+gh pr create --base dev --head imjohnkoo/x --title "fix(hook): prod 차단 구멍" --body "$(cat <<'EOF'
+## 요약
+- `git push origin prod` 차단
+- `gh workflow run client-production.yml` 차단
+- `gh api -X PATCH repos/o/r/git/refs/heads/prod -f sha=abc` 차단
+- `docker push x` · `git reset --hard` · `aws ssm put-parameter`
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+=== allow R11-F03 PR body inline multi-line double-quoted
+gh pr create --base dev --title "x" --body "본문
+- git push origin prod 를 막는다
+- docker push 금지
+- reset --hard 금지"
+=== allow R11-F04 doc heredoc to file
+cat > /tmp/qa/runbook.md <<'EOF'
+# 배포
+git push origin prod
+gh workflow run client-production.yml
+docker push imjohnkoo/nomacom-client:prod
+EOF
+=== allow R11-F05 python patch script with commands in strings (balanced)
+python3 - <<'PY'
+import pathlib
+p = pathlib.Path('AGENTS.md'); s = p.read_text()
+s = s.replace("git push origin prod 차단", "git push origin prod · docker push 차단")
+p.write_text(s)
+PY
+=== allow R11-F06 grep / rg / sed with patterns
+rg -n 'git push origin prod|docker push|reset --hard' .claude && sed -n '1,20p' .claude/hooks/guard-prod-push.sh | grep -c "git push"
+=== allow R11-F07 hook probing via jq (QA pattern)
+jq -n --arg c 'git push origin prod' '{tool_input:{command:$c}}' | bash .claude/hooks/guard-prod-push.sh
+=== allow R11-F08 git log / diff across prod
+git fetch origin --quiet && git log --oneline origin/prod..origin/dev | head -20 && git diff --stat origin/prod origin/dev -- apps/client
+=== allow R11-F09 gh run list/view prod workflow
+gh run list --workflow client-production.yml --branch prod --limit 5 && gh run view 123 --log | grep -i error | head
+=== allow R11-F10 gh workflow view
+gh workflow view client-production.yml && gh workflow list
+=== allow R11-F11 docker build/run local
+docker build -t nomacom-client:local -f apps/client/Dockerfile . && docker run --rm -p 3000:3000 nomacom-client:local
+=== allow R11-F12 git reset soft/mixed
+git reset --soft HEAD~1 && git reset HEAD apps/client/x.ts && git reset --mixed
+=== allow R11-F13 delete feature branch remote
+git push origin --delete feat/x
+=== allow R11-F14 aws ssm read
+aws --profile nomacom ssm get-parameters-by-path --path /nomacom/client --recursive --query 'Parameters[].Name'
+=== allow R11-F15 for loop over quoted commands
+for c in 'git push origin prod' 'docker push x' 'git reset --hard'; do echo "$c"; done
+=== allow R11-F16 orchestration send body mentions prod push
+orca orchestration send --to dispatch:abc --subject "QA 결과" --body "blocker: git push origin prod 가 통과한다"
+=== allow R11-F17 here-string to grep
+grep -c prod <<< "git push origin prod"
+=== allow R11-F18 multi-line script w/ comments mentioning prod push
+# 주의: git push origin prod 는 하지 않는다
+git status --short
+git push -u origin feat/x # not git push origin prod
+=== allow R11-F19 echo with double-quoted commands and $() safe
+echo "next: git push origin prod (user approval) at $(date +%H:%M)"
+=== allow R11-F20 commit -m with backslash-escaped backticks
+git commit -m "fix: \`git push origin prod\` 차단"
+=== allow R11-F21 unquoted heredoc commit body without substitutions
+git commit -F - <<EOF
+fix: git push origin prod 차단
+docker push 금지
+EOF
+=== allow R11-F22 cat heredoc to file then cat it (not executing)
+cat > /tmp/qa/x.sh <<'EOF'
+git push origin prod
+EOF
+cat /tmp/qa/x.sh; wc -l /tmp/qa/x.sh
+=== allow R11-F23 bash -n syntax check of written script
+cat > /tmp/qa/x.sh <<'EOF'
+git push origin prod
+EOF
+bash -n /tmp/qa/x.sh
+=== allow R11-F24 node -e with commands in strings
+node -e "console.log('git push origin prod')"
+=== allow R11-F25 python -c with commands in strings
+python3 -c "print('git push origin prod; docker push x')"
+=== allow R11-F26 gh api GET with jq expression mentioning refs/heads/prod
+gh api repos/o/r/git/matching-refs/heads/ --jq '.[] | select(.ref == "refs/heads/prod") | .object.sha'
+=== allow R11-F27 gh pr view base prod listing
+gh pr list --base prod --state merged --json number,title --jq '.[] | "\(.number) \(.title)"'
+=== block R11-F28 알고 두는 오탐(안전 쪽) — orca terminal send --text 로 보내는 프롬프트 안의 prod push 글자(다른 터미널에 쳐 넣는 글이라 명령으로 본다)
+orca terminal send --terminal term_1 --text "QA 해 줘. 단 git push origin prod 는 절대 하지 말 것" --enter
+=== block R11-R01 "$BASH" -c string (ran_file knows $BASH, -c wrapper?)
+"$BASH" -c "git push --force origin dev"
+=== block R11-R02 $BASH -c string
+$BASH -c 'git push origin HEAD:prod'
+=== block R11-R05 git push matching refspec colon (pushes local prod if exists)
+git push origin :
+=== block R11-R06 bash -c "$(cat <<'EOF')" + 2>&1 | tail
+bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)" 2>&1 | tail -5
+=== block R11-R07 cd x; bash -c "$(cat <<'EOF')" same line after ;
+cd /x; bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-R08 VAR=1 bash -c "$(cat ...)"
+FOO=1 bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-R09 env -i PATH=x bash -c "$(cat...)"
+env -i PATH="$PATH" bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-R10 bash -c "$(cat <<EOF)" written via printf? no — sh -c with heredoc on next line after continuation
+bash -c \
+"$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-R11 { bash -c "$(cat ...)"; }
+{ bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"; }
+=== block R11-R12 while loop do bash -c "$(cat)"
+while true; do bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"; break; done
+=== block R11-R13 xargs bash -c with heredoc stdin? (xargs reads lines) — echo | xargs
+xargs -I{} bash -c '{}' <<'EOF'
+git push origin prod
+EOF
+=== block R11-R14 su -c "$(cat <<EOF)"
+su - deploy -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-R15 ssh host bash -s <<EOF (baseline)
+ssh host bash -s <<'EOF'
+git push origin prod
+EOF
+=== block R11-R16 docker exec -i c sh <<EOF (baseline)
+docker exec -i c sh <<'EOF'
+git push origin prod
+EOF
+=== block R11-R17 docker exec c sh -c "$(cat <<'EOF')" with -i
+docker exec c bash -lc "$(cat <<'EOF'
+cd /app && git push --force origin dev
+EOF
+)"
+=== block R11-S01 write script to $S/x.sh then cd $S && bash x.sh (same line as heredoc)
+cat > $S/probe.sh <<'EOF' && cd $S && bash probe.sh
+git push origin prod
+EOF
+=== block R11-S02 write script then (cd dir && bash x.sh) on later line
+cat > /tmp/qa/probe.sh <<'EOF'
+git push origin prod
+EOF
+cd /tmp/qa && bash probe.sh
+=== block R11-S03 written ${D}/x.sh run $D/x.sh
+cat > ${D}/probe.sh <<'EOF' && bash $D/probe.sh
+git push origin prod
+EOF
+=== block R11-S04 written x.sh run via bash -c 'bash x.sh' (baseline)
+cat > x.sh <<'EOF'
+git push origin prod
+EOF
+bash -c 'bash x.sh'
+=== block R11-S05 tee -a to script then sh it
+tee -a /tmp/qa/x.sh >/dev/null <<'EOF'
+git push --force origin dev
+EOF
+sh /tmp/qa/x.sh
+=== block R11-S06 written unquoted delim then run
+cat > /tmp/qa/x.sh <<EOF
+git push origin HEAD:prod
+EOF
+bash /tmp/qa/x.sh
+=== block R11-S07 written then executed via xargs? no: bash with env prefix
+cat > run.sh <<'EOF'
+git push origin prod
+EOF
+env FOO=1 bash run.sh
+=== block R11-S08 written via cat << EOF > file (space) then ./file
+cat << 'EOF' > ./deploy.sh
+git push origin prod
+EOF
+chmod +x ./deploy.sh && ./deploy.sh
+=== block R11-S09 written then run with sudo -u
+cat > /tmp/qa/x.sh <<'EOF'
+git push origin prod
+EOF
+sudo -u deploy bash /tmp/qa/x.sh
+=== block R11-S12 pushd/popd style run
+cat > /tmp/qa/x.sh <<'EOF'
+git push origin prod
+EOF
+pushd /tmp/qa >/dev/null && bash ./x.sh; popd
+=== block R11-T01 push-option with [ then prod
+git push -o 'x[a' origin HEAD:prod
+=== block R11-T03 push-option with ? and *
+git push -o 'a?*b' origin HEAD:prod
+=== block R11-T04 push-option with & (bash 5.2 patsub)
+git push -o 'a&b' origin HEAD:prod
+=== block R11-T05 push-option with ] [ ! ^
+git push -o '[!^]' origin HEAD:prod
+=== block R11-T06 gh -R with odd chars
+gh pr -R 'o/r[x' create --base prod
+=== block R11-T07 gh -R with &
+gh workflow -R 'o&r' run client-production.yml
+=== block R11-T08 push option value equals following token
+git push -o origin origin HEAD:prod
+=== block R11-T09 quoted long force-with-lease (>64 chars, fully quoted)
+git push "--force-with-lease=refs/heads/dev:0123456789abcdef0123456789abcdef01234567" origin dev
+=== block R11-T10 quoted --force-with-lease=x:$SHA (expands, short)
+git push "--force-with-lease=dev:$SHA" origin dev
+=== block R11-T11 quoted -f bundle long
+git push '--force-if-includes' origin dev
+=== block R11-T12 git push --forc (prefix of --force)
+git push --forc origin dev
+=== block R11-U02 written file | bash (re4)
+cat > /tmp/qa/x.sh <<'EOF'
+git push origin prod
+EOF
+cat /tmp/qa/x.sh | bash
+=== block R11-U03 written file < redirect | sh
+cat > x.sh <<'EOF'
+git push --force origin dev
+EOF
+cat x.sh | sh -s
+=== block R11-U04 sudo bash -c "$(cat <<'EOF')" (recv prefix skip)
+sudo bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R11-U05 env bash -c "$(cat <<'EOF')"
+env bash -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== allow R11-V01 PR review comment body mentions refs/heads/prod
+gh api repos/o/r/pulls/12/comments -f body="refs/heads/prod 로 가는 push 를 막는다" -f commit_id=abc -f path=a.sh -F line=3
+=== allow R11-V02 graphql read query for prod ref
+gh api graphql -f query='query { repository(owner:"o", name:"r") { ref(qualifiedName:"refs/heads/prod") { target { oid } } } }'
+=== allow R11-V03 graphql addComment mutation mentioning push
+gh api graphql -f query='mutation { addComment(input:{subjectId:"X", body:"git push origin prod 금지"}) { clientMutationId } }'
+=== allow R11-V04 graphql resolveReviewThread
+gh api graphql -f query='mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){ thread { id } } }' -f id=PRRT_x
+=== allow R11-V05 issue comment via --input heredoc mentioning prod ref
+gh api repos/o/r/issues/12/comments --input - <<'EOF'
+{"body": "배포 메모: refs/heads/prod 는 dev 승격으로만"}
+EOF
+=== allow R11-V06 PR create via REST base dev, body mentions base prod
+gh api repos/o/r/pulls -f base=dev -f head=feat/x -f title=x -f body="--base prod 는 막힌다"
+=== allow R11-V07 gh pr checks / view prod
+gh pr checks 12 && gh pr view 12 --json baseRefName,headRefName
+=== allow R11-V08 compare prod...dev
+gh api repos/o/r/compare/prod...dev --jq '.ahead_by'
+=== allow R11-V09 git fetch prod and checkout
+git fetch origin prod:refs/remotes/origin/prod && git log -1 origin/prod
+=== allow R11-V10 git branch -f local prod (not push)
+git branch -f prod origin/prod
+=== allow R11-V11 PR body file heredoc then gh pr create --body-file
+cat > /tmp/qa/body.md <<'EOF'
+gh pr create --base prod
+git push origin prod
+EOF
+gh pr create --base dev --body-file /tmp/qa/body.md --title x
+=== allow R11-V12 gh pr edit body mentions -B prod
+gh pr edit 12 --body "fix: -B prod 차단"
+=== allow R11-V13 git commit with -m containing $(...) safe and prod words
+git commit -m "chore: prod 배포 준비 ($(date +%F))"
+=== allow R11-V14 workflow run ci.yml with ref
+gh workflow run ci.yml --ref feat/x
+=== allow R11-V15 gh run watch then echo prod
+gh run watch 123 --exit-status; echo "prod 배포 확인은 따로"
+=== allow R11-M1a 접두 건너뛰기 — 앞 명령 bash 뒤 sudo -E git commit heredoc 의 명령 글자(데이터)
+bash scripts/check.sh && sudo -E git commit -F - <<'EOF'
+docs: git push origin HEAD:prod 예시
+EOF
+=== block R11-M1b heredoc 으로 쓴 그 파일을 cat 으로 읽어 bash 에 파이프
+cat > x.sh <<'EOF'
+git push origin HEAD:prod
+EOF
+cat x.sh | bash
+=== block R11-M1c $( 70겹 — 판정 불가로 막는다(깊은 중첩이 600초를 넘겨 판정 없이 통과하지 않게)
+echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo "$(echo x)")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")")"
+git push origin dev
+=== block R11-m2 aws ssm send-command(EC2 원격 명령)
+aws ssm send-command --document-name AWS-RunShellScript --targets Key=tag:app,Values=nomacom-client --parameters commands="docker restart nomacom-client"
+=== block R12-B1a 서브셸 안 git -C 전역 옵션 뒤 prod push(공백 없이 붙은 «(»)
+(git -C /x/y push origin HEAD:prod)
+=== block R12-B1b time (git -C "$WT" push …)
+time (git -C "$WT" push origin HEAD:prod)
+=== block R12-B1c «;» 뒤 공백 없이 git -C
+cd /x;git -C /x/y push origin HEAD:prod
+=== block R12-B1d «&&» 뒤 공백 없이 git -c
+true&&git -c user.name=x push origin prod
+=== block R12-B1e «|» 뒤 공백 없이 git -C
+echo y|git -C /x push origin prod
+=== block R12-B1f 서브셸 안 git -C reset --hard
+(git -C /x reset --hard origin/dev)
+=== allow R12-B1g 서브셸 안 git -C status(일상형)
+time (git -C "$WT" status --short)
+=== block R12-M1a ${SHELL:-bash} 이 받는 heredoc
+${SHELL:-bash} <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R12-M1b "${BASH}" 가 받는 heredoc
+"${BASH}" <<'EOF'
+git push origin HEAD:prod
+EOF
+=== block R12-m1 zsh =git 확장
+=git push origin HEAD:prod
+=== block R12-m2 )# 주석의 작은따옴표가 뒤 줄을 삼키지 않는다
+(cd /x)#don't
+git push origin prod
+echo 'ok'
+=== block R12-m4 숫자로 시작하는 구분자(1EOF)
+cat <<1EOF
+don't worry
+1EOF
+git push origin prod
+echo 'done'
+=== block R12-m5 expect -c 문자열
+expect -c 'spawn git push origin prod; interact'
+=== block R12-m6 aws ssm 뒤 --region 전역 옵션
+aws ssm --region ap-northeast-2 put-parameter --name /nomacom/x --value y --overwrite
+=== block R12-m6b aws deploy 뒤 --region 전역 옵션
+aws deploy --region ap-northeast-2 create-deployment --application-name nomacom-client --deployment-group-name prod
+=== allow R12-m7 PR 리뷰 본문의 «base: prod» 글자(--input heredoc)
+gh api repos/o/r/pulls/12/reviews --input - <<'EOF'
+{"body": "base: prod 로 바꾸는 PR 은 막혀요", "event": "COMMENT"}
+EOF
+=== block R12-m7b PR base 를 prod 로 바꾸는 PATCH(--input heredoc)
+gh api -X PATCH repos/o/r/pulls/12 --input - <<'EOF'
+{"base": "prod"}
+EOF
+=== allow R12-m8 산술식 1 << 3 은 heredoc 이 아니다
+echo $(( 1 << 3 ))
+x=1
+=== block R13-M1a $(…) 뒤에 붙은 # 는 낱말 안 — 뒤 명령을 숨기지 않는다
+echo $(date +%s)#; git push origin HEAD:prod
+=== block R13-M1b URL 조각(#install) 앞 $(…)
+curl -s http://localhost:3000/guide/$(cat /tmp/id)#install && git push origin prod
+=== block R13-M1c 대입 x=$(…)# 뒤 reset --hard
+x=$(pwd)#; git reset --hard
+=== block R13-M1d $(…)# 뒤 docker push
+echo $(whoami)#; docker push img:prod
+=== block R13-M1e $((…)) 뒤 #
+echo $((1+2))#x; git push origin prod
+=== block R13-M1f 이스케이프한 \) 뒤 #
+echo \)#; git push origin prod
+=== block R13-M1g 이스케이프한 공백 뒤 #
+echo a\ #; git push origin prod
+=== block R13-M1h 프로세스 치환 <(…) 뒤 #
+cat <(echo a)#; git push origin prod
+=== block R13-M1i 이스케이프한 ; 뒤 #
+echo a\;#; git push origin prod
+=== block R13-M1j 줄 이음 뒤 # 는 $(…) 에 붙은 글자
+echo $(date)\
+#; git push origin prod
+=== allow R13-M1k 서브셸을 닫는 ) 뒤 # 는 주석(bash 와 같다)
+(cd /x)#; git push origin prod
+=== allow R13-M1l 산술 명령 ((…)) 뒤 # 는 주석
+((n++))#; git push origin prod
+=== block R13-M1m heredoc 처리기 — 서브셸 ) 뒤 #<<EOF 는 주석이라 다음 줄은 명령
+(cd /x)#<<EOF
+git push origin prod
+EOF
+=== allow R13-M1n heredoc 처리기 — $(…)#<<EOF 는 진짜 heredoc(본문은 echo 의 데이터)
+echo $(date)#<<EOF
+git push origin prod
+EOF
+=== allow R13-M1o heredoc 처리기 — 이스케이프한 공백 뒤 #<<EOF 도 heredoc
+echo a\ #<<EOF
+git push origin prod
+EOF
+=== allow R13-M1p heredoc 처리기 — $((…))#<<EOF 도 heredoc
+echo $((1))#<<EOF
+git push origin prod
+EOF
+=== allow R13-M1q heredoc 처리기 — 줄 이음 뒤 #<<EOF 는 앞 $(…) 에 붙은 글자(heredoc)
+echo $(date)\
+#<<EOF
+git push origin prod
+EOF
+=== block R13-m1a git 전역 옵션 값이 ; 와 다음 명령을 삼키지 않는다(docker push)
+git -C /x;docker push img:latest
+=== block R13-m1b git 전역 옵션 값이 ; 와 다음 명령을 삼키지 않는다(aws ssm put-parameter)
+git -C /x;aws ssm put-parameter --name /nomacom/x --value y --overwrite
+=== block R13-m2a eval 문자열 뒤 인자
+eval 'git push' origin prod
+=== block R13-m2b eval 큰따옴표 문자열 뒤 인자
+eval "git push origin" prod
+=== block R13-m2c eval -- 문자열
+eval -- "git push origin prod"
+=== allow R13-m2d eval "$(ssh-agent -s)" 뒤 git status
+eval "$(ssh-agent -s)" && git status
+=== allow R13-m2e eval 문자열 뒤 dev push
+eval 'echo hi' && git push origin dev
+=== block R13-m4a zsh =docker 확장
+=docker push imjohnkoo/nomacom-client:prod
+=== block R13-m4b zsh =git reset --hard
+=git reset --hard origin/dev
+=== block R13-m4c zsh =git subtree push
+=git subtree push --prefix apps/client origin prod
+=== block R13-m4d zsh =docker buildx --push
+=docker buildx build --push -t imjohnkoo/nomacom-client:prod .
+=== block R13-m4e 경로 없이 이름으로 실행하는 스크립트
+cat > deployit <<'EOF'
+git push origin HEAD:prod
+EOF
+chmod +x deployit && deployit
+=== block R13-m4f bash < 파일
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+bash < /tmp/d.sh
+=== block R13-m4g 따옴표 친 "bash" 로 받는 파이프
+cat <<'EOF' | "bash"
+git push origin prod
+EOF
+=== allow R13-m4h <<\EOF 는 따옴표 친 구분자(본문의 $(…) 는 글자)
+cat <<\EOF
+echo $(git push origin prod)
+EOF
+=== block R13-m4i curl -T - 로 heredoc 본문을 보내는 GitHub API ref 생성
+curl -s -X POST -H "Authorization: token $T" https://api.github.com/repos/o/r/git/refs -T - <<'EOF'
+{"ref": "refs/heads/prod", "sha": "0123456789abcdef0123456789abcdef01234567"}
+EOF
+=== block R13-m4j heredoc 연산자 뒤 긴 파이프라인 끝의 bash(뒤 글 창)
+cat <<'EOF' | sed -e 's/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/b/' -e 's/c/d/' -e 's/e/f/' | bash
+git push origin prod
+EOF
+=== block R13-m4k 긴 인자 뒤 heredoc 을 받는 bash -s(앞 글 창)
+bash -s -- --branch dev --app nomacom-client --dry-run 0 --verbose --log /tmp/x.log --retries 3 <<'EOF'
+git push origin prod
+EOF
+=== block R13-m5a 변수 대입 접두 뒤 실행
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+DRY=0 /tmp/d.sh
+=== block R13-m5b "$SHELL" 파일
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+"$SHELL" /tmp/d.sh
+=== block R13-m5c if 파일; then
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+if /tmp/d.sh; then echo ok; fi
+=== block R13-m5d sudo -u 사용자 파일
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+sudo -u deploy /tmp/d.sh
+=== block R13-m5e timeout 600 ./파일
+cat > d.sh <<'EOF'
+git push origin prod
+EOF
+timeout 600 ./d.sh
+=== allow R13-m5f 쓴 파일을 git add 만(time 접두)
+cat > d.sh <<'EOF'
+git push origin prod
+EOF
+time git add d.sh
+=== allow R13-m5g 쓴 파일에 sudo chmod +x 만
+cat > d.sh <<'EOF'
+git push origin prod
+EOF
+sudo chmod +x d.sh
+=== allow R13-m5h 쓴 파일(경로)에 sudo chmod +x 만
+cat > /tmp/d.sh <<'EOF'
+git push origin prod
+EOF
+sudo chmod +x /tmp/d.sh
+=== block R13-m6a flock -c "$(cat <<EOF)"
+flock /tmp/l -c "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R13-m6b env -S "$(cat <<EOF)"
+env -S "$(cat <<'EOF'
+git push origin prod
+EOF
+)"
+=== block R13-m6c git rebase -x "$(cat <<EOF)"
+git rebase -x "$(cat <<'EOF'
+git push origin prod
+EOF
+)" HEAD~1
+=== block R13-m6d git submodule foreach --recursive 문자열
+git submodule foreach --recursive 'git push origin prod'
+=== block R13-m6e git rebase --exec= 문자열
+git rebase --exec='git push origin prod' HEAD~1
+=== block R13-m6f git config set --append remote.*.push
+git config set --append remote.origin.push HEAD:prod
+=== allow R13-m6g 커밋 메시지 heredoc 의 명령 글자(데이터)
+git commit -m "$(cat <<'EOF'
+fix: git push origin prod 예시
+EOF
+)"

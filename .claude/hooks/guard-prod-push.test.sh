@@ -17,8 +17,16 @@ fail=0
 
 run() { # run <expect: allow|block> <command>
   local expect="$1" cmd="$2" out actual
-  out=$(jq -n --arg c "$cmd" '{tool_input: {command: $c}}' | "$HOOK")
-  if [[ -z "$out" ]]; then actual="allow"; else actual="block"; fi
+  # 훅은 이 테스트를 돌린 bash 로 부른다(/bin/bash test.sh 가 정말 3.2 로 돌게 — shebang 의 env bash 를 타지 않는다)
+  out=$(jq -n --arg c "$cmd" '{tool_input: {command: $c}}' | "$BASH" "$HOOK")
+  # 차단 = permissionDecision deny 인 JSON 하나 · 통과 = 빈 출력. 그 밖의 출력은 실패로 센다
+  if [[ -z "$out" ]]; then
+    actual="allow"
+  elif [[ "$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)" == deny ]]; then
+    actual="block"
+  else
+    actual="bad-output"
+  fi
   if [[ "$actual" == "$expect" ]]; then
     pass=$((pass + 1))
   else
@@ -61,6 +69,18 @@ run allow 'git checkout -- design/README.md'
 run allow "$(printf 'git commit -F - <<%s\nfix: 훅 오탐 정리\n\n  git push origin prod\n  gh api -X PATCH repos/o/r/git/refs/heads/prod -f sha=abc\n위 두 예시가 판정에 걸리면 안 된다.\nMSG' "'MSG'")"
 run allow "$(printf 'cat > docs/note.md <<%s\n# 배포\ngit push origin prod 로 배포한다.\nEOF' "'EOF'")"
 
+# 2026-10-04 구멍 수정과 함께 — 이름에 prod 가 든 정상 브랜치 · 조회 · dev base PR 은 통과해야 한다
+run allow 'git push origin HEAD:refs/heads/dev'
+run allow 'git push -u origin imjohnkoo/prod-push-check-fix'
+run allow 'git push origin HEAD:refs/heads/imjohnkoo/hook-prod-refspec'
+run allow 'git push origin x/prod'
+run allow 'git push -u origin feat/x 2>&1 | grep -c "*"'
+run allow 'gh api repos/o/r/git/refs/heads/prod'
+run allow 'gh api repos/o/r/branches/prod --jq .commit.sha'
+run allow 'gh api repos/o/r/git/refs/heads/production-notes -f sha=abc'
+run allow 'gh pr create --base dev --title "fix(hook): prod refspec 구멍"'
+run allow 'gh pr list --base prod'
+
 echo "== BLOCK (진짜 위험 — 반드시 막혀야 함) =="
 
 # prod 배포 트리거 — nomacom 은 Dockerfile 게이트가 없어 훅이 유일한 사전 방어선
@@ -88,6 +108,137 @@ run block 'aws ssm put-parameter --name /nomacom/shared/db/DATABASE_URL --value 
 run block 'aws ssm delete-parameter --name /nomacom/admin/APP_URL'
 # 복합 명령 안에 섞여 있어도 잡힌다
 run block 'yarn build && git push origin prod'
+
+# 2026-10-04 구멍 수정 — 목적지가 «refs/heads/prod» · 따옴표 · «+» · 삭제여도 prod 다
+run block 'git push origin HEAD:refs/heads/prod'
+run block 'git push origin refs/heads/dev:refs/heads/prod'
+run block 'git push origin "HEAD:prod"'
+run block "git push origin 'prod'"
+run block 'git push origin +prod'
+run block 'git push origin --delete refs/heads/prod'
+# «+refspec» · 짧은 옵션 묶음 = force
+run block 'git push origin +HEAD:dev'
+run block 'git push -fu origin feat/x'
+# 여러 ref 를 한꺼번에(prod 포함 가능)
+run block 'git push --mirror origin'
+run block 'git push --all origin'
+run block "git push origin 'refs/heads/*:refs/heads/*'"
+# gh api 는 필드를 주면 -X 없이도 POST — ref 생성 · 갱신 · 이름 바꾸기
+run block 'gh api repos/o/r/git/refs -f ref=refs/heads/prod -f sha=abc'
+run block 'gh api repos/o/r/git/refs/heads/prod -f sha=abc'
+run block 'gh api -X PUT repos/o/r/git/refs/heads/prod -f sha=abc'
+run block 'gh api repos/o/r/branches/dev/rename -f new_name=prod'
+run block 'gh api -X POST repos/o/r/branches/prod/rename -f new_name=old'
+run block "gh api graphql -f query='mutation { createRef(input: {name: \"refs/heads/prod\", oid: \"abc\", repositoryId: \"R\"}) { ref { name } } }'"
+# prod 를 base 로 하는 PR — 머지하면 prod 가 움직인다
+run block 'gh pr create --base prod --title x --body y'
+run block 'gh pr create -B prod'
+run block 'gh pr edit 12 --base prod'
+
+# 꾸민 큰 입력 — 600초 제한을 넘겨 판정 없이 통과(fail-open)하지 않는다(13회차 minor 8): heredoc 본문 400개 · 명령 치환 1만 개 ·
+#   닫히지 않은 $( 64개 · 명령 512KB 를 넘으면 판정 불가로 막고, push-option · gh -R 2,000개는 빨리 판정한다(bash 3.2 에서 483초였다).
+#   큰 글은 인자가 아니라 표준 입력으로 JSON 을 만든다(리눅스는 인자 하나가 128KB 를 넘지 못한다)
+runbig() { # runbig <expect> <command> — run 과 같되 JSON 을 표준 입력으로 만든다
+  local expect="$1" cmd="$2" out actual
+  out=$(printf '%s' "$cmd" | jq -Rs '{tool_input: {command: .}}' | "$BASH" "$HOOK")
+  if [[ -z "$out" ]]; then actual="allow"
+  elif [[ "$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)" == deny ]]; then actual="block"
+  else actual="bad-output"; fi
+  if [[ "$actual" == "$expect" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); printf '  ⛔ expected %-5s got %-5s : %s…(%d바이트)\n' "$expect" "$actual" "${cmd:0:60}" "${#cmd}"; fi
+}
+echo "== 꾸민 큰 입력 (상한 · 시간) =="
+big=""; for ((k = 0; k < 401; k++)); do big+="bash <<EOF"$'\n'"echo $k"$'\n'"EOF"$'\n'; done
+runbig block "$big"
+big="echo "; for ((k = 0; k < 10001; k++)); do big+='$(a)'; done
+runbig block "$big"
+big="echo "; for ((k = 0; k < 65; k++)); do big+='$( '; done
+runbig block "$big"
+big=$(head -c 524289 /dev/zero | tr '\0' 'a')
+runbig block "echo $big"
+SECONDS=0
+big="git push"; for ((k = 0; k < 2000; k++)); do big+=" -o ci.skip"; done
+runbig allow "$big origin dev"
+big="gh"; for ((k = 0; k < 2000; k++)); do big+=" -R o/r"; done
+runbig allow "$big pr list"
+if ((SECONDS > 60)); then fail=$((fail + 1)); echo "  ⛔ push-option · gh -R 걷기가 느리다: ${SECONDS}초"; fi
+
+# 판정 케이스 파일(2026-10-05 QA ⑥ — 누락 · 오탐 · 따옴표 회귀 · 입력 깨짐) — 여러 줄 명령 그대로 · CRLF 판도 한 번 더
+CASES="$(cd "$(dirname "$0")" && pwd)/guard-prod-push.cases.txt"
+run_cases() { # run_cases <crlf: 0|1>
+  local crlf="$1" line expect="" cmd="" have=0
+  flush() {
+    (( have )) || return
+    cmd="${cmd%$'\n'}"
+    (( crlf )) && cmd="$(printf '%s' "$cmd" | sed 's/$/\r/')"
+    run "$expect" "$cmd"
+    have=0; cmd=""
+  }
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" == "=== "* ]]; then
+      flush
+      expect="${line#=== }"; expect="${expect%% *}"; have=1; cmd=""
+    elif (( have )); then
+      cmd+="$line"$'\n'
+    fi
+  done < "$CASES"
+  flush
+}
+echo "== 케이스 파일 $(grep -c '^=== ' "$CASES")건 (LF · CRLF) =="
+[[ -f "$CASES" ]] || { echo "  ⛔ 케이스 파일 없음: $CASES"; fail=$((fail + 1)); }
+run_cases 0
+run_cases 1
+
+# fail-closed — jq 가 없거나 awk 가 죽으면 «통과» 가 아니라 «차단» 이다
+FC=$(mktemp -d)
+mkdir -p "$FC/nojq" "$FC/badawk"
+for t in bash cat tr sed awk grep printf mktemp; do p=$(command -v "$t") && ln -sf "$p" "$FC/nojq/$t"; done
+for t in bash cat tr sed grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/badawk/$t"; done
+printf '#!/bin/sh\nexit 2\n' > "$FC/badawk/awk" && chmod +x "$FC/badawk/awk"
+# awk 가 제 할 일을 다 내고 실패 코드로 끝나도(일부만 내고 죽는 경우의 대역) 막는다 — pipefail(7회차 minor 10)
+mkdir -p "$FC/lateawk"
+for t in bash cat tr sed grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/lateawk/$t"; done
+printf '#!/bin/sh\n"%s" "$@"\nexit 2\n' "$(command -v awk)" > "$FC/lateawk/awk" && chmod +x "$FC/lateawk/awk"
+# jq 가 있지만 실패해도(크래시 · 깨진 입력) 통과시키지 않는다
+mkdir -p "$FC/badjq"
+for t in bash cat tr sed awk grep printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/badjq/$t"; done
+printf '#!/bin/sh\nexit 134\n' > "$FC/badjq/jq" && chmod +x "$FC/badjq/jq"
+# 스캐너 awk 만 · heredoc 처리기 awk 만 죽어도 막는다(프로그램 글에 든 함수 이름으로 가려 실패시킨다 — 11회차 M1)
+mkdir -p "$FC/scanfail" "$FC/hsfail"
+for t in bash cat tr sed grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/scanfail/$t" && ln -sf "$p" "$FC/hsfail/$t"; done
+printf '#!/bin/sh\ncase "$*" in *matchparen*) exit 2 ;; esac\nexec "%s" "$@"\n' "$(command -v awk)" > "$FC/scanfail/awk" && chmod +x "$FC/scanfail/awk"
+printf '#!/bin/sh\ncase "$*" in *kindof*) exit 2 ;; esac\nexec "%s" "$@"\n' "$(command -v awk)" > "$FC/hsfail/awk" && chmod +x "$FC/hsfail/awk"
+# awk 가 아무것도 내지 않고 0 으로 끝나도(빈 글) 통과시키지 않는다
+mkdir -p "$FC/emptyawk"
+for t in bash cat tr sed grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/emptyawk/$t"; done
+printf '#!/bin/sh\ncat >/dev/null\nexit 0\n' > "$FC/emptyawk/awk" && chmod +x "$FC/emptyawk/awk"
+mkdir -p "$FC/latesed"
+for t in bash cat tr awk grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/latesed/$t"; done
+printf '#!/bin/sh\n"%s" "$@"\nexit 2\n' "$(command -v sed)" > "$FC/latesed/sed" && chmod +x "$FC/latesed/sed"
+# tr · wc 가 실패해도 막는다 — 소문자 변환(gh api) · 마지막 평탄화(gh api --input 판정) · 써 두는 파일 수 세기(13회차 minor 3).
+#   인자로 골라 그 호출만 실패시킨다(맨 앞 tr 실패가 먼저 막아 뒤 장치를 못 보는 일이 없게)
+mkdir -p "$FC/trlow" "$FC/trflat" "$FC/badwc"
+for t in bash cat sed awk grep jq printf wc; do p=$(command -v "$t") && ln -sf "$p" "$FC/trlow/$t" && ln -sf "$p" "$FC/trflat/$t"; done
+for t in bash cat tr sed awk grep jq printf; do p=$(command -v "$t") && ln -sf "$p" "$FC/badwc/$t"; done
+printf '#!/bin/sh\n[ "$1" = A-Z ] && exit 2\nexec "%s" "$@"\n' "$(command -v tr)" > "$FC/trlow/tr" && chmod +x "$FC/trlow/tr"
+printf '#!/bin/sh\ncase "$1" in *n*t*) exit 2 ;; esac\nexec "%s" "$@"\n' "$(command -v tr)" > "$FC/trflat/tr" && chmod +x "$FC/trflat/tr"
+printf '#!/bin/sh\nexit 2\n' > "$FC/badwc/wc" && chmod +x "$FC/badwc/wc"
+fc() { # fc <이름> <PATH> [명령] — 정상 명령(기본 git status)도 막혀야 한다
+  local o j; j=$(jq -n --arg c "${3:-git status}" '{tool_input: {command: $c}}')
+  o=$(printf '%s' "$j" | PATH="$2" "$BASH" "$HOOK" 2>/dev/null)
+  if [[ "$o" == *'"deny"'* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); printf '  ⛔ fail-closed 아님: %s\n' "$1"; fi
+}
+echo "== fail-closed (jq 없음 · jq 실패 · awk 실패 · awk · sed 출력 뒤 실패 · awk 빈 출력 · 스캐너 · heredoc 처리기만 실패 · tr · wc 실패) =="
+fc "jq 없음" "$FC/nojq"
+fc "awk 실패" "$FC/badawk"
+fc "awk 출력 뒤 실패" "$FC/lateawk"
+fc "sed 출력 뒤 실패(pipefail)" "$FC/latesed"
+fc "awk 빈 출력(종료 0)" "$FC/emptyawk"
+fc "jq 실패(종료 134)" "$FC/badjq"
+fc "스캐너 awk 만 실패" "$FC/scanfail"
+fc "heredoc 처리기 awk 만 실패" "$FC/hsfail"
+fc "tr 소문자 변환만 실패(gh api 판정)" "$FC/trlow" "gh api repos/o/r/pulls"
+fc "tr 마지막 평탄화만 실패" "$FC/trflat"
+fc "wc 실패(써 두는 파일 수 세기)" "$FC/badwc" "$(printf 'cat <<%sEOF%s\nhi\nEOF' "'" "'")"
 
 echo
 printf 'pass=%d fail=%d\n' "$pass" "$fail"
