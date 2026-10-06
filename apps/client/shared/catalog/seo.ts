@@ -36,7 +36,7 @@ export function catalogRoutes(catalog: CatalogView): string[] {
   ]
 }
 
-/** nitro.prerender.routes — 홈 · 검색(noindex 지만 payload 를 고정한다) · 카탈로그 · 정적 · 가이드 전용판(noindex) */
+/** nitro.prerender.routes — 홈 · 검색(noindex 지만 payload 를 고정한다) · 카탈로그 · 정적 · 가이드 전용판(canonical = 사이트판 · sitemap 제외 — D-18) */
 export function prerenderRoutes(catalog: CatalogView): string[] {
   return ['/', '/search', ...catalogRoutes(catalog), ...STATIC_ROUTES, ...GUIDE_BARE_ROUTES]
 }

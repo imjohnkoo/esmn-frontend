@@ -290,10 +290,10 @@ describe.each([
     expect(router.replace).not.toHaveBeenCalled()
   })
 
-  it.each([`${VIEW}/`, `${VIEW}#top`, `${VIEW}/#top`])(
+  it.each([`${VIEW}/`, `${VIEW}#top`, `${VIEW}/#top`, `${VIEW}/?from=sms`])(
     '앞 칸 주소 끝에 / · # 가 붙어 있어도(%s) 같은 화면으로 보고 기록 한 칸 뒤로',
     async (back) => {
-      await render(count)
+      await render(count, back.includes('?from=sms') ? { from: 'sms' } : {})
       press(cards()[0]!)
       await settle()
       window.history.replaceState({ back }, '')
@@ -323,10 +323,16 @@ describe.each([
       expect(route.query).toEqual({})
       expect(stack).toEqual([])
       expect(sheetOpen()).toBe(false)
-      // 닫힌 뒤에는 다시 열고 닫을 수 있다
+      // 닫힌 뒤에는 다시 열고 닫을 수 있다(닫는 중 표시가 풀린다)
       press(cards()[1]!)
       await settle()
       expect(title()).toBe(GUIDE_PAGES.android.label)
+      document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+      await new Promise((r) => setTimeout(r, 80))
+      await settle()
+      expect(router.back).toHaveBeenCalledTimes(2)
+      expect(sheetOpen()).toBe(false)
+      expect(route.query).toEqual({})
     } finally {
       router.back.mockImplementation(() => backNow())
     }
