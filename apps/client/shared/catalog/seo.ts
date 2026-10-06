@@ -24,7 +24,8 @@ export const STATIC_ROUTES = [
 
 /**
  * 가이드 전용판(client-guide D-14 · S-5 — `app/content/guide/common.ts` `GUIDE_BARE` 와 같은 글자, 테스트가 대조한다).
- * 프리렌더만 — noindex(`shared/utils/robots.ts`)라 sitemap 에서 빠지고, 설명 · canonical 은 사이트판 `/guide/<os>` 것을 쓴다
+ * 프리렌더만 — 사이트판 `/guide/<os>` 와 같은 글이라 canonical 은 사이트판(D-18 — noindex 없이 canonical 하나로 묶는다),
+ * sitemap 에는 원본(canonical) 주소만 싣으므로 여기서 뺀다. 설명도 사이트판 것을 쓴다
  */
 export const GUIDE_BARE_ROUTES = ['/install-guide/ios', '/install-guide/android'] as const
 
@@ -40,9 +41,10 @@ export function prerenderRoutes(catalog: CatalogView): string[] {
   return ['/', '/search', ...catalogRoutes(catalog), ...STATIC_ROUTES, ...GUIDE_BARE_ROUTES]
 }
 
-/** sitemap = 프리렌더한 페이지 − noindex(`/search` 등 — noindex 목록 단일 출처로 거른다) */
+/** sitemap = 프리렌더한 페이지 − noindex(`/search` 등 — noindex 목록 단일 출처로 거른다) − 다른 주소를 canonical 로 가리키는 전용판 */
 export function sitemapPaths(catalog: CatalogView): string[] {
-  return prerenderRoutes(catalog).filter((p) => !isNoindexPath(p))
+  const bare: readonly string[] = GUIDE_BARE_ROUTES
+  return prerenderRoutes(catalog).filter((p) => !isNoindexPath(p) && !bare.includes(p))
 }
 
 function xmlEscape(s: string): string {

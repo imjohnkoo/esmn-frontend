@@ -28,25 +28,22 @@ const guideOs = computed<GuideOs | null>({
   },
   set: (os) => setGuide(os),
 })
-// 이 화면에서 연 시트면 기록 한 칸이 있다 — 닫을 때 그 칸을 되돌린다(뒤로 가기와 같은 결과 · 기록이 쌓이지 않게)
-let openedHere = false
-watch(guideOs, (os) => {
-  if (!os) openedHere = false // 뒤로 가기 · 다른 이동으로 닫혔다
-})
+// 바로 앞 기록 칸이 이 주소인가 — vue-router 가 history.state.back 에 앞 칸 주소를 적어 둔다(새로 고침에도 남는다)
+const backIs = (fullPath: string) =>
+  typeof window !== 'undefined' &&
+  (window.history.state as { back?: unknown } | null)?.back === fullPath
 function setGuide(os: GuideOs | null) {
   const query = { ...route.query }
   if (os) {
     query.guide = os
     if (guideOs.value) return router.replace({ query }) // 시트 안 OS 전환 — 기록을 늘리지 않는다
-    openedHere = true
     return router.push({ query })
   }
   if (!guideOs.value) return
-  if (openedHere) {
-    openedHere = false
-    return router.back()
-  }
-  delete query.guide // 주소로 바로 열린 시트(새로 고침 등) — 되돌릴 칸이 없다
+  delete query.guide
+  // 앞 칸이 «?guide 없는 이 화면» 이면 그 칸으로 돌아간다(이 화면에서 연 시트 · 앞으로 가기로 다시 연 시트 — 기록이 쌓이지 않게).
+  // 아니면(주소로 바로 열린 시트) 되돌릴 칸이 없으니 ?guide 만 지운다
+  if (backIs(router.resolve({ query }).fullPath)) return router.back()
   return router.replace({ query })
 }
 // 카드 = 사이트판 링크(새 탭)이고 보조키 없는 클릭만 시트로(D-17 — 화면 준비 전 · 보조키 · 가운데 클릭은 링크 그대로).
@@ -619,6 +616,14 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 
 .view-page__faq-q span {
   color: #6239ff;
+}
+
+/* 머리 설명 · FAQ — 어절 단위 줄바꿈(«연결/돼요» 처럼 어절 중간에서 끊지 않게 · client-guide QA ⑦ walk 2) */
+.view-page__heading :deep(.n-page-heading__desc),
+.view-page__faq-q,
+.view-page__faq-a {
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .view-page__faq-a {

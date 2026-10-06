@@ -10,7 +10,7 @@ import { GUIDE_BARE, GUIDE_SECTIONS } from '~/content/guide/common'
 import AndroidPage from './android.vue'
 import IosPage from './ios.vue'
 
-/** client-guide spec D-14 · S-5 · F-9 · DoD 9 — 가이드 전용판: flow 레이아웃 · 같은 본문 · OS 전환은 전용판끼리 · canonical = 사이트판 · 검색 제외 */
+/** client-guide spec D-14 · S-5 · F-9 · DoD 9 — 가이드 전용판: flow 레이아웃 · 같은 본문 · OS 전환은 전용판끼리 · canonical = 사이트판(noindex 없음 — D-18) */
 const seo = vi.fn()
 const pageMeta = vi.fn()
 beforeEach(() => {
@@ -89,14 +89,14 @@ describe.each([
     w.unmount()
   })
 
-  it(`SEO — 제목 · 설명은 사이트판과 같고 canonical 은 사이트판(${site}) · 이 주소는 검색 제외`, () => {
+  it(`SEO — 제목 · 설명은 사이트판과 같고 canonical 은 사이트판(${site}) · noindex 아님(D-18 — canonical 하나로 묶는다)`, () => {
     render().unmount()
     expect(seo).toHaveBeenCalledTimes(1)
     const [meta, image, canonical] = seo.mock.calls[0]!
     expect(meta).toEqual({ title: h1, description: DESC[os] })
     expect(image).toBeUndefined()
     expect(canonical).toBe(site)
-    expect(isNoindexPath(self)).toBe(true)
+    expect(isNoindexPath(self)).toBe(false)
     expect(isNoindexPath(site)).toBe(false)
   })
 

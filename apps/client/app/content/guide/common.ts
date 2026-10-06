@@ -40,7 +40,7 @@ export const GUIDE_PAGES: Record<
   },
 }
 
-/** 가이드 전용 페이지(client-guide D-14 · S-5) — 헤더 · 하단 탭 없이 본문만. 검색 제외 · canonical 은 사이트판(`GUIDE_PAGES[os].to`) */
+/** 가이드 전용 페이지(client-guide D-14 · S-5) — 헤더 · 하단 탭 없이 본문만. canonical 은 사이트판(`GUIDE_PAGES[os].to`) 하나 — noindex 없음(D-18) */
 export const GUIDE_BARE: Record<GuideOs, string> = {
   ios: '/install-guide/ios',
   android: '/install-guide/android',

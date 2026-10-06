@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  NOINDEX_CRAWL_ROUTES,
   NOINDEX_ROUTES,
   NO_STORE_ROUTES,
   buildRobotsRouteRules,
@@ -24,9 +23,6 @@ describe('isNoindexPath', () => {
     '/checkout-preview?paymentId=pv-1&code=FAILURE',
     '/search',
     '/search?q=fr',
-    '/install-guide/ios',
-    '/install-guide/android',
-    '/install-guide',
   ])('%s 는 noindex', (path) => {
     expect(isNoindexPath(path)).toBe(true)
   })
@@ -39,6 +35,9 @@ describe('isNoindexPath', () => {
     '/guide',
     '/guide/ios',
     '/guide/android',
+    // 가이드 전용판 — noindex 없이 canonical 만(사이트판으로 묶는다 · client-guide D-18)
+    '/install-guide/ios',
+    '/install-guide/android',
     '/supported-devices',
     '/countries/fra',
     '/products/cze00',
@@ -53,10 +52,10 @@ describe('buildRobotsRouteRules', () => {
   const rules = buildRobotsRouteRules()
 
   it('noindex 경로마다 X-Robots-Tag 를 건다', () => {
-    for (const pattern of [...NOINDEX_ROUTES, ...NOINDEX_CRAWL_ROUTES]) {
+    for (const pattern of NOINDEX_ROUTES) {
       expect(rules[pattern]?.headers['X-Robots-Tag']).toBe('noindex, nofollow')
     }
-    expect(Object.keys(rules)).toHaveLength(NOINDEX_ROUTES.length + NOINDEX_CRAWL_ROUTES.length)
+    expect(Object.keys(rules)).toHaveLength(NOINDEX_ROUTES.length)
   })
 
   it('4-step 경로만 no-store — 나머지 noindex 경로는 캐시 헤더를 건드리지 않는다', () => {
@@ -126,15 +125,9 @@ describe('robots.txt', () => {
     expect(txt.endsWith('\n')).toBe(true)
   })
 
-  it('가이드 전용판은 noindex(meta · X-Robots-Tag)이지만 robots.txt 로 막지 않는다 — 크롤러가 noindex · canonical 을 읽게(client-guide D-16)', () => {
-    expect([...NOINDEX_CRAWL_ROUTES]).toEqual(['/install-guide/**'])
-    expect(isNoindexPath('/install-guide/ios')).toBe(true)
-    expect(buildRobotsRouteRules()['/install-guide/**']).toEqual({
-      headers: { 'X-Robots-Tag': 'noindex, nofollow' },
-    })
-    expect(robotsDisallowPrefixes().some((p) => '/install-guide/ios'.startsWith(p))).toBe(false)
+  it('가이드 전용판은 noindex · X-Robots-Tag · Disallow 어디에도 없다 — canonical 하나로 사이트판에 묶는다(client-guide D-18)', () => {
+    expect(isNoindexPath('/install-guide/ios')).toBe(false)
+    expect(Object.keys(buildRobotsRouteRules()).some((p) => p.startsWith('/install-guide'))).toBe(false)
     expect(buildRobotsTxt()).not.toContain('install-guide')
-    // 4-step 처럼 캐시 금지는 아니다(정적 글)
-    expect(buildRobotsRouteRules()['/install-guide/**']!.headers['Cache-Control']).toBeUndefined()
   })
 })

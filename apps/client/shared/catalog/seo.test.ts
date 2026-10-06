@@ -86,14 +86,14 @@ describe('프리렌더 · sitemap (catalog spec F-9 · E2E-15)', () => {
     expect(routes).toContain('/products/eu340')
   })
 
-  it('sitemap = 프리렌더 − noindex — /search · 가이드 전용판은 프리렌더하지만 sitemap 에는 없다(client-guide D-14)', () => {
+  it('sitemap = 프리렌더 − noindex − 전용판 — /search(noindex) · 가이드 전용판(canonical 이 사이트판 — client-guide D-18)은 프리렌더하지만 sitemap 에는 없다', () => {
     const paths = sitemapPaths(catalog)
     expect(prerenderRoutes(catalog)).toContain('/search')
     expect(isNoindexPath('/search')).toBe(true)
     expect(paths).not.toContain('/search')
     for (const bare of GUIDE_BARE_ROUTES) {
       expect(prerenderRoutes(catalog)).toContain(bare)
-      expect(isNoindexPath(bare), bare).toBe(true)
+      expect(isNoindexPath(bare), bare).toBe(false)
       expect(paths).not.toContain(bare)
     }
     for (const p of paths) {

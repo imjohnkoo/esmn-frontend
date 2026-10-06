@@ -23,28 +23,41 @@ vi.mock('qrcode-vue3', () => ({
 Object.assign(globalThis, { ref, computed, watch, nextTick })
 
 type Query = Record<string, string>
-// 주소(같은 경로의 query)와 기록만 흉내 낸다 — push 는 한 칸 쌓고 replace 는 바꿔 끼우고 back 은 한 칸 되돌린다
+// 주소(같은 경로의 query)와 기록만 흉내 낸다 — push 는 한 칸 쌓고 replace 는 바꿔 끼우고 back 은 한 칸 되돌린다.
+// vue-router 처럼 앞 칸 주소를 history.state.back 에 적는다(화면은 이것으로 «되돌릴 칸이 이 화면인가» 를 본다 — D-15)
+const VIEW = '/view/2026092300000101'
+const fullPathOf = (q: Query) => {
+  const qs = new URLSearchParams(q).toString()
+  return qs ? `${VIEW}?${qs}` : VIEW
+}
 const route = reactive({ params: { orderId: '2026092300000101' }, query: {} as Query })
-let history: Query[] = []
+let stack: Query[] = []
+const syncState = () =>
+  window.history.replaceState({ back: stack.length ? fullPathOf(stack[stack.length - 1]!) : null }, '')
 const router = {
   push: vi.fn(async (to: string | { query: Query }) => {
     if (typeof to === 'string') return // «주문 목록으로» 같은 다른 화면 이동 — 이 테스트에서는 일어나지 않아야 한다
-    history.push({ ...route.query })
+    stack.push({ ...route.query })
     route.query = { ...to.query }
+    syncState()
   }),
   replace: vi.fn(async (to: { query: Query }) => {
     route.query = { ...to.query }
+    syncState()
   }),
   back: vi.fn(() => {
-    const prev = history.pop()
+    const prev = stack.pop()
     if (prev) route.query = prev
+    syncState()
   }),
+  resolve: (to: { query: Query }) => ({ fullPath: fullPathOf(to.query) }),
 }
 
 beforeEach(() => {
   setActivePinia(createPinia())
   route.query = {}
-  history = []
+  stack = []
+  syncState()
   router.push.mockClear()
   router.replace.mockClear()
   router.back.mockClear()
@@ -88,11 +101,21 @@ const cards = () => [...document.body.querySelectorAll<HTMLAnchorElement>('.view
 const sheetOpen = () => !!document.body.querySelector('.n-bottom-sheet__content')
 const title = () => document.body.querySelector('.n-bottom-sheet__title')?.textContent?.trim()
 const shots = () => document.body.querySelectorAll('.guide-sheet img.g-shot__img').length
-/** 카드를 누른다 — 기본 동작(새 탭 이동)이 막혔는지 돌려준다 */
+/**
+ * 카드를 누른다 — 화면의 클릭 처리가 기본 동작(새 탭 이동)을 막았는지 돌려준다.
+ * 문서 끝(버블)에서 그 결과를 읽은 뒤 기본 동작을 막는다 — 테스트 환경(happy-dom)이 링크를 실제로 따라가 네트워크 요청을 보내지 않게
+ */
+let prevented: boolean | null = null
+const stopNavigation = (e: Event) => {
+  prevented = e.defaultPrevented
+  e.preventDefault()
+}
+beforeEach(() => document.addEventListener('click', stopNavigation))
+afterEach(() => document.removeEventListener('click', stopNavigation))
 const press = (card: HTMLElement, init: MouseEventInit = {}) => {
-  const ev = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ...init })
-  card.dispatchEvent(ev)
-  return ev.defaultPrevented
+  prevented = null
+  card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ...init }))
+  return prevented
 }
 
 describe.each([
@@ -119,7 +142,9 @@ describe.each([
     await render(count)
     expect(press(cards()[0]!)).toBe(true)
     await settle()
+    // 같은 경로 — query 만(경로 · path 키 없이 · spec D-15 «?guide=<os> 만 붙는다»)
     expect(router.push).toHaveBeenCalledTimes(1)
+    expect(router.push).toHaveBeenCalledWith({ query: { guide: 'ios' } })
     expect(route.query).toEqual({ guide: 'ios' })
     expect(title()).toBe(GUIDE_PAGES.ios.label)
     expect(shots()).toBe(24)
@@ -162,7 +187,7 @@ describe.each([
     expect(router.back).toHaveBeenCalledTimes(1)
     expect(router.replace).not.toHaveBeenCalled()
     expect(route.query).toEqual({})
-    expect(history).toEqual([])
+    expect(stack).toEqual([])
     expect(sheetOpen()).toBe(false)
     expect(document.activeElement).toBe(android)
   })
@@ -195,24 +220,62 @@ describe.each([
     expect(sheetOpen()).toBe(false)
   })
 
+  it('주소의 다른 값은 그대로 두고 ?guide 만 붙였다 뗀다(열기 · OS 전환 · 닫기)', async () => {
+    await render(count, { from: 'sms' })
+    press(cards()[0]!)
+    await settle()
+    expect(router.push).toHaveBeenCalledWith({ query: { from: 'sms', guide: 'ios' } })
+    ;[...document.body.querySelectorAll<HTMLButtonElement>('.guide-sheet .g-os__tab')]
+      .find((b) => b.textContent?.trim() === GUIDE_PAGES.android.short)!
+      .click()
+    await settle()
+    expect(router.replace).toHaveBeenCalledWith({ query: { from: 'sms', guide: 'android' } })
+    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+    await settle()
+    expect(router.back).toHaveBeenCalledTimes(1)
+    expect(route.query).toEqual({ from: 'sms' })
+  })
+
+  it('주소로 바로 열린 시트도 닫을 때 다른 값은 남긴다', async () => {
+    await render(count, { from: 'sms', guide: 'ios' })
+    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+    await settle()
+    expect(router.replace).toHaveBeenCalledWith({ query: { from: 'sms' } })
+  })
+
   it('모르는 ?guide 값은 시트를 열지 않는다', async () => {
     await render(count, { guide: 'windows' })
     expect(sheetOpen()).toBe(false)
   })
 
-  it('뒤로 가기로 닫은 뒤 X 로 다시 닫을 일이 생겨도 기록을 한 칸 더 되돌리지 않는다(뒤로 가기가 그 칸을 이미 썼다)', async () => {
+  it('뒤로 가기로 닫고 앞으로 가기로 다시 연 시트를 X 로 닫으면 기록 한 칸 뒤로(앞 칸 = 이 화면 — 기록이 남지 않는다)', async () => {
     await render(count)
     press(cards()[0]!)
     await settle()
     router.back() // 휴대폰 뒤로 가기
     await settle()
     expect(sheetOpen()).toBe(false)
-    // 주소로 다시 열린 것처럼(앞으로 가기 등) — 이 화면에서 연 칸이 아니다
+    // 앞으로 가기 — 앞 칸은 «?guide 없는 이 화면»
+    stack.push({})
     route.query = { guide: 'ios' }
+    syncState()
     await settle()
+    expect(title()).toBe(GUIDE_PAGES.ios.label)
     document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
     await settle()
-    expect(router.back).toHaveBeenCalledTimes(1) // 위의 휴대폰 뒤로 가기 한 번뿐
+    expect(router.back).toHaveBeenCalledTimes(2) // 휴대폰 뒤로 가기 + X
+    expect(router.replace).not.toHaveBeenCalled()
+    expect(route.query).toEqual({})
+    expect(stack).toEqual([])
+  })
+
+  it('앞 칸이 다른 화면이면(주문 목록에서 ?guide 주소로 바로 온 경우) X 는 기록을 되돌리지 않고 ?guide 만 지운다', async () => {
+    window.history.replaceState({ back: '/details/2026092300000101' }, '')
+    await render(count, { guide: 'ios' })
+    window.history.replaceState({ back: '/details/2026092300000101' }, '')
+    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+    await settle()
+    expect(router.back).not.toHaveBeenCalled()
     expect(router.replace).toHaveBeenCalledWith({ query: {} })
   })
 })
