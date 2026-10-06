@@ -241,21 +241,37 @@ describe('«주문 확인하기» 는 화면 아래에 붙어 있다(D-25) — �
     expect(cta).toMatch(/\bbottom:\s*0;/)
     expect(cta).toMatch(/z-index:\s*[1-9]/)
     expect(cta).toMatch(/margin:\s*auto -24px 0;/)
-    expect(cta).toMatch(
-      /background:\s*linear-gradient\(to bottom, rgb\(255 255 255 \/ 0\), #ffffff 20px\)/,
-    )
+    // 버튼 줄은 불투명 · 누름을 받는다(R12 M1 — 여백을 눌러 밑의 숨은 카드 · 링크가 눌리던 것)
+    expect(cta).toMatch(/background:\s*#ffffff;/)
+    expect(cta).not.toMatch(/pointer-events/)
+    // 흐림은 버튼 줄 위 20px 띠만 — 그 띠만 누름을 밑으로 넘긴다
+    const fade = rule('.verify-page__cta::before')
+    expect(fade).toMatch(/bottom:\s*100%/)
+    expect(fade).toMatch(/height:\s*20px/)
+    expect(fade).toMatch(/pointer-events:\s*none/)
+    expect(fade).toMatch(/linear-gradient\(to bottom, rgb\(255 255 255 \/ 0\), #ffffff\)/)
+    // 끝까지 내렸을 때 흐림 띠가 카드를 덮지 않게 카드 아래 20px
+    expect(rule('.verify-page__guides')).toMatch(/margin-bottom:\s*20px/)
     expect(rule('.verify-page__form :deep(:is(input, a))')).toMatch(/scroll-margin-bottom:\s*120px/)
-    // 흐림 · 여백은 누름을 밑으로 넘기고 버튼만 받는다(QA ⑥ R11 m4)
-    expect(cta).toMatch(/pointer-events:\s*none/)
-    expect(rule('.verify-page__cta > *')).toMatch(/pointer-events:\s*auto/)
-    // sticky 를 푸는 것 — 버튼과 화면 사이 조상(페이지 · flow 레이아웃 · 앱 프레임 — 폼도 덤으로)의 overflow · transform · contain(QA ⑥ R11 m1)
-    const forbidden = /overflow|transform|contain:/
+    // sticky 를 푸는 것 — 버튼과 화면 사이 조상(페이지 · flow 레이아웃 · 앱 프레임 — 폼도 덤으로)이 스크롤 상자가 되는 overflow(QA ⑥ R11 m1 · R12 m3)
+    const forbidden = /overflow(-x|-y)?:\s*(hidden|auto|scroll)/
     expect(rule('.verify-page__form')).not.toMatch(forbidden)
     expect(rule('.verify-page')).not.toMatch(forbidden)
     const styleOf = (f: string) =>
       readFileSync(`${process.cwd()}/app/${f}`, 'utf8').split(/<style[^>]*>/)[1] ?? ''
     expect(styleOf('layouts/flow.vue')).not.toMatch(forbidden)
     expect(styleOf('app.vue')).not.toMatch(forbidden)
+    // 전역 CSS 의 html · body · #__nuxt 도(앱 main.css · DS base.css)
+    for (const f of [
+      `${process.cwd()}/app/assets/css/main.css`,
+      `${process.cwd()}/../../packages/design-vue/src/styles/base.css`,
+    ]) {
+      const g = readFileSync(f, 'utf8')
+      for (const m of g.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+        if (/(^|[\s,])(html|body|#__nuxt)\b/.test(m[1]!))
+          expect(m[2], `${f} ${m[1]!.trim()}`).not.toMatch(forbidden)
+      }
+    }
     // 버튼이 늘 위 — 본인 확인 화면 · 카드 CSS 에 버튼보다 위로 올라오는 쌓임이 없다
     const z = [...css.matchAll(/z-index:\s*(\d+)/g)].map((m) => Number(m[1]))
     expect(z).toEqual([2])
@@ -288,5 +304,28 @@ describe('제출 검증 실패 — 첫 오류 칸으로 포커스(D-25 · QA ⑥
     press(card)
     await settle()
     expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+  })
+})
+
+describe('시트를 닫을 때 페이지가 움직이지 않는다(S-4 · QA ⑥ R12 m1 — 카드로 포커스가 돌아올 때 아래 여백을 잠시 끈다)', () => {
+  it('닫히는 순간 «돌아오는 중» 표시 → 카드가 포커스를 받은 다음 차례에 풀린다 · 그 동안 카드 여백 0(CSS)', async () => {
+    await render()
+    press(cards()[0]!)
+    await settle()
+    const root = document.body.querySelector('.verify-page .guide-cards')!
+    expect(root.classList.contains('guide-cards--returning')).toBe(false)
+    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+    await settle()
+    expect(root.classList.contains('guide-cards--returning')).toBe(true)
+    cards()[0]!.focus({ preventScroll: true })
+    await new Promise((r) => setTimeout(r, 50))
+    await settle()
+    expect(root.classList.contains('guide-cards--returning')).toBe(false)
+    const css = readFileSync(`${process.cwd()}/app/components/guide/GuideCards.vue`, 'utf8').split(
+      '<style scoped>',
+    )[1]!
+    expect(css).toMatch(
+      /\.guide-cards--returning \.guide-cards__list > a \{\s*scroll-margin-bottom: 0;\s*\}/,
+    )
   })
 })

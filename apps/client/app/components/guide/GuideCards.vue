@@ -2,6 +2,7 @@
 // 설치 가이드 카드 2 + 하단 시트(client-guide F-6 · D-13 · D-15 · D-17 · D-19) — 발급 완료 화면 · 본인 확인 화면이 같이 쓴다.
 // 화면을 떠나지 않고(QR · 입력한 이름 · 전화 그대로) 같은 화면 위 하단 시트로 OS 가이드를 본다.
 import { NLinkCard } from '@imjohnkoo/design-vue'
+import { ref } from 'vue'
 import { GUIDE_PAGES } from '~/content/guide/common'
 import type { GuideOs } from '~/content/guide/types'
 import GuideSheet from './GuideSheet.vue'
@@ -31,8 +32,29 @@ const backIs = (fullPath: string) => {
 }
 // 닫는 중 — 앞 칸으로 돌아가는 이동이 끝나기 전에 닫기가 또 오면(두 번 누름 · Esc 여러 번) 한 번만 처리한다(이 화면을 떠나지 않게)
 let closing = false
-watch(guideOs, (os) => {
-  if (!os) closing = false
+// 시트가 닫히면 reka 가 연 카드로 포커스를 돌려준다(스크롤 옵션 없이) — 본인 확인 화면의 아래 여백(D-25 scroll-margin-bottom) 때문에
+// 그때 페이지가 움직이지 않게, 포커스가 돌아올 때까지만 카드의 여백을 끈다(S-4 «닫으면 화면 그대로» · QA ⑥ R12 m1).
+// 닫기가 시작되는 곳(X · Esc · 바깥 = setGuide(null), 휴대폰 뒤로 가기 = 주소 변화)에서 바로 켠다 — reka 가 주소보다 먼저 포커스를 돌려줄 수 있다
+const root = ref<HTMLElement | null>(null)
+const returning = ref(false)
+function beginReturn() {
+  if (returning.value || !root.value) return
+  const el = root.value
+  returning.value = true
+  const done = () => {
+    returning.value = false
+    el.removeEventListener('focusin', onFocusIn)
+    clearTimeout(timer)
+  }
+  // 포커스 스크롤은 focus() 안에서 끝난다 — 그 다음 차례에 푼다(화면 그리기를 기다리면 백그라운드 탭에서 멈춘다)
+  const onFocusIn = () => setTimeout(done, 0)
+  el.addEventListener('focusin', onFocusIn)
+  const timer = setTimeout(done, 1500)
+}
+watch(guideOs, (os, prev) => {
+  if (os) return
+  closing = false
+  if (prev) beginReturn()
 })
 function setGuide(os: GuideOs | null) {
   const query = { ...route.query }
@@ -43,6 +65,7 @@ function setGuide(os: GuideOs | null) {
   }
   if (!guideOs.value || closing) return
   closing = true
+  beginReturn()
   delete query.guide
   // 앞 칸이 «?guide 없는 이 화면» 이면 그 칸으로 돌아간다(이 화면에서 연 시트 · 앞으로 가기로 다시 연 시트 · 그 뒤 새로 고침 — 기록이 쌓이지 않게).
   // 아니면(?guide 주소로 처음 들어온 시트 — 새 탭 · 밖 링크) 되돌릴 칸이 없으니 ?guide 만 지운다
@@ -61,7 +84,7 @@ const openGuide = (os: GuideOs, e: MouseEvent) => {
 </script>
 
 <template>
-  <div class="guide-cards">
+  <div ref="root" class="guide-cards" :class="{ 'guide-cards--returning': returning }">
     <div class="guide-cards__divider"><span>설치 가이드</span></div>
     <div class="guide-cards__list">
       <NLinkCard
@@ -104,6 +127,11 @@ const openGuide = (os: GuideOs, e: MouseEvent) => {
 </template>
 
 <style scoped>
+/* 시트가 닫히며 카드로 포커스가 돌아오는 동안 — 아래 여백을 꺼 페이지가 움직이지 않게(S-4 · QA ⑥ R12 m1) */
+.guide-cards--returning .guide-cards__list > a {
+  scroll-margin-bottom: 0;
+}
+
 .guide-cards__divider {
   margin: 22px 0 12px;
   display: flex;

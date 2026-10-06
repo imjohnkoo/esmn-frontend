@@ -352,20 +352,26 @@ const legalSheet = ref<DocSheetKey | null>(null)
 /* «주문 확인하기» 는 화면 아래에 붙어 있다(client-guide D-25) — 스크롤하면 내용만 움직이고 버튼은 그대로, 설치 가이드 카드 등
    다른 내용 위에 겹친다. 페이지 맨 끝(폼 바로 뒤)의 sticky — 기준 상자가 페이지라 화면이 낮아도(가로 모드 · 키보드) 붙고,
    끝까지 내리면 제자리(카드 아래)에 놓이며, 내용이 짧으면 margin-top:auto 로
-   화면 맨 아래. 바탕은 페이지 좌우 여백까지 흰색 — 위쪽 20px 은 흐려지게(밑으로 지나가는 내용이 버튼에 바로 잘려 보이지 않게) */
+   화면 맨 아래. 바탕은 페이지 좌우 여백까지 불투명한 흰색 — 버튼 줄의 여백을 눌러도 밑의 숨은 내용이 눌리지 않는다(QA ⑥ R12 M1) */
 .verify-page__cta {
   position: sticky;
   bottom: 0;
   z-index: 2;
   margin: auto -24px 0;
-  padding: 32px 24px calc(16px + env(safe-area-inset-bottom));
-  background: linear-gradient(to bottom, rgb(255 255 255 / 0), #ffffff 20px);
-  /* 흐림 · 여백은 누름을 밑의 내용(카드 가장자리 등)으로 넘긴다 — 버튼만 받는다(QA ⑥ R11 m4) */
-  pointer-events: none;
+  padding: 12px 24px calc(16px + env(safe-area-inset-bottom));
+  background: #ffffff;
 }
 
-.verify-page__cta > * {
-  pointer-events: auto;
+/* 흐림 — 버튼 줄 위 20px 띠(밑으로 지나가는 내용이 버튼에 바로 잘려 보이지 않게). 이 띠만 누름을 밑의 내용으로 넘긴다(R11 m4) */
+.verify-page__cta::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, rgb(255 255 255 / 0), #ffffff);
+  pointer-events: none;
 }
 
 /* 키보드 포커스가 간 입력칸 · 링크 · 카드가 아래 붙은 버튼 밑에 숨지 않게(D-25) — 버튼 줄 높이 + 여유 */
@@ -375,6 +381,8 @@ const legalSheet = ref<DocSheetKey | null>(null)
 
 .verify-page__guides {
   margin-top: 4px;
+  /* 끝까지 내렸을 때 버튼 줄 위 흐림 띠(20px)가 카드를 덮지 않게(D-25) */
+  margin-bottom: 20px;
 }
 
 .verify-page__dialog-desc {
