@@ -9,7 +9,7 @@ import {
   NAlertDialog,
   NLoaderDialog,
 } from '@imjohnkoo/design-vue'
-import { nextTick, watch } from 'vue'
+import { nextTick, onBeforeUnmount, watch } from 'vue'
 import { keepScrollAfterClose } from '~/utils/keep-scroll'
 import { useOrderStore } from '~/stores/order'
 import { useApi } from '~/composables/useApi'
@@ -106,9 +106,14 @@ import GuideCards from '~/components/guide/GuideCards.vue'
 
 const legalSheet = ref<DocSheetKey | null>(null)
 // 약관 시트를 닫을 때 페이지가 움직이지 않게 — reka 가 링크로 포커스를 돌려주며 아래 여백(D-25) 때문에 스크롤하는 것을 되돌린다(QA ⑥ R13 m3)
+let stopLegalKeep: (() => void) | undefined
 watch(legalSheet, (open, prev) => {
-  if (!open && prev && typeof window !== 'undefined') keepScrollAfterClose()
+  if (open || !prev || typeof window === 'undefined') return
+  stopLegalKeep?.()
+  stopLegalKeep = keepScrollAfterClose()
 })
+// 화면을 떠나면 끈다 — 다른 화면의 스크롤 복원을 되돌리지 않게(QA ⑥ R14 m1)
+onBeforeUnmount(() => stopLegalKeep?.())
 </script>
 
 <template>
@@ -382,9 +387,10 @@ watch(legalSheet, (open, prev) => {
   pointer-events: none;
 }
 
-/* 키보드 포커스가 간 입력칸 · 링크 · 카드가 아래 붙은 버튼 밑에 숨지 않게(D-25) — 버튼 줄 높이 + 여유 */
+/* 키보드 포커스가 간 입력칸 · 링크 · 카드가 아래 붙은 버튼 밑에 숨지 않게(D-25) — 입력칸 아래 오류 문구(약 25px) +
+   버튼 줄(약 84px) + 흐림 띠(20px)까지 비켜 서게(QA ⑥ R14 m3 — 120px 이면 오류 문구 아래쪽이 흐림 띠에 9px 걸렸다) */
 .verify-page__form :deep(:is(input, a)) {
-  scroll-margin-bottom: 120px;
+  scroll-margin-bottom: 132px;
 }
 
 .verify-page__guides {

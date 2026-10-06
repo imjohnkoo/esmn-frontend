@@ -2,6 +2,7 @@
 // 설치 가이드 카드 2 + 하단 시트(client-guide F-6 · D-13 · D-15 · D-17 · D-19) — 발급 완료 화면 · 본인 확인 화면이 같이 쓴다.
 // 화면을 떠나지 않고(QR · 입력한 이름 · 전화 그대로) 같은 화면 위 하단 시트로 OS 가이드를 본다.
 import { NLinkCard } from '@imjohnkoo/design-vue'
+import { onBeforeUnmount } from 'vue'
 import { keepScrollAfterClose } from '~/utils/keep-scroll'
 import { GUIDE_PAGES } from '~/content/guide/common'
 import type { GuideOs } from '~/content/guide/types'
@@ -41,6 +42,8 @@ function keepPage() {
   stopKeep?.()
   stopKeep = keepScrollAfterClose()
 }
+// 화면을 떠나면 끈다 — 남아 있으면 뒤로 가기로 넘어간 다른 화면의 스크롤 복원까지 되돌린다(QA ⑥ R14 m1)
+onBeforeUnmount(() => stopKeep?.())
 watch(guideOs, (os, prev) => {
   if (os) return
   closing = false

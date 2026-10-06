@@ -252,7 +252,7 @@ describe('«주문 확인하기» 는 화면 아래에 붙어 있다(D-25) — �
     expect(fade).toMatch(/linear-gradient\(to bottom, rgb\(255 255 255 \/ 0\), #ffffff\)/)
     // 끝까지 내렸을 때 흐림 띠가 카드를 덮지 않게 카드 아래 20px
     expect(rule('.verify-page__guides')).toMatch(/margin-bottom:\s*20px/)
-    expect(rule('.verify-page__form :deep(:is(input, a))')).toMatch(/scroll-margin-bottom:\s*120px/)
+    expect(rule('.verify-page__form :deep(:is(input, a))')).toMatch(/scroll-margin-bottom:\s*132px/)
     // sticky 를 푸는 것 — 버튼과 화면 사이 조상(페이지 · flow 레이아웃 · 앱 프레임 — 폼도 덤으로)이 스크롤 상자가 되는 overflow(QA ⑥ R11 m1 · R12 m3)
     const forbidden = /overflow(-x|-y)?:\s*(hidden|auto|scroll)/
     expect(rule('.verify-page__form')).not.toMatch(forbidden)
@@ -380,5 +380,36 @@ describe('폼 밖 «주문 확인하기» 가 폼을 제출한다(D-25 — form 
     await settle()
     expect(document.activeElement).toBe(name)
     expect(into).toHaveBeenCalledWith({ block: 'nearest' })
+  })
+})
+
+describe('화면을 떠나면 스크롤 되돌리기를 끈다(QA ⑥ R14 m1 — 뒤로 가기로 넘어간 다른 화면의 스크롤 복원을 되돌리지 않게)', () => {
+  const browserScroll = (y: number) => {
+    window.scrollTo(0, y)
+    window.dispatchEvent(new Event('scroll'))
+  }
+
+  it('설치 가이드 시트를 닫고 곧바로 화면을 떠나면 — 다음 화면의 스크롤은 그대로', async () => {
+    const w = await render()
+    press(cards()[0]!)
+    await settle()
+    window.scrollTo(0, 150)
+    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+    await settle()
+    w.unmount()
+    browserScroll(900)
+    expect(window.scrollY).toBe(900)
+  })
+
+  it('약관 시트를 닫고 곧바로 화면을 떠나면 — 다음 화면의 스크롤은 그대로', async () => {
+    const w = await render()
+    document.body.querySelector<HTMLAnchorElement>('.verify-page__policy-link--privacy')!.click()
+    await settle()
+    window.scrollTo(0, 120)
+    document.body.querySelector<HTMLButtonElement>('.n-bottom-sheet__close')!.click()
+    await settle()
+    w.unmount()
+    browserScroll(2000)
+    expect(window.scrollY).toBe(2000)
   })
 })
