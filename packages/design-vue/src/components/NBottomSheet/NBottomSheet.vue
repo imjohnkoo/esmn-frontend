@@ -15,7 +15,16 @@
               <DialogTitle v-if="title" class="n-bottom-sheet__title">{{ title }}</DialogTitle>
             </slot>
             <DialogClose v-if="closable" class="n-bottom-sheet__close" :aria-label="closeLabel">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
                 <path d="M6 6l12 12M18 6L6 18" />
               </svg>
             </DialogClose>
@@ -33,7 +42,14 @@
 </template>
 
 <script setup lang="ts">
-import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogClose } from 'reka-ui'
+import {
+  DialogRoot,
+  DialogPortal,
+  DialogOverlay,
+  DialogContent,
+  DialogTitle,
+  DialogClose,
+} from 'reka-ui'
 
 export interface NBottomSheetProps {
   title?: string
@@ -66,11 +82,15 @@ const open = defineModel<boolean>({ default: false })
   -webkit-backdrop-filter: blur(4px);
 }
 
+/* 가운데 정렬은 «화면 폭 − 스크롤바 폭» 기준 — 열려 있는 동안 reka 스크롤 잠금이 스크롤바를 숨기고 --scrollbar-width 를 준다.
+   left: 50% + translateX(-50%) 는 닫히는 순간 스크롤바가 돌아와 화면 폭이 줄면 닫힘 애니메이션 중에 스크롤바 폭의 절반만큼 옆으로 밀린다
+   (스크롤바가 폭을 차지하는 데스크톱 — 0.7.2). 잠금 중 페이지는 padding-right 로 같은 자리에 있으니 시트도 그 폭 안에서 가운데 */
 .n-bottom-sheet__content {
   position: fixed;
-  left: 50%;
+  left: 0;
+  right: var(--scrollbar-width, 0px);
   bottom: 0;
-  transform: translateX(-50%);
+  margin: 0 auto;
   z-index: var(--n-z-index-modal, 1050);
   width: 100%;
   max-width: 420px;
@@ -78,7 +98,16 @@ const open = defineModel<boolean>({ default: false })
   border-radius: var(--n-radius-3xl, 1.5rem) var(--n-radius-3xl, 1.5rem) 0 0;
   background-color: var(--n-color-neutral-0, #ffffff);
   box-shadow: 0 -10px 40px -10px rgba(0, 0, 0, 0.2);
-  font-family: var(--n-font-family-sans, 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', 'Noto Sans KR', sans-serif);
+  font-family: var(
+    --n-font-family-sans,
+    'Pretendard',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Apple SD Gothic Neo',
+    'Segoe UI',
+    'Noto Sans KR',
+    sans-serif
+  );
   max-height: 90vh;
   overflow: auto;
 }
@@ -161,10 +190,10 @@ const open = defineModel<boolean>({ default: false })
 }
 .n-bottom-sheet-content-enter-from {
   opacity: 0.6;
-  transform: translateX(-50%) translateY(24px);
+  transform: translateY(24px);
 }
 .n-bottom-sheet-content-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(24px);
+  transform: translateY(24px);
 }
 </style>
