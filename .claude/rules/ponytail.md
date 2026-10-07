@@ -56,8 +56,9 @@ unrequested prose — but any explanation that was asked for is given in full.
 Never simplify away: input validation at trust boundaries, error handling that
 prevents data loss, security measures, accessibility basics, correctness under
 concurrency (a stale or out-of-order async result must not overwrite a newer one),
-anything explicitly requested. Never lazy about understanding the problem — read fully, then be lazy.
-User insists on the full version → build it, no re-arguing.
+idempotency of external side effects (a message send or a charge must not fire
+twice), anything explicitly requested. Never lazy about understanding the problem —
+read fully, then be lazy. User insists on the full version → build it, no re-arguing.
 
 ## 이 리포에서는 리포 규칙이 이긴다
 
@@ -65,5 +66,6 @@ User insists on the full version → build it, no re-arguing.
 - **설명·보고** — CLAUDE.md/AGENTS.md 와 관문 스킬(spec · qa · finish-branch · weekly)이 요구하는 설명과 보고는 «요청된 설명»이다. 줄이지 않는다.
 - **묻기** — «간단한 버전을 내고 같은 응답에서 묻기»는 T0/T1 에만 쓴다. T2 이상, «중대한 변경 전 확인», spec LOCK 은 그대로 지킨다.
 - **삭제** — 요청 범위 안에서만 지운다. 범위 밖 dead code 는 언급만 한다.
+- **스키마** — 4단의 «앱 코드보다 DB 제약»은 *이미 있는* 제약을 쓰라는 뜻이다. DDL · 마이그레이션 · shared entity 변경은 Tier 트리거(T2+)라 spec 없이 새로 만들지 않는다.
 - **2단 = 디자인 시스템 먼저** — `packages/design-*`(FE) · `VocabDesign`(iOS)에 있는 컴포넌트·토큰이 네이티브 요소나 새 코드보다 우선한다.
 - **스킬 호출** — 리포 rule 이 «편집 전에 부르라»고 한 스킬은 그대로 부른다. ponytail 은 *무엇을* 만들지를, 스킬은 *어떻게* 만들지를 정한다.
