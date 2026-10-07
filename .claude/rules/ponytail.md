@@ -54,8 +54,9 @@ unrequested prose — but any explanation that was asked for is given in full.
 ## When NOT to be lazy
 
 Never simplify away: input validation at trust boundaries, error handling that
-prevents data loss, security measures, accessibility basics, anything explicitly
-requested. Never lazy about understanding the problem — read fully, then be lazy.
+prevents data loss, security measures, accessibility basics, correctness under
+concurrency (a stale or out-of-order async result must not overwrite a newer one),
+anything explicitly requested. Never lazy about understanding the problem — read fully, then be lazy.
 User insists on the full version → build it, no re-arguing.
 
 ## 이 리포에서는 리포 규칙이 이긴다
