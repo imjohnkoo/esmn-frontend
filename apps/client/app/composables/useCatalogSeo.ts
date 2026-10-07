@@ -4,10 +4,11 @@ import { pageTitle } from '~/utils/page-title'
 /**
  * 카탈로그 페이지 메타(catalog spec F-9 · S-6 · D-15) — 제목(템플릿 « · 이심마니») · 설명 · canonical · og.
  * canonical · og:url 은 빌드 상수 https://esimmany.com + 경로(호스트 판정 0). og:image 는 자사 자산 절대 URL.
+ * canonicalPath — 같은 글을 다른 주소로도 내는 페이지(가이드 전용판 → 사이트판, client-guide D-14)만 준다. 없으면 이 페이지 경로.
  */
-export function useCatalogSeo(meta: PageMeta, image?: string) {
+export function useCatalogSeo(meta: PageMeta, image?: string, canonicalPath?: string) {
   const route = useRoute()
-  const url = canonicalUrl(route.path)
+  const url = canonicalUrl(canonicalPath ?? route.path)
   useSeoMeta({
     title: meta.title,
     description: meta.description,

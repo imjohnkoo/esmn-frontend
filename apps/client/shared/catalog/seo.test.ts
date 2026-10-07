@@ -6,6 +6,7 @@ import {
   HOME_META,
   STATIC_DESCRIPTIONS,
   STATIC_ROUTES,
+  GUIDE_BARE_ROUTES,
   buildSitemapXml,
   canonicalUrl,
   catalogRoutes,
@@ -21,9 +22,17 @@ import { parseCatalog } from './validate'
 const catalog = fixtureCatalog()
 
 describe('정적 페이지 목록 (spec S-6)', () => {
-  it('법정 3종 · 가이드 · 지원 기기 — spec 이 정한 다섯 경로(사업자정보 페이지는 없다 — client-shell D-39)', () => {
+  it('법정 3종 · 가이드 허브 + OS 2(client-guide F-7) · 지원 기기 — 일곱 경로(사업자정보 페이지는 없다 — client-shell D-39)', () => {
     expect([...STATIC_ROUTES].sort()).toEqual(
-      ['/guide', '/privacy', '/refund', '/supported-devices', '/terms'].sort(),
+      [
+        '/guide',
+        '/guide/android',
+        '/guide/ios',
+        '/privacy',
+        '/refund',
+        '/supported-devices',
+        '/terms',
+      ].sort(),
     )
   })
 })
@@ -36,6 +45,8 @@ describe('정적 페이지 결선 — 각 페이지가 자기 경로의 설명�
     ['refund.vue', '/refund'],
     ['supported-devices.vue', '/supported-devices'],
     ['guide/index.vue', '/guide'],
+    ['guide/ios.vue', '/guide/ios'],
+    ['guide/android.vue', '/guide/android'],
   ] as const)('%s → useCatalogSeo(설명 = STATIC_DESCRIPTIONS[%s]) 한 번', (f, route) => {
     const src = page(f)
     const calls = src.match(/useCatalogSeo\(\{[^}]*\}\)/g) ?? []
@@ -52,32 +63,56 @@ describe('정적 페이지 결선 — 각 페이지가 자기 경로의 설명�
     expect(page(f)).toContain(`import { ${doc} } from '~/content/legal/`)
   })
   it('og:title 은 문서 제목 규칙(pageTitle — 이미 «이심마니» 로 시작하면 다시 붙이지 않는다)', () => {
-    const seo = readFileSync(new URL('../../app/composables/useCatalogSeo.ts', import.meta.url), 'utf8')
+    const seo = readFileSync(
+      new URL('../../app/composables/useCatalogSeo.ts', import.meta.url),
+      'utf8',
+    )
     expect(seo).toMatch(/ogTitle: pageTitle\(meta\.title\),/)
   })
   it('정적 경로마다 페이지가 있다 · app.vue 가 html lang="ko"', () => {
-    expect([...STATIC_ROUTES].sort()).toEqual(['/guide', '/privacy', '/refund', '/supported-devices', '/terms'])
-    expect(readFileSync(new URL('../../app/app.vue', import.meta.url), 'utf8')).toMatch(/htmlAttrs: \{ lang: 'ko' \}/)
+    expect([...STATIC_ROUTES].sort()).toEqual([
+      '/guide',
+      '/guide/android',
+      '/guide/ios',
+      '/privacy',
+      '/refund',
+      '/supported-devices',
+      '/terms',
+    ])
+    expect(readFileSync(new URL('../../app/app.vue', import.meta.url), 'utf8')).toMatch(
+      /htmlAttrs: \{ lang: 'ko' \}/,
+    )
   })
 })
 
 describe('프리렌더 · sitemap (catalog spec F-9 · E2E-15)', () => {
-  it('프리렌더 = 홈 · 검색 · 국가 전수 · 상품 전수 · 정적 6 — 전부 소문자 · 중복 없음', () => {
+  it('프리렌더 = 홈 · 검색 · 국가 전수 · 상품 전수 · 정적 7 · 전용판 3(가이드 2 · 지원 기기 — client-guide D-24) — 전부 소문자 · 중복 없음', () => {
     const routes = prerenderRoutes(catalog)
     expect(routes).toHaveLength(
-      2 + countriesOf(catalog).length + catalog.zones.length + STATIC_ROUTES.length,
+      2 + countriesOf(catalog).length + catalog.zones.length + STATIC_ROUTES.length + 3,
     )
+    expect(routes.slice(-3)).toEqual([
+      '/install-guide/ios',
+      '/install-guide/android',
+      '/install-guide/devices',
+    ])
+    expect(routes.slice(-3)).toEqual([...GUIDE_BARE_ROUTES])
     expect(new Set(routes).size).toBe(routes.length)
     for (const r of routes) expect(r).toBe(r.toLowerCase())
     expect(routes).toContain('/countries/fra')
     expect(routes).toContain('/products/eu340')
   })
 
-  it('sitemap = 프리렌더 − noindex — /search 는 프리렌더하지만 sitemap 에는 없다', () => {
+  it('sitemap = 프리렌더 − noindex − 전용판 — /search(noindex) · 가이드 전용판(canonical 이 사이트판 — client-guide D-18)은 프리렌더하지만 sitemap 에는 없다', () => {
     const paths = sitemapPaths(catalog)
     expect(prerenderRoutes(catalog)).toContain('/search')
     expect(isNoindexPath('/search')).toBe(true)
     expect(paths).not.toContain('/search')
+    for (const bare of GUIDE_BARE_ROUTES) {
+      expect(prerenderRoutes(catalog)).toContain(bare)
+      expect(isNoindexPath(bare), bare).toBe(false)
+      expect(paths).not.toContain(bare)
+    }
     for (const p of paths) {
       expect(isNoindexPath(p), p).toBe(false)
       expect(p).not.toMatch(/^\/(verify|details|select-date|view|my|checkout-preview)/)

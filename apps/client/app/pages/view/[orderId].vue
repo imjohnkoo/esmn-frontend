@@ -6,9 +6,9 @@ import {
   NInfoChip,
   NStatusPill,
   NCodeRow,
-  NLinkCard,
   NButton,
 } from '@imjohnkoo/design-vue'
+import GuideCards from '~/components/guide/GuideCards.vue'
 import { useOrderStore } from '~/stores/order'
 
 const route = useRoute()
@@ -53,7 +53,7 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
       <NPageHeading
         eyebrow="eSIM QR 코드 발급"
         :title="`eSIM 발급이\n완료됐어요`"
-        :description="`QR 코드를 스캔해서 설치해 주세요.\n현지 도착 후 데이터 로밍을 켜면 자동으로 연결돼요.`"
+        :description="`QR 코드를 스캔해서 설치해 주세요.\n출국 전에 이 회선의 데이터 로밍을 켜 두면 도착하자마자 연결돼요.`"
       />
     </div>
 
@@ -257,39 +257,8 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
         </li>
       </ul>
 
-      <!-- 공통 설치 가이드 — single/multi 둘 다 1회만 -->
-      <div class="view-page__divider"><span>설치 가이드</span></div>
-
-      <div class="view-page__guides">
-        <NLinkCard
-          label="아이폰 설치 가이드"
-          sub="iOS · Universal Link 자동 설치"
-          href="https://esimmany.super.site"
-          external
-        >
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="#111827">
-              <path
-                d="M19.665 16.811a10.32 10.32 0 0 1-1.021 1.837c-.537.767-.978 1.297-1.316 1.592-.525.482-1.089.73-1.692.744-.432 0-.954-.123-1.563-.373-.61-.249-1.17-.371-1.683-.371-.537 0-1.113.122-1.73.371-.616.25-1.114.381-1.495.393-.577.025-1.154-.229-1.732-.764-.367-.32-.826-.87-1.377-1.648-.59-.829-1.075-1.794-1.456-2.891-.408-1.187-.611-2.335-.611-3.447 0-1.273.275-2.372.826-3.292a4.857 4.857 0 0 1 1.73-1.751 4.65 4.65 0 0 1 2.34-.662c.46 0 1.063.142 1.81.422.745.28 1.224.422 1.434.422.157 0 .688-.166 1.588-.493.852-.303 1.572-.429 2.164-.379 1.604.13 2.809.762 3.611 1.901-1.434.871-2.144 2.091-2.13 3.658.012 1.221.456 2.237 1.33 3.044a4.378 4.378 0 0 0 1.336.871c-.108.31-.221.609-.341.895z"
-              />
-            </svg>
-          </template>
-        </NLinkCard>
-        <NLinkCard
-          label="안드로이드 설치 가이드"
-          sub="Galaxy · Pixel · QR 등록"
-          href="https://esimmany.super.site"
-          external
-        >
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="#3ddc84">
-              <path
-                d="M17.523 15.34a1.123 1.123 0 1 1 1.122-1.123 1.123 1.123 0 0 1-1.122 1.123m-11.046 0a1.123 1.123 0 1 1 1.123-1.123 1.123 1.123 0 0 1-1.123 1.123m11.45-6.02 2.24-3.879a.465.465 0 0 0-.165-.635.466.466 0 0 0-.635.17l-2.27 3.931a14.107 14.107 0 0 0-11.793 0L3.034 4.976a.467.467 0 0 0-.806.464l2.24 3.88A13.219 13.219 0 0 0 0 19.59h24a13.218 13.218 0 0 0-6.077-10.27"
-              />
-            </svg>
-          </template>
-        </NLinkCard>
-      </div>
+      <!-- 공통 설치 가이드 — single/multi 둘 다 1회만(client-guide F-6 · D-13 · D-15 · D-17 — 카드 · 시트 · 주소 상태는 GuideCards) -->
+      <GuideCards />
     </template>
 
     <div v-else class="view-page__empty">
@@ -515,12 +484,6 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
   background: #e5e7eb;
 }
 
-.view-page__guides {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .view-page__codes {
   display: flex;
   flex-direction: column;
@@ -563,6 +526,14 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 
 .view-page__faq-q span {
   color: #6239ff;
+}
+
+/* 머리 설명 · FAQ — 어절 단위 줄바꿈(«연결/돼요» 처럼 어절 중간에서 끊지 않게 · client-guide QA ⑦ walk 2) */
+.view-page__heading :deep(.n-page-heading__desc),
+.view-page__faq-q,
+.view-page__faq-a {
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .view-page__faq-a {

@@ -9,6 +9,8 @@ import {
   NAlertDialog,
   NLoaderDialog,
 } from '@imjohnkoo/design-vue'
+import { nextTick, onBeforeUnmount, watch } from 'vue'
+import { keepScrollAfterClose } from '~/utils/keep-scroll'
 import { useOrderStore } from '~/stores/order'
 import { useApi } from '~/composables/useApi'
 import { useFlowSession } from '~/composables/useFlowSession'
@@ -28,6 +30,7 @@ const isReverify = computed(() => route.query.reason === 'reverify')
 const fullName = ref('')
 const phoneNumber = ref('')
 const errors = ref<{ fullName?: string; phoneNumber?: string }>({})
+const formEl = ref<HTMLFormElement | null>(null)
 
 const isSubmitting = ref(false)
 const isAlertVisible = ref(false)
@@ -51,7 +54,17 @@ const validate = () => {
 }
 
 const onSubmit = async () => {
-  if (!validate()) return
+  if (!validate()) {
+    // 첫 오류 칸으로 포커스 — 아래 붙은 «주문 확인하기»(client-guide D-25) 밑에 오류 문구가 숨지 않게 그 칸을 화면 안으로
+    // (낮은 화면 · 가로 모드 · 키보드가 화면을 줄이는 브라우저 — QA ⑥ R11 m3). 칸 아래 여백은 scroll-margin-bottom
+    await nextTick()
+    const inputs = formEl.value?.querySelectorAll<HTMLInputElement>('.verify-page__field input')
+    const first = inputs?.[errors.value.fullName ? 0 : 1]
+    first?.focus()
+    // 이미 그 칸에 포커스가 있으면(Enter 제출) focus() 는 움직이지 않는다 — 화면 안으로 직접(아래 여백까지 · QA ⑥ R13 m2)
+    first?.scrollIntoView?.({ block: 'nearest' })
+    return
+  }
   isSubmitting.value = true
   await new Promise((resolve) => setTimeout(resolve, 1200))
   try {
@@ -81,14 +94,26 @@ const onSubmit = async () => {
   }
 }
 // 게스트 발급 4-step 은 헤더 · 하단 탭 없는 flow 레이아웃 (spec D-2) · 가드는 order-flow 미들웨어 (K8)
-definePageMeta({ layout: 'flow', middleware: 'order-flow' })
+// 사업자정보 푸터 없음(client-guide D-20 — 법정 링크는 화면 안 시트로 그대로)
+definePageMeta({ layout: 'flow', middleware: 'order-flow', siteFooter: false })
 
 // 개인정보처리방침 · 이용약관 하단 시트(spec D-46 · John 2026-10-03) — 새 탭 대신(입력한 이름 · 전화를 잃지 않는다)
 import type { DocSheetKey } from '~/components/legal/DocSheet.vue'
 // 시트는 페이지와 함께 싣는다 — 따로 불러오면 배포 뒤 묶음 이름이 바뀐 화면에서 불러오기가 실패해 링크가 먹통이 된다(링크는 일반 클릭을 막는다 · QA ⑥ m2)
 import DocSheet from '~/components/legal/DocSheet.vue'
+// 설치 가이드 카드 · 시트(client-guide D-19) — 발급 화면과 같은 컴포넌트. 시트라 입력한 이름 · 전화를 잃지 않는다
+import GuideCards from '~/components/guide/GuideCards.vue'
 
 const legalSheet = ref<DocSheetKey | null>(null)
+// 약관 시트를 닫을 때 페이지가 움직이지 않게 — reka 가 링크로 포커스를 돌려주며 아래 여백(D-25) 때문에 스크롤하는 것을 되돌린다(QA ⑥ R13 m3)
+let stopLegalKeep: (() => void) | undefined
+watch(legalSheet, (open, prev) => {
+  if (open || !prev || typeof window === 'undefined') return
+  stopLegalKeep?.()
+  stopLegalKeep = keepScrollAfterClose()
+})
+// 화면을 떠나면 끈다 — 다른 화면의 스크롤 복원을 되돌리지 않게(QA ⑥ R14 m1)
+onBeforeUnmount(() => stopLegalKeep?.())
 </script>
 
 <template>
@@ -129,7 +154,7 @@ const legalSheet = ref<DocSheetKey | null>(null)
       이어서 보려면 본인 확인을 다시 해 주세요.
     </p>
 
-    <form class="verify-page__form" @submit.prevent="onSubmit">
+    <form id="verify-form" ref="formEl" class="verify-page__form" @submit.prevent="onSubmit">
       <div class="verify-page__field">
         <NInput v-model="fullName" variant="underline" label="이름" :error="!!errors.fullName" />
         <p v-if="errors.fullName" class="verify-page__err">{{ errors.fullName }}</p>
@@ -177,12 +202,23 @@ const legalSheet = ref<DocSheetKey | null>(null)
       </p>
       <DocSheet v-model="legalSheet" />
 
-      <div class="verify-page__cta">
-        <NButton type="submit" variant="primary" size="xl" full-width :disabled="isSubmitting">
-          주문 확인하기
-        </NButton>
-      </div>
+      <!-- 설치 가이드(client-guide D-19) — 약관 링크 바로 아래 · «주문 확인하기» 위. 발급 전에 설치 방법을 미리 본다(하단 시트 · 뒤로 가기 = 시트 닫기 · 입력 그대로) -->
+      <GuideCards class="verify-page__guides" />
     </form>
+
+    <!-- «주문 확인하기» 는 화면 아래에 붙어 있다(client-guide D-25) — 폼 밖 · 페이지 맨 끝에 두어 sticky 가 화면 높이와 상관없이 붙는다(form 속성으로 폼에 이어진다) -->
+    <div class="verify-page__cta">
+      <NButton
+        type="submit"
+        form="verify-form"
+        variant="primary"
+        size="xl"
+        full-width
+        :disabled="isSubmitting"
+      >
+        주문 확인하기
+      </NButton>
+    </div>
 
     <NLoaderDialog
       v-model="isSubmitting"
@@ -245,7 +281,7 @@ const legalSheet = ref<DocSheetKey | null>(null)
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: 20px 24px 32px;
+  padding: 20px 24px 16px;
   background: #ffffff;
 }
 
@@ -326,9 +362,41 @@ const legalSheet = ref<DocSheetKey | null>(null)
   font-weight: 700;
 }
 
+/* «주문 확인하기» 는 화면 아래에 붙어 있다(client-guide D-25) — 스크롤하면 내용만 움직이고 버튼은 그대로, 설치 가이드 카드 등
+   다른 내용 위에 겹친다. 페이지 맨 끝(폼 바로 뒤)의 sticky — 기준 상자가 페이지라 화면이 낮아도(가로 모드 · 키보드) 붙고,
+   끝까지 내리면 제자리(카드 아래)에 놓이며, 내용이 짧으면 margin-top:auto 로
+   화면 맨 아래. 바탕은 페이지 좌우 여백까지 불투명한 흰색 — 버튼 줄의 여백을 눌러도 밑의 숨은 내용이 눌리지 않는다(QA ⑥ R12 M1) */
 .verify-page__cta {
-  margin-top: auto;
-  padding-top: 32px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: auto -24px 0;
+  padding: 12px 24px calc(16px + env(safe-area-inset-bottom));
+  background: #ffffff;
+}
+
+/* 흐림 — 버튼 줄 위 20px 띠(밑으로 지나가는 내용이 버튼에 바로 잘려 보이지 않게). 이 띠만 누름을 밑의 내용으로 넘긴다(R11 m4) */
+.verify-page__cta::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, rgb(255 255 255 / 0), #ffffff);
+  pointer-events: none;
+}
+
+/* 키보드 포커스가 간 입력칸 · 링크 · 카드가 아래 붙은 버튼 밑에 숨지 않게(D-25) — 입력칸 아래 오류 문구(약 25px) +
+   버튼 줄(약 84px) + 흐림 띠(20px)까지 비켜 서게(QA ⑥ R14 m3 — 120px 이면 오류 문구 아래쪽이 흐림 띠에 9px 걸렸다) */
+.verify-page__form :deep(:is(input, a)) {
+  scroll-margin-bottom: 132px;
+}
+
+.verify-page__guides {
+  margin-top: 4px;
+  /* 끝까지 내렸을 때 버튼 줄 위 흐림 띠(20px)가 카드를 덮지 않게(D-25) */
+  margin-bottom: 20px;
 }
 
 .verify-page__dialog-desc {

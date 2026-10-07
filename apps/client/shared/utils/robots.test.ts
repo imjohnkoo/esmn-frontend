@@ -33,6 +33,11 @@ describe('isNoindexPath', () => {
     '/privacy',
     '/refund',
     '/guide',
+    '/guide/ios',
+    '/guide/android',
+    // 가이드 전용판 — noindex 없이 canonical 만(사이트판으로 묶는다 · client-guide D-18)
+    '/install-guide/ios',
+    '/install-guide/android',
     '/supported-devices',
     '/countries/fra',
     '/products/cze00',
@@ -118,5 +123,11 @@ describe('robots.txt', () => {
     expect(txt.match(/^Disallow: /gm)).toHaveLength(7)
     expect(txt).toContain('\nSitemap: https://esimmany.com/sitemap.xml\n')
     expect(txt.endsWith('\n')).toBe(true)
+  })
+
+  it('가이드 전용판은 noindex · X-Robots-Tag · Disallow 어디에도 없다 — canonical 하나로 사이트판에 묶는다(client-guide D-18)', () => {
+    expect(isNoindexPath('/install-guide/ios')).toBe(false)
+    expect(Object.keys(buildRobotsRouteRules()).some((p) => p.startsWith('/install-guide'))).toBe(false)
+    expect(buildRobotsTxt()).not.toContain('install-guide')
   })
 })

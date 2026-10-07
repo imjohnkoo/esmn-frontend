@@ -1,0 +1,367 @@
+<article class="g-article">
+  <header class="g-hero">
+    <p class="g-hero__eyebrow">Install guide · iOS</p>
+    <h1 class="g-hero__title">아이폰 eSIM 설치 가이드</h1>
+    <p class="g-hero__lede">
+      <!--v-if-->출국 전에 집에서 미리 설치해 두세요.<br>설치만으로는 사용일수가 시작되지 않아요.
+    </p>
+    <nav class="g-os" aria-label="기기 종류"><a class="g-os__tab g-os__tab--on" aria-current="page" href="/guide/ios">아이폰</a><a class="g-os__tab" href="/guide/android">안드로이드</a></nav>
+    <ol class="g-flow g-hero__flow">
+      <li class="g-flow__item"><span class="g-flow__step">STEP 1</span><span class="g-flow__title">집에서 설치</span><!-- «·» 는 앞 토막 끝에 붙인다(줄이 갈려도 «· 5분» 이 줄 첫머리에 오지 않게) · 사이 공백은 글자로(템플릿 공백 압축이 지운다) --><span class="g-flow__meta"><span class="g-flow__nw">출국 전 ·</span> <span class="g-flow__nw">5분</span></span></li>
+      <li class="g-flow__item"><span class="g-flow__step">STEP 2</span><span class="g-flow__title">회선 설정</span><!-- «·» 는 앞 토막 끝에 붙인다(줄이 갈려도 «· 5분» 이 줄 첫머리에 오지 않게) · 사이 공백은 글자로(템플릿 공백 압축이 지운다) --><span class="g-flow__meta"><span class="g-flow__nw">설치 직후 ·</span> <span class="g-flow__nw">1분</span></span></li>
+      <li class="g-flow__item"><span class="g-flow__step">STEP 3</span><span class="g-flow__title">현지에서 켜기</span><!-- «·» 는 앞 토막 끝에 붙인다(줄이 갈려도 «· 5분» 이 줄 첫머리에 오지 않게) · 사이 공백은 글자로(템플릿 공백 압축이 지운다) --><span class="g-flow__meta"><span class="g-flow__nw">도착 후 ·</span> <span class="g-flow__nw">1분</span></span></li>
+    </ol>
+  </header>
+  <nav class="g-jump g-jump--under-header" aria-label="이 페이지 안에서 이동"><a href="#step1" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">STEP 1</span> 설치</span></a><a href="#step2" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">STEP 2</span> 설정</span></a><a href="#step3" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">STEP 3</span> 현지</span></a><a href="#help" class="g-jump__chip"><span class="g-jump__label"><!--v-if-->문제 해결</span></a></nav>
+  <p class="g-hero__hint">화면의 빨간 테두리는 설명이 가리키는 곳이에요. 켜고 끄는 건 설명을 따라 주세요.</p><!-- 설치 전 확인 -->
+  <section id="check" class="g-sec" aria-labelledby="check-title">
+    <h2 id="check-title" class="g-sec__title">설치 전에 확인해 주세요</h2>
+    <p class="g-sec__lede">네 가지만 확인하면 설치 오류 대부분을 피할 수 있어요.</p>
+    <ul class="g-checks">
+      <li class="g-check"><span class="g-check__tile" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-check__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z"></path></svg></span>
+        <div>
+          <h3 class="g-check__h">인터넷 연결</h3>
+          <p class="g-check__body">설치하는 동안 인터넷이 필요해요. <span class="g-nw">Wi-Fi나</span> 국내 데이터가 연결된 곳에서 설치해 주세요.</p>
+          <!--v-if-->
+        </div>
+      </li>
+      <li class="g-check"><span class="g-check__tile" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-check__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"></path></svg></span>
+        <div>
+          <h3 class="g-check__h">iOS 업데이트</h3>
+          <p class="g-check__body"><span class="g-path"><!--v-if--><span class="g-nw">설정<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">일반<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">소프트웨어 업데이트<span class="g-path__p">에서</span></span></span> 최신 버전으로 올린 뒤 설치하면 오류가 줄어요.</p>
+          <!--v-if-->
+        </div>
+      </li>
+      <li class="g-check"><span class="g-check__tile" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-check__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"></path></svg></span>
+        <div>
+          <h3 class="g-check__h">지원 기기</h3>
+          <p class="g-check__body">eSIM을 지원하는 아이폰이어야 해요. 통신사 잠금(컨트리락)도 풀려 있어야 해요.</p><a class="g-check__link" href="/supported-devices">지원 기기 확인하기</a>
+        </div>
+      </li>
+      <li class="g-check"><span class="g-check__tile" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-check__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"></path></svg></span>
+        <div>
+          <h3 class="g-check__h">지난 여행 eSIM</h3>
+          <p class="g-check__body">예전에 쓰던 여행용 eSIM이 켜져 있다면 끄고 설치해 주세요. 회선이 헷갈리지 않아요.</p>
+          <!--v-if-->
+        </div>
+      </li>
+    </ul>
+    <div class="g-alert" role="note"><span class="g-alert__tile" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-alert__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"></path></svg></span>
+      <div>
+        <h3 class="g-alert__h">설치한 eSIM은 여행이 끝날 때까지 지우지 마세요</h3>
+        <p class="g-alert__body">한 번 지우면 다시 설치할 수 없고 재발급도 되지 않아요. QR 코드 하나는 폰 한 대에 한 번만 설치돼요.</p>
+      </div>
+    </div>
+  </section><!-- STEP 1 -->
+  <section id="step1" class="g-sec g-sec--alt" aria-labelledby="step1-title"><span class="g-badge">STEP 1 · 출국 전</span>
+    <h2 id="step1-title" class="g-sec__title">집에서 eSIM 설치하기</h2>
+    <p class="g-sec__lede">카카오톡으로 받은 발급 링크에서 QR 코드를 먼저 발급받아 주세요. 그다음 아래 세 가지 중 편한 방법 하나로 설치하면 돼요.</p>
+    <div class="g-method" aria-label="방법 A 다른 화면의 QR 코드 스캔하기" role="group">
+      <div class="g-method__tags"><span class="g-pill">방법 A</span><span class="g-pill g-pill--soft">가장 쉬워요</span></div>
+      <h3 class="g-method__title">다른 화면의 QR 코드 스캔하기</h3>
+      <p class="g-method__desc">PC나 태블릿, 동행자 폰에 QR 코드를 띄울 수 있을 때 써요.</p>
+      <ol class="g-steps g-method__steps" role="list">
+        <li class="g-step">
+          <div class="g-step__text"><span class="g-step__num">1<span class="g-step__sr">번.</span></span>
+            <p class="g-step__p"><span class="g-path"><!--v-if--><span class="g-nw">설정<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러<span class="g-path__p">에서</span></span></span> <span class="g-nw"><span class="g-ui">eSIM 추가</span>를</span> 눌러요.
+              <!--v-if-->
+            </p>
+          </div>
+          <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-cellular-esim-add.v1.png" alt="설정 › 셀룰러 화면 — eSIM 추가 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+        </li>
+        <li class="g-step">
+          <div class="g-step__text"><span class="g-step__num">2<span class="g-step__sr">번.</span></span>
+            <p class="g-step__p">‘전화번호 전송’ 화면이 나오면 아래 <span class="g-nw"><span class="g-ui">기타 옵션</span>을</span> 눌러요.<span class="g-step__sub">바로 ‘eSIM 설정’ 화면이 나오면 다음으로 넘어가요.</span></p>
+          </div>
+          <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-transfer-more.v1.png" alt="전화번호 전송 화면 — 기타 옵션 버튼 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+        </li>
+        <li class="g-step">
+          <div class="g-step__text"><span class="g-step__num">3<span class="g-step__sr">번.</span></span>
+            <p class="g-step__p"><span class="g-nw"><span class="g-ui">QR 코드 사용</span>을</span> 눌러요.
+              <!--v-if-->
+            </p>
+          </div>
+          <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-esim-setup-use-qr.v1.png" alt="eSIM 설정 화면 — QR 코드 사용 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+        </li>
+        <li class="g-step">
+          <div class="g-step__text"><span class="g-step__num">4<span class="g-step__sr">번.</span></span>
+            <p class="g-step__p">다른 기기에 띄운 QR 코드를 화면 안에 맞춰 비춰요.
+              <!--v-if-->
+            </p>
+          </div>
+          <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-qr-scan.v1.png" alt="QR 코드 스캔 화면 — 화면 안에 QR 코드를 맞춘 모습" width="368" height="449" loading="lazy" decoding="async"></figure>
+        </li>
+      </ol>
+      <!--v-if-->
+    </div>
+    <div class="g-method" aria-label="방법 B QR 코드 길게 누르기" role="group">
+      <div class="g-method__tags"><span class="g-pill">방법 B</span><span class="g-pill g-pill--soft">폰 한 대로</span></div>
+      <h3 class="g-method__title">QR 코드 길게 누르기</h3>
+      <p class="g-method__desc">QR 코드를 띄울 다른 기기가 없을 때 써요. iOS 17.4 이상에서 돼요.</p>
+      <ol class="g-steps g-method__steps" role="list">
+        <li class="g-step">
+          <div class="g-step__text"><span class="g-step__num">1<span class="g-step__sr">번.</span></span>
+            <p class="g-step__p">아이폰의 Safari에서 발급 화면을 열어 QR 코드를 띄워요.
+              <!--v-if-->
+            </p>
+          </div>
+          <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/web-qr-ios.v1.png" alt="아이폰 Safari 로 연 발급 완료 화면 — QR 코드" width="368" height="449" loading="lazy" decoding="async"></figure>
+        </li>
+        <li class="g-step">
+          <div class="g-step__text"><span class="g-step__num">2<span class="g-step__sr">번.</span></span>
+            <p class="g-step__p">QR 코드를 길게 누르고 메뉴에서 <span class="g-nw"><span class="g-ui">eSIM 추가</span>를</span> 눌러요.
+              <!--v-if-->
+            </p>
+          </div>
+          <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-longpress-add-esim.v1.png" alt="QR 코드를 길게 누른 메뉴 — eSIM 추가 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+        </li>
+      </ol>
+      <div class="g-note g-note--info"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-note__icon">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"></path>
+        </svg>
+        <div class="g-note__body">
+          <p><b class="g-b">메뉴에 eSIM 추가가 보이지 않나요?</b> iOS 17.4 미만이거나 QR 코드가 이미지로 인식되지 않은 경우예요. 방법 C로 설치해 주세요.</p>
+        </div>
+      </div>
+    </div>
+    <div class="g-method" aria-label="방법 C 코드 직접 입력하기" role="group">
+      <div class="g-method__tags"><span class="g-pill">방법 C</span><span class="g-pill g-pill--soft">QR이 안 될 때</span></div>
+      <h3 class="g-method__title">코드 직접 입력하기</h3>
+      <p class="g-method__desc">QR 코드가 인식되지 않을 때 써요.</p>
+      <ol class="g-steps g-method__steps" role="list">
+        <li class="g-step">
+          <div class="g-step__text"><span class="g-step__num">1<span class="g-step__sr">번.</span></span>
+            <p class="g-step__p">발급 화면 아래 ‘아이폰 수동 설치’에서 <span class="g-nw">SM-DP+</span> 주소와 활성화 코드를 복사해요.
+              <!--v-if-->
+            </p>
+          </div>
+          <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/web-codes-ios.v1.png" alt="발급 화면 아이폰 수동 설치 — SM-DP+ 주소와 활성화 코드 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+        </li>
+        <li class="g-step">
+          <div class="g-step__text"><span class="g-step__num">2<span class="g-step__sr">번.</span></span>
+            <p class="g-step__p">방법 A처럼 QR 스캔 화면까지 들어가 <span class="g-nw"><span class="g-ui">세부사항 직접 입력</span>을</span> 눌러요.
+              <!--v-if-->
+            </p>
+          </div>
+          <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-qr-scan-manual.v1.png" alt="QR 코드 스캔 화면 아래 — 세부사항 직접 입력 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+        </li>
+        <li class="g-step">
+          <div class="g-step__text"><span class="g-step__num">3<span class="g-step__sr">번.</span></span>
+            <p class="g-step__p">두 값을 각 칸에 붙여 넣고 <span class="g-nw"><span class="g-ui">다음</span>을</span> 눌러요.<span class="g-step__sub">확인 코드 칸이 보이면 비워 두세요.</span></p>
+          </div>
+          <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-manual-fields.v1.png" alt="활성화 코드 입력 화면 — 두 입력 칸과 다음 버튼 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+        </li>
+      </ol>
+      <!--v-if-->
+    </div>
+    <div class="g-note g-note--warn"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-note__icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"></path>
+      </svg>
+      <div class="g-note__body">
+        <p><b class="g-b">설치하는 동안 취소나 뒤로가기를 누르지 마세요.</b> 설치에 몇 분 걸릴 수 있어요.</p>
+        <p><b class="g-b">‘eSIM으로 전환’은 누르지 마세요.</b> 지금 쓰는 유심을 eSIM으로 바꾸는 메뉴라 여행용 eSIM 설치와 관계없어요.</p>
+      </div>
+    </div>
+  </section><!-- STEP 2 · STEP 3 -->
+  <section id="step2" class="g-sec" aria-labelledby="step2-title"><span class="g-badge">STEP 2 · 설치 직후</span>
+    <h2 id="step2-title" class="g-sec__title">이어서 나오는 화면</h2>
+    <p class="g-sec__lede">설치를 시작하면 아래 화면이 차례로 나와요. 마지막 7번까지 해 두면 현지에 도착하자마자 쓸 수 있어요.</p>
+    <ol class="g-steps g-sec__steps" role="list">
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">1<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p">‘eSIM 활성화’ 알림이 뜨면 <span class="g-nw"><span class="g-ui">활성화</span>를</span> 눌러요.<span class="g-step__sub">iOS 18 이하에서는 ‘새로운 eSIM 활성화’ 알림의 허용을 눌러요.</span></p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-activate-alert.v1.png" alt="eSIM 활성화 알림 — 활성화 버튼 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">2<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p">‘eSIM 활성화’ 화면에서 <span class="g-nw"><span class="g-ui">계속</span>을</span> 눌러요.<span class="g-step__sub">설치에 1분 정도 걸려요.</span></p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-activate-ready.v1.png" alt="eSIM 활성화 화면 — 계속 버튼 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">3<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p">사용할 위치는 <span class="g-nw"><span class="g-ui">해외</span>를</span> 고르고 <span class="g-nw"><span class="g-ui">계속</span>을</span> 눌러요.
+            <!--v-if-->
+          </p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-where-abroad.v1.png" alt="이 eSIM 을 사용할 위치 선택 화면 — 해외 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">4<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p">요금제는 <span class="g-nw"><span class="g-ui">데이터 전용</span>을</span> 고르고 <span class="g-nw"><span class="g-ui">계속</span>을</span> 눌러요.<span class="g-step__sub">여행용 eSIM은 데이터 전용 상품이라 전화와 문자는 지금 쓰는 번호로 받아요.</span></p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-plan-data-only.v1.png" alt="어떤 요금제를 사용하고 있습니까 화면 — 데이터 전용 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">5<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p">‘여행용 eSIM 설정 완료’가 나오면 <span class="g-nw"><span class="g-ui">완료</span>를</span> 눌러요.
+            <!--v-if-->
+          </p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-done.v1.png" alt="여행용 eSIM 설정 완료 화면 — 완료 버튼 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">6<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p"><span class="g-path"><!--v-if--><span class="g-nw">설정<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러<span class="g-path__p">에</span></span></span> 새 회선이 보이면 설치가 끝난 거예요.<span class="g-step__sub">한국에서는 ‘활성화 중…’으로 계속 보일 수 있어요. 정상이에요.</span></p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-cellular-new-line.v1.png" alt="설정 › 셀룰러 화면 — 새 회선(활성화 중) 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">7<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p">새 회선을 눌러 <span class="g-nw"><span class="g-ui">이 회선 켜기</span>와</span> <span class="g-nw"><span class="g-ui">데이터 로밍</span>을</span> 미리 켜 두세요.<span class="g-step__sub">도착하자마자 바로 연결돼요. 한국에서 켜 두어도 사용일수는 시작되지 않고, 셀룰러 데이터는 도착할 때까지 메인 그대로 둬요.</span></p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-line-on-roaming.v1.png" alt="새 회선 화면 — 이 회선 켜기와 데이터 로밍 스위치 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+    </ol>
+    <div class="g-note g-note--info"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-note__icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"></path>
+      </svg>
+      <div class="g-note__body">
+        <p><b class="g-b">iOS 18 이하에서는 3~5번 대신 다른 화면이 나와요.</b></p>
+        <p>레이블은 그대로 두고, 기본 회선과 셀룰러 데이터는 <b class="g-b">메인</b>을 골라요. <b class="g-b">셀룰러 데이터 전환 허용</b>은 꺼 두세요. 그다음 7번을 해 주세요.</p>
+      </div>
+    </div>
+    <div class="g-note g-note--tip"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-note__icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"></path>
+      </svg>
+      <div class="g-note__body">
+        <p><b class="g-b">미리 설치해도 사용일수는 시작되지 않아요.</b> 현지에서 처음 연결된 순간부터 24시간 단위로 차감돼요.</p>
+      </div>
+    </div>
+  </section>
+  <section id="step3" class="g-sec g-sec--alt" aria-labelledby="step3-title"><span class="g-badge">STEP 3 · 현지 도착 후</span>
+    <h2 id="step3-title" class="g-sec__title">현지에서 여행용 eSIM 켜기</h2>
+    <p class="g-sec__lede">iOS 26 이상은 도착하면 ‘여행용 eSIM 켜기’ 알림이 오기도 해요. 알림이 오지 않으면 4~5번을 확인하면 돼요.</p>
+    <ol class="g-steps g-sec__steps" role="list">
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">1<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p">‘여행용 eSIM 켜기’ 알림을 눌러요.
+            <!--v-if-->
+          </p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-lock-noti.v1.png" alt="잠금 화면 — 여행용 eSIM 켜기 알림 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">2<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p"><span class="g-nw"><span class="g-ui">여행용 SIM 및 현재 eSIM</span>을</span> 고르고 <span class="g-nw"><span class="g-ui">계속</span>을</span> 눌러요.<span class="g-step__sub">데이터는 여행용 eSIM으로 쓰고, 한국 번호로 오는 문자도 받을 수 있어요.</span></p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-travel-choice-both.v1.png" alt="여행용 eSIM 켜기 화면 — 여행용 SIM 및 현재 eSIM 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">3<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p">저데이터 모드는 편한 쪽을 골라요.<span class="g-step__sub">켜 두면 사진 동기화 같은 백그라운드 데이터가 줄어요.</span></p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-lowdata.v1.png" alt="저데이터 모드 화면 — 저데이터 모드 켜기 · 지금 안 함" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">4<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p">알림이 오지 않으면 <span class="g-path"><!--v-if--><span class="g-nw">설정<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러<span class="g-path__p">에서</span></span></span> 새 회선의 <span class="g-nw"><span class="g-ui">이 회선 켜기</span>와</span> <span class="g-nw"><span class="g-ui">데이터 로밍</span>이</span> 켜져 있는지 확인해요.<span class="g-step__sub">STEP 2의 7번을 해 두었다면 그대로 켜져 있어요. 꺼져 있으면 지금 켜 주세요.</span></p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-line-on-roaming.v1.png" alt="새 회선 화면 — 이 회선 켜기와 데이터 로밍 스위치 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">5<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p"><span class="g-path"><!--v-if--><span class="g-nw">설정<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러 데이터<span class="g-path__p">에서</span></span></span> 새 회선을 고르고 <span class="g-nw"><span class="g-ui">셀룰러 데이터 전환 허용</span>은</span> 꺼 두세요.
+            <!--v-if-->
+          </p>
+        </div>
+        <figure class="g-shot"><img class="g-shot__img" src="/guide-screens/ios-celldata-travel.v1.png" alt="셀룰러 데이터 화면 — 새 회선 선택과 셀룰러 데이터 전환 허용 스위치 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </li>
+      <li class="g-step">
+        <div class="g-step__text"><span class="g-step__num">6<span class="g-step__sr">번.</span></span>
+          <p class="g-step__p">화면 위 신호 표시가 위아래 두 칸으로 나뉘고 <b class="g-b">5G</b>나 <b class="g-b">LTE</b>가 뜨면 연결된 거예요.<span class="g-step__sub">위 칸이 데이터를 쓰는 여행용 eSIM이에요. 처음 연결에 몇 분 걸릴 수 있어요.</span></p>
+        </div>
+        <div class="g-status" role="img" aria-label="상태 표시줄 예시 — 신호 표시가 위아래 두 칸으로 나뉘고 5G 가 뜬 모습. 위 칸은 여행용 eSIM, 아래 칸은 한국 회선">
+          <div class="g-status__bar"><span>9:41</span><span class="g-status__right"><span class="g-dual" aria-hidden="true"><b></b><b></b><b></b><b></b></span><span class="g-status__net">5G</span><span class="g-status__bat" aria-hidden="true"></span></span></div><span class="g-status__cap">위 칸 = 여행용 eSIM · 아래 칸 = 한국 회선</span>
+        </div>
+      </li>
+    </ol>
+    <div class="g-note g-note--warn"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-note__icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"></path>
+      </svg>
+      <div class="g-note__body">
+        <p><b class="g-b">한국 회선의 데이터 로밍은 꺼 두세요.</b> 켜져 있으면 통신사 로밍 요금이 나올 수 있어요.</p>
+        <p><b class="g-b">셀룰러 데이터 전환 허용도 꺼 두세요.</b> 켜 두면 데이터가 한국 회선으로 넘어갈 수 있어요.</p>
+      </div>
+    </div>
+    <div class="g-note g-note--home"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-note__icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"></path>
+      </svg>
+      <div class="g-note__body">
+        <p><b class="g-b">한국에 돌아오면</b></p>
+        <p>iOS 26 이상은 여행용 eSIM을 알아서 끄고 한국 회선을 다시 켜기도 해요. 그렇지 않다면 <span class="g-path"><!--v-if--><span class="g-nw">설정<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러 데이터<span class="g-path__p">를</span></span></span> <b class="g-b">메인</b>으로 바꿔 주세요.</p>
+      </div>
+    </div>
+  </section><!-- 문제 해결 -->
+  <section id="help" class="g-sec" aria-labelledby="help-title"><span class="g-badge">문제 해결</span>
+    <h2 id="help-title" class="g-sec__title">설치나 연결이 잘 안 되나요?</h2>
+    <p class="g-sec__lede">자주 받는 문의를 모았어요. 대부분 여기서 해결돼요.</p>
+    <div class="g-faqs">
+      <div class="g-faq">
+        <h3 class="g-faq__q"><span class="g-faq__n">Q1</span> <span>「eSIM을 활성화할 수 없음」 메시지가 떴나요?</span></h3>
+        <div class="g-faq__a">
+          <p>한국에서 미리 설치하면 뜰 수 있어요. <span class="g-nw"><span class="g-ui">확인</span>을</span> 누르고 <span class="g-path"><!--v-if--><span class="g-nw">설정<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러<span class="g-path__p">에</span></span></span> 새 회선이 있는지 봐 주세요. 회선이 있으면 설치는 끝난 거예요.</p>
+          <p>회선이 없다면 인터넷 연결을 확인하고 다시 시도해 주세요. 쓰지 않는 다른 eSIM이 켜져 있으면 끄고 시도해요.</p>
+          <!--v-if-->
+        </div>
+        <figure class="g-shot g-faq__shot"><img class="g-shot__img" src="/guide-screens/ios-error.v1.png" alt="eSIM 을 활성화할 수 없음 알림" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </div>
+      <div class="g-faq">
+        <h3 class="g-faq__q"><span class="g-faq__n">Q2</span> <span>‘활성화 중…’이 계속 떠 있나요?</span></h3>
+        <div class="g-faq__a">
+          <p>한국에서는 여행용 eSIM이 연결되지 않아 그대로 보일 수 있어요. 정상이에요.</p>
+          <p>현지에 도착해 STEP 3을 진행하면 켜져요.</p>
+          <!--v-if-->
+        </div>
+        <figure class="g-shot g-faq__shot"><img class="g-shot__img" src="/guide-screens/ios-cellular-new-line.v1.png" alt="설정 › 셀룰러 화면 — 새 회선(활성화 중) 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </div>
+      <div class="g-faq">
+        <h3 class="g-faq__q"><span class="g-faq__n">Q3</span> <span>설치 도중 전화가 오거나 뒤로가기를 눌렀나요?</span></h3>
+        <div class="g-faq__a">
+          <p>먼저 <span class="g-path"><!--v-if--><span class="g-nw">설정<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러<span class="g-path__p">에</span></span></span> 새 회선이 있는지 확인해 주세요. 회선이 있다면 설치는 끝났어요.</p>
+          <p>회선이 없다면 인터넷 연결을 확인하고 같은 QR 코드로 한 번 더 설치해 주세요. 그래도 안 되면 아래 채널로 문의해 주세요.</p>
+          <!--v-if-->
+        </div>
+        <!--v-if-->
+      </div>
+      <div class="g-faq">
+        <h3 class="g-faq__q"><span class="g-faq__n">Q4</span> <span>현지에서 신호는 뜨는데 인터넷이 안 되나요?</span></h3>
+        <div class="g-faq__a">
+          <p>새 회선의 <span class="g-nw"><span class="g-ui">데이터 로밍</span>이</span> 켜져 있는지, 셀룰러 데이터가 새 회선으로 되어 있는지 다시 확인해 주세요.</p>
+          <p>그래도 안 되면 비행기 모드를 2~3번 켰다 끄고, 폰을 다시 켜 주세요.</p>
+          <!--v-if-->
+        </div>
+        <!--v-if-->
+      </div>
+      <div class="g-faq">
+        <h3 class="g-faq__q"><span class="g-faq__n">Q5</span> <span>연결이 계속 안 되거나 너무 느린가요?</span></h3>
+        <div class="g-faq__a">
+          <p>현지 통신사를 직접 골라 보세요. <span class="g-path"><!--v-if--><span class="g-nw">설정<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">새 회선<!--v-if--></span><span class="g-path__sep"> › </span><span class="g-nw">네트워크 선택<span class="g-path__p">에서</span></span></span> <span class="g-nw"><span class="g-ui">자동</span>을</span> 끄면 통신사 목록이 나와요.</p>
+          <p>고른 통신사로도 안 되면 다시 자동으로 돌려 주세요.</p>
+          <!--v-if-->
+        </div>
+        <figure class="g-shot g-faq__shot"><img class="g-shot__img" src="/guide-screens/ios-network-auto.v1.png" alt="네트워크 선택 화면 — 자동 스위치 표시" width="368" height="449" loading="lazy" decoding="async"></figure>
+      </div>
+      <div class="g-faq">
+        <h3 class="g-faq__q"><span class="g-faq__n">Q6</span> <span>QR 코드를 잃어버렸나요?</span></h3>
+        <div class="g-faq__a">
+          <p>‘내 eSIM’에서 주문번호로 다시 조회하면 같은 QR 코드를 볼 수 있어요. 다만 이미 설치한 eSIM은 다른 폰으로 옮길 수 없어요.</p><a class="g-faq__link" href="/my-esim">내 eSIM 조회하기</a>
+        </div>
+        <!--v-if-->
+      </div>
+    </div>
+    <section class="g-cs" aria-labelledby="guide-cs-title">
+      <h2 id="guide-cs-title" class="g-cs__title">그래도 해결되지 않으면 문의해 주세요</h2>
+      <p class="g-cs__lede">설치 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.</p>
+      <ul class="g-cs__cards">
+        <li><a class="g-cs__card" href="https://pf.kakao.com/_TjTCG" target="_blank" rel="noopener noreferrer"><span class="g-cs__icon g-cs__icon--kakao" aria-hidden="true">TALK</span><span class="g-cs__text"><span class="g-cs__name">카카오톡 채널</span><span class="g-cs__handle">@이심마니</span><span class="g-cs__sr">(새 창)</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-cs__chev">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
+            </svg></a></li>
+        <li><a class="g-cs__card" href="https://smartstore.naver.com/esimmany" target="_blank" rel="noopener noreferrer"><span class="g-cs__icon g-cs__icon--naver" aria-hidden="true">N</span><span class="g-cs__text"><span class="g-cs__name">네이버 톡톡</span><span class="g-cs__handle">스마트스토어 채팅 문의</span><span class="g-cs__sr">(새 창)</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="g-cs__chev">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
+            </svg></a></li>
+      </ul><a class="g-cs__more" href="/my#cs">고객센터 전체 보기</a>
+    </section>
+  </section>
+</article>
