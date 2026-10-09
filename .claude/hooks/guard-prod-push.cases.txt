@@ -4818,3 +4818,122 @@ git commit -m "$(cat <<'EOF'
 fix: git push origin prod 예시
 EOF
 )"
+=== block RN-B37 URL remote · esmn 쌍둥이
+git push git@github.com:imjohnkoo/esmn-frontend.git HEAD:prod
+=== block RN-B41 git -C then -c then push · esmn 쌍둥이
+git -C ~/orca/workspaces/esmn-frontend/x -c push.default=current push origin HEAD:refs/heads/prod
+=== allow RN-A33 git push dev with -C orca path · esmn 쌍둥이
+git -C /Users/someone/orca/workspaces/esmn-frontend/issuer-legal-links push -u origin imjohnkoo/issuer-legal-links
+=== block RN-K39 git push in && chain after cd with orca path · esmn 쌍둥이
+cd /Users/someone/orca/workspaces/esmn-frontend/issuer-legal-links && git push origin HEAD:prod 2>&1 | tail -5
+=== allow RN-F15 long multi-line script typical · esmn 쌍둥이
+cd /Users/someone/orca/workspaces/esmn-frontend/issuer-legal-links
+git status -sb
+git add -A
+git commit -m "$(cat <<'EOF'
+fix(hook): x
+
+- git push origin HEAD:prod
+EOF
+)"
+git push -u origin imjohnkoo/issuer-legal-links 2>&1 | tail -5
+gh pr create --base dev --title "fix(hook): x" --body "$(cat <<'EOF'
+## 요약
+- gh pr create --base prod 차단
+- gh workflow run client-production.yml 차단
+EOF
+)"
+=== block RN-G15 gh pr create --repo then base · esmn 쌍둥이
+gh pr create --repo imjohnkoo/esmn-frontend --head dev --base prod --fill
+=== block RN-R4-X43 workflow run with --repo first · esmn 쌍둥이
+gh workflow run --repo imjohnkoo/esmn-frontend client-production.yml
+=== allow RN-R4-N37 git push with --signed=false? nah -- push to dev via full URL · esmn 쌍둥이
+git push https://github.com/imjohnkoo/esmn-frontend.git HEAD:dev
+=== allow RN-R4-S30 commit via -C worktree path containing node · esmn 쌍둥이
+git -C ~/orca/workspaces/esmn-frontend/node-22-upgrade commit -F - <<'EOF'
+chore: node 22
+
+- git push origin HEAD:prod 는 사용자 승인 뒤
+EOF
+=== allow RN-R5-c4-N05 api runs list dev · esmn 쌍둥이
+gh api 'repos/imjohnkoo/esmn-frontend/actions/runs?branch=dev&per_page=5' --jq '.workflow_runs[] | [.name, .conclusion] | @tsv'
+=== allow RN-R5-c4-N27 gh api search q base:prod with -X GET · esmn 쌍둥이
+gh api -X GET search/issues -f q='repo:imjohnkoo/esmn-frontend is:pr base:prod' --jq .total_count
+=== allow RN-R5-c4-N30 typical multi-step script w/ comments and quotes · esmn 쌍둥이
+cd /Users/someone/orca/workspaces/esmn-frontend/x
+# 1) 상태
+git status -sb
+# 2) 빌드 (it's slow)
+yarn turbo run build --filter=nomacom-client 2>&1 | tail -20
+# 3) 결과
+echo "done: $(date '+%H:%M')"
+=== allow RN-R6-p2-X08 gh workflow run --repo r ci.yml · esmn 쌍둥이
+gh workflow run --repo imjohnkoo/esmn-frontend ci.yml
+=== block RN-R6-p2-X20 git push -- refspec quoted with spaces? no: push with --repo=URL then prod · esmn 쌍둥이
+git push --repo=https://github.com/imjohnkoo/esmn-frontend.git HEAD:prod
+=== block RN-R6-p2-X30 git push using full remote URL with refs and quoted · esmn 쌍둥이
+git push "https://github.com/imjohnkoo/esmn-frontend.git" "origin/dev:refs/heads/prod"
+=== block RN-R6-p4-H06 gh run watch then gh api PATCH quoted path prod · esmn 쌍둥이
+gh run watch 33599247862 --exit-status
+gh api -X PATCH "repos/imjohnkoo/esmn-frontend/git/refs/heads/prod" -f sha="$(git rev-parse origin/dev)"
+=== allow RN-R7-m05 curl 로 prod 브랜치 조회(GET · 7회차 minor 5) · esmn 쌍둥이
+curl -s -H "Authorization: token $(gh auth token)" https://api.github.com/repos/imjohnkoo/esmn-frontend/branches/prod | jq -r .commit.sha
+=== block RN-R8-P1-15 curl dispatch production workflow · esmn 쌍둥이
+curl -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/esmn-frontend/actions/workflows/client-production.yml/dispatches -d '{"ref":"dev"}'
+=== block RN-R8-P1-16 gh api dispatch by workflow id · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/actions/workflows/123456789/dispatches -f ref=dev
+=== block RN-R8-P1-23 aws deploy create-deployment (direct prod deploy) · esmn 쌍둥이
+aws deploy create-deployment --application-name nomacom-client --deployment-group-name prod --github-location repository=imjohnkoo/esmn-frontend,commitId=abc
+=== allow RN-R8-P1-25 gh api comment via -F body=@- heredoc mentioning database: prod · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/issues/12/comments -F body=@- <<'EOF'
+배포 확인 — database: prod 연결 정상
+EOF
+=== allow RN-R8-P1-26 gh api comment via -F body=@- heredoc mentioning refs/heads/prod · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/issues/12/comments -F body=@- <<'EOF'
+dev → refs/heads/prod fast-forward 는 사용자 승인 뒤
+EOF
+=== allow RN-R8-D01 wiki commit flow with heredoc msg mentioning prod push · esmn 쌍둥이
+W="${NOMACOM_WIKI:-$HOME/dev/current-projects/esmn-wiki}"
+git -C "$W" pull --rebase -q
+git -C "$W" add wiki/frontend/plans/2026-10-05-hook.md
+git -C "$W" commit -q -F - <<'EOF'
+docs(frontend): hook plan — git push origin HEAD:prod · gh workflow run client-production.yml 차단 정리
+
+it's the 8th QA round; don't merge before ack.
+EOF
+git -C "$W" push -q
+=== allow RN-R8-D09 gh api PR review comment reply inline -f body with prod mention · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/pulls/12/comments/123/replies -f body="dev → prod 승격은 사용자 승인 뒤 — git push origin dev:prod 는 훅이 막는다"
+=== allow RN-R8-D10 gh api comment via --input JSON file built by jq with body mentioning base: prod · esmn 쌍둥이
+jq -n --arg b "PR base: prod 금지 — base 는 dev" '{body: $b}' > /tmp/qa/c.json
+gh api repos/imjohnkoo/esmn-frontend/issues/12/comments --input /tmp/qa/c.json
+=== block RN-R9-P1-03 gh pr -R before create · esmn 쌍둥이
+gh pr -R imjohnkoo/esmn-frontend create --base prod --fill
+=== block RN-R9-P1-04 gh workflow -R before run · esmn 쌍둥이
+gh workflow -R imjohnkoo/esmn-frontend run client-production.yml
+=== block RN-R9-P1-05 gh run -R before rerun · esmn 쌍둥이
+gh run -R imjohnkoo/esmn-frontend rerun 123456
+=== block RN-R9-P1-06 curl create ref prod with heredoc body · esmn 쌍둥이
+curl -sS -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/esmn-frontend/git/refs -d @- <<'EOF'
+{"ref": "refs/heads/prod", "sha": "abc123"}
+EOF
+=== allow RN-R9-P1-16 gh api comment with body via $(cat heredoc) mentioning commands · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/issues/12/comments -f body="$(cat <<'EOF'
+QA 9회차: `git push origin prod` · `docker push` · `git reset --hard` 는 막힌다.
+EOF
+)"
+=== block RN-R9-P3-01 subshell (cd && bash) <<EOF · esmn 쌍둥이
+(cd /Users/johnkoo/orca/workspaces/esmn-frontend/client-shell && bash) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== allow RN-R9-P4-12 gh api read with jq containing pipes and prod · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/commits/prod --jq '.sha + " " + (.commit.message | split("\n")[0])'
+=== block RN-R10-A30 git push with repo URL and prod · esmn 쌍둥이
+git push https://github.com/imjohnkoo/esmn-frontend.git HEAD:prod
+=== block RN-R10-A34 heredoc commit then push prod with -C path · esmn 쌍둥이
+git -C /Users/johnkoo/orca/workspaces/esmn-frontend/x commit -F - <<'EOF'
+msg
+EOF
+git -C /Users/johnkoo/orca/workspaces/esmn-frontend/x push origin HEAD:prod
+=== block RN-R10-A42 gh workflow run via -R repo after run · esmn 쌍둥이
+gh workflow run -R imjohnkoo/esmn-frontend client-production.yml

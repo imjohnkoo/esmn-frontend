@@ -1,6 +1,6 @@
 # 개발 프로세스 v2 — Tier · 게이트 · QA
 
-> **정본**. m8-frontend 에서 설계·검증한 프로세스 v2 를 nomacom-frontend 로 이식한 것 (2026-09-02).
+> **정본**. m8-frontend 에서 설계·검증한 프로세스 v2 를 esmn-frontend 로 이식한 것 (2026-09-02).
 > 설계 배경·기각안·이식 판단은 `$NOMACOM_WIKI/wiki/frontend/proposals/2026-09-02-dev-process-v2-port-proposal.md`(2026-09-22 위키 이관).
 
 ## 파이프라인

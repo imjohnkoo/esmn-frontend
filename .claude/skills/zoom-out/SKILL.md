@@ -1,6 +1,6 @@
 ---
 name: zoom-out
-description: Explain an unfamiliar code section by mapping its callers and dependencies and locating it within the whole system. Use when you land in code you don't understand and need the surrounding structure — who uses this, what it depends on, where it sits across the nomacom-frontend monorepo (admin/client apps + design-system packages) — before editing or debugging.
+description: Explain an unfamiliar code section by mapping its callers and dependencies and locating it within the whole system. Use when you land in code you don't understand and need the surrounding structure — who uses this, what it depends on, where it sits across the esmn-frontend monorepo (admin/client apps + design-system packages) — before editing or debugging.
 ---
 
 # zoom-out
@@ -44,12 +44,12 @@ description: Explain an unfamiliar code section by mapping its callers and depen
 
 복잡하면 caller → this → deps 를 ASCII 또는 Mermaid 로.
 
-## nomacom-frontend 탐색 팁
+## esmn-frontend 탐색 팁
 
 - import 추적: `Grep` 로 `from '@imjohnkoo/design-vue'` / `from '~/...'` / 컴포넌트·컴포저블명
 - 어느 앱인지: 경로 `apps/admin/...` vs `apps/client/...`, 공유면 `packages/design-*/...`
 - server route: `apps/<app>/server/api/...` (Nitro) — middleware 는 `server/middleware/`
-- DB: Drizzle 스키마 + repository. eSIM 메인 DB 는 공유(nomacom-backend 와), admin 전용 DB 는 별도
+- DB: Drizzle 스키마 + repository. eSIM 메인 DB 는 공유(esmn-backend 와), admin 전용 DB 는 별도
 - DS 영향: `packages/design-*/**` 변경은 Turbo `^build` 로 admin+client 자동 리빌드 (`.claude/rules/turbo.md`)
 - rules: 모노리포 `.claude/rules/`, 앱별 `apps/{admin,client,mobile}/.claude/rules/`
 

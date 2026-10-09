@@ -17,7 +17,7 @@ description: Relentless one-question-at-a-time interview that sharpens a fuzzy i
 | 무엇은 정해졌고 **어떻게/어느 방향** 인지 sharpen 필요 (설계·결정)                         | **`grill-me`**                     |
 | schema/Drizzle migration / Nuxt server route / admin↔client cross-app / design-system 변경 | 코드·스키마 탐색 후 **`grill-me`** |
 
-grill-me 는 도메인 무관 sharpening 도구. (nomacom-frontend 엔 brainstorming skill 이 따로 없으므로 설계 대화는 grill-me 가 담당.)
+grill-me 는 도메인 무관 sharpening 도구. (esmn-frontend 엔 brainstorming skill 이 따로 없으므로 설계 대화는 grill-me 가 담당.)
 
 ## Rules of the interview
 

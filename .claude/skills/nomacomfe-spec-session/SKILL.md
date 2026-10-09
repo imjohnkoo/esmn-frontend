@@ -1,6 +1,6 @@
 ---
 name: nomacomfe-spec-session
-description: Staged planning-session orchestrator for nomacom-frontend — tier triage, parallel codebase/prod research, gap-closing interview, 기능정의서(spec) writing to LOCK, plan, and Orca worktree handoff to a coding session. Use when starting to plan or spec a new feature, screen, flow, or external integration ("기획하자", "기획서/기능정의서 쓰자", "spec 작성"), or when deciding whether a task needs a spec at all.
+description: Staged planning-session orchestrator for esmn-frontend — tier triage, parallel codebase/prod research, gap-closing interview, 기능정의서(spec) writing to LOCK, plan, and Orca worktree handoff to a coding session. Use when starting to plan or spec a new feature, screen, flow, or external integration ("기획하자", "기획서/기능정의서 쓰자", "spec 작성"), or when deciding whether a task needs a spec at all.
 ---
 
 # nomacomfe-spec-session

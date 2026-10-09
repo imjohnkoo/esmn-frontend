@@ -30,7 +30,7 @@ DS 변경 PR 에서 `packages/design-*/package.json` 의 `version` 필드를 직
 
 Semantic version 기준: breaking change 는 minor (0.x 단계), 그 외는 patch. (1.0 진입 후에는 semver 정식 적용)
 
-> **현재 버전 (2026-08-18)**: `@imjohnkoo/design-tokens` 0.4.0 / `@imjohnkoo/design-vue` 0.4.0 — nomacom-frontend 에서의 첫 publish 완료 (run 32145853523). 레지스트리에는 구 레포 시절 0.3.0 도 존재.
+> **현재 버전 (2026-08-18)**: `@imjohnkoo/design-tokens` 0.4.0 / `@imjohnkoo/design-vue` 0.4.0 — esmn-frontend 에서의 첫 publish 완료 (run 32145853523). 레지스트리에는 구 레포 시절 0.3.0 도 존재.
 
 ## 외부 consumer 세팅 예시 (미래용)
 
@@ -59,7 +59,7 @@ npmScopes:
 0.4.0 첫 publish 성공 (run 32145853523, 두 패키지 모두 "Package archive published"). 최초 시도 (2026-05-21, run 26197193842) 와 재시도가 실패했던 원인 두 가지를 기록:
 
 1. **패키지가 이미 존재했음** — archived 구 레포 `nomacom-design-system` 이 2026-03-20 에 동일 이름 (`@imjohnkoo/design-tokens`, `@imjohnkoo/design-vue`) 0.3.0 을 publish 했고, 패키지가 그 레포의 권한을 **상속** 중이었음. repo-scoped GITHUB_TOKEN 은 타 레포에 연결된 패키지에 접근 불가 → GET 403 (404 아님), PUT 403 `permission_denied: write_package`.
-2. **해결 (2026-08-18, john 수동 설정)** — 각 패키지 설정에서 "Inherit access from repository" 해제 → 나타나는 "Manage Actions access" 에 `nomacom-frontend` 를 Role=Write 로 추가. 이후 패키지 권한은 레포 상속이 아닌 패키지 설정에서 직접 관리됨.
+2. **해결 (2026-08-18, john 수동 설정)** — 각 패키지 설정에서 "Inherit access from repository" 해제 → 나타나는 "Manage Actions access" 에 `esmn-frontend` 를 Role=Write 로 추가. 이후 패키지 권한은 레포 상속이 아닌 패키지 설정에서 직접 관리됨.
 
 ### 신규 패키지 추가 시 체크리스트
 

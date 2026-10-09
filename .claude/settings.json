@@ -61,8 +61,8 @@
       "Bash(gh issue*)",
       "Bash(gh run*)",
       "Bash(gh api*)",
-      "Bash(git -C /Users/johnkoo/dev/current-projects/nomacom-wiki *)",
-      "Bash(python3 /Users/johnkoo/dev/current-projects/nomacom-wiki/scripts/*)",
+      "Bash(git -C /Users/johnkoo/dev/current-projects/esmn-wiki *)",
+      "Bash(python3 /Users/johnkoo/dev/current-projects/esmn-wiki/scripts/*)",
       "Bash(python3 /Users/johnkoo/dev/current-projects/nomacom-manager/scripts/*)"
     ],
     "ask": [
@@ -84,7 +84,7 @@
       "Bash(aws ssm delete-parameter*)"
     ],
     "additionalDirectories": [
-      "/Users/johnkoo/dev/current-projects/nomacom-wiki",
+      "/Users/johnkoo/dev/current-projects/esmn-wiki",
       "/Users/johnkoo/dev/current-projects/nomacom-manager/docs/weekly"
     ]
   },

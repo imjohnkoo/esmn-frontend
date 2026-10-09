@@ -44,4 +44,4 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ap-northeast-2
           COMMIT_SHA: ${{ github.sha }}
-        run: aws deploy create-deployment --application-name nomacom-client --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name prod --github-location repository=imjohnkoo/nomacom-frontend,commitId="$COMMIT_SHA"
+        run: aws deploy create-deployment --application-name nomacom-client --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name prod --github-location repository=imjohnkoo/esmn-frontend,commitId="$COMMIT_SHA"

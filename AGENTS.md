@@ -1,8 +1,10 @@
-# AGENTS.md — nomacom-frontend (CLAUDE.md 는 심링크)
+# AGENTS.md — esmn-frontend (CLAUDE.md 는 심링크)
 
 ## 개요
 
 Nomacom 프론트엔드 프로젝트들을 통합한 Yarn 4 + Turborepo monorepo. 참조 템플릿은 `m8-frontend` 였다.
+
+2026-10-09 `nomacom-frontend` → `esmn-frontend` 개명(폴더·GitHub — remote `imjohnkoo/esmn-frontend` · 메인 클론 `~/dev/current-projects/esmn-frontend`). 서비스·AWS·Docker·CodeDeploy·스킬 이름과 기존 워크트리 폴더(`~/orca/workspaces/nomacom-frontend/`)는 그대로.
 
 ## 구성 원칙
 
@@ -108,9 +110,9 @@ m8-frontend 에서 미포팅: `notion-workflow.md` (nomacom 개발 워크플로�
 
 앱별 `.claude/rules/` 는 도메인이 충분히 굳기 전까지는 신설하지 않음 — 루트 `.claude/rules/` 단일 보관 (분리 결정 게이트: Phase 3 쿠팡 진입 이후 코드 폭증 또는 admin/client 도메인 명확 분리 시점).
 
-## 지식 지도 — nomacom-wiki (2026-09-22, 결정 nomacom-wiki 0001)
+## 지식 지도 — esmn-wiki (2026-09-22, 결정 nomacom-wiki 0001)
 
-- **이 리포에는 `docs/` 가 없다.** 문서는 전부 `$NOMACOM_WIKI`(fallback `../nomacom-wiki` → `~/dev/current-projects/nomacom-wiki`, private `imjohnkoo/nomacom-wiki`): 내 실행 문서는 `wiki/frontend/{specs,plans,proposals,runbooks,decisions,migrations}/`(이 세션이 직접 쓰고 커밋 — `nomacom-wiki-update` 스킬, 규칙 `.claude/rules/docs-convention.md`), 크로스리포 사실·결정·계약·런북·외부 시스템은 `wiki/{domains,decisions,contracts,runbooks,entities}/`(초안 `wiki/_drafts/<CODE>/` → nomacom-manager 의 wiki 세션이 승격).
+- **이 리포에는 `docs/` 가 없다.** 문서는 전부 `$NOMACOM_WIKI`(fallback `../esmn-wiki` → `~/dev/current-projects/esmn-wiki`, private `imjohnkoo/esmn-wiki`): 내 실행 문서는 `wiki/frontend/{specs,plans,proposals,runbooks,decisions,migrations}/`(이 세션이 직접 쓰고 커밋 — `nomacom-wiki-update` 스킬, 규칙 `.claude/rules/docs-convention.md`), 크로스리포 사실·결정·계약·런북·외부 시스템은 `wiki/{domains,decisions,contracts,runbooks,entities}/`(초안 `wiki/_drafts/<CODE>/` → nomacom-manager 의 wiki 세션이 승격).
 - 작업 전: `$NOMACOM_WIKI/index.md` → `wiki/frontend/README.md`(내 문서 전체 목록) → `wiki/contracts/CHANGELOG.md`(backend↔frontend 계약을 건드리면 한 줄 추가).
 - 인용은 `[repo://<repo>/<path>#Lx-Ly@<sha>](GitHub 퍼머링크)`, 위키 안은 상대경로. PR 설명에 참조 문서를 인용한다.
 - 주간 SoT 는 `$NOMACOM_MANAGER/docs/weekly/frontend-current-week.md`(fallback `~/dev/current-projects/nomacom-manager` — `nomacom-weekly` 스킬로 자기 트랙 행만), 서버 관측·운영 AC 판정은 nomacom-manager 의 monitor 세션(`nomacom-monitor` 스텁이 진입점).
@@ -120,7 +122,7 @@ m8-frontend 에서 미포팅: `notion-workflow.md` (nomacom 개발 워크플로�
 - `.claude/settings.json` — committed 권한 화이트리스트 + hook 등록. **`.claude/` 는 git 추적** (2026-09-02 전환 — `settings.local.json` 만 제외)
   - **PostToolUse (Edit|Write|MultiEdit)**: prettier 자동 포맷 (.vue/.ts/.tsx/.css 등)
   - **PreToolUse (Bash · Monitor)**: **prod push** / `gh api` prod ref 쓰기 / ref force 되감기 / force push / production workflow 실행(dispatch · `gh workflow run` — ci · design-system-publish 외) / `gh run rerun` / prod base PR / `aws deploy create-deployment` / `docker push` / hard reset / `aws ssm put|delete` 차단
-  - ⚠️ 훅 수정 시 **회귀 테스트 필수**: `.claude/hooks/guard-prod-push.test.sh` (2734판정 — 2026-10-05 구멍 · 오탐 수정 · 케이스 파일 guard-prod-push.cases.txt · fail-closed 11 · 꾸민 큰 입력 상한)
+  - ⚠️ 훅 수정 시 **회귀 테스트 필수**: `.claude/hooks/guard-prod-push.test.sh` (2807판정 — 2026-10-05 구멍 · 오탐 수정 · 케이스 파일 guard-prod-push.cases.txt · fail-closed 11 · 꾸민 큰 입력 상한 · 2026-10-09 개명 쌍둥이 38 — 옛 · 새 리포 이름 둘 다)
   - ⚠️ 알려진 오탐: 인터프리터 heredoc(`python3 - <<PY`) 본문은 «실행» 으로 본다 — 짝이 맞는 문자열 안 글자는 통과하지만(python · node 의 백틱 문자열도 글자 — 백틱이 명령인 것은 ruby · perl · php), 짝 없는 따옴표가 든 줄 · 따옴표 밖에 차단 대상 명령 글자를 쓰면 막히고, 큰따옴표 문자열 안의 `$(…)` 는 따옴표 친 구분자(`<<'PY'`)여도 명령 치환 꼴이라 막는다(줄을 셸 기준으로 읽기 때문 — dev 판도 같다). 따옴표 없는 구분자(`<<PY`)면 `$(…)` · 백틱은 밖 셸이 실행하므로 명령이다(dev 판 훅은 더 넓게 막는다). 문서 편집은 Edit/Write 도구로, 긴 패치 스크립트는 파일로 써서 실행.
 - 차단된 명령은 `.claude/hooks/guard-prod-push.sh` 참조. 우회 필요 시 사용자 명시 승인 받기.
 

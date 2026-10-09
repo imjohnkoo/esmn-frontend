@@ -1,9 +1,9 @@
 ---
 name: nomacomfe-finish-branch
-description: Complete nomacom-frontend worktree work — enforce the Tier/QA gate (Step 0), verify Turbo build/typecheck, present merge/PR options, and clean up the worktree after explicit approval. Use when implementation is done and you need to integrate the work.
+description: Complete esmn-frontend worktree work — enforce the Tier/QA gate (Step 0), verify Turbo build/typecheck, present merge/PR options, and clean up the worktree after explicit approval. Use when implementation is done and you need to integrate the work.
 ---
 
-# nomacom-frontend Finish Branch
+# esmn-frontend Finish Branch
 
 Guide completion of worktree development. **Gate → Verify → options → execute → cleanup.**
 
@@ -15,7 +15,7 @@ Guide completion of worktree development. **Gate → Verify → options → exec
 - **Verify before offering options** — no broken code gets merged
 - **Paths-filter awareness** — `packages/design-tokens/**` 또는 `packages/design-vue/**` 변경은 **admin + client 둘 다** 배포 트리거. `packages/design-mobile/**` 은 mobile 전용
 - ⛔ **삭제는 전부 사용자 명시 승인 후** — 브랜치·worktree·Orca 세션 중 **하나도** 승인 없이 지우지 않는다. 머지가 끝나 «정리하면 친절하겠지» 로 보이는 상황이 가장 위험하다 (Step 5)
-- **Worktree 위치는 두 가지** — Orca 관리 `~/orca/workspaces/nomacom-frontend/<name>` (표준) 또는 수동 sibling `~/dev/worktrees/nomacom-frontend/<name>`. **정리 명령이 서로 다르다**
+- **Worktree 위치는 두 가지** — Orca 관리 `~/orca/workspaces/esmn-frontend/<name>` (표준 — 2026-10-09 개명 전 워크트리는 `~/orca/workspaces/nomacom-frontend/<name>` 에 그대로) 또는 수동 sibling `~/dev/worktrees/esmn-frontend/<name>`. **정리 명령이 서로 다르다**
 
 > ⛔ **이 스킬을 안 지나가면 작업은 고립된다.** 2026-08-18~26 사이 워크트리 5개에 **139커밋**이 쌓였고 main 최근 커밋은 5월이었다 (2026-09-02 일괄 통합으로 해소). 워크트리는 작업 장소이지 보관소가 아니다.
 
@@ -107,7 +107,7 @@ Which option?
 #### Option 1: Merge Locally to `dev`
 
 ```bash
-cd ~/dev/current-projects/nomacom-frontend    # 메인 클론으로 이동 (worktree 에서 base 체크아웃 불가)
+cd ~/dev/current-projects/esmn-frontend    # 메인 클론으로 이동 (worktree 에서 base 체크아웃 불가)
 git fetch origin
 git checkout dev && git pull --ff-only || exit 1   # 실패하면(다른 워크트리에 dev · dirty) 게이트 · 머지가 엉뚱한 브랜치에 일어난다
 [ "${MERGE_PREREQ_OK:-}" = yes ] || exit 1   # spec 머지 선행조건(예: client-shell 은 P6 #2)을 확인하고 yes 로 둔 뒤에만
@@ -142,8 +142,8 @@ gh pr create --base dev $DRAFT --title "<type>(<scope>): <title>" --body "$(cat 
 <2-3 bullets>
 
 ## Spec / Plan
-- spec: nomacom-wiki wiki/frontend/specs/<app>/<file>.md
-- plan: nomacom-wiki wiki/frontend/plans/<app>/<file>-plan.md
+- spec: esmn-wiki wiki/frontend/specs/<app>/<file>.md
+- plan: esmn-wiki wiki/frontend/plans/<app>/<file>-plan.md
 - Tier: T?
 
 ## QA 증거

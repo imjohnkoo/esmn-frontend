@@ -89,10 +89,14 @@ run block 'git push origin HEAD:prod'
 run block 'git push origin fa27295:prod'
 # Orca 워크트리 상시 사용 → git -C 는 일상 형태. 전역 옵션이 껴도 잡혀야 한다
 run block 'git -C ~/orca/workspaces/nomacom-frontend/admin-ui-update push origin prod'
+run block 'git -C ~/orca/workspaces/esmn-frontend/admin-ui-update push origin prod'   # 개명 뒤 새 워크트리 폴더(2026-10-09)
 run block 'git --no-pager -c user.name=x push origin HEAD:prod'
 # gh api 로 prod ref 직접 이동 = git push 와 동등
 run block 'gh api -X PATCH repos/imjohnkoo/nomacom-frontend/git/refs/heads/prod -f sha=abc123'
 run block 'gh api --method PATCH repos/imjohnkoo/nomacom-frontend/git/refs/heads/prod -f sha=abc123'
+# 2026-10-09 nomacom-frontend → esmn-frontend 개명 — GitHub 가 옛 이름을 리다이렉트하므로 옛 · 새 이름 둘 다 막혀야 한다
+run block 'gh api -X PATCH repos/imjohnkoo/esmn-frontend/git/refs/heads/prod -f sha=abc123'
+run block 'gh api --method PATCH repos/imjohnkoo/esmn-frontend/git/refs/heads/prod -f sha=abc123'
 # ref 되감기 — 배포를 되돌리고 커밋이 소실된다
 run block 'gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc -F force=true'
 
