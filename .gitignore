@@ -38,6 +38,8 @@ logs
 # (스킬·훅·rules 가 git 에 없으면 워크트리 간 전파도 이력도 없다 — 2026-09-02 전환)
 **/.claude/settings.local.json
 **/.claude/scheduled_tasks.lock
+# 프로젝트 MCP 설정 — 서버 env 에 API 자격 증명이 들어간다(공개 리포 — 커밋 금지, 2026-10-09)
+.mcp.json
 
 # Documentation — 이 리포에는 docs/ 가 없다 (2026-09-22, nomacom-wiki 결정 0001). 문서는 nomacom-wiki wiki/frontend/. 포인터 README 만 추적
 /docs/*
