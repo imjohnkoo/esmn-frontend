@@ -75,7 +75,7 @@ git push origin :refs/heads/prod
 === block B36 upstream remote
 git push upstream HEAD:prod
 === block B37 URL remote
-git push git@github.com:imjohnkoo/esmn-frontend.git HEAD:prod
+git push git@github.com:imjohnkoo/nomacom-frontend.git HEAD:prod
 === block B38 line continuation
 git push origin \
   HEAD:prod
@@ -487,7 +487,7 @@ url=$(gh pr create --base prod --fill)
 === block G14 gh pr edit no number
 gh pr edit --base prod
 === block G15 gh pr create --repo then base
-gh pr create --repo imjohnkoo/esmn-frontend --head dev --base prod --fill
+gh pr create --repo imjohnkoo/nomacom-frontend --head dev --base prod --fill
 === block G16 gh api leading slash path
 gh api --method PATCH /repos/o/r/git/refs/heads/prod -f sha=x
 === block G17 gh api quoted field ref
@@ -713,7 +713,7 @@ gh pr edit 3 -B prod
 === block R4-X42 workflow run quoted name
 gh workflow run 'client-production.yml'
 === block R4-X43 workflow run with --repo first
-gh workflow run --repo imjohnkoo/esmn-frontend client-production.yml
+gh workflow run --repo imjohnkoo/nomacom-frontend client-production.yml
 === block R4-X44 gh api dispatch with -X POST and quoted path
 gh api -X POST "/repos/{owner}/{repo}/actions/workflows/admin-production.yml/dispatches" -f ref=dev
 === block R4-X45 CR 만 있는 줄 뒤 prod push
@@ -803,7 +803,7 @@ git push origin imjohnkoo/x && echo "prod=$(gh api repos/o/r/git/refs/heads/prod
 === allow R4-N36 orca cli terminal send text with push example? (data)
 orca terminal send --text "git status"
 === allow R4-N37 git push with --signed=false? nah -- push to dev via full URL
-git push https://github.com/imjohnkoo/esmn-frontend.git HEAD:dev
+git push https://github.com/imjohnkoo/nomacom-frontend.git HEAD:dev
 === allow R4-N38 cat of hook test file via sed range containing prod
 sed -n '/=== block B01/,/=== block B05/p' .claude/hooks/guard-prod-push.cases.txt
 === allow R4-N39 awk program mentioning git push prod
@@ -1225,7 +1225,7 @@ EOF
 === allow R5-c4-N04 run watch
 gh run watch 123456 --exit-status
 === allow R5-c4-N05 api runs list dev
-gh api 'repos/imjohnkoo/esmn-frontend/actions/runs?branch=dev&per_page=5' --jq '.workflow_runs[] | [.name, .conclusion] | @tsv'
+gh api 'repos/imjohnkoo/nomacom-frontend/actions/runs?branch=dev&per_page=5' --jq '.workflow_runs[] | [.name, .conclusion] | @tsv'
 === allow R5-c4-N06 docker run test container
 docker run --rm -v "$PWD":/w -w /w ubuntu:22.04 bash -c 'bash .claude/hooks/guard-prod-push.test.sh'
 === allow R5-c4-N07 docker compose logs
@@ -1273,7 +1273,7 @@ git push origin imjohnkoo/x -o ci.variable="GLOB=*.ts"
 === allow R5-c4-N26 git push --push-option "+1"
 git push origin imjohnkoo/x --push-option "+1"
 === allow R5-c4-N27 gh api search q base:prod with -X GET
-gh api -X GET search/issues -f q='repo:imjohnkoo/esmn-frontend is:pr base:prod' --jq .total_count
+gh api -X GET search/issues -f q='repo:imjohnkoo/nomacom-frontend is:pr base:prod' --jq .total_count
 === allow R5-c4-N28 gh pr list base prod json
 gh pr list --base prod --state all --json number,title,mergedAt
 === allow R5-c4-N29 yarn turbo
@@ -1648,7 +1648,7 @@ docker build -o type=registry -t imjohnkoo/nomacom-client:prod .
 === allow R6-p2-X06 docker compose run git push feature (not docker push)
 docker compose run --rm tools git push origin imjohnkoo/x
 === allow R6-p2-X08 gh workflow run --repo r ci.yml
-gh workflow run --repo imjohnkoo/esmn-frontend ci.yml
+gh workflow run --repo imjohnkoo/nomacom-frontend ci.yml
 === block R6-p2-X11 heredoc-written script run with sh -e relative
 cat > promote.sh <<'EOF'
 git push origin origin/dev:prod
@@ -1667,7 +1667,7 @@ fish <<'EOF'
 git push origin HEAD:prod
 EOF
 === block R6-p2-X20 git push -- refspec quoted with spaces? no: push with --repo=URL then prod
-git push --repo=https://github.com/imjohnkoo/esmn-frontend.git HEAD:prod
+git push --repo=https://github.com/imjohnkoo/nomacom-frontend.git HEAD:prod
 === block R6-p2-X21 gh api -F 로 prod ref 쓰기(메서드 없이 — 필드가 있으면 POST)
 gh api repos/o/r/git/refs/heads/prod -F sha=abc
 === block R6-p2-X22 git push origin HEAD:prod inside $(()) ? no — inside process substitution
@@ -1689,7 +1689,7 @@ git push origin "${SHA:?}:refs/heads/prod"
 === block R6-p2-X29 PROMOTE via git -C wt with quoted var and && chain
 git -C "$WT" fetch origin && git -C "$WT" push origin "origin/dev:prod"
 === block R6-p2-X30 git push using full remote URL with refs and quoted
-git push "https://github.com/imjohnkoo/esmn-frontend.git" "origin/dev:refs/heads/prod"
+git push "https://github.com/imjohnkoo/nomacom-frontend.git" "origin/dev:refs/heads/prod"
 === allow R6-p3-Y01 push-option with glob bracket value
 git push origin imjohnkoo/x -o 'a[1]'
 === allow R6-p3-Y02 push-option with backslash value
@@ -1789,7 +1789,7 @@ gh run watch 33599247862 --exit-status
 gh pr create --base "prod" --head dev --fill
 === block R6-p4-H06 gh run watch then gh api PATCH quoted path prod
 gh run watch 33599247862 --exit-status
-gh api -X PATCH "repos/imjohnkoo/esmn-frontend/git/refs/heads/prod" -f sha="$(git rev-parse origin/dev)"
+gh api -X PATCH "repos/imjohnkoo/nomacom-frontend/git/refs/heads/prod" -f sha="$(git rev-parse origin/dev)"
 === block R6-p4-H07 ls ~/.ssh then quoted refspec
 ls ~/.ssh
 git push origin "HEAD:refs/heads/prod"
@@ -2039,7 +2039,7 @@ docker-compose -f docker-compose.yml push
 === allow R7-m04d docker compose -f 값 뒤 exec 안의 drizzle-kit push
 docker compose -f docker-compose.yml exec admin npx drizzle-kit push
 === allow R7-m05 curl 로 prod 브랜치 조회(GET · 7회차 minor 5)
-curl -s -H "Authorization: token $(gh auth token)" https://api.github.com/repos/imjohnkoo/esmn-frontend/branches/prod | jq -r .commit.sha
+curl -s -H "Authorization: token $(gh auth token)" https://api.github.com/repos/imjohnkoo/nomacom-frontend/branches/prod | jq -r .commit.sha
 === block R7-m05b curl --request PATCH prod ref
 curl --request PATCH https://api.github.com/repos/o/r/git/refs/heads/prod --data '{"sha":"abc"}'
 === block R7-m05c curl -d 로 merges
@@ -2139,9 +2139,9 @@ git push origin HEAD:prod
 EOF
 )" Enter
 === block R8-P1-15 curl dispatch production workflow
-curl -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/esmn-frontend/actions/workflows/client-production.yml/dispatches -d '{"ref":"dev"}'
+curl -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/nomacom-frontend/actions/workflows/client-production.yml/dispatches -d '{"ref":"dev"}'
 === block R8-P1-16 gh api dispatch by workflow id
-gh api repos/imjohnkoo/esmn-frontend/actions/workflows/123456789/dispatches -f ref=dev
+gh api repos/imjohnkoo/nomacom-frontend/actions/workflows/123456789/dispatches -f ref=dev
 === block R8-P1-17 curl rerun run
 curl -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/o/r/actions/runs/123/rerun
 === block R8-P1-19 $SHELL -c reset --hard (dev blocks)
@@ -2149,18 +2149,18 @@ $SHELL -c 'git reset --hard origin/dev'
 === block R8-P1-20 parallel push (dev blocks)
 parallel 'git push origin {}' ::: prod
 === block R8-P1-23 aws deploy create-deployment (direct prod deploy)
-aws deploy create-deployment --application-name nomacom-client --deployment-group-name prod --github-location repository=imjohnkoo/esmn-frontend,commitId=abc
+aws deploy create-deployment --application-name nomacom-client --deployment-group-name prod --github-location repository=imjohnkoo/nomacom-frontend,commitId=abc
 === allow R8-P1-24 node quoted heredoc template literal log mentioning docker push
 node - <<'JS'
 const img = "imjohnkoo/nomacom-client:prod";
 console.log(`next: docker push ${img} is done by CI`);
 JS
 === allow R8-P1-25 gh api comment via -F body=@- heredoc mentioning database: prod
-gh api repos/imjohnkoo/esmn-frontend/issues/12/comments -F body=@- <<'EOF'
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments -F body=@- <<'EOF'
 배포 확인 — database: prod 연결 정상
 EOF
 === allow R8-P1-26 gh api comment via -F body=@- heredoc mentioning refs/heads/prod
-gh api repos/imjohnkoo/esmn-frontend/issues/12/comments -F body=@- <<'EOF'
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments -F body=@- <<'EOF'
 dev → refs/heads/prod fast-forward 는 사용자 승인 뒤
 EOF
 === allow R8-P1-27 git add . then commit heredoc
@@ -2341,7 +2341,7 @@ PY
 === block R8-P6-03 ssh with 120-char options then quoted command (wrapper window between 32 and 256)
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/nomacom-prod.pem ec2-user@ec2-3-34-1-2.compute.amazonaws.com 'git reset --hard origin/prod'
 === allow R8-D01 wiki commit flow with heredoc msg mentioning prod push
-W="${NOMACOM_WIKI:-$HOME/dev/current-projects/esmn-wiki}"
+W="${NOMACOM_WIKI:-$HOME/dev/current-projects/nomacom-wiki}"
 git -C "$W" pull --rebase -q
 git -C "$W" add wiki/frontend/plans/2026-10-05-hook.md
 git -C "$W" commit -q -F - <<'EOF'
@@ -2393,10 +2393,10 @@ cat > /tmp/qa/note.md <<EOF
 - \`git push origin HEAD:prod\` 는 사용자 승인 뒤
 EOF
 === allow R8-D09 gh api PR review comment reply inline -f body with prod mention
-gh api repos/imjohnkoo/esmn-frontend/pulls/12/comments/123/replies -f body="dev → prod 승격은 사용자 승인 뒤 — git push origin dev:prod 는 훅이 막는다"
+gh api repos/imjohnkoo/nomacom-frontend/pulls/12/comments/123/replies -f body="dev → prod 승격은 사용자 승인 뒤 — git push origin dev:prod 는 훅이 막는다"
 === allow R8-D10 gh api comment via --input JSON file built by jq with body mentioning base: prod
 jq -n --arg b "PR base: prod 금지 — base 는 dev" '{body: $b}' > /tmp/qa/c.json
-gh api repos/imjohnkoo/esmn-frontend/issues/12/comments --input /tmp/qa/c.json
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments --input /tmp/qa/c.json
 === allow R8-D11 node heredoc writing html with template literal and $(
 node - <<'JS'
 const fs = require('fs');
@@ -2489,13 +2489,13 @@ cat <<'EOF' | while read -r c; do eval "$c"; done
 git push origin HEAD:prod
 EOF
 === block R9-P1-03 gh pr -R before create
-gh pr -R imjohnkoo/esmn-frontend create --base prod --fill
+gh pr -R imjohnkoo/nomacom-frontend create --base prod --fill
 === block R9-P1-04 gh workflow -R before run
-gh workflow -R imjohnkoo/esmn-frontend run client-production.yml
+gh workflow -R imjohnkoo/nomacom-frontend run client-production.yml
 === block R9-P1-05 gh run -R before rerun
-gh run -R imjohnkoo/esmn-frontend rerun 123456
+gh run -R imjohnkoo/nomacom-frontend rerun 123456
 === block R9-P1-06 curl create ref prod with heredoc body
-curl -sS -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/esmn-frontend/git/refs -d @- <<'EOF'
+curl -sS -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/nomacom-frontend/git/refs -d @- <<'EOF'
 {"ref": "refs/heads/prod", "sha": "abc123"}
 EOF
 === block R9-P1-07 written script run via bash --
@@ -2547,7 +2547,7 @@ git push origin prod 는 막힌다
 EOF
 )"
 === allow R9-P1-16 gh api comment with body via $(cat heredoc) mentioning commands
-gh api repos/imjohnkoo/esmn-frontend/issues/12/comments -f body="$(cat <<'EOF'
+gh api repos/imjohnkoo/nomacom-frontend/issues/12/comments -f body="$(cat <<'EOF'
 QA 9회차: `git push origin prod` · `docker push` · `git reset --hard` 는 막힌다.
 EOF
 )"
@@ -2732,7 +2732,7 @@ PY
 === allow R9-P4-11 ssh read logs with quoted remote command mentioning prod image
 ssh ec2-client "docker ps --filter ancestor=imjohnkoo/nomacom-client:prod --format '{{.ID}} {{.Status}}'"
 === allow R9-P4-12 gh api read with jq containing pipes and prod
-gh api repos/imjohnkoo/esmn-frontend/commits/prod --jq '.sha + " " + (.commit.message | split("\n")[0])'
+gh api repos/imjohnkoo/nomacom-frontend/commits/prod --jq '.sha + " " + (.commit.message | split("\n")[0])'
 === allow R9-P4-13 grep for push lines across cases with -E alternation
 grep -n -E 'git push|docker push|reset --hard' .claude/hooks/guard-prod-push.cases.txt | head -5
 === allow R9-P4-14 subshell cd then cat heredoc to file (data)
@@ -3025,7 +3025,7 @@ OUT=$(git push origin HEAD:prod 2>&1)
 === block R10-A29 git push via npx/yarn exec? no - git push inside make-like: sh -c with double quotes nested var
 sh -c "cd /tmp && git push origin HEAD:prod"
 === block R10-A30 git push with repo URL and prod
-git push https://github.com/imjohnkoo/esmn-frontend.git HEAD:prod
+git push https://github.com/imjohnkoo/nomacom-frontend.git HEAD:prod
 === block R10-A31 git push origin dev:prod
 git push origin dev:prod
 === block R10-A32 git push origin HEAD:prod after --
@@ -3050,7 +3050,7 @@ gh workflow run -f x=y client-production.yml
 === block R10-A41 gh workflow run --ref prod name later
 gh workflow run --ref dev admin-production.yml
 === block R10-A42 gh workflow run via -R repo after run
-gh workflow run -R imjohnkoo/esmn-frontend client-production.yml
+gh workflow run -R imjohnkoo/nomacom-frontend client-production.yml
 === block R10-A43 gh run rerun --failed
 gh run rerun 12345 --failed
 === block R10-A45 gh pr create base prod with heredoc body
@@ -4818,3 +4818,122 @@ git commit -m "$(cat <<'EOF'
 fix: git push origin prod 예시
 EOF
 )"
+=== block RN-B37 URL remote · esmn 쌍둥이
+git push git@github.com:imjohnkoo/esmn-frontend.git HEAD:prod
+=== block RN-B41 git -C then -c then push · esmn 쌍둥이
+git -C ~/orca/workspaces/esmn-frontend/x -c push.default=current push origin HEAD:refs/heads/prod
+=== allow RN-A33 git push dev with -C orca path · esmn 쌍둥이
+git -C /Users/someone/orca/workspaces/esmn-frontend/issuer-legal-links push -u origin imjohnkoo/issuer-legal-links
+=== block RN-K39 git push in && chain after cd with orca path · esmn 쌍둥이
+cd /Users/someone/orca/workspaces/esmn-frontend/issuer-legal-links && git push origin HEAD:prod 2>&1 | tail -5
+=== allow RN-F15 long multi-line script typical · esmn 쌍둥이
+cd /Users/someone/orca/workspaces/esmn-frontend/issuer-legal-links
+git status -sb
+git add -A
+git commit -m "$(cat <<'EOF'
+fix(hook): x
+
+- git push origin HEAD:prod
+EOF
+)"
+git push -u origin imjohnkoo/issuer-legal-links 2>&1 | tail -5
+gh pr create --base dev --title "fix(hook): x" --body "$(cat <<'EOF'
+## 요약
+- gh pr create --base prod 차단
+- gh workflow run client-production.yml 차단
+EOF
+)"
+=== block RN-G15 gh pr create --repo then base · esmn 쌍둥이
+gh pr create --repo imjohnkoo/esmn-frontend --head dev --base prod --fill
+=== block RN-R4-X43 workflow run with --repo first · esmn 쌍둥이
+gh workflow run --repo imjohnkoo/esmn-frontend client-production.yml
+=== allow RN-R4-N37 git push with --signed=false? nah -- push to dev via full URL · esmn 쌍둥이
+git push https://github.com/imjohnkoo/esmn-frontend.git HEAD:dev
+=== allow RN-R4-S30 commit via -C worktree path containing node · esmn 쌍둥이
+git -C ~/orca/workspaces/esmn-frontend/node-22-upgrade commit -F - <<'EOF'
+chore: node 22
+
+- git push origin HEAD:prod 는 사용자 승인 뒤
+EOF
+=== allow RN-R5-c4-N05 api runs list dev · esmn 쌍둥이
+gh api 'repos/imjohnkoo/esmn-frontend/actions/runs?branch=dev&per_page=5' --jq '.workflow_runs[] | [.name, .conclusion] | @tsv'
+=== allow RN-R5-c4-N27 gh api search q base:prod with -X GET · esmn 쌍둥이
+gh api -X GET search/issues -f q='repo:imjohnkoo/esmn-frontend is:pr base:prod' --jq .total_count
+=== allow RN-R5-c4-N30 typical multi-step script w/ comments and quotes · esmn 쌍둥이
+cd /Users/someone/orca/workspaces/esmn-frontend/x
+# 1) 상태
+git status -sb
+# 2) 빌드 (it's slow)
+yarn turbo run build --filter=nomacom-client 2>&1 | tail -20
+# 3) 결과
+echo "done: $(date '+%H:%M')"
+=== allow RN-R6-p2-X08 gh workflow run --repo r ci.yml · esmn 쌍둥이
+gh workflow run --repo imjohnkoo/esmn-frontend ci.yml
+=== block RN-R6-p2-X20 git push -- refspec quoted with spaces? no: push with --repo=URL then prod · esmn 쌍둥이
+git push --repo=https://github.com/imjohnkoo/esmn-frontend.git HEAD:prod
+=== block RN-R6-p2-X30 git push using full remote URL with refs and quoted · esmn 쌍둥이
+git push "https://github.com/imjohnkoo/esmn-frontend.git" "origin/dev:refs/heads/prod"
+=== block RN-R6-p4-H06 gh run watch then gh api PATCH quoted path prod · esmn 쌍둥이
+gh run watch 33599247862 --exit-status
+gh api -X PATCH "repos/imjohnkoo/esmn-frontend/git/refs/heads/prod" -f sha="$(git rev-parse origin/dev)"
+=== allow RN-R7-m05 curl 로 prod 브랜치 조회(GET · 7회차 minor 5) · esmn 쌍둥이
+curl -s -H "Authorization: token $(gh auth token)" https://api.github.com/repos/imjohnkoo/esmn-frontend/branches/prod | jq -r .commit.sha
+=== block RN-R8-P1-15 curl dispatch production workflow · esmn 쌍둥이
+curl -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/esmn-frontend/actions/workflows/client-production.yml/dispatches -d '{"ref":"dev"}'
+=== block RN-R8-P1-16 gh api dispatch by workflow id · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/actions/workflows/123456789/dispatches -f ref=dev
+=== block RN-R8-P1-23 aws deploy create-deployment (direct prod deploy) · esmn 쌍둥이
+aws deploy create-deployment --application-name nomacom-client --deployment-group-name prod --github-location repository=imjohnkoo/esmn-frontend,commitId=abc
+=== allow RN-R8-P1-25 gh api comment via -F body=@- heredoc mentioning database: prod · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/issues/12/comments -F body=@- <<'EOF'
+배포 확인 — database: prod 연결 정상
+EOF
+=== allow RN-R8-P1-26 gh api comment via -F body=@- heredoc mentioning refs/heads/prod · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/issues/12/comments -F body=@- <<'EOF'
+dev → refs/heads/prod fast-forward 는 사용자 승인 뒤
+EOF
+=== allow RN-R8-D01 wiki commit flow with heredoc msg mentioning prod push · esmn 쌍둥이
+W="${NOMACOM_WIKI:-$HOME/dev/current-projects/esmn-wiki}"
+git -C "$W" pull --rebase -q
+git -C "$W" add wiki/frontend/plans/2026-10-05-hook.md
+git -C "$W" commit -q -F - <<'EOF'
+docs(frontend): hook plan — git push origin HEAD:prod · gh workflow run client-production.yml 차단 정리
+
+it's the 8th QA round; don't merge before ack.
+EOF
+git -C "$W" push -q
+=== allow RN-R8-D09 gh api PR review comment reply inline -f body with prod mention · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/pulls/12/comments/123/replies -f body="dev → prod 승격은 사용자 승인 뒤 — git push origin dev:prod 는 훅이 막는다"
+=== allow RN-R8-D10 gh api comment via --input JSON file built by jq with body mentioning base: prod · esmn 쌍둥이
+jq -n --arg b "PR base: prod 금지 — base 는 dev" '{body: $b}' > /tmp/qa/c.json
+gh api repos/imjohnkoo/esmn-frontend/issues/12/comments --input /tmp/qa/c.json
+=== block RN-R9-P1-03 gh pr -R before create · esmn 쌍둥이
+gh pr -R imjohnkoo/esmn-frontend create --base prod --fill
+=== block RN-R9-P1-04 gh workflow -R before run · esmn 쌍둥이
+gh workflow -R imjohnkoo/esmn-frontend run client-production.yml
+=== block RN-R9-P1-05 gh run -R before rerun · esmn 쌍둥이
+gh run -R imjohnkoo/esmn-frontend rerun 123456
+=== block RN-R9-P1-06 curl create ref prod with heredoc body · esmn 쌍둥이
+curl -sS -X POST -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/imjohnkoo/esmn-frontend/git/refs -d @- <<'EOF'
+{"ref": "refs/heads/prod", "sha": "abc123"}
+EOF
+=== allow RN-R9-P1-16 gh api comment with body via $(cat heredoc) mentioning commands · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/issues/12/comments -f body="$(cat <<'EOF'
+QA 9회차: `git push origin prod` · `docker push` · `git reset --hard` 는 막힌다.
+EOF
+)"
+=== block RN-R9-P3-01 subshell (cd && bash) <<EOF · esmn 쌍둥이
+(cd /Users/johnkoo/orca/workspaces/esmn-frontend/client-shell && bash) <<'EOF'
+git push origin HEAD:prod
+EOF
+=== allow RN-R9-P4-12 gh api read with jq containing pipes and prod · esmn 쌍둥이
+gh api repos/imjohnkoo/esmn-frontend/commits/prod --jq '.sha + " " + (.commit.message | split("\n")[0])'
+=== block RN-R10-A30 git push with repo URL and prod · esmn 쌍둥이
+git push https://github.com/imjohnkoo/esmn-frontend.git HEAD:prod
+=== block RN-R10-A34 heredoc commit then push prod with -C path · esmn 쌍둥이
+git -C /Users/johnkoo/orca/workspaces/esmn-frontend/x commit -F - <<'EOF'
+msg
+EOF
+git -C /Users/johnkoo/orca/workspaces/esmn-frontend/x push origin HEAD:prod
+=== block RN-R10-A42 gh workflow run via -R repo after run · esmn 쌍둥이
+gh workflow run -R imjohnkoo/esmn-frontend client-production.yml

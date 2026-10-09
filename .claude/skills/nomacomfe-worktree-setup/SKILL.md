@@ -14,7 +14,7 @@ Create an isolated worktree for parallel-session work on esmn-frontend.
 | Setting          | Value                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------- |
 | 표준 위치        | 새 워크트리는 **`~/orca/workspaces/esmn-frontend/<name>/`** · 2026-10-09 개명 전 워크트리는 `~/orca/workspaces/nomacom-frontend/<name>/` 에 그대로 (Orca 관리 — 실사용 규약) |
-| 대체 위치        | 새 워크트리는 `~/dev/worktrees/esmn-frontend/<name>/` · 개명 전 경로는 `~/dev/worktrees/nomacom-frontend/<name>/` (Orca 밖에서 수동 생성할 때만) |
+| 대체 위치        | `~/dev/worktrees/esmn-frontend/<name>/` (Orca 밖에서 수동 생성할 때만)                      |
 | Main clone       | `~/dev/current-projects/esmn-frontend/` — 통합/기획/리뷰. 동시 세션이면 worktree 로 격리 |
 | Base branch      | **`dev`** (2026-10-04 `main` 에서 이름 변경 — `main` 은 없다. `prod` 는 배포 트리거이지 개발 base 가 아니다)  |
 | Branch naming    | `imjohnkoo/<topic>` 또는 `<type>/<topic>` (`feat/`·`fix/`·`refactor/`·`chore/`)             |

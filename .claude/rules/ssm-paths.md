@@ -2,7 +2,7 @@
 
 > **상태 (2026-05-19, A-2c 완료 시점)**: 네임스페이스 = **`/nomacom/*`** (확정). 본 문서는 **확정값** — `deploy/scripts/after_deploy.sh` 가 직접 참조.
 > **AWS 계정**: `059265294529` (nomacom 별도) · **Region**: `ap-northeast-2` · **CLI profile**: `nomacom` (IAM user `nomacom-infra`).
-> **A-1 audit 정정**: 처음엔 "기존 nomacom SSM 부재" 로 판단했으나, A-2c 시점 list 결과 **2026-05-18 23 시경 nomacom-backend (NestJS esim-manager) 용 13개 키가 이미 등록됨** 을 발견. 본 frontend monorepo 와 같은 `/nomacom/*` 네임스페이스 공유. 충돌은 없지만 (키 이름 차이) 통합 정리 가능 — 아래 "공존 키" 표 참조.
+> **A-1 audit 정정**: 처음엔 "기존 nomacom SSM 부재" 로 판단했으나, A-2c 시점 list 결과 **2026-05-18 23 시경 esmn-backend (NestJS esim-manager) 용 13개 키가 이미 등록됨** 을 발견. 본 frontend monorepo 와 같은 `/nomacom/*` 네임스페이스 공유. 충돌은 없지만 (키 이름 차이) 통합 정리 가능 — 아래 "공존 키" 표 참조.
 
 프로덕션 환경변수는 **AWS SSM Parameter Store** 에서 관리합니다. Docker 이미지에 시크릿을 ARG/ENV 로 넣지 않습니다 (이미지 레이어 노출 위험). `deploy/scripts/after_deploy.sh` 가 런타임에 EC2 IAM role 권한으로 SSM 에서 가져와 `--env-file` 로 주입.
 
@@ -127,8 +127,8 @@ mobile 은 Expo 가 `EXPO_PUBLIC_*` prefix 환경변수를 빌드 시 인라인.
 
 ## audit 체크리스트 (A-1 결과)
 
-- [x] 기존 nomacom-admin / nomacom-client-nuxt3 별도 repo 의 deploy 스크립트에서 SSM 경로 추출 → **별 SSM 경로 부재 확인** (`nomacom-esim-manager-v2` 가 Dockerfile ARG/ENV 패턴이었음). 단 nomacom-backend (NestJS esim-manager) 는 별개 — A-2c 시점 SSM list 에서 발견됨 (아래 참조)
-- [x] AWS 콘솔 / CLI 로 실제 등록된 `/nomacom/*` 또는 다른 prefix 파라미터 목록 확인 → ⚠️ **2026-05-18 23 시경 nomacom-backend 용 13키 사전 등록 발견** (A-1 audit 시 m8-infra-readonly profile 로 점검해서 못 봤었음). frontend 용 6키 추가 등록 후 총 19키. 공존 표는 본 문서 상단 참조
+- [x] 기존 nomacom-admin / nomacom-client-nuxt3 별도 repo 의 deploy 스크립트에서 SSM 경로 추출 → **별 SSM 경로 부재 확인** (`nomacom-esim-manager-v2` 가 Dockerfile ARG/ENV 패턴이었음). 단 esmn-backend (NestJS esim-manager) 는 별개 — A-2c 시점 SSM list 에서 발견됨 (아래 참조)
+- [x] AWS 콘솔 / CLI 로 실제 등록된 `/nomacom/*` 또는 다른 prefix 파라미터 목록 확인 → ⚠️ **2026-05-18 23 시경 esmn-backend 용 13키 사전 등록 발견** (A-1 audit 시 m8-infra-readonly profile 로 점검해서 못 봤었음). frontend 용 6키 추가 등록 후 총 19키. 공존 표는 본 문서 상단 참조
 - [ ] Maya / 네이버 / 카카오 알림톡 벤더 키 보유 여부 확인 → A-3 직전 SSM put 시점에 실값 확보 (Maya 는 운영 중인 v2 manager 에서 회수 가능)
 - [ ] EC2 IAM role 이 SSM `GetParameters` + `Decrypt` 권한 보유 확인 → **A-3 직전 신규 EC2 launch 시 함께 셋업** (audit 메모 Q8 결정: 신규 EC2)
 - [x] 본 문서 placeholder 값을 실제 경로로 교체 → A-2c 시점에 확정 스키마로 갱신 완료
@@ -138,4 +138,4 @@ mobile 은 Expo 가 `EXPO_PUBLIC_*` prefix 환경변수를 빌드 시 인라인.
 ## 변경 이력
 
 - 2026-05-19 (A-2c 완료): STUB → 확정. `deploy/scripts/after_deploy.sh` 가 본 경로 직접 참조. audit 체크리스트 진행상황 갱신.
-- 2026-05-19 (A-2c 실 SSM 등록): frontend 용 6키 (`/nomacom/client/DATABASE_URL`, `/nomacom/admin/ESIM_DATABASE_URL`, `/nomacom/shared/maya/MAYA_API_{ENDPOINT,CLIENT_ID,CLIENT_SECRET}`, `/nomacom/shared/docker/DOCKER_ID`) 등록 완료. **A-1 audit 정정**: nomacom-backend 용 SSM 키가 이미 존재한다는 사실 발견 — 13키 (DB_*/MAYA_*/NAVER_*/REDIS_*/SOLAPI_*/DOCKER_PW), 키 이름 차이로 충돌 없음. 공존 표 추가. 보류: `/nomacom/admin/DATABASE_URL` (운영자 DB 미생성), `/nomacom/admin/APP_URL` (EC2 launch 시).
+- 2026-05-19 (A-2c 실 SSM 등록): frontend 용 6키 (`/nomacom/client/DATABASE_URL`, `/nomacom/admin/ESIM_DATABASE_URL`, `/nomacom/shared/maya/MAYA_API_{ENDPOINT,CLIENT_ID,CLIENT_SECRET}`, `/nomacom/shared/docker/DOCKER_ID`) 등록 완료. **A-1 audit 정정**: esmn-backend 용 SSM 키가 이미 존재한다는 사실 발견 — 13키 (DB_*/MAYA_*/NAVER_*/REDIS_*/SOLAPI_*/DOCKER_PW), 키 이름 차이로 충돌 없음. 공존 표 추가. 보류: `/nomacom/admin/DATABASE_URL` (운영자 DB 미생성), `/nomacom/admin/APP_URL` (EC2 launch 시).

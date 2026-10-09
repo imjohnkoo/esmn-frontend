@@ -1,6 +1,6 @@
 ---
 name: nomacomfe-write-plan
-description: Write the coding plan (nomacom-wiki wiki/frontend/plans/) for esmn-frontend work — T1 bugfix/refactor lightweight format (repro → expected → root cause → regression evidence pledge) or T2+ standard format (file plan, AC↔test mapping, regression scope, manual QA charter, 200–400 LOC task breakdown). Use before implementing any non-trivial change: bugfix planning, post-LOCK feature plans, refactor plans ("plan 작성", "코딩계획서").
+description: Write the coding plan (esmn-wiki wiki/frontend/plans/) for esmn-frontend work — T1 bugfix/refactor lightweight format (repro → expected → root cause → regression evidence pledge) or T2+ standard format (file plan, AC↔test mapping, regression scope, manual QA charter, 200–400 LOC task breakdown). Use before implementing any non-trivial change: bugfix planning, post-LOCK feature plans, refactor plans ("plan 작성", "코딩계획서").
 ---
 
 # nomacomfe-write-plan
