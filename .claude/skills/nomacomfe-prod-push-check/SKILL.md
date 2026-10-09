@@ -1,9 +1,9 @@
 ---
 name: nomacomfe-prod-push-check
-description: Pre-flight checklist before pushing to nomacom-frontend prod or merging to the prod branch. Verifies clean working tree, paths-filter deploy impact, build for affected apps, manual UI verification, migration safety, DS version bump, and dev->prod fast-forward. Use before any push that triggers admin/client prod deploy.
+description: Pre-flight checklist before pushing to esmn-frontend prod or merging to the prod branch. Verifies clean working tree, paths-filter deploy impact, build for affected apps, manual UI verification, migration safety, DS version bump, and dev->prod fast-forward. Use before any push that triggers admin/client prod deploy.
 ---
 
-# nomacom-frontend Prod Push Check
+# esmn-frontend Prod Push Check
 
 Prevent broken/unsafe prod deployments by running a structured pre-flight check.
 
@@ -251,7 +251,7 @@ SH
 
 ### Phase 5 — 마이그레이션/DB 변경 안전성
 
-nomacom-frontend 도 Drizzle 사용 (`apps/admin/server/`, `apps/client/server/`):
+esmn-frontend 도 Drizzle 사용 (`apps/admin/server/`, `apps/client/server/`):
 
 ```bash
 # 마이그레이션 파일
@@ -323,7 +323,7 @@ gh run list --branch prod --limit 5 --workflow "client-production.yml"
 ## Final Report Template
 
 ```
-nomacom-frontend prod push readiness check
+esmn-frontend prod push readiness check
 ==========================================
 
 Working tree:

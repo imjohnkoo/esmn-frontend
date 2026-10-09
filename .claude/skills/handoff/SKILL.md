@@ -33,7 +33,7 @@ argument-hint: '다음 세션의 focus (선택)'
 ## What's NOT in this doc (reference these instead)
 
 - Plan: `$NOMACOM_WIKI/wiki/frontend/plans/<file>`
-- PR: https://github.com/imjohnkoo/nomacom-frontend/pull/<n>
+- PR: https://github.com/imjohnkoo/esmn-frontend/pull/<n>
 - Memory: `[[memory_slug]]`
 - Diff: `git log <branch> -5 --oneline` or `git diff <base>...HEAD`
 - Code: `apps/{admin,client,mobile}/<path>:<line>`

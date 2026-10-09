@@ -57,11 +57,11 @@ paths:
 | `nomacom-admin` | `prod` | `imjohnkoo/nomacom-admin:prod` (DockerHub) | admin EC2 (app-name.conf: `nomacom-admin`) |
 | `nomacom-client` | `prod` | `imjohnkoo/nomacom-client:prod` (DockerHub) | client EC2 (app-name.conf: `nomacom-client`) |
 
-각 application은 **같은 GitHub repo** (`imjohnkoo/nomacom-frontend`) 를 가리키지만, 서로 다른 EC2로 배포됩니다.
+각 application은 **같은 GitHub repo** (`imjohnkoo/esmn-frontend`) 를 가리키지만, 서로 다른 EC2로 배포됩니다.
 
 **확정값** (`.github/workflows/*-production.yml` · `deploy/scripts/after_deploy.sh` 실측):
 - registry = **DockerHub** (`imjohnkoo/nomacom-{admin,client}:prod`). 크레덴셜은 GHA secret `PROD_DOCKER_ID/PW` + 런타임은 SSM `/nomacom/shared/docker/`
-- repo = `imjohnkoo/nomacom-frontend` · CodeDeploy `--deployment-group-name prod` · config `CodeDeployDefault.OneAtATime`
+- repo = `imjohnkoo/esmn-frontend`(2026-10-09 `nomacom-frontend` 에서 개명 — EC2 경로 `/app/nomacom-frontend` · 앱명 · 이미지 이름은 그대로) · CodeDeploy `--deployment-group-name prod` · config `CodeDeployDefault.OneAtATime`
 - 구 레포(`nomacom-admin`, `nomacom-client-nuxt3`, `nomacom-design-system`) 는 2026-05-21 Archived
 
 ## 도메인 — Route53 · CloudFront (2026-10-04 실측 · esimmany.com 공개)

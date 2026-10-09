@@ -91,8 +91,8 @@ run block 'git push origin fa27295:prod'
 run block 'git -C ~/orca/workspaces/nomacom-frontend/admin-ui-update push origin prod'
 run block 'git --no-pager -c user.name=x push origin HEAD:prod'
 # gh api 로 prod ref 직접 이동 = git push 와 동등
-run block 'gh api -X PATCH repos/imjohnkoo/nomacom-frontend/git/refs/heads/prod -f sha=abc123'
-run block 'gh api --method PATCH repos/imjohnkoo/nomacom-frontend/git/refs/heads/prod -f sha=abc123'
+run block 'gh api -X PATCH repos/imjohnkoo/esmn-frontend/git/refs/heads/prod -f sha=abc123'
+run block 'gh api --method PATCH repos/imjohnkoo/esmn-frontend/git/refs/heads/prod -f sha=abc123'
 # ref 되감기 — 배포를 되돌리고 커밋이 소실된다
 run block 'gh api -X PATCH repos/o/r/git/refs/heads/dev -f sha=abc -F force=true'
 

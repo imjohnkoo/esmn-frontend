@@ -19,7 +19,7 @@
 | `/nomacom/client/` | **client 전용** | `APP_URL`, `AUTH_TOKEN_MAX_AGE`, `NUXT_PUBLIC_*` mapping 대상 (A-4 에서 결정) · `NUXT_PUBLIC_PORTONE_STORE_ID` · `NUXT_PUBLIC_PORTONE_TEST_CHANNEL_KEY`(String — 공개값, `/checkout-preview` 전용 · W1-2 2026-09-23 · **미등록** — P9-7 에서 John 이 등록. 등록 전에 봉투 서버로 로컬 E2E-6 통과 + PortOne 콘솔에서 채널 테스트 모드 확인) | `after_deploy.sh` 는 SSM 키 이름 끝 토막을 그대로 env 이름으로 쓴다 → `NUXT_PUBLIC_` 로 시작하는 키는 별도 alias 없이 Nuxt runtimeConfig 를 런타임에 덮는다. ⚠️ `TEST_CHANNEL_KEY` 에는 테스트 채널키만(실채널키는 Phase 2 에서 다른 이름) |
 | `/nomacom/mobile/` | **mobile 전용** (참고) | Expo EAS Secrets 채널 별도 — SSM 미사용 가능 | mobile 은 CodeDeploy 경로가 아님 |
 
-## 공존 키 — nomacom-backend (NestJS) vs nomacom-frontend (Nuxt admin/client)
+## 공존 키 — esmn-backend (NestJS) vs esmn-frontend (Nuxt admin/client)
 
 backend / frontend 가 같은 `/nomacom/*` 네임스페이스를 공유. **키 이름 차이로 충돌 없음**, 단 같은 외부 의존성 (DB, Maya) 의 값이 두 형식으로 중복 등록되어 있으므로 회전 시 양쪽 동시 갱신 필요.
 

@@ -11,7 +11,7 @@ description: How this repo's session writes documentation — this repo has no d
 
 ## 0. 경로 · 읽기
 
-- `NOMACOM_WIKI` fallback `../nomacom-wiki` → `~/dev/current-projects/nomacom-wiki`. `NOMACOM_MANAGER` fallback `~/dev/current-projects/nomacom-manager`.
+- `NOMACOM_WIKI` fallback `../esmn-wiki` → `~/dev/current-projects/esmn-wiki`. `NOMACOM_MANAGER` fallback `~/dev/current-projects/nomacom-manager`.
 - alias = 이 워크트리의 `git remote get-url origin`: `nomacom-backend` → `backend`, `nomacom-frontend` → `frontend`. 자기 트리 = `$NOMACOM_WIKI/wiki/<alias>/`.
 - 쓰기 전에 `$NOMACOM_WIKI/index.md` → `wiki/<alias>/README.md`(생성물 — 내 리포 문서 전체 목록) → 관련 페이지 → `wiki/contracts/CHANGELOG.md`. 이미 있는 문서를 새로 만들지 않는다.
 

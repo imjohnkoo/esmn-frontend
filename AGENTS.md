@@ -1,8 +1,10 @@
-# AGENTS.md — nomacom-frontend (CLAUDE.md 는 심링크)
+# AGENTS.md — esmn-frontend (CLAUDE.md 는 심링크)
 
 ## 개요
 
 Nomacom 프론트엔드 프로젝트들을 통합한 Yarn 4 + Turborepo monorepo. 참조 템플릿은 `m8-frontend` 였다.
+
+2026-10-09 `nomacom-frontend` → `esmn-frontend` 개명(폴더·GitHub). 서비스·AWS·Docker·CodeDeploy 이름은 그대로.
 
 ## 구성 원칙
 
@@ -110,7 +112,7 @@ m8-frontend 에서 미포팅: `notion-workflow.md` (nomacom 개발 워크플로�
 
 ## 지식 지도 — nomacom-wiki (2026-09-22, 결정 nomacom-wiki 0001)
 
-- **이 리포에는 `docs/` 가 없다.** 문서는 전부 `$NOMACOM_WIKI`(fallback `../nomacom-wiki` → `~/dev/current-projects/nomacom-wiki`, private `imjohnkoo/nomacom-wiki`): 내 실행 문서는 `wiki/frontend/{specs,plans,proposals,runbooks,decisions,migrations}/`(이 세션이 직접 쓰고 커밋 — `nomacom-wiki-update` 스킬, 규칙 `.claude/rules/docs-convention.md`), 크로스리포 사실·결정·계약·런북·외부 시스템은 `wiki/{domains,decisions,contracts,runbooks,entities}/`(초안 `wiki/_drafts/<CODE>/` → nomacom-manager 의 wiki 세션이 승격).
+- **이 리포에는 `docs/` 가 없다.** 문서는 전부 `$NOMACOM_WIKI`(fallback `../esmn-wiki` → `~/dev/current-projects/esmn-wiki`, private `imjohnkoo/esmn-wiki`): 내 실행 문서는 `wiki/frontend/{specs,plans,proposals,runbooks,decisions,migrations}/`(이 세션이 직접 쓰고 커밋 — `nomacom-wiki-update` 스킬, 규칙 `.claude/rules/docs-convention.md`), 크로스리포 사실·결정·계약·런북·외부 시스템은 `wiki/{domains,decisions,contracts,runbooks,entities}/`(초안 `wiki/_drafts/<CODE>/` → nomacom-manager 의 wiki 세션이 승격).
 - 작업 전: `$NOMACOM_WIKI/index.md` → `wiki/frontend/README.md`(내 문서 전체 목록) → `wiki/contracts/CHANGELOG.md`(backend↔frontend 계약을 건드리면 한 줄 추가).
 - 인용은 `[repo://<repo>/<path>#Lx-Ly@<sha>](GitHub 퍼머링크)`, 위키 안은 상대경로. PR 설명에 참조 문서를 인용한다.
 - 주간 SoT 는 `$NOMACOM_MANAGER/docs/weekly/frontend-current-week.md`(fallback `~/dev/current-projects/nomacom-manager` — `nomacom-weekly` 스킬로 자기 트랙 행만), 서버 관측·운영 AC 판정은 nomacom-manager 의 monitor 세션(`nomacom-monitor` 스텁이 진입점).

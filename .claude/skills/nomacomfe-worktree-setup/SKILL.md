@@ -1,11 +1,11 @@
 ---
 name: nomacomfe-worktree-setup
-description: Create or finish bootstrapping a git worktree for nomacom-frontend — Orca-managed workspaces at ~/orca/workspaces/nomacom-frontend/<name>/ (standard) or manual sibling worktrees, with Yarn workspaces bootstrap and .env.local symlinking. Use when starting a session that needs isolation from other concurrent sessions, or before executing implementation plans.
+description: Create or finish bootstrapping a git worktree for esmn-frontend — Orca-managed workspaces at ~/orca/workspaces/esmn-frontend/<name>/ (standard; worktrees created before the 2026-10-09 rename stay under ~/orca/workspaces/nomacom-frontend/) or manual sibling worktrees, with Yarn workspaces bootstrap and .env.local symlinking. Use when starting a session that needs isolation from other concurrent sessions, or before executing implementation plans.
 ---
 
-# nomacom-frontend Worktree Setup
+# esmn-frontend Worktree Setup
 
-Create an isolated worktree for parallel-session work on nomacom-frontend.
+Create an isolated worktree for parallel-session work on esmn-frontend.
 
 **Announce at start:** "nomacomfe-worktree-setup 으로 격리 작업공간을 준비합니다."
 
@@ -13,9 +13,9 @@ Create an isolated worktree for parallel-session work on nomacom-frontend.
 
 | Setting          | Value                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------- |
-| 표준 위치        | **`~/orca/workspaces/nomacom-frontend/<name>/`** (Orca 관리 — 실사용 규약)                  |
-| 대체 위치        | `~/dev/worktrees/nomacom-frontend/<name>/` (Orca 밖에서 수동 생성할 때만)                   |
-| Main clone       | `~/dev/current-projects/nomacom-frontend/` — 통합/기획/리뷰. 동시 세션이면 worktree 로 격리 |
+| 표준 위치        | 새 워크트리는 **`~/orca/workspaces/esmn-frontend/<name>/`** · 2026-10-09 개명 전 워크트리는 `~/orca/workspaces/nomacom-frontend/<name>/` 에 그대로 (Orca 관리 — 실사용 규약) |
+| 대체 위치        | 새 워크트리는 `~/dev/worktrees/esmn-frontend/<name>/` · 개명 전 경로는 `~/dev/worktrees/nomacom-frontend/<name>/` (Orca 밖에서 수동 생성할 때만) |
+| Main clone       | `~/dev/current-projects/esmn-frontend/` — 통합/기획/리뷰. 동시 세션이면 worktree 로 격리 |
 | Base branch      | **`dev`** (2026-10-04 `main` 에서 이름 변경 — `main` 은 없다. `prod` 는 배포 트리거이지 개발 base 가 아니다)  |
 | Branch naming    | `imjohnkoo/<topic>` 또는 `<type>/<topic>` (`feat/`·`fix/`·`refactor/`·`chore/`)             |
 | Package manager  | **yarn** (Yarn 4.5.3, `nodeLinker: node-modules`)                                           |
@@ -25,7 +25,7 @@ Create an isolated worktree for parallel-session work on nomacom-frontend.
 
 ## ⭐ Orca 부트스트랩 모드 — nomacom 은 `--setup run` 이 정상
 
-**m8-frontend 와 반대다.** nomacom-frontend 는 Orca repo 설정에 setup hook 이 등록돼 있다:
+**m8-frontend 와 반대다.** esmn-frontend 는 Orca repo 설정에 setup hook 이 등록돼 있다:
 
 ```
 hookSettings.scripts.setup = "yarn install"   ·   setupRunPolicy = "run-by-default"
@@ -46,7 +46,7 @@ hookSettings.scripts.setup = "yarn install"   ·   setupRunPolicy = "run-by-defa
 ### 1. Validate Inputs
 
 - Branch/topic name 확보. 없으면 사용자에게 물어봄
-- `MAIN=~/dev/current-projects/nomacom-frontend` · `WT=~/dev/worktrees/nomacom-frontend/<name>`
+- `MAIN=~/dev/current-projects/esmn-frontend` · `WT=~/dev/worktrees/esmn-frontend/<name>`
 
 ### 2. Pre-flight Checks
 
@@ -58,7 +58,7 @@ git -C "$MAIN" worktree list   # 같은 브랜치가 다른 worktree 에 체크�
 ### 3. Create Worktree
 
 ```bash
-mkdir -p ~/dev/worktrees/nomacom-frontend
+mkdir -p ~/dev/worktrees/esmn-frontend
 git -C "$MAIN" worktree add "$WT" -b "<type>/<topic>" origin/dev
 cd "$WT"
 ```
@@ -125,7 +125,7 @@ orca worktree set --worktree current --workspace-status in-progress --json
 # Orca 워크스페이스 — git + Orca 메타데이터를 함께 정리해야 유령 카드가 안 남는다
 orca worktree rm --worktree id:<repoId>::<path> --json
 # 수동 sibling worktree
-git -C ~/dev/current-projects/nomacom-frontend worktree remove <path>
+git -C ~/dev/current-projects/esmn-frontend worktree remove <path>
 ```
 
 ## Integration

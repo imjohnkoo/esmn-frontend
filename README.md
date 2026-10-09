@@ -1,6 +1,8 @@
-# nomacom-frontend
+# esmn-frontend
 
 Nomacom 프론트엔드 프로젝트들을 단일 Yarn 4 + Turborepo 기반 monorepo로 통합한 저장소.
+
+2026-10-09 `nomacom-frontend` → `esmn-frontend` 개명(폴더·GitHub). 서비스·AWS·Docker·CodeDeploy 이름은 그대로.
 
 ## Workspaces
 
@@ -76,7 +78,7 @@ yarn clean        # turbo run clean
 ## Structure
 
 ```
-nomacom-frontend/
+esmn-frontend/
 ├── apps/
 │   ├── admin/                    # Nuxt 4 admin
 │   ├── client/                   # Nuxt 4 client (eSIMMany)

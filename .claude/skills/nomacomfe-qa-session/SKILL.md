@@ -1,6 +1,6 @@
 ---
 name: nomacomfe-qa-session
-description: QA stage for nomacom-frontend after implementation reaches DoD — dispatch a fresh-context adversarial review subagent (spec+diff only, blocker/major/minor severity, pass = blocker/major 0, re-review always with a NEW subagent), and for user-facing/write/billing/external-integration tracks run an acceptance walk of the spec's E2E verification procedure in the Orca embedded browser with state coverage. Use when implementation is done and needs verification before merge ("QA 하자", "적대적 리뷰", "acceptance walk"), before nomacomfe-finish-branch.
+description: QA stage for esmn-frontend after implementation reaches DoD — dispatch a fresh-context adversarial review subagent (spec+diff only, blocker/major/minor severity, pass = blocker/major 0, re-review always with a NEW subagent), and for user-facing/write/billing/external-integration tracks run an acceptance walk of the spec's E2E verification procedure in the Orca embedded browser with state coverage. Use when implementation is done and needs verification before merge ("QA 하자", "적대적 리뷰", "acceptance walk"), before nomacomfe-finish-branch.
 ---
 
 # nomacomfe-qa-session
