@@ -1,18 +1,18 @@
 ---
 name: nomacom-wiki-update
-description: How this repo's session writes documentation — this repo has no docs/; every document lives in nomacom-wiki. Own execution docs (spec, plan, design, report, reference, repo-local decision/runbook, migration SQL) go straight into wiki/<backend|frontend>/ and are committed by this session (pull --rebase → own subtree only → lint hook → push); a backend↔frontend contract change is one line in wiki/contracts/CHANGELOG.md; cross-repo decisions/runbooks/domain facts/entities are drafts under wiki/_drafts/<CODE>/ that the nomacom-manager wiki session promotes after John's ack. Use when writing or saving a spec/plan/runbook ("spec 작성", "plan 저장", "문서 어디에"), when the user says "위키에 반영", "CHANGELOG 추가", "결정 기록해", "런북 올려", or when spec LOCK / finish-branch touched a backend↔frontend contract.
+description: How this repo's session writes documentation — this repo has no docs/; every document lives in esmn-wiki. Own execution docs (spec, plan, design, report, reference, repo-local decision/runbook, migration SQL) go straight into wiki/<backend|frontend>/ and are committed by this session (pull --rebase → own subtree only → lint hook → push); a backend↔frontend contract change is one line in wiki/contracts/CHANGELOG.md; cross-repo decisions/runbooks/domain facts/entities are drafts under wiki/_drafts/<CODE>/ that the nomacom-manager wiki session promotes after John's ack. Use when writing or saving a spec/plan/runbook ("spec 작성", "plan 저장", "문서 어디에"), when the user says "위키에 반영", "CHANGELOG 추가", "결정 기록해", "런북 올려", or when spec LOCK / finish-branch touched a backend↔frontend contract.
 ---
 
-# nomacom-wiki-update — 문서는 전부 nomacom-wiki 에 (정본 nomacom-wiki `schema/repo-skill-wiki.md`, sync 복사본 — 여기서 고치지 말 것)
+# nomacom-wiki-update — 문서는 전부 esmn-wiki 에 (정본 esmn-wiki `schema/repo-skill-wiki.md`, sync 복사본 — 여기서 고치지 말 것)
 
-이 리포에는 `docs/` 가 없다(2026-09-22 결정 nomacom-wiki 0001). 실행 문서는 이 세션이 **직접** nomacom-wiki 의 자기 트리(`wiki/<alias>/`)에 쓰고 커밋하고, 크로스리포 페이지는 초안만 쓰고 알리면 nomacom-manager 의 **wiki 세션**(스킬 `nomacom-wiki`, 터미널 `nomacom-wiki`)이 lint·승격(John ack)·index·log 를 한다.
+이 리포에는 `docs/` 가 없다(2026-09-22 결정 nomacom-wiki 0001). 실행 문서는 이 세션이 **직접** esmn-wiki 의 자기 트리(`wiki/<alias>/`)에 쓰고 커밋하고, 크로스리포 페이지는 초안만 쓰고 알리면 nomacom-manager 의 **wiki 세션**(스킬 `nomacom-wiki`, 터미널 `nomacom-wiki`)이 lint·승격(John ack)·index·log 를 한다.
 
 **Announce at start:** "nomacom-wiki-update: [실행 문서 직접 커밋 / CHANGELOG 한 줄 / 크로스리포 초안]."
 
 ## 0. 경로 · 읽기
 
 - `NOMACOM_WIKI` fallback `../esmn-wiki` → `~/dev/current-projects/esmn-wiki`. `NOMACOM_MANAGER` fallback `~/dev/current-projects/nomacom-manager`.
-- alias = 이 워크트리의 `git remote get-url origin`: `nomacom-backend` → `backend`, `nomacom-frontend` → `frontend`. 자기 트리 = `$NOMACOM_WIKI/wiki/<alias>/`.
+- alias = 이 워크트리의 `git remote get-url origin`: `esmn-backend` → `backend`, `esmn-frontend` → `frontend`. 자기 트리 = `$NOMACOM_WIKI/wiki/<alias>/`.
 - 쓰기 전에 `$NOMACOM_WIKI/index.md` → `wiki/<alias>/README.md`(생성물 — 내 리포 문서 전체 목록) → 관련 페이지 → `wiki/contracts/CHANGELOG.md`. 이미 있는 문서를 새로 만들지 않는다.
 
 ## 1. 어디에 쓰나 (`$NOMACOM_WIKI/schema/placement.md`)
@@ -27,7 +27,7 @@ description: How this repo's session writes documentation — this repo has no d
 ## 2. 실행 문서 — 쓰기·커밋
 
 1. 템플릿: `cp $NOMACOM_WIKI/schema/templates/<spec|plan|decision-local|runbook>.md $NOMACOM_WIKI/wiki/<alias>/<dir>/YYYY-MM-DD-<topic>.md` (frontend 는 `<dir>/<app>/` 하위 허용). html 렌더는 같은 이름으로 옆에(선택) — **md 가 정본**, 둘 다 고친다.
-2. frontmatter: `type` · `title` · **`repo: <이 리포>` 하나** · `status`(spec: draft → proposed → accepted = LOCK) · `owner` · `created/updated` · `sources`(권장 — 상위 proposal `repo://nomacom-manager/docs/proposals/…` 또는 spec 상대경로, 코드는 `repo://…@sha`) · `tags`.
+2. frontmatter: `type` · `title` · **`repo: <이 리포>` 하나**(repos.yaml 키 `esmn-backend` | `esmn-frontend` — 옛 `nomacom-*` 키는 alias 라 lint L2 오류) · `status`(spec: draft → proposed → accepted = LOCK) · `owner` · `created/updated` · `sources`(권장 — 상위 proposal `repo://nomacom-manager/docs/proposals/…` 또는 spec 상대경로, 코드는 `repo://…@sha`) · `tags`.
 3. 링크: 위키 안은 상대경로, 코드는 `[repo://<이 리포>/<path>#Lx-Ly@<sha>](퍼머링크)`. `python3 $NOMACOM_WIKI/scripts/wiki-linkify.py <file>` 로 맞춘다.
 4. 커밋(자기 트리만):
 
@@ -54,7 +54,7 @@ sha 는 push 된 커밋만. 그 뒤 4절의 알림도 보낸다(`--ref wiki/cont
 ## 4. 크로스리포 초안 + 알림
 
 1. `mkdir -p $NOMACOM_WIKI/wiki/_drafts/<CODE>` · `cp $NOMACOM_WIKI/schema/templates/<decision|domain|runbook|entity>.md …/<slug>.md`. slug 는 kebab-case 영문, 결정은 번호 없이(승격 때 wiki 세션이 `NNNN-` 부여).
-2. frontmatter: `type` · `title` · `repo: [nomacom-backend, nomacom-frontend]`(관여 리포 전부) · `status: proposed` · `owner` · `created/updated` · **`sources ≥ 1`**(`repo://…@sha`) · `tags`. 본문: TL;DR → 무엇/왜 → 하지 말 것 → 제약 → `## 관련`(아웃링크 ≥ 2) → `## 출처`. 코드로 grep 되는 것은 쓰지 않는다.
+2. frontmatter: `type` · `title` · `repo: [esmn-backend, esmn-frontend]`(관여 리포 전부) · `status: proposed` · `owner` · `created/updated` · **`sources ≥ 1`**(`repo://…@sha`) · `tags`. 본문: TL;DR → 무엇/왜 → 하지 말 것 → 제약 → `## 관련`(아웃링크 ≥ 2) → `## 출처`. 코드로 grep 되는 것은 쓰지 않는다.
 3. 자가 검증: `python3 $NOMACOM_WIKI/scripts/wiki-lint.py --repo $NOMACOM_WIKI 2>&1 | grep '<slug>'` — 내 파일의 E 가 0.
 4. 초안도 자기 커밋으로 올린다(`git add wiki/_drafts/<CODE>/`, 2절과 같은 방법) — 유실 방지.
 5. 알림(필수):

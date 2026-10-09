@@ -3,7 +3,7 @@ name: nomacom-monitor
 description: 서버 모니터링·배포 후 확인·Spark 재고·operator AC 판정 요청의 리포 쪽 진입점 — 실제 관측·판정은 nomacom-manager 의 monitor 세션(nomacom-monitor 스킬)이 양 리포를 한 번에 한다. Use when the user asks "서버 어때", "이심 재고 얼마나 남았어", "배포 정상이야", "에러 있나", "운영 AC 확인", or a gate skill needs post-deploy observation registered.
 ---
 
-# nomacom-monitor — 리다이렉트 스텁 (정본 nomacom-wiki `schema/repo-skill-monitor.md`, `sync-docs-convention.sh` 복사본 — 여기서 고치지 말 것)
+# nomacom-monitor — 리다이렉트 스텁 (정본 esmn-wiki `schema/repo-skill-monitor.md`, `sync-docs-convention.sh` 복사본 — 여기서 고치지 말 것)
 
 이 리포 세션은 서버를 **관측하지 않는다**. 2026-09-22 부터 **nomacom-manager 의 `nomacom-monitor`** 가 monitor 세션(터미널 제목 `nomacom-monitor`)·automation `nomacom-monitor-daily`(평일 10:30 KST, 월요일 deep)로 esim-manager 서버 + Spark 벤더 축 + frontend admin/client + AWS 계정을 한 번에 본다. 최신 결과 = `$NOMACOM_MANAGER/docs/monitor/latest.md`(`$NOMACOM_MANAGER` fallback `~/dev/current-projects/nomacom-manager`). backend 의 옛 `nomacom-monitor`(reference.md · scripts)는 그쪽 `.claude/skills/nomacom-monitor/{reference,bin}/` 로 옮겨졌다(git 이력만 여기 남는다).
 
