@@ -11,7 +11,10 @@ import type { CatalogView, ZoneView } from './types'
 
 export { SITE_ORIGIN }
 
-/** 카탈로그와 무관한 정적 페이지 — 법정 3종(사업자정보 페이지는 없다 — client-shell D-39) · 가이드 허브 + OS 2(client-guide F-7) · 지원 기기 */
+/**
+ * 카탈로그와 무관한 정적 페이지 — 법정 3종(사업자정보 페이지는 없다 — client-shell D-39) · 가이드 허브 + OS 2(client-guide F-7) · 지원 기기 ·
+ * 설치 확인 2 · 현지 통신사 바꾸기(client-guide-check F-8 — `app/content/guide/common.ts` `GUIDE_CHECK` · `GUIDE_NETWORK` 와 같은 글자)
+ */
 export const STATIC_ROUTES = [
   '/terms',
   '/privacy',
@@ -20,11 +23,14 @@ export const STATIC_ROUTES = [
   '/guide/ios',
   '/guide/android',
   '/supported-devices',
+  '/guide/check/ios',
+  '/guide/check/android',
+  '/guide/network',
 ] as const
 
 /**
  * 전용판(client-guide D-14 · S-5 · D-24 — `app/content/guide/common.ts` `GUIDE_BARE` · `DEVICES_BARE` 와 같은 글자, 테스트가 대조한다).
- * 가이드 두 OS + 지원 기기(canonical = `/supported-devices`).
+ * 가이드 두 OS + 지원 기기(canonical = `/supported-devices`) + 설치 확인 2 · 현지 통신사 바꾸기(client-guide-check S-5 — `GUIDE_CHECK` · `GUIDE_NETWORK` 의 bare).
  * 프리렌더만 — 사이트판 `/guide/<os>` 와 같은 글이라 canonical 은 사이트판(D-18 — noindex 없이 canonical 하나로 묶는다),
  * sitemap 에는 원본(canonical) 주소만 싣으므로 여기서 뺀다. 설명도 사이트판 것을 쓴다
  */
@@ -32,6 +38,9 @@ export const GUIDE_BARE_ROUTES = [
   '/install-guide/ios',
   '/install-guide/android',
   '/install-guide/devices',
+  '/install-guide/check/ios',
+  '/install-guide/check/android',
+  '/install-guide/network',
 ] as const
 
 export function catalogRoutes(catalog: CatalogView): string[] {
@@ -116,6 +125,12 @@ export const STATIC_DESCRIPTIONS: Record<(typeof STATIC_ROUTES)[number], string>
   '/guide/android':
     '안드로이드(갤럭시) eSIM 설치 가이드 — SIM 관리자에서 QR 코드로 설치하고, 현지에서 모바일 데이터와 데이터 로밍을 켜는 법을 화면과 함께 안내해요.',
   '/supported-devices': 'eSIM 을 쓸 수 있는 아이폰 · 갤럭시 기종을 확인해 보세요.',
+  // client-guide-check spec §⑤ 공통 — 페이지 제목 · 설명(SEO)
+  '/guide/check/ios':
+    '현지에서 아이폰 eSIM이 연결되지 않을 때 셀룰러 · 회선 · 셀룰러 데이터 설정을 화면과 비교해 확인해요.',
+  '/guide/check/android':
+    '현지에서 갤럭시 eSIM이 연결되지 않을 때 SIM 관리자 · 데이터 로밍 설정을 화면과 비교해 확인해요.',
+  '/guide/network': '연결이 불안정할 때 아이폰 · 안드로이드에서 현지 통신사를 직접 고르는 방법이에요.',
 }
 
 export const HOME_META: PageMeta = {
