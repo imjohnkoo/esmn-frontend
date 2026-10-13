@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from '
 import { describe, expect, it } from 'vitest'
 import { STATIC_ROUTES } from '#shared/catalog/seo'
 import { ANDROID_GUIDE } from './android'
+import { CHECK_ANDROID, CHECK_IOS, NETWORK_GUIDE } from './check'
 // 생성 스크립트의 지문 계산을 그대로 쓴다(같은 계산이어야 대조가 된다)
 import { guideFigureHash, guideInputsHash, sha256 } from '../../../scripts/guide-screens/lock.mjs'
 import * as COMMON from './common'
@@ -19,7 +20,7 @@ import { guidePlainText, parseGuideInline } from './inline'
 import lockJson from './figures.lock.json'
 import { guideGolden } from './golden'
 import { IOS_GUIDE } from './ios'
-import type { GuideContent, GuideStep } from './types'
+import type { GuideCheckContent, GuideContent, GuideStep } from './types'
 
 /** client-guide spec F-2 · F-3 · F-6 · F-8 · DoD 2 · 5 · 6 · 불변식 */
 const GUIDES = { ios: IOS_GUIDE, android: ANDROID_GUIDE } as const
@@ -256,7 +257,17 @@ describe('공통 문안(허브 · 카드 · 흐름 · 문의) — 본문과 같�
 })
 
 describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
-  const used = new Set([...figuresOf(IOS_GUIDE), ...figuresOf(ANDROID_GUIDE)])
+  // 설치 확인 · 통신사 바꾸기 페이지가 쓰는 창도 «쓰는 창»(client-guide-check F-6)
+  const checkFigures = (c: GuideCheckContent) =>
+    c.sections.flatMap((s) => [
+      ...(s.figures ?? []),
+      ...(s.steps ?? []).flatMap((st) => (st.figure ? [st.figure] : [])),
+    ])
+  const used = new Set([
+    ...figuresOf(IOS_GUIDE),
+    ...figuresOf(ANDROID_GUIDE),
+    ...[CHECK_IOS, CHECK_ANDROID, NETWORK_GUIDE].flatMap(checkFigures),
+  ])
   const keys = Object.keys(GUIDE_FIGURES) as FigureKey[]
 
   it('매니페스트의 창은 전부 어딘가에서 쓴다(안 쓰는 창 0)', () => {
@@ -383,6 +394,8 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
       '데이터 로밍 SIM 1': 'false', // android «데이터 로밍 SIM 1은 꺼 두세요»
       '데이터 로밍 eSIM 1': 'true', // android «데이터 로밍 eSIM 1을 미리 켜 두세요»
       'eSIM 1': 'true', // android «eSIM 1이 켜져 있으면»
+      자동: 'false', // 통신사 바꾸기 «자동을 꺼요»(client-guide-check S-3)
+      '자동 선택': 'false', // 통신사 바꾸기 «자동 선택을 꺼요»
     } as const
     for (const [label, on] of Object.entries(want)) {
       const got = sw(label)
@@ -396,6 +409,16 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
     expect(body).toContain('{{데이터 전환}}은 꺼 두세요')
     expect(body).toContain('**데이터 로밍 SIM 1은 꺼 두세요.**')
     expect(body).toContain('{{데이터 로밍 eSIM 1}}을 미리 켜 두세요')
+    // 설치 확인 · 통신사 바꾸기도 같은 행동(client-guide-check S-1~S-3)
+    const check = [CHECK_IOS, CHECK_ANDROID, NETWORK_GUIDE].flatMap((c) => strings(c as never)).join('\n')
+    expect(check).toContain('{{이 회선 켜기}}가 켜져 있어요.')
+    expect(check).toContain('{{데이터 로밍}}이 켜져 있어요.')
+    expect(check).toContain('{{셀룰러 데이터 전환 허용}}은 꺼져 있어요.')
+    expect(check).toContain('{{데이터 전환}}은 꺼져 있어요.')
+    expect(check).toContain('{{데이터 로밍 SIM 1}}은 꺼져 있어요.')
+    expect(check).toContain('{{데이터 로밍 eSIM 1}}이 켜져 있어요.')
+    expect(check).toContain('{{자동}}을 꺼요.')
+    expect(check).toContain('{{자동 선택}}을 꺼요.')
   })
 
   it('src 는 /guide-screens/<키>.<버전>.png (CloudFront 캐시 무효화가 필요 없게 버전 접미 — Proposal K4)', () => {

@@ -192,6 +192,30 @@ export const GUIDE_FIGURES = {
     focus: 30,
     alt: '네트워크 선택 화면 — 자동 스위치 표시',
   },
+  // 설치 확인 · 통신사 바꾸기(client-guide-check spec F-6 · D-12) — 현지 도착 뒤 상태
+  'ios-cellular-arrival': {
+    screen: 'ios-cellular',
+    state: 'arrival',
+    hl: ['cell-data', 'voice', 'main', 'new-line'],
+    ar: 0.82,
+    focus: 33,
+    alt: '설정 › 셀룰러 화면 — 셀룰러 데이터 여행 · 기본 음성 회선 메인 · 두 회선 켬 표시',
+  },
+  'ios-line-check': {
+    screen: 'ios-line',
+    state: 'check',
+    hl: ['line-on', 'voice-data', 'roaming'],
+    ar: 0.82,
+    focus: 36,
+    alt: '여행용 회선 세부 화면 — 이 회선 켜기 · 음성 및 데이터 5G 자동 · 데이터 로밍 표시',
+  },
+  'ios-line-network': {
+    screen: 'ios-line',
+    hl: ['network'],
+    ar: 0.82,
+    focus: 36,
+    alt: '여행용 회선 세부 화면 — 네트워크 선택 표시',
+  },
 
   // ---------------------------------------------------------------- 안드로이드 (갤럭시 One UI)
   'aos-connections-sim': {
@@ -309,6 +333,15 @@ export const GUIDE_FIGURES = {
     ar: 0.82,
     focus: 28,
     alt: '로밍 이동통신사 선택 화면 — 자동 선택 스위치 표시',
+  },
+  // 설치 확인(client-guide-check spec F-6 · D-12) — 현지 도착 뒤 모바일 데이터 eSIM 1
+  'aos-sim-arrival-data': {
+    screen: 'aos-sim',
+    state: 'arrival',
+    hl: ['mobile-data', 'switch'],
+    ar: 0.82,
+    focus: 90,
+    alt: 'SIM 관리자 화면 아래 — 모바일 데이터 eSIM 1 · 데이터 전환 스위치 표시',
   },
 } as const satisfies Record<string, GuideFigure>
 

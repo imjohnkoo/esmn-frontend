@@ -54,6 +54,17 @@ export const DEVICES_PAGE = '/supported-devices'
 /** 지원 기기 전용판(client-guide D-24) — 헤더 · 하단 탭 없이 `DEVICES_PAGE` 본문만. 가이드 전용판 · 시트의 «지원 기기 확인하기» 가 연다 · canonical 은 사이트판 */
 export const DEVICES_BARE = '/install-guide/devices'
 
+/**
+ * 설치 확인 · 현지 통신사 바꾸기 · 나라별 현지 통신사 주소(client-guide-check D-2 · S-5) — 사이트판(page) · 전용판(bare).
+ * 전용판은 canonical 이 사이트판 하나 · sitemap 제외(client-guide D-18 규칙)
+ */
+export const GUIDE_CHECK: Record<GuideOs, { page: string; bare: string }> = {
+  ios: { page: '/guide/check/ios', bare: '/install-guide/check/ios' },
+  android: { page: '/guide/check/android', bare: '/install-guide/check/android' },
+}
+export const GUIDE_NETWORK = { page: '/guide/network', bare: '/install-guide/network' } as const
+export const GUIDE_CARRIERS = { page: '/guide/carriers', bare: '/install-guide/carriers' } as const
+
 export const GUIDE_HUB = {
   title: '설치 가이드',
   desc: '아이폰과 안드로이드 설치 방법을 출국 전 설치부터 현지에서 켜기까지 순서대로 안내해요.',
