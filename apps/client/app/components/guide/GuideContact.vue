@@ -6,17 +6,22 @@ import { GUIDE_CONTACT } from '~/content/guide/common'
 import { supportRows } from '~/content/support'
 
 // moreNewTab — 발급 화면 시트에서는 «고객센터 전체 보기» 를 새 탭으로(QR 화면을 떠나지 않게 — client-guide D-13)
-const props = withDefaults(defineProps<{ title?: string; moreNewTab?: boolean }>(), {
-  title: GUIDE_CONTACT.title,
-  moreNewTab: false,
-})
+// lede — 설치 확인 · 통신사 페이지는 «설정 화면을 캡처해 …»(client-guide-check §⑤ 공통)
+const props = withDefaults(
+  defineProps<{ title?: string; lede?: string; moreNewTab?: boolean }>(),
+  {
+    title: GUIDE_CONTACT.title,
+    lede: GUIDE_CONTACT.lede,
+    moreNewTab: false,
+  },
+)
 const rows = supportRows().filter((r) => r.key === 'kakao' || r.key === 'naver')
 </script>
 
 <template>
   <section class="g-cs" aria-labelledby="guide-cs-title">
     <h2 id="guide-cs-title" class="g-cs__title">{{ props.title }}</h2>
-    <p class="g-cs__lede">{{ GUIDE_CONTACT.lede }}</p>
+    <p class="g-cs__lede">{{ props.lede }}</p>
     <ul class="g-cs__cards">
       <li v-for="row in rows" :key="row.key">
         <component

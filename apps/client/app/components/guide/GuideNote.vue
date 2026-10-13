@@ -10,6 +10,7 @@ import {
 import type { GuideNote } from '~/content/guide/types'
 import GuideText from './GuideText.vue'
 
+// 기본 슬롯 = 문단 아래 링크 한 줄(client-guide-check S-3 · S-4) — 쓰는 쪽이 그리고 스타일도 쓰는 쪽에(이 컴포넌트 CSS · 설치 가이드 DOM 불변)
 defineProps<{ note: GuideNote }>()
 const ICONS = {
   info: InformationCircleIcon,
@@ -24,6 +25,7 @@ const ICONS = {
     <component :is="ICONS[note.tone]" class="g-note__icon" aria-hidden="true" />
     <div class="g-note__body">
       <p v-for="(line, i) in note.lines" :key="i"><GuideText :src="line" /></p>
+      <slot />
     </div>
   </div>
 </template>

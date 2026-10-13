@@ -44,6 +44,7 @@ export const CHECK_CONTACT_LEDE = '설정 화면을 캡처해 보내 주시면 �
 const helpCard = (g: GuideContent) => ({
   label: '설치 가이드 문제 해결',
   sub: `자주 받는 문의 ${g.help.faqs.length}가지`,
+  icon: 'help' as const,
   page: `${GUIDE_PAGES[g.os].to}#help`,
   bare: `${GUIDE_BARE[g.os]}#help`,
 })
@@ -145,6 +146,7 @@ export const CHECK_IOS: GuideCheckContent = {
       {
         label: '현지 통신사 바꾸기',
         sub: '설정에서 통신사를 직접 골라요',
+        icon: 'network',
         page: `${GUIDE_NETWORK.page}#ios`,
         bare: `${GUIDE_NETWORK.bare}#ios`,
       },
@@ -226,6 +228,7 @@ export const CHECK_ANDROID: GuideCheckContent = {
       {
         label: '현지 통신사 바꾸기',
         sub: '설정에서 통신사를 직접 골라요',
+        icon: 'network',
         page: `${GUIDE_NETWORK.page}#android`,
         bare: `${GUIDE_NETWORK.bare}#android`,
       },
@@ -330,6 +333,7 @@ export const NETWORK_GUIDE: GuideCheckContent = {
       {
         label: '나라별 현지 통신사',
         sub: '나라마다 연결할 수 있는 통신사',
+        icon: 'carriers',
         page: GUIDE_CARRIERS.page,
         bare: GUIDE_CARRIERS.bare,
       },

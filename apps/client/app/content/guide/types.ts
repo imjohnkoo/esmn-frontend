@@ -121,9 +121,10 @@ export interface GuideCheckSection {
 /** 머리 설명 한 줄 — 글자만(인라인 표기), 또는 글자 사이 링크 하나 */
 export type GuideLede = string | GuideLinkLine
 
-/** 끝 구간 카드 — 이름 · 설명 · 목적지(사이트판 · 전용판) */
+/** 끝 구간 카드 — 이름 · 설명 · 목적지(사이트판 · 전용판) · 아이콘 */
 export interface GuideEndCard extends GuideLink {
   sub: string
+  icon: 'network' | 'help' | 'carriers'
 }
 
 /** «설치한 뒤에» 줄 — 제목 · 설명 · 버튼 1~2(client-guide-check S-6 · S-3 끝) */
