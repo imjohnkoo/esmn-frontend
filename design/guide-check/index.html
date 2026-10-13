@@ -604,7 +604,7 @@
       <!-- =============================================================== 세 페이지 -->
       <h2 class="mk-h2" id="pages">페이지 — 사이트판(헤더 · 하단 탭 있음)</h2>
       <p class="mk-lead">
-        주소는 Q1 추천안 기준입니다. 통신사 변경은 Q9 추천안(가이드처럼 OS 전환)이라 아이폰 · 안드로이드 두 장입니다. 확인
+        주소는 Q1 결정(가이드 체계) 기준입니다. 통신사 변경은 Q9 결정대로 한 페이지에 두 OS 를 담았습니다. 확인
         페이지는 <b>현지 도착 뒤의 화면</b>이 기준이라 머리 설명에 그 시점을 밝혔습니다(가이드 STEP 2 는 한국에서 셀룰러
         데이터를 메인으로 두게 하므로, 시점을 안 밝히면 두 페이지가 서로 반대로 읽힙니다).
       </p>
@@ -877,31 +877,38 @@
           </div>
         </section>
 
-        <!-- ------------------------------------------------ ③ 통신사 바꾸기 · 아이폰 -->
-        <section class="mk-col" aria-label="통신사 바꾸기 아이폰 목업">
-          <p class="mk-cap">③ 현지 통신사 바꾸기 · 아이폰<code>/guide/network/ios</code></p>
+        <!-- ------------------------------------------------ ③ 통신사 바꾸기 (Q9 — 한 페이지에 두 OS) -->
+        <section class="mk-col" aria-label="통신사 바꾸기 목업">
+          <p class="mk-cap">③ 현지 통신사 바꾸기 (아이폰 · 안드로이드 한 페이지)<code>/guide/network</code></p>
           <div class="mk-phone">
             <div class="mk-sh"><span class="mk-logo">이심마니</span><span class="mk-sh__r"><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg></span><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></span></span></div>
             <article class="g-article">
               <header class="g-hero">
-                <p class="g-hero__eyebrow">Network · iOS</p>
+                <p class="g-hero__eyebrow">Change network</p>
                 <h1 class="g-hero__title">현지 통신사 바꾸기</h1>
                 <p class="g-hero__lede">나라와 지역에 따라 잘 잡히는 통신사가 달라요.<br />연결이 불안정하면 다른 통신사로 바꿔 보세요.</p>
-                <nav class="g-os" aria-label="기기 종류"><a class="g-os__tab g-os__tab--on" aria-current="page" href="#">아이폰</a><a class="g-os__tab" href="#">안드로이드</a></nav>
               </header>
-              <p class="g-hero__hint" style="padding-top: 16px">화면의 빨간 테두리는 설명이 가리키는 곳이에요.</p>
+              <nav class="g-jump g-jump--under-header" aria-label="이 페이지 안에서 이동">
+                <a href="#nw-ios" class="g-jump__chip"><span class="g-jump__label">아이폰</span></a
+                ><a href="#nw-android" class="g-jump__chip"><span class="g-jump__label">안드로이드</span></a>
+              </nav>
+              <p class="g-hero__hint">화면의 빨간 테두리는 설명이 가리키는 곳이에요.</p>
 
               <section class="g-sec" style="padding-top: 8px">
                 <div class="g-note g-note--tip" style="margin-top: 0">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" /></svg>
                   <div class="g-note__body">
-                    <p><b class="g-b">여행용 eSIM은 한 나라에서 여러 통신사에 연결할 수 있어요.</b> 통신사마다 잘 잡히는 곳이 달라, 신호가 약한 곳에서는 바꾸면 나아질 수 있어요.</p>
+                    <p><b class="g-b">여행용 eSIM은 나라에 따라 여러 통신사에 연결할 수 있어요.</b> 통신사마다 잘 잡히는 곳이 달라, 신호가 약한 곳에서는 바꾸면 나아질 수 있어요.</p>
                     <p class="mk-add">나라별로 연결할 수 있는 통신사는 <a class="g-more__link" href="#carriers">나라별 현지 통신사</a>에서 볼 수 있어요.</p>
                   </div>
                 </div>
                 <span class="mk-fc mk-fc--new">Q8 일반화 · Q4 → ④ 목록 페이지</span>
+              </section>
 
-                <ol class="g-steps g-sec__steps" role="list" style="margin-top: 28px">
+              <section id="nw-ios" class="g-sec g-sec--alt">
+                <span class="g-badge">아이폰</span>
+                <h2 class="g-sec__title">아이폰에서 바꾸기</h2>
+                <ol class="g-steps g-sec__steps" role="list">
                   <li class="g-step">
                     <div class="g-step__text">
                       <span class="g-step__num">1</span>
@@ -937,61 +944,18 @@
                 <span class="mk-fc mk-fc--reuse">가이드 문제 해결 Q5 문장 그대로</span>
               </section>
 
-              <section class="g-sec g-sec--alt">
-                <div class="g-more">
-                  <a class="n-link-card" href="#"><span class="n-link-card__icon">✅</span><span class="n-link-card__text"><span class="n-link-card__label" style="font-size: 15px">아이폰 설치 확인</span><span class="n-link-card__sub" style="font-size: 13px; color: #737373">셀룰러 · 회선 · 데이터 설정을 화면과 비교</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
-                </div>
-                <section class="g-cs">
-                  <h2 class="g-cs__title">그래도 해결되지 않으면 문의해 주세요</h2>
-                  <p class="g-cs__lede">설정 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.</p>
-                  <ul class="g-cs__cards">
-                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--kakao" aria-hidden="true">TALK</span><span class="g-cs__text"><span class="g-cs__name">카카오톡 채널</span><span class="g-cs__handle">@이심마니</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
-                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--naver" aria-hidden="true">N</span><span class="g-cs__text"><span class="g-cs__name">네이버 톡톡</span><span class="g-cs__handle">스마트스토어 채팅 문의</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
-                  </ul>
-                  <a class="g-cs__more" href="#">고객센터 전체 보기</a>
-                </section>
-              </section>
-            </article>
-            <div class="mk-foot">사업자정보 푸터 (생략)</div>
-            <nav class="mk-tab" aria-label="하단 탭(그림)"><span>홈</span><span>내 eSIM</span><span class="on">가이드</span><span>마이</span></nav>
-          </div>
-        </section>
-
-        <!-- ------------------------------------------------ ③ 통신사 바꾸기 · 안드로이드 -->
-        <section class="mk-col" aria-label="통신사 바꾸기 안드로이드 목업">
-          <p class="mk-cap">③ 현지 통신사 바꾸기 · 안드로이드<code>/guide/network/android</code></p>
-          <div class="mk-phone">
-            <div class="mk-sh"><span class="mk-logo">이심마니</span><span class="mk-sh__r"><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg></span><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></span></span></div>
-            <article class="g-article">
-              <header class="g-hero">
-                <p class="g-hero__eyebrow">Network · Android</p>
-                <h1 class="g-hero__title">현지 통신사 바꾸기</h1>
-                <p class="g-hero__lede">나라와 지역에 따라 잘 잡히는 통신사가 달라요.<br />연결이 불안정하면 다른 통신사로 바꿔 보세요.</p>
-                <nav class="g-os" aria-label="기기 종류"><a class="g-os__tab" href="#">아이폰</a><a class="g-os__tab g-os__tab--on" aria-current="page" href="#">안드로이드</a></nav>
-              </header>
-              <p class="g-hero__hint" style="padding-top: 16px">화면의 빨간 테두리는 설명이 가리키는 곳이에요.</p>
-
-              <section class="g-sec" style="padding-top: 8px">
-                <div class="g-note g-note--tip" style="margin-top: 0">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" /></svg>
-                  <div class="g-note__body">
-                    <p><b class="g-b">여행용 eSIM은 한 나라에서 여러 통신사에 연결할 수 있어요.</b> 통신사마다 잘 잡히는 곳이 달라, 신호가 약한 곳에서는 바꾸면 나아질 수 있어요.</p>
-                    <p class="mk-add">나라별로 연결할 수 있는 통신사는 <a class="g-more__link" href="#carriers">나라별 현지 통신사</a>에서 볼 수 있어요.</p>
-                  </div>
-                </div>
-
-                <ol class="g-steps g-sec__steps" role="list" style="margin-top: 28px">
+              <section id="nw-android" class="g-sec">
+                <span class="g-badge">안드로이드</span>
+                <h2 class="g-sec__title">안드로이드에서 바꾸기</h2>
+                <p class="g-sec__lede">갤럭시 화면으로 안내해요. 다른 안드로이드 폰은 메뉴 이름이 조금 다를 수 있어요.</p>
+                <ol class="g-steps g-sec__steps" role="list">
                   <li class="g-step">
                     <div class="g-step__text">
                       <span class="g-step__num">1</span>
                       <p class="g-step__p">
                         <span class="g-path"><span class="g-nw">설정</span><span class="g-path__sep"> › </span><span class="g-nw">연결</span><span class="g-path__sep"> › </span><span class="g-nw">모바일 네트워크</span><span class="g-path__sep"> › </span><span class="g-nw">로밍 이동통신사 선택<span class="g-path__p">을</span></span></span>
-                        눌러요.
+                        눌러요.<span class="g-step__sub mk-add">SKT 폰은 <span class="g-path"><span class="g-nw">설정</span><span class="g-path__sep"> › </span><span class="g-nw">T로밍</span><span class="g-path__sep"> › </span><span class="g-nw">로밍 이동통신사 선택<span class="g-path__p">에</span></span></span> 있어요.</span>
                       </p>
-                    </div>
-                    <div class="mk-tbd">
-                      <b>[Q6] SKT 폰 대체 경로 한 줄 후보</b> — 옛 글은 «설정 → T로밍(또는 해외로밍) → 로밍 이동통신사 선택». 가이드 2609
-                      확인본에는 T로밍 쪽 «로밍 이동통신사 선택» 근거가 없어 지금은 넣지 않았습니다(데이터 로밍의 T로밍 경로만 확인됨).
                     </div>
                   </li>
                   <li class="g-step">
@@ -1018,8 +982,10 @@
 
               <section class="g-sec g-sec--alt">
                 <div class="g-more">
-                  <a class="n-link-card" href="#"><span class="n-link-card__icon">✅</span><span class="n-link-card__text"><span class="n-link-card__label" style="font-size: 15px">안드로이드 설치 확인</span><span class="n-link-card__sub" style="font-size: 13px; color: #737373">SIM 관리자 · 데이터 로밍을 화면과 비교</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
+                  <a class="n-link-card" href="#"><span class="n-link-card__icon">✅</span><span class="n-link-card__text"><span class="n-link-card__label" style="font-size: 15px">설치 확인하기</span><span class="n-link-card__sub" style="font-size: 13px; color: #737373">아이폰 · 안드로이드 설정을 화면과 비교</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
+                  <a class="n-link-card" href="#carriers"><span class="n-link-card__icon">🌐</span><span class="n-link-card__text"><span class="n-link-card__label" style="font-size: 15px">나라별 현지 통신사</span><span class="n-link-card__sub" style="font-size: 13px; color: #737373">나라마다 연결할 수 있는 통신사</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
                 </div>
+                <span class="mk-fc mk-fc--new">«설치 확인하기» 는 OS 두 칸(허브 «설치한 뒤에» 와 같은 조각)도 가능 — 구현 때 정함</span>
                 <section class="g-cs">
                   <h2 class="g-cs__title">그래도 해결되지 않으면 문의해 주세요</h2>
                   <p class="g-cs__lede">설정 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.</p>
@@ -1052,7 +1018,7 @@
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>
                   <div class="g-note__body">
                     <p>현지 사정에 따라 연결되는 통신사가 달라질 수 있어요.</p>
-                    <p>통신사 바꾸는 방법: <a class="g-more__link" href="#">아이폰</a> · <a class="g-more__link" href="#">안드로이드</a></p>
+                    <p><a class="g-more__link" href="#">통신사 바꾸는 방법 보기</a></p>
                   </div>
                 </div>
                 <span class="mk-fc mk-fc--new">데이터 = 카탈로그 K1 operators · network(상품 상세 칩과 같은 값) · 49개국 · 가나다 · (추천) 없음</span>
@@ -1170,8 +1136,8 @@
                   </li>
                   <li>
                     <span class="g-after__t">현지 통신사 바꾸기</span>
-                    <span class="g-after__sub">연결이 불안정할 때 통신사를 직접 골라요.</span>
-                    <span class="g-after__os"><a href="#">아이폰</a><a href="#">안드로이드</a></span>
+                    <span class="g-after__sub">연결이 불안정할 때 통신사를 직접 골라요. 아이폰 · 안드로이드 한 페이지예요.</span>
+                    <span class="g-after__os"><a href="#" style="grid-column: 1 / -1">통신사 바꾸는 방법 보기</a></span>
                   </li>
                 </ul>
               </div>
@@ -1219,7 +1185,7 @@
               </section>
             </article>
           </div>
-          <p class="mk-lead" style="margin-top: 10px">안드로이드 가이드는 Q3 · Q4 에 같은 두 링크(→ 안드로이드 판). 발급 화면 시트 안에서는 새 탭으로 엽니다(QR 화면을 떠나지 않게 — 가이드 시트 규칙과 같음).</p>
+          <p class="mk-lead" style="margin-top: 10px">안드로이드 가이드는 Q3 · Q4 에 같은 두 링크(설치 확인 → 안드로이드 판 · 통신사 → /guide/network#android). 발급 화면 시트 안에서는 새 탭으로 엽니다(QR 화면을 떠나지 않게 — 가이드 시트 규칙과 같음).</p>
         </section>
 
         <!-- =============================================================== 전용판 -->
@@ -1283,8 +1249,8 @@
             <tr>
               <td>통신사 변경</td>
               <td><code>/change-network</code> (두 OS 한 페이지)</td>
-              <td class="rec"><code>/guide/network/ios</code> · <code>/guide/network/android</code> · 전용판 <code>/install-guide/network/{ios,android}</code></td>
-              <td><code>/guide/network/{ios,android}</code> · <code>/change-network</code> (한 주소에 OS 둘 — 전용판만 모양이 달라짐)</td>
+              <td class="rec"><code>/guide/network</code> (두 OS 한 페이지 — John Q9) · 전용판 <code>/install-guide/network</code></td>
+              <td><code>/guide/network</code> · <code>/change-network</code></td>
             </tr>
             <tr>
               <td>나라별 현지 통신사 (Q4 추가)</td>
@@ -1323,9 +1289,9 @@
             <tr><td>5</td><td>«데이터 전환 허용 켬 → 국내 로밍 요금 과다 청구»</td><td>가이드 경고 두 줄 그대로(한국 회선 데이터 로밍 · 전환 허용)</td><td>같은 경고를 두 곳에서 다르게 쓰지 않음 · 경고 두 줄은 빼지 않는 규칙</td></tr>
             <tr><td>6</td><td>«두줄 / 한줄 · 5G, LTE, 또는 3G»</td><td>«위아래 두 칸 · 5G나 LTE» + 가이드 상태 표시줄 그림</td><td>가이드 STEP 3 6번과 같은 문장 · 같은 그림</td></tr>
             <tr><td>7</td><td>안드로이드 «설정 → T로밍(또는 해외로밍) · SK: 로밍 상세 설정 / KT &amp; LG: 데이터 로밍»</td><td>«설정 › 연결 › 해외 로밍 › 데이터 로밍 eSIM 1» + «SKT 폰은 설정 › T로밍 › 로밍 상세 설정»</td><td>One UI 7~8 확인본(SIM별 스위치) · SKT 경로는 확인본에 있음</td></tr>
-            <tr><td>8</td><td>안드로이드 통신사 변경 «설정 → T로밍(또는 해외로밍) → 로밍 이동통신사 선택»</td><td>«설정 › 연결 › 모바일 네트워크 › 로밍 이동통신사 선택» (SKT 대체 경로는 근거 없어 뺌)</td><td>가이드 문제 해결 Q4 · 화면 aos-carrier 와 같은 경로</td></tr>
-            <tr><td>9</td><td>아이폰 통신사 변경 5단계 · 안드로이드 6단계(글만)</td><td>3단계씩 + 화면 (아이폰 2장 · 안드로이드 1장)</td><td>가이드 단계 문체(누를 이름 형광 밑줄 · 경로 굵게)</td></tr>
-            <tr><td>10</td><td>«유럽은 … 음영지역 … 최대한 많은 통신사와 계약»</td><td>«나라와 지역에 따라 잘 잡히는 통신사가 달라요» · «한 나라에서 여러 통신사에 연결할 수 있어요»</td><td>판매 국가가 유럽 밖에도 있음(Q8) · «계약» 표현은 벤더 사실 확인 없이 쓰지 않음 — 상품 상세 «현지 통신사» 칩과 같은 수준의 사실만</td></tr>
+            <tr><td>8</td><td>안드로이드 통신사 변경 «설정 → T로밍(또는 해외로밍) → 로밍 이동통신사 선택»</td><td>«설정 › 연결 › 모바일 네트워크 › 로밍 이동통신사 선택» + «SKT 폰은 설정 › T로밍 › 로밍 이동통신사 선택에 있어요»(John Q6 — 옛 글 유지 · 실기기 미확인)</td><td>가이드 문제 해결 Q4 · 화면 aos-carrier 와 같은 경로</td></tr>
+            <tr><td>9</td><td>아이폰 통신사 변경 5단계 · 안드로이드 6단계(글만)</td><td>한 페이지 두 구간(John Q9) · 3단계씩 + 화면 (아이폰 2장 · 안드로이드 1장)</td><td>가이드 단계 문체(누를 이름 형광 밑줄 · 경로 굵게)</td></tr>
+            <tr><td>10</td><td>«유럽은 … 음영지역 … 최대한 많은 통신사와 계약»</td><td>«나라와 지역에 따라 잘 잡히는 통신사가 달라요» · «나라에 따라 여러 통신사에 연결할 수 있어요»(통신사가 하나뿐인 나라 8곳 — 폴란드 · 키프로스 등)</td><td>판매 국가가 유럽 밖에도 있음(Q8) · «계약» 표현은 벤더 사실 확인 없이 쓰지 않음 — 상품 상세 «현지 통신사» 칩과 같은 수준의 사실만</td></tr>
             <tr><td>11</td><td>«국가별 통신사 목록 바로가기»(/network-list)</td><td>④ 나라별 현지 통신사 페이지로(John Q4 — 옮기기)</td><td>옛 사이트 링크 금지(테스트) — 사이트 안 페이지로</td></tr>
             <tr><td>11a</td><td>/network-list 목록 70여 개국(Maya 시절 · 러시아 · 우크라이나 등 포함) · «(추천)» 표시</td><td>판매 중인 49개국만 · 카탈로그 K1 의 통신사 · 망(상품 상세 칩과 같은 값) · «(추천)» 없음 · «현지 사정에 따라 …» 단서</td><td>manager 09-13: 국가별 우선 통신사 자료 없음 · 원가 기준 망 목록은 고객용 금지 — K1 은 이미 상품 상세에 공개된 값 · 판매하지 않는 나라를 실으면 «쓸 수 있다» 로 읽힘</td></tr>
             <tr><td>12</td><td>옛 사이트 «설치가이드» 링크</td><td>사이트판 → /guide/&lt;os&gt; · 전용판 → /install-guide/&lt;os&gt;</td><td>apps/client 전체에서 «super.site» 금지(guide.test.ts)</td></tr>
@@ -1367,15 +1333,15 @@
       <!-- =============================================================== 질문 -->
       <h2 class="mk-h2" id="qs">질문 Q1~Q9 — 추천안</h2>
       <div class="mk-card">
-        <div class="mk-q"><span class="mk-q__n">Q1</span><div><p><b>주소</b> — (b) 가이드 체계 <span class="mk-pill mk-pill--rec">John 결정</span></p><p>/guide/check/&lt;os&gt; · /guide/network/&lt;os&gt; + 전용판 /install-guide/check/&lt;os&gt; · /install-guide/network/&lt;os&gt;. 비교는 «주소» 표.</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q1</span><div><p><b>주소</b> — (b) 가이드 체계 <span class="mk-pill mk-pill--rec">John 결정</span></p><p>/guide/check/&lt;os&gt; · /guide/network · /guide/carriers + 전용판 /install-guide/check/&lt;os&gt; · /install-guide/network · /install-guide/carriers. 비교는 «주소» 표.</p></div></div>
         <div class="mk-q"><span class="mk-q__n">Q2</span><div><p><b>판</b> — 사이트판 + 전용판 <span class="mk-pill mk-pill--rec">John 결정</span></p><p>발급 화면 하단 시트판은 만들지 않음(시트 안 링크는 새 탭으로 사이트판).</p></div></div>
         <div class="mk-q"><span class="mk-q__n">Q3</span><div><p><b>진입점</b> — 허브 «설치한 뒤에» + 가이드 문제 해결 링크 <span class="mk-pill mk-pill--rec">John 결정</span></p><p>발급 완료 화면 · 마이 · 알림톡/CS 문구 변경은 범위 밖.</p></div></div>
         <div class="mk-q"><span class="mk-q__n">Q4</span><div><p><b>«국가별 통신사 목록»</b> — /network-list 도 옮기기 <span class="mk-pill mk-pill--rec">John 결정</span></p><p>④ /guide/carriers(+ 전용판) — 카탈로그 K1 49개국 · «(추천)» 없음. 통신사 바꾸기 두 페이지의 팁 상자가 이 페이지로 잇는다.</p></div></div>
-        <div class="mk-q"><span class="mk-q__n">Q5</span><div><p><b>네트워크 이름</b> — 이름으로 가려내지 않고 «다른 여행용 eSIM 은 꺼 두기» (manager A안) <span class="mk-pill mk-pill--rec">추천</span></p><p>manager 회신 10-14: 지금 고객 eSIM 은 전부 Sparks · 화면 글자는 실기기 미확인 · 우리만의 고정 이름 없음(같은 스폰서 · 옛 Maya 와 겹치고 배치마다 바뀔 수 있음) · 공개 비권장 · 옛 «다른 이름이면 삭제 후 재설치» 는 틀렸고 위험. 다른 안: B 설치 때 레이블 고정(가이드 변경 · 실기기 선행) · C ICCID 대조(발급 화면에 ICCID 없음).</p></div></div>
-        <div class="mk-q"><span class="mk-q__n">Q6</span><div><p><b>경로 · 화면 기준</b> — 설치 가이드 2609 에 맞춤 <span class="mk-pill mk-pill--rec">추천</span></p><p>옛 글과 달라지는 곳은 «결정 표 초안» 15줄.</p></div></div>
-        <div class="mk-q"><span class="mk-q__n">Q7</span><div><p><b>문체 · 오타</b> — «~해요» 로 다듬고 오타 고침 · 켜고 끄는 내용은 그대로 <span class="mk-pill mk-pill--rec">추천</span></p></div></div>
-        <div class="mk-q"><span class="mk-q__n">Q8</span><div><p><b>«유럽은…» 문장</b> — 나라 · 지역 일반으로 <span class="mk-pill mk-pill--rec">추천</span></p><p>«계약» 표현도 빼고 «한 나라에서 여러 통신사에 연결할 수 있어요» 로.</p></div></div>
-        <div class="mk-q"><span class="mk-q__n">Q9</span><div><p><b>OS 묶음</b> — 통신사 변경도 가이드처럼 OS 전환(두 페이지) <span class="mk-pill mk-pill--rec">추천</span></p><p>원본처럼 한 페이지에 두 OS 를 담으면 주소 하나로 끝나지만, 가이드 · 확인 페이지와 모양이 달라지고 자기 OS 를 찾아 내려가야 함.</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q5</span><div><p><b>네트워크 이름</b> — 이름으로 가려내지 않고 «다른 여행용 eSIM 은 꺼 두기» (manager A안) <span class="mk-pill mk-pill--rec">John 결정</span></p><p>manager 회신 10-14: 지금 고객 eSIM 은 전부 Sparks · 화면 글자는 실기기 미확인 · 우리만의 고정 이름 없음(같은 스폰서 · 옛 Maya 와 겹치고 배치마다 바뀔 수 있음) · 공개 비권장 · 옛 «다른 이름이면 삭제 후 재설치» 는 틀렸고 위험. 다른 안: B 설치 때 레이블 고정(가이드 변경 · 실기기 선행) · C ICCID 대조(발급 화면에 ICCID 없음).</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q6</span><div><p><b>경로 · 화면 기준</b> — 설치 가이드 2609 에 맞춤 + 통신사 변경 SKT 대체 경로 한 줄 유지 <span class="mk-pill mk-pill--rec">John 결정</span></p><p>옛 글과 달라지는 곳은 «결정 표 초안».</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q7</span><div><p><b>문체 · 오타</b> — «~해요» 로 다듬고 오타 고침 · 켜고 끄는 내용은 그대로 <span class="mk-pill mk-pill--rec">John 결정</span></p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q8</span><div><p><b>«유럽은…» 문장</b> — 나라 · 지역 일반으로 <span class="mk-pill mk-pill--rec">John 결정</span></p><p>«계약» 표현도 빼고 «나라에 따라 여러 통신사에 연결할 수 있어요» 로(통신사가 하나뿐인 나라 8곳이 있어 «한 나라에서» 는 쓰지 않음).</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q9</span><div><p><b>OS 묶음</b> — 통신사 변경은 한 페이지에 두 OS(원본 구성) <span class="mk-pill mk-pill--rec">John 결정</span></p><p>/guide/network — 바로가기 칩 «아이폰 · 안드로이드» · 구간 #ios · #android. 설치 확인은 OS 별 두 페이지(OS 전환) 그대로.</p></div></div>
       </div>
     </div>
 
