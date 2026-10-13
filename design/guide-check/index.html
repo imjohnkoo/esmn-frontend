@@ -187,6 +187,53 @@
         text-decoration: none;
       }
 
+      /* 나라별 통신사 목록 — 상품 상세 «현지 통신사» 칩(ProductSections .sec__op)과 같은 값 */
+      .g-carriers {
+        display: grid;
+        gap: 0;
+        margin: 16px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .g-carriers__h {
+        margin: 18px 0 4px;
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--n-color-primary-600, #5025e8);
+      }
+      .g-carriers__row {
+        display: grid;
+        gap: 6px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--n-color-neutral-100, #f5f5f5);
+      }
+      .g-carriers__name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .g-carriers__name img {
+        border-radius: 2px;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+      }
+      .g-carriers__ops {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .g-carriers__op {
+        padding: 3px 9px;
+        border: 1px solid var(--n-color-neutral-200, #e5e5e5);
+        border-radius: 8px;
+        font-size: 13px;
+        color: var(--n-color-neutral-700, #404040);
+      }
+      .g-carriers__op--muted {
+        color: var(--n-color-neutral-500, #737373);
+      }
+
       /* 새 화면(템플릿에서 바로 그림) — 굽는 PNG 와 같은 창 비율 */
       .shot__win {
         position: relative;
@@ -544,7 +591,7 @@
       </header>
 
       <nav class="mk-bar" aria-label="목업 안에서 이동">
-        <a href="#pages">세 페이지</a>
+        <a href="#pages">페이지</a><a href="#carriers">④ 통신사 목록</a>
         <a href="#entry">진입점 (Q3)</a>
         <a href="#bare">전용판 (Q2)</a>
         <a href="#url">주소 (Q1)</a>
@@ -555,7 +602,7 @@
       </nav>
 
       <!-- =============================================================== 세 페이지 -->
-      <h2 class="mk-h2" id="pages">세 페이지 — 사이트판(헤더 · 하단 탭 있음)</h2>
+      <h2 class="mk-h2" id="pages">페이지 — 사이트판(헤더 · 하단 탭 있음)</h2>
       <p class="mk-lead">
         주소는 Q1 추천안 기준입니다. 통신사 변경은 Q9 추천안(가이드처럼 OS 전환)이라 아이폰 · 안드로이드 두 장입니다. 확인
         페이지는 <b>현지 도착 뒤의 화면</b>이 기준이라 머리 설명에 그 시점을 밝혔습니다(가이드 STEP 2 는 한국에서 셀룰러
@@ -849,10 +896,10 @@
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" /></svg>
                   <div class="g-note__body">
                     <p><b class="g-b">여행용 eSIM은 한 나라에서 여러 통신사에 연결할 수 있어요.</b> 통신사마다 잘 잡히는 곳이 달라, 신호가 약한 곳에서는 바꾸면 나아질 수 있어요.</p>
-                    <p class="mk-add">나라별로 연결되는 통신사는 상품 페이지의 ‘현지 통신사’에서 볼 수 있어요. <a class="g-more__link" href="/search">나라 검색하기</a></p>
+                    <p class="mk-add">나라별로 연결할 수 있는 통신사는 <a class="g-more__link" href="#carriers">나라별 현지 통신사</a>에서 볼 수 있어요.</p>
                   </div>
                 </div>
-                <span class="mk-fc mk-fc--new">Q8 일반화 · Q4 (b) 안</span>
+                <span class="mk-fc mk-fc--new">Q8 일반화 · Q4 → ④ 목록 페이지</span>
 
                 <ol class="g-steps g-sec__steps" role="list" style="margin-top: 28px">
                   <li class="g-step">
@@ -929,7 +976,7 @@
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" /></svg>
                   <div class="g-note__body">
                     <p><b class="g-b">여행용 eSIM은 한 나라에서 여러 통신사에 연결할 수 있어요.</b> 통신사마다 잘 잡히는 곳이 달라, 신호가 약한 곳에서는 바꾸면 나아질 수 있어요.</p>
-                    <p class="mk-add">나라별로 연결되는 통신사는 상품 페이지의 ‘현지 통신사’에서 볼 수 있어요. <a class="g-more__link" href="/search">나라 검색하기</a></p>
+                    <p class="mk-add">나라별로 연결할 수 있는 통신사는 <a class="g-more__link" href="#carriers">나라별 현지 통신사</a>에서 볼 수 있어요.</p>
                   </div>
                 </div>
 
@@ -979,6 +1026,109 @@
                   <ul class="g-cs__cards">
                     <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--kakao" aria-hidden="true">TALK</span><span class="g-cs__text"><span class="g-cs__name">카카오톡 채널</span><span class="g-cs__handle">@이심마니</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
                     <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--naver" aria-hidden="true">N</span><span class="g-cs__text"><span class="g-cs__name">네이버 톡톡</span><span class="g-cs__handle">스마트스토어 채팅 문의</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
+                  </ul>
+                  <a class="g-cs__more" href="#">고객센터 전체 보기</a>
+                </section>
+              </section>
+            </article>
+            <div class="mk-foot">사업자정보 푸터 (생략)</div>
+            <nav class="mk-tab" aria-label="하단 탭(그림)"><span>홈</span><span>내 eSIM</span><span class="on">가이드</span><span>마이</span></nav>
+          </div>
+        </section>
+
+        <!-- ------------------------------------------------ ④ 나라별 현지 통신사 (Q4 — /network-list 옮기기) -->
+        <section class="mk-col" aria-label="나라별 현지 통신사 목업" id="carriers">
+          <p class="mk-cap">④ 나라별 현지 통신사 (Q4 · 옛 /network-list)<code>/guide/carriers</code></p>
+          <div class="mk-phone">
+            <div class="mk-sh"><span class="mk-logo">이심마니</span><span class="mk-sh__r"><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg></span><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></span></span></div>
+            <article class="g-article">
+              <header class="g-hero">
+                <p class="g-hero__eyebrow">Carriers</p>
+                <h1 class="g-hero__title">나라별 현지 통신사</h1>
+                <p class="g-hero__lede">여행용 eSIM이 나라마다 연결할 수 있는 통신사예요.<br />연결이 불안정하면 이 중 다른 통신사로 바꿔 보세요.</p>
+              </header>
+              <section class="g-sec" style="padding-top: 20px">
+                <div class="g-note g-note--info" style="margin-top: 0">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>
+                  <div class="g-note__body">
+                    <p>현지 사정에 따라 연결되는 통신사가 달라질 수 있어요.</p>
+                    <p>통신사 바꾸는 방법: <a class="g-more__link" href="#">아이폰</a> · <a class="g-more__link" href="#">안드로이드</a></p>
+                  </div>
+                </div>
+                <span class="mk-fc mk-fc--new">데이터 = 카탈로그 K1 operators · network(상품 상세 칩과 같은 값) · 49개국 · 가나다 · (추천) 없음</span>
+                <ul class="g-carriers">
+                  <li class="g-carriers__h" aria-hidden="true">ㄱ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/GR.a4519d98.svg" alt="" width="20" height="15" />그리스</span><span class="g-carriers__ops"><span class="g-carriers__op">Cosmote</span><span class="g-carriers__op">Nova</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㄴ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/NL.d99b87e8.svg" alt="" width="20" height="15" />네덜란드</span><span class="g-carriers__ops"><span class="g-carriers__op">KPN</span><span class="g-carriers__op">Odido</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/NO.55fc1564.svg" alt="" width="20" height="15" />노르웨이</span><span class="g-carriers__ops"><span class="g-carriers__op">ice</span><span class="g-carriers__op">Telenor</span><span class="g-carriers__op">Telia</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/NZ.9e6e1d5e.svg" alt="" width="20" height="15" />뉴질랜드</span><span class="g-carriers__ops"><span class="g-carriers__op">One NZ</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㄷ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/DK.4d7c9c44.svg" alt="" width="20" height="15" />덴마크</span><span class="g-carriers__ops"><span class="g-carriers__op">TDC</span><span class="g-carriers__op">Telenor</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/DE.c02c7eec.svg" alt="" width="20" height="15" />독일</span><span class="g-carriers__ops"><span class="g-carriers__op">O2</span><span class="g-carriers__op">Telekom</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㄹ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/LV.f4e0567e.svg" alt="" width="20" height="15" />라트비아</span><span class="g-carriers__ops"><span class="g-carriers__op">Bite</span><span class="g-carriers__op">LMT</span><span class="g-carriers__op">Tele2</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/RO.b56a867a.svg" alt="" width="20" height="15" />루마니아</span><span class="g-carriers__ops"><span class="g-carriers__op">DIGI</span><span class="g-carriers__op">Orange</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/LU.02b43c1a.svg" alt="" width="20" height="15" />룩셈부르크</span><span class="g-carriers__ops"><span class="g-carriers__op">Orange</span><span class="g-carriers__op">Tango</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/LT.8ef0e9cb.svg" alt="" width="20" height="15" />리투아니아</span><span class="g-carriers__ops"><span class="g-carriers__op">Bitė</span><span class="g-carriers__op">Tele2</span><span class="g-carriers__op">Telia</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/LI.6d84c94c.svg" alt="" width="20" height="15" />리히텐슈타인</span><span class="g-carriers__ops"><span class="g-carriers__op">FL1</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㅁ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/MA.8f1a0be2.svg" alt="" width="20" height="15" />모로코</span><span class="g-carriers__ops"><span class="g-carriers__op">Inwi</span><span class="g-carriers__op">Maroc Telecom</span><span class="g-carriers__op">Orange</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G(일부 통신사)</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/ME.98399037.svg" alt="" width="20" height="15" />몬테네그로</span><span class="g-carriers__ops"><span class="g-carriers__op">Crnogorski Telekom</span><span class="g-carriers__op">m:tel</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/MT.9488845c.svg" alt="" width="20" height="15" />몰타</span><span class="g-carriers__ops"><span class="g-carriers__op">Epic</span><span class="g-carriers__op">Melita</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/US.633325cb.svg" alt="" width="20" height="15" />미국</span><span class="g-carriers__ops"><span class="g-carriers__op">AT&amp;T</span><span class="g-carriers__op">Verizon</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㅂ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/VN.7b590ecf.svg" alt="" width="20" height="15" />베트남</span><span class="g-carriers__ops"><span class="g-carriers__op">VinaPhone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/BE.ba60828a.svg" alt="" width="20" height="15" />벨기에</span><span class="g-carriers__ops"><span class="g-carriers__op">Orange</span><span class="g-carriers__op">Proximus</span><span class="g-carriers__op">Telenet</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/BA.07eced7b.svg" alt="" width="20" height="15" />보스니아</span><span class="g-carriers__ops"><span class="g-carriers__op">BH Telecom</span><span class="g-carriers__op">HT Eronet</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/MK.8faba052.svg" alt="" width="20" height="15" />북마케도니아</span><span class="g-carriers__ops"><span class="g-carriers__op">A1</span><span class="g-carriers__op">Telekom</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/BG.4943a69e.svg" alt="" width="20" height="15" />불가리아</span><span class="g-carriers__ops"><span class="g-carriers__op">A1</span><span class="g-carriers__op">Vivacom</span><span class="g-carriers__op">Yettel</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㅅ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/RS.4dbe08eb.svg" alt="" width="20" height="15" />세르비아</span><span class="g-carriers__ops"><span class="g-carriers__op">A1</span><span class="g-carriers__op">Yettel</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G(일부 통신사)</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/SE.73e67d57.svg" alt="" width="20" height="15" />스웨덴</span><span class="g-carriers__ops"><span class="g-carriers__op">Tele2</span><span class="g-carriers__op">Telenor</span><span class="g-carriers__op">Telia</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/CH.be4b8257.svg" alt="" width="20" height="15" />스위스</span><span class="g-carriers__ops"><span class="g-carriers__op">Salt</span><span class="g-carriers__op">Sunrise</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/ES.5b25031d.svg" alt="" width="20" height="15" />스페인</span><span class="g-carriers__ops"><span class="g-carriers__op">Movistar</span><span class="g-carriers__op">Orange</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/SK.5ad0da47.svg" alt="" width="20" height="15" />슬로바키아</span><span class="g-carriers__ops"><span class="g-carriers__op">O2</span><span class="g-carriers__op">Orange</span><span class="g-carriers__op">Telekom</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/SI.4eccac5a.svg" alt="" width="20" height="15" />슬로베니아</span><span class="g-carriers__ops"><span class="g-carriers__op">A1</span><span class="g-carriers__op">Telemach</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/SG.4aa6c197.svg" alt="" width="20" height="15" />싱가포르</span><span class="g-carriers__ops"><span class="g-carriers__op">Singtel</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㅇ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/IS.e1e1c200.svg" alt="" width="20" height="15" />아이슬란드</span><span class="g-carriers__ops"><span class="g-carriers__op">Síminn</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/IE.860168f5.svg" alt="" width="20" height="15" />아일랜드</span><span class="g-carriers__ops"><span class="g-carriers__op">eir</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/AL.04b5d48a.svg" alt="" width="20" height="15" />알바니아</span><span class="g-carriers__ops"><span class="g-carriers__op">One Albania</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/EE.9fbc0f51.svg" alt="" width="20" height="15" />에스토니아</span><span class="g-carriers__ops"><span class="g-carriers__op">Elisa</span><span class="g-carriers__op">Tele2</span><span class="g-carriers__op">Telia</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/GB.c9024642.svg" alt="" width="20" height="15" />영국</span><span class="g-carriers__ops"><span class="g-carriers__op">EE</span><span class="g-carriers__op">O2</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/AT.9ad44039.svg" alt="" width="20" height="15" />오스트리아</span><span class="g-carriers__ops"><span class="g-carriers__op">A1</span><span class="g-carriers__op">Magenta</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/IT.03086f2e.svg" alt="" width="20" height="15" />이탈리아</span><span class="g-carriers__ops"><span class="g-carriers__op">Iliad</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/ID.b8cd30f2.svg" alt="" width="20" height="15" />인도네시아</span><span class="g-carriers__ops"><span class="g-carriers__op">Smartfren</span><span class="g-carriers__op">XL</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㅈ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/GE.05f9a3cb.svg" alt="" width="20" height="15" />조지아</span><span class="g-carriers__ops"><span class="g-carriers__op">Cellfie</span><span class="g-carriers__op">Magti</span><span class="g-carriers__op">Silknet</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G(일부 통신사)</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㅊ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/CZ.5a462b5f.svg" alt="" width="20" height="15" />체코</span><span class="g-carriers__ops"><span class="g-carriers__op">O2</span><span class="g-carriers__op">T-Mobile</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㅋ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/CA.f2b1a3d9.svg" alt="" width="20" height="15" />캐나다</span><span class="g-carriers__ops"><span class="g-carriers__op">Bell</span><span class="g-carriers__op">Eastlink</span><span class="g-carriers__op">Freedom Mobile</span><span class="g-carriers__op">Telus</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/HR.8bdbc317.svg" alt="" width="20" height="15" />크로아티아</span><span class="g-carriers__ops"><span class="g-carriers__op">A1</span><span class="g-carriers__op">Hrvatski Telekom</span><span class="g-carriers__op">Telemach</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/CY.eea7f79e.svg" alt="" width="20" height="15" />키프로스</span><span class="g-carriers__ops"><span class="g-carriers__op">Epic</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㅌ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/TH.bb8a18d6.svg" alt="" width="20" height="15" />태국</span><span class="g-carriers__ops"><span class="g-carriers__op">AIS</span><span class="g-carriers__op">dtac</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/TR.d83c3693.svg" alt="" width="20" height="15" />튀르키예</span><span class="g-carriers__ops"><span class="g-carriers__op">Türk Telekom</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㅍ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/PT.447e9ee9.svg" alt="" width="20" height="15" />포르투갈</span><span class="g-carriers__ops"><span class="g-carriers__op">MEO</span><span class="g-carriers__op">NOS</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/PL.698cda1f.svg" alt="" width="20" height="15" />폴란드</span><span class="g-carriers__ops"><span class="g-carriers__op">Plus</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/FR.5cdc5047.svg" alt="" width="20" height="15" />프랑스</span><span class="g-carriers__ops"><span class="g-carriers__op">Bouygues Telecom</span><span class="g-carriers__op">Free</span><span class="g-carriers__op">Orange</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/FI.f4064089.svg" alt="" width="20" height="15" />핀란드</span><span class="g-carriers__ops"><span class="g-carriers__op">DNA</span><span class="g-carriers__op">Elisa</span><span class="g-carriers__op">Telia</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__h" aria-hidden="true">ㅎ</li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/HU.9e6bc6d7.svg" alt="" width="20" height="15" />헝가리</span><span class="g-carriers__ops"><span class="g-carriers__op">One</span><span class="g-carriers__op">Telekom</span><span class="g-carriers__op">Yettel</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/AU.1e6796ab.svg" alt="" width="20" height="15" />호주</span><span class="g-carriers__ops"><span class="g-carriers__op">Optus</span><span class="g-carriers__op">Vodafone</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                  <li class="g-carriers__row"><span class="g-carriers__name"><img src="../../apps/client/public/catalog/flags/HK.cb99edfd.svg" alt="" width="20" height="15" />홍콩</span><span class="g-carriers__ops"><span class="g-carriers__op">3 Hong Kong</span><span class="g-carriers__op g-carriers__op--muted">4G/LTE · 5G</span></span></li>
+                </ul>
+              </section>
+              <section class="g-sec g-sec--alt">
+                <section class="g-cs" style="margin-top: 0">
+                  <h2 class="g-cs__title">그래도 해결되지 않으면 문의해 주세요</h2>
+                  <p class="g-cs__lede">설정 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.</p>
+                  <ul class="g-cs__cards">
+                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--kakao" aria-hidden="true">TALK</span><span class="g-cs__text"><span class="g-cs__name">카카오톡 채널</span><span class="g-cs__handle">@이심마니</span></span></a></li>
+                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--naver" aria-hidden="true">N</span><span class="g-cs__text"><span class="g-cs__name">네이버 톡톡</span><span class="g-cs__handle">스마트스토어 채팅 문의</span></span></a></li>
                   </ul>
                   <a class="g-cs__more" href="#">고객센터 전체 보기</a>
                 </section>
@@ -1137,6 +1287,12 @@
               <td><code>/guide/network/{ios,android}</code> · <code>/change-network</code> (한 주소에 OS 둘 — 전용판만 모양이 달라짐)</td>
             </tr>
             <tr>
+              <td>나라별 현지 통신사 (Q4 추가)</td>
+              <td><code>/network-list</code></td>
+              <td class="rec"><code>/guide/carriers</code> · 전용판 <code>/install-guide/carriers</code> (OS 무관 한 페이지)</td>
+              <td><code>/guide/carriers</code> · <code>/network-list</code></td>
+            </tr>
+            <tr>
               <td>근거</td>
               <td>나간 CS 문구 · 알림톡 링크를 도메인만 바꾸면 됨. 대신 가이드와 주소 규칙이 갈리고 이름이 중복(simple-check/simple-check-…)</td>
               <td class="rec">«설치가이드와 동일» — 가이드(/guide/&lt;os&gt; · /install-guide/&lt;os&gt;) 규칙 그대로. 옛 링크는 어차피 도메인을 바꿔야 해서 경로까지 바꾸는 비용이 같음. 파일은 <code>pages/guide/check/*</code> · <code>pages/guide/network/*</code> — 기존 /guide/ios 와 안 겹침</td>
@@ -1170,7 +1326,8 @@
             <tr><td>8</td><td>안드로이드 통신사 변경 «설정 → T로밍(또는 해외로밍) → 로밍 이동통신사 선택»</td><td>«설정 › 연결 › 모바일 네트워크 › 로밍 이동통신사 선택» (SKT 대체 경로는 근거 없어 뺌)</td><td>가이드 문제 해결 Q4 · 화면 aos-carrier 와 같은 경로</td></tr>
             <tr><td>9</td><td>아이폰 통신사 변경 5단계 · 안드로이드 6단계(글만)</td><td>3단계씩 + 화면 (아이폰 2장 · 안드로이드 1장)</td><td>가이드 단계 문체(누를 이름 형광 밑줄 · 경로 굵게)</td></tr>
             <tr><td>10</td><td>«유럽은 … 음영지역 … 최대한 많은 통신사와 계약»</td><td>«나라와 지역에 따라 잘 잡히는 통신사가 달라요» · «한 나라에서 여러 통신사에 연결할 수 있어요»</td><td>판매 국가가 유럽 밖에도 있음(Q8) · «계약» 표현은 벤더 사실 확인 없이 쓰지 않음 — 상품 상세 «현지 통신사» 칩과 같은 수준의 사실만</td></tr>
-            <tr><td>11</td><td>«국가별 통신사 목록 바로가기»(/network-list)</td><td>Q4 — 목업은 (b) «상품 페이지의 ‘현지 통신사’» + 나라 검색 링크</td><td>/network-list 는 범위 밖 페이지 · 옛 사이트 링크 금지(테스트)</td></tr>
+            <tr><td>11</td><td>«국가별 통신사 목록 바로가기»(/network-list)</td><td>④ 나라별 현지 통신사 페이지로(John Q4 — 옮기기)</td><td>옛 사이트 링크 금지(테스트) — 사이트 안 페이지로</td></tr>
+            <tr><td>11a</td><td>/network-list 목록 70여 개국(Maya 시절 · 러시아 · 우크라이나 등 포함) · «(추천)» 표시</td><td>판매 중인 49개국만 · 카탈로그 K1 의 통신사 · 망(상품 상세 칩과 같은 값) · «(추천)» 없음 · «현지 사정에 따라 …» 단서</td><td>manager 09-13: 국가별 우선 통신사 자료 없음 · 원가 기준 망 목록은 고객용 금지 — K1 은 이미 상품 상세에 공개된 값 · 판매하지 않는 나라를 실으면 «쓸 수 있다» 로 읽힘</td></tr>
             <tr><td>12</td><td>옛 사이트 «설치가이드» 링크</td><td>사이트판 → /guide/&lt;os&gt; · 전용판 → /install-guide/&lt;os&gt;</td><td>apps/client 전체에서 «super.site» 금지(guide.test.ts)</td></tr>
             <tr><td>13</td><td>네트워크 이름(Connect · StarHub · PLAY · Plus) · «CMHK · CMLink 면 삭제 후 재설치»</td><td>이름 판별 없음 — «다른 여행용 eSIM 은 꺼 두세요(지우지 않아도 돼요)» · «모르겠으면 지우지 말고 고객센터»</td><td>manager 회신(10-14): 우리 eSIM 만의 고정 이름이 없고(스폰서 단위 · 바뀔 수 있음) 공개도 비권장 · 옛 판별은 우리 eSIM 을 지우게 만듦(재설치 불가) — 가이드 «끄고 설치» 원칙과 같게</td></tr>
             <tr><td>14</td><td>«통신사 변경 후 10분»</td><td>그대로 + «안 되면 다시 자동으로» 한 줄</td><td>가이드 문제 해결의 같은 문장</td></tr>
@@ -1210,10 +1367,10 @@
       <!-- =============================================================== 질문 -->
       <h2 class="mk-h2" id="qs">질문 Q1~Q9 — 추천안</h2>
       <div class="mk-card">
-        <div class="mk-q"><span class="mk-q__n">Q1</span><div><p><b>주소</b> — (b) 가이드 체계 <span class="mk-pill mk-pill--rec">추천</span></p><p>/guide/check/&lt;os&gt; · /guide/network/&lt;os&gt; + 전용판 /install-guide/check/&lt;os&gt; · /install-guide/network/&lt;os&gt;. 비교는 «주소» 표.</p></div></div>
-        <div class="mk-q"><span class="mk-q__n">Q2</span><div><p><b>판</b> — 사이트판 + 전용판 <span class="mk-pill mk-pill--rec">추천</span></p><p>발급 화면 하단 시트판은 만들지 않음(시트 안 링크는 새 탭으로 사이트판).</p></div></div>
-        <div class="mk-q"><span class="mk-q__n">Q3</span><div><p><b>진입점</b> — 허브 «설치한 뒤에» + 가이드 문제 해결 링크 <span class="mk-pill mk-pill--rec">추천</span></p><p>발급 완료 화면 · 마이 · 알림톡/CS 문구 변경은 범위 밖.</p></div></div>
-        <div class="mk-q"><span class="mk-q__n">Q4</span><div><p><b>«국가별 통신사 목록»</b> — (b) 상품 페이지 «현지 통신사» 안내 + 나라 검색 링크 <span class="mk-pill mk-pill--rec">추천</span></p><p>(a) 빼기 · (c) /network-list 도 옮기기(범위 커짐). 원가 기준 망 목록은 고객용으로 쓰지 않는다는 manager 판단(09-13)이 있어 (c) 는 데이터 출처부터 새로 정해야 함.</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q1</span><div><p><b>주소</b> — (b) 가이드 체계 <span class="mk-pill mk-pill--rec">John 결정</span></p><p>/guide/check/&lt;os&gt; · /guide/network/&lt;os&gt; + 전용판 /install-guide/check/&lt;os&gt; · /install-guide/network/&lt;os&gt;. 비교는 «주소» 표.</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q2</span><div><p><b>판</b> — 사이트판 + 전용판 <span class="mk-pill mk-pill--rec">John 결정</span></p><p>발급 화면 하단 시트판은 만들지 않음(시트 안 링크는 새 탭으로 사이트판).</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q3</span><div><p><b>진입점</b> — 허브 «설치한 뒤에» + 가이드 문제 해결 링크 <span class="mk-pill mk-pill--rec">John 결정</span></p><p>발급 완료 화면 · 마이 · 알림톡/CS 문구 변경은 범위 밖.</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q4</span><div><p><b>«국가별 통신사 목록»</b> — /network-list 도 옮기기 <span class="mk-pill mk-pill--rec">John 결정</span></p><p>④ /guide/carriers(+ 전용판) — 카탈로그 K1 49개국 · «(추천)» 없음. 통신사 바꾸기 두 페이지의 팁 상자가 이 페이지로 잇는다.</p></div></div>
         <div class="mk-q"><span class="mk-q__n">Q5</span><div><p><b>네트워크 이름</b> — 이름으로 가려내지 않고 «다른 여행용 eSIM 은 꺼 두기» (manager A안) <span class="mk-pill mk-pill--rec">추천</span></p><p>manager 회신 10-14: 지금 고객 eSIM 은 전부 Sparks · 화면 글자는 실기기 미확인 · 우리만의 고정 이름 없음(같은 스폰서 · 옛 Maya 와 겹치고 배치마다 바뀔 수 있음) · 공개 비권장 · 옛 «다른 이름이면 삭제 후 재설치» 는 틀렸고 위험. 다른 안: B 설치 때 레이블 고정(가이드 변경 · 실기기 선행) · C ICCID 대조(발급 화면에 ICCID 없음).</p></div></div>
         <div class="mk-q"><span class="mk-q__n">Q6</span><div><p><b>경로 · 화면 기준</b> — 설치 가이드 2609 에 맞춤 <span class="mk-pill mk-pill--rec">추천</span></p><p>옛 글과 달라지는 곳은 «결정 표 초안» 15줄.</p></div></div>
         <div class="mk-q"><span class="mk-q__n">Q7</span><div><p><b>문체 · 오타</b> — «~해요» 로 다듬고 오타 고침 · 켜고 끄는 내용은 그대로 <span class="mk-pill mk-pill--rec">추천</span></p></div></div>
