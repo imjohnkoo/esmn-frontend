@@ -2,7 +2,8 @@
  * 페이지별 데이터 조각 — 페이지 전용 라우트(`server/api/catalog/*`)가 이것만 응답한다(plan §2.1 — 옵션 전체를
  * 브라우저 번들 · payload 에 싣지 않는다). 순수 함수라 테스트로 모양을 잠근다.
  */
-import { lowestWon, zoneByCode, zonesOfCountry } from './derive'
+import { countriesOf, lowestWon, zoneByCode, zonesOfCountry } from './derive'
+import { toChosung } from './search'
 import { countryMeta, type PageMeta } from './seo'
 import type { CatalogView, Kind, ZoneView } from './types'
 
@@ -67,4 +68,44 @@ export function countryPageData(catalog: CatalogView, iso3: string): CountryPage
 /** 상품 상세(spec S-4) — zone 하나(옵션 ≤ 103개). 모르는 zone 이면 null(→ 404). 판매가 · 즉시할인은 화면 모델에 없다 */
 export function zonePageData(catalog: CatalogView, code: string): ZoneView | null {
   return zoneByCode(catalog, code) ?? null
+}
+
+/** 나라별 현지 통신사 한 줄(client-guide-check S-4 · D-15) — 상품 상세 «현지 통신사» 칩과 같은 값 */
+export interface CarrierRow {
+  iso3: string
+  iso2: string
+  nameKr: string
+  operators: string[] | null
+  network: string | null
+}
+
+export interface CarrierGroup {
+  /** 초성 머리(ㄱ · ㄴ · … — 쌍자음은 기본 자음으로) */
+  head: string
+  rows: CarrierRow[]
+}
+
+const PLAIN_CHOSUNG: Record<string, string> = { ㄲ: 'ㄱ', ㄸ: 'ㄷ', ㅃ: 'ㅂ', ㅆ: 'ㅅ', ㅉ: 'ㅈ' }
+
+/**
+ * 판매 중인 나라 전부(중복 없음 · 가나다 — `countriesOf`)를 초성으로 묶는다. 같은 나라가 여러 zone 에 있으면 첫 zone 값 —
+ * 검증기가 zone 마다 같은 값을 보장한다(D-15). 도시 · 상품은 싣지 않는다(payload).
+ */
+export function carrierGroups(catalog: CatalogView): CarrierGroup[] {
+  const groups: CarrierGroup[] = []
+  for (const c of countriesOf(catalog)) {
+    const first = toChosung(c.nameKr)[0] ?? ''
+    const head = PLAIN_CHOSUNG[first] ?? first
+    const row: CarrierRow = {
+      iso3: c.iso3,
+      iso2: c.iso2,
+      nameKr: c.nameKr,
+      operators: c.operators,
+      network: c.network,
+    }
+    const last = groups.at(-1)
+    if (last?.head === head) last.rows.push(row)
+    else groups.push({ head, rows: [row] })
+  }
+  return groups
 }

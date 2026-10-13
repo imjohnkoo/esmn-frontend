@@ -23,6 +23,7 @@ const props = withDefaults(defineProps<{ content: GuideCheckContent; mode?: 'pag
 const to = (l: Pick<GuideLink, 'page' | 'bare'>) => (props.mode === 'bare' ? l.bare : l.page)
 const OS_ORDER: GuideOs[] = ['ios', 'android']
 const CARD_ICONS = { network: SignalIcon, help: LifebuoyIcon, carriers: GlobeAltIcon } as const
+// 기본 슬롯 = 머리 안내 아래 본문(나라별 현지 통신사 목록 — S-4). 칩 · 안내 줄 · 구간 · 끝 카드는 콘텐츠에 있을 때만 그린다
 </script>
 
 <template>
@@ -56,6 +57,7 @@ const CARD_ICONS = { network: SignalIcon, help: LifebuoyIcon, carriers: GlobeAlt
     </header>
 
     <nav
+      v-if="content.chips.length"
       class="g-jump"
       :class="{ 'g-jump--under-header': mode === 'page' }"
       aria-label="이 페이지 안에서 이동"
@@ -67,9 +69,13 @@ const CARD_ICONS = { network: SignalIcon, help: LifebuoyIcon, carriers: GlobeAlt
         ></a
       >
     </nav>
-    <p class="g-hero__hint">{{ content.hint }}</p>
+    <p v-if="content.hint" class="g-hero__hint">{{ content.hint }}</p>
 
-    <div v-if="content.intro" class="g-sec g-sec--intro">
+    <div
+      v-if="content.intro || $slots.default"
+      class="g-sec g-sec--intro"
+      :class="{ 'g-sec--intro-solo': !content.hint }"
+    >
       <GuideNote v-for="(n, i) in content.intro" :key="i" :note="n"
         ><p v-if="n.link" class="g-note__more">
           {{ n.link.before
@@ -77,6 +83,7 @@ const CARD_ICONS = { network: SignalIcon, help: LifebuoyIcon, carriers: GlobeAlt
           >{{ n.link.after }}
         </p></GuideNote
       >
+      <slot />
     </div>
 
     <section
@@ -114,7 +121,7 @@ const CARD_ICONS = { network: SignalIcon, help: LifebuoyIcon, carriers: GlobeAlt
       </h2>
       <p v-if="content.end.lede" class="g-sec__lede">{{ content.end.lede }}</p>
       <GuideAfter v-if="content.end.after" :rows="content.end.after" :mode="mode" />
-      <div class="g-more">
+      <div v-if="content.end.cards.length" class="g-more">
         <NuxtLink
           v-for="c in content.end.cards"
           :key="c.page"
@@ -332,6 +339,11 @@ const CARD_ICONS = { network: SignalIcon, help: LifebuoyIcon, carriers: GlobeAlt
 
 .g-sec--intro > :first-child {
   margin-top: 0;
+}
+
+/* 칩 줄 · 안내 줄이 없는 페이지(나라별 통신사) — 머리 바로 아래라 위 여백을 둔다 */
+.g-sec--intro-solo {
+  padding-top: 20px;
 }
 
 /* 확인 목록 아래 화면 · 상태 표시줄은 목록과 조금 띄운다 */

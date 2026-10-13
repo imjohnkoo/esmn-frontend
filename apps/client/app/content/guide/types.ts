@@ -135,14 +135,15 @@ export interface GuideAfterRow {
 }
 
 export interface GuideCheckContent {
-  key: 'check-ios' | 'check-android' | 'network'
+  key: 'check-ios' | 'check-android' | 'network' | 'carriers'
   eyebrow: string
   title: string
   lede: readonly GuideLede[]
   /** 있으면 머리 OS 전환(설치 확인 두 페이지) — 지금 페이지 OS */
   os?: GuideOs
-  /** 바로가기 칩 — id 는 구간 id, step 은 «확인 1» 처럼 붙여 둘 앞 토막 */
+  /** 바로가기 칩 — id 는 구간 id, step 은 «확인 1» 처럼 붙여 둘 앞 토막(없으면 칩 줄 없음 — 나라별 통신사) */
   chips: readonly { id: string; step?: string; label: string }[]
+  /** 빨간 테두리 안내 줄(화면 그림이 없는 페이지는 빈 글자 — 줄 없음) */
   hint: string
   /** 칩 줄 · 안내 줄 아래 흰 구간의 안내 상자(통신사 바꾸기 머리 tip) */
   intro?: readonly GuideNote[]
@@ -156,10 +157,3 @@ export interface GuideCheckContent {
   }
 }
 
-/** 나라별 현지 통신사 페이지 머리 · 안내(client-guide-check S-4) — 목록은 카탈로그 데이터 */
-export interface GuideCarriersContent {
-  eyebrow: string
-  title: string
-  lede: readonly string[]
-  note: GuideNote
-}

@@ -213,6 +213,18 @@ describe('parseCatalog — 깨진 입력은 빌드를 멈춘다', () => {
         (zoneRaw(r, 'EU340').countries.find((c: any) => c.iso3 === 'FRA').nameKr = '프랑스공화국'),
       /FRA 가 다른 zone 과 다르다/,
     ],
+    // client-guide-check D-15 — 나라별 현지 통신사 페이지는 나라마다 한 줄(첫 zone 값)이라 zone 마다 같아야 한다
+    [
+      '같은 나라 통신사가 zone 마다 다름',
+      (r) =>
+        (zoneRaw(r, 'EU340').countries.find((c: any) => c.iso3 === 'FRA').operators = ['Orange']),
+      /FRA 가 다른 zone 과 다르다/,
+    ],
+    [
+      '같은 나라 망이 zone 마다 다름',
+      (r) => (zoneRaw(r, 'EU340').countries.find((c: any) => c.iso3 === 'FRA').network = '4G/LTE'),
+      /FRA 가 다른 zone 과 다르다/,
+    ],
     ['나라 0', (r) => (zoneRaw(r, 'THA00').countries = []), /나라가 없다/],
     ['iso3 모양', (r) => (zoneRaw(r, 'THA00').countries[0].iso3 = 'TH'), /iso3 모양/],
     [

@@ -9,7 +9,6 @@ import { GUIDE_BARE, GUIDE_CARRIERS, GUIDE_CHECK, GUIDE_NETWORK, GUIDE_PAGES } f
 import { IOS_GUIDE } from './ios'
 import type {
   GuideAfterRow,
-  GuideCarriersContent,
   GuideCheckContent,
   GuideContent,
   GuideNote,
@@ -341,27 +340,34 @@ export const NETWORK_GUIDE: GuideCheckContent = {
   },
 }
 
-// ---------------------------------------------------------------- S-4 나라별 현지 통신사(머리 · 안내)
-export const CARRIERS_GUIDE: GuideCarriersContent = {
+// ---------------------------------------------------------------- S-4 나라별 현지 통신사(머리 · 안내 — 목록은 카탈로그 데이터를 본문 슬롯에)
+export const CARRIERS_GUIDE: GuideCheckContent = {
+  key: 'carriers',
   eyebrow: 'Carriers',
   title: '나라별 현지 통신사',
   lede: [
     '여행용 eSIM이 나라마다 연결할 수 있는 통신사예요.',
     '연결이 불안정하면 이 중 다른 통신사로 바꿔 보세요.',
   ],
-  note: {
-    tone: 'info',
-    lines: [OPERATOR_NOTE],
-    link: {
-      before: '',
+  chips: [],
+  hint: '',
+  intro: [
+    {
+      tone: 'info',
+      lines: [OPERATOR_NOTE],
       link: {
-        label: '통신사 바꾸는 방법 보기',
-        page: GUIDE_NETWORK.page,
-        bare: GUIDE_NETWORK.bare,
+        before: '',
+        link: {
+          label: '통신사 바꾸는 방법 보기',
+          page: GUIDE_NETWORK.page,
+          bare: GUIDE_NETWORK.bare,
+        },
+        after: '',
       },
-      after: '',
     },
-  },
+  ],
+  sections: [],
+  end: { alt: true, cards: [] },
 }
 
 // ---------------------------------------------------------------- S-6 허브 «설치한 뒤에»

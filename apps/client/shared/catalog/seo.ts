@@ -13,7 +13,8 @@ export { SITE_ORIGIN }
 
 /**
  * 카탈로그와 무관한 정적 페이지 — 법정 3종(사업자정보 페이지는 없다 — client-shell D-39) · 가이드 허브 + OS 2(client-guide F-7) · 지원 기기 ·
- * 설치 확인 2 · 현지 통신사 바꾸기(client-guide-check F-8 — `app/content/guide/common.ts` `GUIDE_CHECK` · `GUIDE_NETWORK` 와 같은 글자)
+ * 설치 확인 2 · 현지 통신사 바꾸기 · 나라별 현지 통신사(client-guide-check F-8 — `app/content/guide/common.ts` `GUIDE_CHECK` · `GUIDE_NETWORK` ·
+ * `GUIDE_CARRIERS` 와 같은 글자)
  */
 export const STATIC_ROUTES = [
   '/terms',
@@ -26,11 +27,12 @@ export const STATIC_ROUTES = [
   '/guide/check/ios',
   '/guide/check/android',
   '/guide/network',
+  '/guide/carriers',
 ] as const
 
 /**
  * 전용판(client-guide D-14 · S-5 · D-24 — `app/content/guide/common.ts` `GUIDE_BARE` · `DEVICES_BARE` 와 같은 글자, 테스트가 대조한다).
- * 가이드 두 OS + 지원 기기(canonical = `/supported-devices`) + 설치 확인 2 · 현지 통신사 바꾸기(client-guide-check S-5 — `GUIDE_CHECK` · `GUIDE_NETWORK` 의 bare).
+ * 가이드 두 OS + 지원 기기(canonical = `/supported-devices`) + 설치 확인 2 · 현지 통신사 바꾸기 · 나라별 현지 통신사(client-guide-check S-5 — `GUIDE_CHECK` · `GUIDE_NETWORK` · `GUIDE_CARRIERS` 의 bare).
  * 프리렌더만 — 사이트판 `/guide/<os>` 와 같은 글이라 canonical 은 사이트판(D-18 — noindex 없이 canonical 하나로 묶는다),
  * sitemap 에는 원본(canonical) 주소만 싣으므로 여기서 뺀다. 설명도 사이트판 것을 쓴다
  */
@@ -41,6 +43,7 @@ export const GUIDE_BARE_ROUTES = [
   '/install-guide/check/ios',
   '/install-guide/check/android',
   '/install-guide/network',
+  '/install-guide/carriers',
 ] as const
 
 export function catalogRoutes(catalog: CatalogView): string[] {
@@ -131,6 +134,7 @@ export const STATIC_DESCRIPTIONS: Record<(typeof STATIC_ROUTES)[number], string>
   '/guide/check/android':
     '현지에서 갤럭시 eSIM이 연결되지 않을 때 SIM 관리자 · 데이터 로밍 설정을 화면과 비교해 확인해요.',
   '/guide/network': '연결이 불안정할 때 아이폰 · 안드로이드에서 현지 통신사를 직접 고르는 방법이에요.',
+  '/guide/carriers': '이심마니 여행용 eSIM이 나라마다 연결할 수 있는 현지 통신사 목록이에요.',
 }
 
 export const HOME_META: PageMeta = {

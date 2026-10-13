@@ -9,6 +9,7 @@ import {
   DEVICES_BARE,
   DEVICES_PAGE,
   GUIDE_BARE,
+  GUIDE_CARRIERS,
   GUIDE_CHECK,
   GUIDE_NETWORK,
   GUIDE_SECTIONS,
@@ -139,6 +140,7 @@ describe('전용판 경로 · 레이아웃(D-14)', () => {
       GUIDE_CHECK.ios.bare,
       GUIDE_CHECK.android.bare,
       GUIDE_NETWORK.bare,
+      GUIDE_CARRIERS.bare,
     ]).toEqual([...GUIDE_BARE_ROUTES])
   })
 

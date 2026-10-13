@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest'
  * client-guide-check 불변식 «같은 모양» · plan §2.1 — 새 본문(GuideCheckArticle)은 설치 가이드 본문(GuideArticle)의 틀 CSS 를
  * 복제한다(GuideArticle 골든을 흔들지 않으려고). 복제가 어긋나면 여기서 실패한다 — 한쪽을 고치면 다른 쪽도 같이.
  */
-const read = (f: string) => readFileSync(`${process.cwd()}/app/components/guide/${f}`, 'utf8')
+const read = (f: string) =>
+  readFileSync(`${process.cwd()}/app/components/${f.includes('/') ? f : `guide/${f}`}`, 'utf8')
 
 /** `<style scoped>` 의 규칙 → { 선택자: 정렬한 선언 } (@media 안 규칙은 «@media … 선택자») */
 function rules(file: string): Map<string, string> {
@@ -77,5 +78,14 @@ describe('확인 목록 글자 = 설치 가이드 단계 문장', () => {
     expect(rules('GuidePoints.vue').get('.g-point__p')).toBe(
       rules('GuideSteps.vue').get('.g-step__p'),
     )
+  })
+})
+
+describe('나라별 통신사 칩 = 상품 상세 «현지 통신사» 칩(client-guide-check S-4)', () => {
+  it('GuideCarriers .g-carriers__op = ProductSections .sec__op · 흐린 칩도 같다', () => {
+    const mine = rules('GuideCarriers.vue')
+    const base = rules('catalog/ProductSections.vue')
+    expect(mine.get('.g-carriers__op')).toBe(base.get('.sec__op'))
+    expect(mine.get('.g-carriers__op--muted')).toBe(base.get('.sec__op--muted'))
   })
 })

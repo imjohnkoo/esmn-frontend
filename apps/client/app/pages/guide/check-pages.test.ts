@@ -1,14 +1,18 @@
 // @vitest-environment happy-dom
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, type Component } from 'vue'
+import { Suspense, defineComponent, h, ref, type Component } from 'vue'
 import { GUIDE_BARE_ROUTES, STATIC_DESCRIPTIONS, STATIC_ROUTES } from '#shared/catalog/seo'
 import { isNoindexPath } from '#shared/utils/robots'
-import { CHECK_ANDROID, CHECK_IOS, NETWORK_GUIDE } from '~/content/guide/check'
+import { carrierGroups } from '#shared/catalog/pages'
+import { fixtureCatalog } from '#shared/catalog/test-data'
+import { CARRIERS_GUIDE, CHECK_ANDROID, CHECK_IOS, NETWORK_GUIDE } from '~/content/guide/check'
 // 페이지는 파일 수집 때 import 한다(install-guide-pages.test.ts 와 같은 이유)
+import BareCarriers from '../install-guide/carriers.vue'
 import BareCheckAndroid from '../install-guide/check/android.vue'
 import BareCheckIos from '../install-guide/check/ios.vue'
 import BareNetwork from '../install-guide/network.vue'
+import SiteCarriers from './carriers.vue'
 import SiteCheckAndroid from './check/android.vue'
 import SiteCheckIos from './check/ios.vue'
 import SiteNetwork from './network.vue'
@@ -108,5 +112,66 @@ describe.each(CASES)('%s', (_name, Site, Bare, site, bare, title) => {
     expect(w.find('article').text()).toBe(site_.find('article').text())
     site_.unmount()
     w.unmount()
+  })
+})
+
+describe('나라별 현지 통신사 — 데이터 라우트 · 같은 key · 실패하면 500(fail-closed — D-15)', () => {
+  const groups = carrierGroups(fixtureCatalog())
+  const fetch = vi.fn()
+  const createError = vi.fn((e: unknown) => Object.assign(new Error('createError'), e))
+  beforeEach(() => {
+    fetch.mockReset()
+    vi.stubGlobal('useFetch', fetch)
+    vi.stubGlobal('createError', createError)
+  })
+  const mountPage = async (P: Component) => {
+    const errors: unknown[] = []
+    const w = mount(
+      defineComponent({ render: () => h(Suspense, null, { default: () => h(P) }) }),
+      { global: { stubs: { NuxtLink }, config: { errorHandler: (e) => void errors.push(e) } } },
+    )
+    await flushPromises()
+    return { w, errors }
+  }
+
+  it.each([
+    ['사이트판 /guide/carriers', SiteCarriers, false],
+    ['전용판 /install-guide/carriers', BareCarriers, true],
+  ] as const)('%s — 머리 · 안내 · 목록 · SEO · canonical', async (_n, P, bare) => {
+    fetch.mockResolvedValue({ data: ref(groups), error: ref(null) })
+    const { w, errors } = await mountPage(P)
+    expect(errors).toEqual([])
+    expect(fetch).toHaveBeenCalledWith('/api/catalog/carriers', { key: 'catalog-carriers' })
+    expect(w.find('h1').text()).toBe(CARRIERS_GUIDE.title)
+    expect(w.find('.g-jump').exists()).toBe(false)
+    expect(w.find('.g-hero__hint').exists()).toBe(false)
+    expect(w.findAll('.g-carriers__row').length).toBe(groups.flatMap((g) => g.rows).length)
+    expect(w.find('.g-note__link').attributes('href')).toBe(bare ? '/install-guide/network' : '/guide/network')
+    const [meta, , canonical] = seo.mock.calls[0]!
+    expect(meta).toEqual({
+      title: CARRIERS_GUIDE.title,
+      description: '이심마니 여행용 eSIM이 나라마다 연결할 수 있는 현지 통신사 목록이에요.',
+    })
+    expect(STATIC_DESCRIPTIONS['/guide/carriers']).toBe(meta.description)
+    if (bare) {
+      expect(pageMeta).toHaveBeenCalledWith({ layout: 'flow' })
+      expect(canonical).toBe('/guide/carriers')
+      expect(GUIDE_BARE_ROUTES as readonly string[]).toContain('/install-guide/carriers')
+    } else {
+      expect(pageMeta).not.toHaveBeenCalled()
+      expect(canonical).toBeUndefined()
+      expect(STATIC_ROUTES as readonly string[]).toContain('/guide/carriers')
+    }
+    w.unmount()
+  })
+
+  it.each([
+    ['라우트 오류', { data: ref(null), error: ref(new Error('x')) }],
+    ['빈 응답', { data: ref(null), error: ref(null) }],
+  ])('%s → 500 으로 던진다(빈 목록 페이지를 만들지 않는다)', async (_n, res) => {
+    fetch.mockResolvedValue(res)
+    const { errors } = await mountPage(SiteCarriers)
+    expect(createError).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 500, fatal: true }))
+    expect(errors.length).toBe(1)
   })
 })

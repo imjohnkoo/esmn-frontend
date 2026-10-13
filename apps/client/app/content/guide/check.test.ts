@@ -142,7 +142,7 @@ describe('문장 — 파서 · 표기 · spec 글자', () => {
       ]),
       CARRIERS_GUIDE.eyebrow,
       CARRIERS_GUIDE.title,
-      ...CARRIERS_GUIDE.lede,
+      ...CARRIERS_GUIDE.lede.filter((l): l is string => typeof l === 'string'),
       GUIDE_AFTER.title,
       ...links(ALL).map((l) => l.label),
     ]
@@ -202,7 +202,9 @@ describe('문장 — 파서 · 표기 · spec 글자', () => {
       '한국에서는 여행용 회선이 ‘활성화 중…’으로 보이고 셀룰러 데이터는 메인이에요. 정상이에요.',
     )
     expect(CHECK_CONTACT_LEDE).toBe('설정 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.')
-    expect(CARRIERS_GUIDE.note.lines).toEqual([OPERATOR_NOTE])
+    expect(CARRIERS_GUIDE.intro?.map((n) => n.lines)).toEqual([[OPERATOR_NOTE]])
+    expect(CARRIERS_GUIDE.chips).toEqual([])
+    expect(CARRIERS_GUIDE.sections).toEqual([])
   })
   it('허브 «설치한 뒤에»(S-6) — 줄 2 · 버튼 3 · 목적지', () => {
     expect(GUIDE_AFTER.title).toBe('설치한 뒤에')
