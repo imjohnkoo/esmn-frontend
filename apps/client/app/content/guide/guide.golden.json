@@ -467,7 +467,12 @@
           "a": [
             "새 회선의 {{데이터 로밍}}이 켜져 있는지, 셀룰러 데이터가 새 회선으로 되어 있는지 다시 확인해 주세요.",
             "그래도 안 되면 비행기 모드를 2~3번 켰다 끄고, 폰을 다시 켜 주세요."
-          ]
+          ],
+          "link": {
+            "to": "/guide/check/ios",
+            "bareTo": "/install-guide/check/ios",
+            "label": "설치 상태 화면으로 확인하기"
+          }
         },
         {
           "q": "연결이 계속 안 되거나 너무 느린가요?",
@@ -475,6 +480,11 @@
             "현지 통신사를 직접 골라 보세요. [[설정 › 셀룰러 › 새 회선 › 네트워크 선택]]에서 {{자동}}을 끄면 통신사 목록이 나와요.",
             "고른 통신사로도 안 되면 다시 자동으로 돌려 주세요."
           ],
+          "link": {
+            "to": "/guide/network#ios",
+            "bareTo": "/install-guide/network#ios",
+            "label": "통신사 바꾸는 방법 자세히 보기"
+          },
           "figure": {
             "key": "ios-network-auto",
             "screen": "ios-network",
@@ -878,7 +888,12 @@
           "a": [
             "모바일 데이터가 ((eSIM 1))로 되어 있는지, {{데이터 로밍 eSIM 1}}이 켜져 있는지 다시 확인해 주세요.",
             "그래도 안 되면 비행기 탑승 모드를 2~3번 켰다 끄고, 폰을 다시 켜 주세요."
-          ]
+          ],
+          "link": {
+            "to": "/guide/check/android",
+            "bareTo": "/install-guide/check/android",
+            "label": "설치 상태 화면으로 확인하기"
+          }
         },
         {
           "q": "연결이 계속 안 되거나 너무 느린가요?",
@@ -886,6 +901,11 @@
             "현지 통신사를 직접 골라 보세요. [[설정 › 연결 › 모바일 네트워크 › 로밍 이동통신사 선택]]에서 ((eSIM 1)) 탭을 누르고 {{자동 선택}}을 끄면 통신사 목록이 나와요.",
             "고른 통신사로도 안 되면 다시 자동 선택으로 돌려 주세요."
           ],
+          "link": {
+            "to": "/guide/network#android",
+            "bareTo": "/install-guide/network#android",
+            "label": "통신사 바꾸는 방법 자세히 보기"
+          },
           "figure": {
             "key": "aos-carrier-auto",
             "screen": "aos-carrier",

@@ -3,7 +3,7 @@
  * `design/install-guide/android.html` @ eb96d75 — 글자 그대로 옮기고, 바꾼 곳은 spec D-4 표만
  * (발급 화면 이름 · 버튼 글자 · 다시 조회 · 문의 링크). 표기는 inline.ts.
  */
-import { DEVICES_BARE, DEVICES_PAGE } from './common'
+import { DEVICES_BARE, DEVICES_PAGE, GUIDE_CHECK, GUIDE_NETWORK } from './common'
 import type { GuideContent } from './types'
 
 export const ANDROID_GUIDE: GuideContent = {
@@ -211,6 +211,12 @@ export const ANDROID_GUIDE: GuideContent = {
           '모바일 데이터가 ((eSIM 1))로 되어 있는지, {{데이터 로밍 eSIM 1}}이 켜져 있는지 다시 확인해 주세요.',
           '그래도 안 되면 비행기 탑승 모드를 2~3번 켰다 끄고, 폰을 다시 켜 주세요.',
         ],
+        // 설치 확인 페이지(client-guide-check S-6 · D-4) — 전용판 · 시트(새 탭)는 bareTo
+        link: {
+          to: GUIDE_CHECK.android.page,
+          bareTo: GUIDE_CHECK.android.bare,
+          label: '설치 상태 화면으로 확인하기',
+        },
       },
       {
         q: '연결이 계속 안 되거나 너무 느린가요?',
@@ -218,6 +224,12 @@ export const ANDROID_GUIDE: GuideContent = {
           '현지 통신사를 직접 골라 보세요. [[설정 › 연결 › 모바일 네트워크 › 로밍 이동통신사 선택]]에서 ((eSIM 1)) 탭을 누르고 {{자동 선택}}을 끄면 통신사 목록이 나와요.',
           '고른 통신사로도 안 되면 다시 자동 선택으로 돌려 주세요.',
         ],
+        // 통신사 바꾸기의 그 OS 구간(client-guide-check S-6 · D-4)
+        link: {
+          to: `${GUIDE_NETWORK.page}#android`,
+          bareTo: `${GUIDE_NETWORK.bare}#android`,
+          label: '통신사 바꾸는 방법 자세히 보기',
+        },
         figure: 'aos-carrier-auto',
       },
       {

@@ -34,6 +34,9 @@ const headTab = computed(() => (props.mode === 'sheet' ? -1 : undefined))
 // 확인 카드 링크(«지원 기기 확인하기» — D-22)는 시트에서 새 탭(발급 · 본인 확인 화면을 떠나지 않게), 사이트판 · 전용판은 같은 탭.
 // 목적지 — 사이트판은 메뉴 있는 사이트 페이지, 전용판 · 시트(메뉴 없는 화면)는 메뉴 없는 판(D-24)
 const checkTo = (l: { to: string; bareTo?: string }) => (props.mode === 'page' ? l.to : (l.bareTo ?? l.to))
+// 문제 해결 답 아래 링크(client-guide-check D-13 · S-6) — page: to · bare: bareTo ?? to(같은 탭) ·
+// sheet: bareTo 가 있으면 그 주소를 새 탭으로(설치 확인 · 통신사 바꾸기 — 메뉴 없는 판), 없으면 숨긴다(«내 eSIM 조회하기» — D-13)
+const faqTo = (l: { to: string; bareTo?: string }) => (props.mode === 'bare' ? (l.bareTo ?? l.to) : l.to)
 const CHECK_ICONS = {
   wifi: WifiIcon,
   update: ArrowPathIcon,
@@ -211,9 +214,19 @@ const chipStep = (label: string) => /^STEP \d+(?= )/.exec(label)?.[0] ?? ''
           </h3>
           <div class="g-faq__a">
             <p v-for="(a, j) in f.a" :key="j"><GuideText :src="a" /></p>
-            <NuxtLink v-if="f.link && mode !== 'sheet'" :to="f.link.to" class="g-faq__link">{{
-              f.link.label
-            }}</NuxtLink>
+            <template v-if="f.link">
+              <a
+                v-if="mode === 'sheet' && f.link.bareTo"
+                :href="f.link.bareTo"
+                class="g-faq__link"
+                target="_blank"
+                rel="noopener noreferrer"
+                >{{ f.link.label }}<span class="g-check__sr">(새 창)</span></a
+              >
+              <NuxtLink v-else-if="mode !== 'sheet'" :to="faqTo(f.link)" class="g-faq__link">{{
+                f.link.label
+              }}</NuxtLink>
+            </template>
           </div>
           <GuideShot v-if="f.figure" :figure="f.figure" class="g-faq__shot" />
         </div>

@@ -3,7 +3,7 @@
  * @ eb96d75 — 글자 그대로 옮기고, 바꾼 곳은 spec D-4 표만(발급 화면 이름 · 다시 조회 · 문의 링크).
  * 표기: `{{누를 이름}}` · `[[설정 › 셀룰러]]` · `**굵게**` · `((줄바꿈 금지))` (inline.ts).
  */
-import { DEVICES_BARE, DEVICES_PAGE } from './common'
+import { DEVICES_BARE, DEVICES_PAGE, GUIDE_CHECK, GUIDE_NETWORK } from './common'
 import type { GuideContent } from './types'
 
 export const IOS_GUIDE: GuideContent = {
@@ -258,6 +258,12 @@ export const IOS_GUIDE: GuideContent = {
           '새 회선의 {{데이터 로밍}}이 켜져 있는지, 셀룰러 데이터가 새 회선으로 되어 있는지 다시 확인해 주세요.',
           '그래도 안 되면 비행기 모드를 2~3번 켰다 끄고, 폰을 다시 켜 주세요.',
         ],
+        // 설치 확인 페이지(client-guide-check S-6 · D-4) — 전용판 · 시트(새 탭)는 bareTo
+        link: {
+          to: GUIDE_CHECK.ios.page,
+          bareTo: GUIDE_CHECK.ios.bare,
+          label: '설치 상태 화면으로 확인하기',
+        },
       },
       {
         q: '연결이 계속 안 되거나 너무 느린가요?',
@@ -265,6 +271,12 @@ export const IOS_GUIDE: GuideContent = {
           '현지 통신사를 직접 골라 보세요. [[설정 › 셀룰러 › 새 회선 › 네트워크 선택]]에서 {{자동}}을 끄면 통신사 목록이 나와요.',
           '고른 통신사로도 안 되면 다시 자동으로 돌려 주세요.',
         ],
+        // 통신사 바꾸기의 그 OS 구간(client-guide-check S-6 · D-4)
+        link: {
+          to: `${GUIDE_NETWORK.page}#ios`,
+          bareTo: `${GUIDE_NETWORK.bare}#ios`,
+          label: '통신사 바꾸는 방법 자세히 보기',
+        },
         figure: 'ios-network-auto',
       },
       {
