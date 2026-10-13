@@ -1,0 +1,1268 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>설치 확인 · 통신사 변경 목업</title>
+    <!--
+      client 설치 확인 · 통신사 변경 페이지 3종 — 디자인 목업 v1 (2026-10-14 · 세션 guide-check-network)
+      - 모양 정본 = 설치 가이드 골든(apps/client/app/components/guide/__golden__/styles.css)을 그대로 링크한다.
+        골든의 :deep() 규칙만 아래 «골든 :deep 보정» 에서 평문으로 다시 쓴다(브라우저가 :deep 을 모른다).
+      - 폰 화면: 재사용 = public/guide-screens/*.v1.png 그대로 · 새 화면 = scripts/guide-screens 템플릿(screens.js · ui.css)을
+        이 페이지에서 바로 그린다(구현 때 같은 템플릿으로 PNG 를 굽는다). 원본(super.site) 캡처는 쓰지 않는다.
+      - mk-* 는 목업 전용 표시(주석 · 질문 · 단순화한 사이트 머리 · 탭)다. g-* 는 골든 클래스 그대로.
+    -->
+    <link rel="stylesheet" href="../../apps/client/app/components/guide/__golden__/styles.css" />
+    <link rel="stylesheet" href="../../apps/client/scripts/guide-screens/ui.css" />
+    <style>
+      @font-face {
+        font-family: 'NanumSquareNeo';
+        font-weight: 100 900;
+        src: url('../../apps/client/public/fonts/NanumSquareNeo-Variable.woff') format('woff');
+      }
+      @font-face {
+        font-family: 'Pretendard';
+        font-weight: 45 920;
+        src: url('../../apps/client/public/fonts/PretendardVariable.woff2') format('woff2');
+      }
+
+      /* ---------- 골든 :deep 보정 (styles.css 의 :deep 규칙을 평문으로) ---------- */
+      .g-method .g-step__text,
+      .g-method .g-note {
+        margin-left: 6px;
+        margin-right: 6px;
+      }
+      .g-note--warn .g-b {
+        color: var(--n-color-error-700, #b91c1c);
+      }
+      .g-note--tip .g-b {
+        color: var(--n-color-primary-700, #4a1fd6);
+      }
+      .guide-page__cards .n-link-card__label {
+        font-size: 15px;
+      }
+      .guide-page__cards .n-link-card__sub {
+        color: var(--n-color-neutral-500, #737373);
+        font-size: 13px;
+        line-height: 1.6;
+        word-break: keep-all;
+      }
+      /* DS NLinkCard (packages/design-vue — scoped 라 여기 옮김) */
+      .n-link-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border: 1px solid #f1f1f4;
+        border-radius: 12px;
+        background: #fff;
+        color: #171717;
+        font-family: 'Pretendard', sans-serif;
+        text-decoration: none;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .n-link-card__icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: #fafafa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .n-link-card__text {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .n-link-card__label {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .n-link-card__sub {
+        font-size: 11px;
+        color: #a3a3a3;
+      }
+      .n-link-card__chev {
+        margin-left: auto;
+        color: #a3a3a3;
+        display: inline-flex;
+      }
+
+      /* ---------- 새 조각 후보 (구현 때 GuideArticle 계열에 더한다) ---------- */
+      /* 확인 목록 — 화면과 비교할 상태 한 줄씩(체크 표시) */
+      .g-points {
+        display: grid;
+        gap: 10px;
+        margin: 0 0 4px;
+        padding: 0;
+        list-style: none;
+      }
+      .g-points li {
+        display: grid;
+        grid-template-columns: 24px 1fr;
+        gap: 10px;
+        align-items: start;
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--n-color-neutral-800, #262626);
+        text-wrap: pretty;
+      }
+      .g-points li::before {
+        content: '';
+        width: 24px;
+        height: 24px;
+        margin-top: 1px;
+        border-radius: 50%;
+        background: var(--n-color-primary-50, #f1edff)
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235025e8' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4L18 8'/%3E%3C/svg%3E")
+          center / 16px no-repeat;
+      }
+      .g-points + .g-shot,
+      .g-points + .mk-tbd {
+        margin-top: 16px;
+      }
+      .g-sec__path {
+        margin: -8px 0 18px;
+        font-size: 15px;
+        line-height: 1.65;
+        color: var(--n-color-neutral-600, #525252);
+        text-align: center;
+      }
+      .g-hero__link,
+      .g-more__link {
+        color: var(--n-color-primary-600, #5025e8);
+        font-weight: 700;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .g-more {
+        display: grid;
+        gap: 10px;
+      }
+      /* 허브 «설치한 뒤에» — 줄 이름 + OS 두 칸 */
+      .g-after {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .g-after li {
+        display: grid;
+        gap: 8px;
+        padding: 14px 16px;
+        border: 1px solid #f1f1f4;
+        border-radius: 12px;
+        background: #fff;
+      }
+      .g-after__t {
+        font-size: 15px;
+        font-weight: 600;
+        color: #171717;
+      }
+      .g-after__sub {
+        font-size: 13px;
+        line-height: 1.6;
+        color: #737373;
+      }
+      .g-after__os {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 2px;
+      }
+      .g-after__os a {
+        padding: 9px 0;
+        border-radius: 9999px;
+        background: var(--n-color-neutral-100, #f5f5f5);
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--n-color-neutral-700, #404040);
+        text-align: center;
+        text-decoration: none;
+      }
+
+      /* 새 화면(템플릿에서 바로 그림) — 굽는 PNG 와 같은 창 비율 */
+      .shot__win {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        aspect-ratio: 368 / 449;
+      }
+
+      /* ---------- 목업 캔버스 ---------- */
+      :root {
+        --mk-bg: #e9ebf1;
+        --mk-ink: #1c1d22;
+        --mk-sub: #5d6070;
+        --mk-line: #d5d8e2;
+        --mk-new: #0e7c5a;
+        --mk-reuse: #3b5bdb;
+        --mk-tbd: #b45309;
+      }
+      html {
+        scroll-padding-top: 56px;
+      }
+      body {
+        margin: 0;
+        background: var(--mk-bg);
+        color: var(--mk-ink);
+        font-family: 'Pretendard', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .mk-wrap {
+        max-width: 1960px;
+        margin: 0 auto;
+        padding: 28px 28px 80px;
+      }
+      .mk-top h1 {
+        margin: 0 0 6px;
+        font-size: 24px;
+        font-weight: 800;
+      }
+      .mk-top p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.65;
+        color: var(--mk-sub);
+        max-width: 1100px;
+      }
+      .mk-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin: 12px 0 0;
+        font-size: 13px;
+        color: var(--mk-sub);
+      }
+      .mk-k {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .mk-k--reuse {
+        background: var(--mk-reuse);
+      }
+      .mk-k--new {
+        background: var(--mk-new);
+      }
+      .mk-k--tbd {
+        background: var(--mk-tbd);
+      }
+      .mk-k--add {
+        background: #7c3aed;
+      }
+      .mk-bar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 18px -28px 0;
+        padding: 10px 28px;
+        background: rgba(233, 235, 241, 0.94);
+        border-bottom: 1px solid var(--mk-line);
+        backdrop-filter: blur(6px);
+      }
+      .mk-bar a,
+      .mk-bar button {
+        padding: 6px 12px;
+        border: 1px solid var(--mk-line);
+        border-radius: 999px;
+        background: #fff;
+        font: 600 13px 'Pretendard', sans-serif;
+        color: var(--mk-ink);
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .mk-bar button[aria-pressed='false'] {
+        background: #f3f4f7;
+        color: var(--mk-sub);
+      }
+      .mk-h2 {
+        margin: 44px 0 6px;
+        font-size: 20px;
+        font-weight: 800;
+      }
+      .mk-lead {
+        margin: 0 0 18px;
+        font-size: 14px;
+        line-height: 1.65;
+        color: var(--mk-sub);
+        max-width: 1100px;
+      }
+      .mk-board {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 28px;
+      }
+      .mk-col {
+        width: 440px;
+        flex: 0 0 440px;
+      }
+      .mk-cap {
+        margin: 0 0 8px;
+        font-size: 15px;
+        font-weight: 800;
+      }
+      .mk-cap code {
+        display: block;
+        margin-top: 2px;
+        font: 600 12.5px ui-monospace, Menlo, monospace;
+        color: var(--mk-sub);
+      }
+      .mk-phone {
+        position: relative;
+        width: 440px;
+        background: #fff;
+        border-radius: 22px;
+        box-shadow:
+          0 1px 0 rgba(0, 0, 0, 0.04),
+          0 18px 40px -24px rgba(20, 22, 40, 0.45);
+        overflow: clip;
+        font-family: 'NanumSquareNeo', 'Pretendard', sans-serif;
+        --shell-header-height: 56px;
+      }
+      .mk-sh {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 56px;
+        padding: 0 12px 0 16px;
+        background: #fff;
+      }
+      .mk-logo {
+        font-size: 19px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        color: var(--n-color-primary-500, #6239ff);
+      }
+      .mk-sh__r {
+        display: flex;
+        gap: 6px;
+      }
+      .mk-sh__r span {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: #fafafa;
+      }
+      .mk-sh__r svg,
+      .mk-tab svg {
+        width: 24px;
+        height: 24px;
+      }
+      .mk-foot {
+        padding: 18px 16px;
+        border-top: 1px solid #f0f0f0;
+        background: #fafafa;
+        font-size: 12px;
+        line-height: 1.6;
+        color: #8a8a8a;
+        text-align: center;
+      }
+      .mk-tab {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        height: 56px;
+        border-top: 1px solid #e5e5e5;
+        background: #fff;
+      }
+      .mk-tab span {
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 3px;
+        font-size: 11px;
+        color: #737373;
+      }
+      .mk-tab .on {
+        color: var(--n-color-primary-600, #5025e8);
+        font-weight: 700;
+      }
+      .mk-crop {
+        max-height: 760px;
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(#000 88%, transparent);
+        mask-image: linear-gradient(#000 88%, transparent);
+      }
+
+      /* 주석 — «주석 숨기기» 로 끈다 */
+      .mk-fc {
+        display: block;
+        width: fit-content;
+        margin: 6px auto 0;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font: 600 11.5px ui-monospace, Menlo, monospace;
+        color: #fff;
+        text-align: center;
+      }
+      .mk-fc--reuse {
+        background: var(--mk-reuse);
+      }
+      .mk-fc--new {
+        background: var(--mk-new);
+      }
+      .mk-add {
+        outline: 2px dashed #7c3aed;
+        outline-offset: 4px;
+        border-radius: 6px;
+      }
+      .mk-tbd {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border: 2px dashed var(--mk-tbd);
+        border-radius: 12px;
+        background: #fffbeb;
+        font: 500 13.5px/1.6 'Pretendard', sans-serif;
+        color: #78350f;
+      }
+      .mk-tbd b {
+        color: #92400e;
+      }
+      .mk-tbd s {
+        color: #a16207;
+      }
+      body.mk-clean .mk-fc,
+      body.mk-clean .mk-tbd {
+        display: none;
+      }
+      body.mk-clean .mk-add {
+        outline: none;
+      }
+
+      /* 표 · 질문 */
+      .mk-card {
+        max-width: 1240px;
+        padding: 18px 20px;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 10px 30px -24px rgba(20, 22, 40, 0.5);
+      }
+      .mk-card + .mk-card {
+        margin-top: 14px;
+      }
+      table.mk-t {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+        line-height: 1.6;
+      }
+      .mk-t th,
+      .mk-t td {
+        padding: 9px 10px;
+        border-bottom: 1px solid #eef0f4;
+        text-align: left;
+        vertical-align: top;
+      }
+      .mk-t th {
+        font-size: 12.5px;
+        color: var(--mk-sub);
+        font-weight: 700;
+        background: #f7f8fb;
+      }
+      .mk-t code {
+        font: 600 12.5px ui-monospace, Menlo, monospace;
+        white-space: nowrap;
+      }
+      .mk-t .rec {
+        background: #f3f0ff;
+      }
+      .mk-pill {
+        display: inline-block;
+        padding: 0 7px;
+        border-radius: 999px;
+        font-size: 11.5px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .mk-pill--rec {
+        background: #6239ff;
+        color: #fff;
+      }
+      .mk-pill--wait {
+        background: #fde68a;
+        color: #78350f;
+      }
+      .mk-q {
+        display: grid;
+        grid-template-columns: 54px 1fr;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #eef0f4;
+        font-size: 14px;
+        line-height: 1.65;
+      }
+      .mk-q:last-child {
+        border-bottom: 0;
+      }
+      .mk-q__n {
+        font-weight: 900;
+        color: #6239ff;
+      }
+      .mk-q p {
+        margin: 0;
+      }
+      .mk-q p + p {
+        margin-top: 4px;
+        color: var(--mk-sub);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mk-wrap">
+      <header class="mk-top">
+        <h1>설치 확인 · 통신사 변경 — 디자인 목업 v1</h1>
+        <p>
+          옛 가이드 사이트의 세 페이지(아이폰 간단 설치 확인 · 안드로이드 간단 설치 확인 · 통신사 변경/선택)를
+          <b>설치 가이드(/guide/ios · /guide/android)와 같은 틀 · 같은 문체</b>로 다시 그린 안입니다. 틀과 색은 가이드
+          골든을 그대로 링크했고, 폰 화면은 가이드 PNG 를 재사용하거나 같은 화면 템플릿으로 새로 그렸습니다. 원본 캡처는
+          쓰지 않았습니다. 주소 · 진입점 · 문구 차이는 아래 질문(Q1~Q9)과 «옛 글과 달라지는 곳» 표에 모았습니다.
+        </p>
+        <div class="mk-legend">
+          <span><span class="mk-k mk-k--reuse">재사용</span> 가이드 PNG 그대로</span>
+          <span><span class="mk-k mk-k--new">새 화면</span> 같은 템플릿으로 새로 굽기</span>
+          <span><span class="mk-k mk-k--add">추가</span> 기존 가이드에 더하는 곳</span>
+                    <span>사이트 머리 · 하단 탭 · 푸터는 단순화한 그림</span>
+        </div>
+      </header>
+
+      <nav class="mk-bar" aria-label="목업 안에서 이동">
+        <a href="#pages">세 페이지</a>
+        <a href="#entry">진입점 (Q3)</a>
+        <a href="#bare">전용판 (Q2)</a>
+        <a href="#url">주소 (Q1)</a>
+        <a href="#diff">옛 글과 달라지는 곳 (Q6~Q8)</a>
+        <a href="#figs">폰 화면 목록</a>
+        <a href="#qs">질문 Q1~Q9</a>
+        <button type="button" id="mk-clean" aria-pressed="true">주석 보이기</button>
+      </nav>
+
+      <!-- =============================================================== 세 페이지 -->
+      <h2 class="mk-h2" id="pages">세 페이지 — 사이트판(헤더 · 하단 탭 있음)</h2>
+      <p class="mk-lead">
+        주소는 Q1 추천안 기준입니다. 통신사 변경은 Q9 추천안(가이드처럼 OS 전환)이라 아이폰 · 안드로이드 두 장입니다. 확인
+        페이지는 <b>현지 도착 뒤의 화면</b>이 기준이라 머리 설명에 그 시점을 밝혔습니다(가이드 STEP 2 는 한국에서 셀룰러
+        데이터를 메인으로 두게 하므로, 시점을 안 밝히면 두 페이지가 서로 반대로 읽힙니다).
+      </p>
+
+      <div class="mk-board">
+        <!-- ------------------------------------------------ ① 아이폰 설치 확인 -->
+        <section class="mk-col" aria-label="아이폰 설치 확인 목업">
+          <p class="mk-cap">① 아이폰 설치 확인<code>/guide/check/ios</code></p>
+          <div class="mk-phone">
+            <div class="mk-sh">
+              <span class="mk-logo">이심마니</span>
+              <span class="mk-sh__r"
+                ><span
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg></span
+                ><span
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></span
+              ></span>
+            </div>
+            <article class="g-article">
+              <header class="g-hero">
+                <p class="g-hero__eyebrow">Install check · iOS</p>
+                <h1 class="g-hero__title">아이폰 eSIM 설치 확인</h1>
+                <p class="g-hero__lede">
+                  현지에 도착해 여행용 eSIM을 켠 뒤, 아래 화면과 비교해 확인해 주세요.<br />설치 방법은
+                  <a class="g-hero__link" href="/guide/ios">아이폰 설치 가이드</a>에서 볼 수 있어요.
+                </p>
+                <nav class="g-os" aria-label="기기 종류">
+                  <a class="g-os__tab g-os__tab--on" aria-current="page" href="#">아이폰</a
+                  ><a class="g-os__tab" href="#">안드로이드</a>
+                </nav>
+              </header>
+              <nav class="g-jump g-jump--under-header" aria-label="이 페이지 안에서 이동">
+                <a href="#ic-cellular" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">확인 1</span> 셀룰러</span></a
+                ><a href="#ic-line" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">확인 2</span> 회선</span></a
+                ><a href="#ic-data" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">확인 3</span> 데이터</span></a
+                ><a href="#ic-signal" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">확인 4</span> 신호</span></a>
+              </nav>
+              <p class="g-hero__hint">화면의 빨간 테두리가 확인할 곳이에요.</p>
+
+              <section id="ic-cellular" class="g-sec">
+                <span class="g-badge">확인 1</span>
+                <h2 class="g-sec__title">셀룰러 화면</h2>
+                <p class="g-sec__path">
+                  <span class="g-path"><span class="g-nw">설정</span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러<span class="g-path__p">를</span></span></span>
+                  열어 세 가지를 확인해요.
+                </p>
+                <ul class="g-points">
+                  <li><span><span class="g-nw"><span class="g-ui">셀룰러 데이터</span>가</span> 여행용 회선이에요.</span></li>
+                  <li><span>SIMs의 메인과 여행용 회선이 모두 <b class="g-b">켬</b>이에요.</span></li>
+                  <li><span><span class="g-nw"><span class="g-ui">기본 음성 회선</span>은</span> <b class="g-b">메인</b>이에요.</span></li>
+                </ul>
+                <figure class="g-shot" data-mk-screen="ios-cellular" data-state="arrival" data-hl="cell-data,new-line" data-xhl="기본 음성 회선|메인" data-ar="0.82" data-focus="33">
+                  <div class="shot__win" role="img" aria-label="설정 › 셀룰러 화면 — 셀룰러 데이터 여행 · 기본 음성 회선 메인 · 두 회선 켬 표시"></div>
+                </figure>
+                <span class="mk-fc mk-fc--new">새 화면 · ios-cellular · arrival · 강조 4</span>
+                <div class="g-note g-note--info">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>
+                  <div class="g-note__body">
+                    <p><b class="g-b">여행용 회선 이름은 폰이 붙여요.</b> ‘여행’ · ‘보조’처럼 폰마다 달라도 괜찮아요.</p>
+                    <p>한국에서는 여행용 회선이 ‘활성화 중…’으로 보이고 셀룰러 데이터는 메인이에요. 정상이에요.</p>
+                  </div>
+                </div>
+                <div class="g-note g-note--warn mk-add">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+                  <div class="g-note__body">
+                    <p><b class="g-b">다른 여행용 eSIM이 더 보이나요?</b> 이번에 설치한 것 말고 다른 여행용 eSIM은 꺼 두세요. 지우지 않아도 돼요.</p>
+                    <p>어느 회선인지 모르겠으면 <b class="g-b">지우지 말고</b> 고객센터로 문의해 주세요. 한 번 지운 eSIM은 다시 설치할 수 없어요.</p>
+                  </div>
+                </div>
+                <span class="mk-fc mk-fc--new">Q5 회신 A안 — 옛 «이름이 다르면 삭제 후 재설치» 대신</span>
+              </section>
+
+              <section id="ic-line" class="g-sec g-sec--alt">
+                <span class="g-badge">확인 2</span>
+                <h2 class="g-sec__title">여행용 회선 설정</h2>
+                <p class="g-sec__path">셀룰러 화면에서 여행용 회선을 눌러 세부 화면을 열어요.</p>
+                <ul class="g-points">
+                  <li><span><span class="g-nw"><span class="g-ui">이 회선 켜기</span>가</span> 켜져 있어요.</span></li>
+                  <li><span><span class="g-nw"><span class="g-ui">음성 및 데이터</span>는</span> <b class="g-b">5G 자동</b>이에요.</span></li>
+                  <li><span><span class="g-nw"><span class="g-ui">데이터 로밍</span>이</span> 켜져 있어요. <b class="g-b">가장 중요해요.</b></span></li>
+                </ul>
+                <figure class="g-shot" data-mk-screen="ios-line" data-hl="line-on,roaming" data-xhl="음성 및 데이터" data-xval="음성 및 데이터=5G 자동" data-ar="0.82" data-focus="36">
+                  <div class="shot__win" role="img" aria-label="여행용 회선 세부 화면 — 이 회선 켜기 · 음성 및 데이터 5G 자동 · 데이터 로밍 표시"></div>
+                </figure>
+                <span class="mk-fc mk-fc--new">새 화면 · ios-line · 값 «5G 자동» 변형 · 강조 3</span>
+              </section>
+
+              <section id="ic-data" class="g-sec">
+                <span class="g-badge">확인 3</span>
+                <h2 class="g-sec__title">셀룰러 데이터</h2>
+                <p class="g-sec__path">
+                  <span class="g-path"><span class="g-nw">설정</span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러</span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러 데이터<span class="g-path__p">를</span></span></span>
+                  열어요.
+                </p>
+                <ul class="g-points">
+                  <li><span>여행용 회선에 체크 표시가 있어요.</span></li>
+                  <li><span><span class="g-nw"><span class="g-ui">셀룰러 데이터 전환 허용</span>은</span> 꺼져 있어요.</span></li>
+                </ul>
+                <figure class="g-shot"><img class="g-shot__img" src="../../apps/client/public/guide-screens/ios-celldata-travel.v1.png" alt="셀룰러 데이터 화면 — 새 회선 선택과 셀룰러 데이터 전환 허용 스위치 표시" width="368" height="449" /></figure>
+                <span class="mk-fc mk-fc--reuse">재사용 · ios-celldata-travel.v1.png</span>
+                <div class="g-note g-note--warn">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+                  <div class="g-note__body">
+                    <p><b class="g-b">한국 회선의 데이터 로밍은 꺼 두세요.</b> 켜져 있으면 통신사 로밍 요금이 나올 수 있어요.</p>
+                    <p><b class="g-b">셀룰러 데이터 전환 허용도 꺼 두세요.</b> 켜 두면 데이터가 한국 회선으로 넘어갈 수 있어요.</p>
+                  </div>
+                </div>
+                <span class="mk-fc mk-fc--reuse">가이드 STEP 3 경고 두 줄 그대로</span>
+              </section>
+
+              <section id="ic-signal" class="g-sec g-sec--alt">
+                <span class="g-badge">확인 4</span>
+                <h2 class="g-sec__title">신호 표시</h2>
+                <p class="g-sec__path">화면 맨 위 상태 표시줄을 봐요.</p>
+                <ul class="g-points">
+                  <li><span>신호 표시가 위아래 두 칸으로 나뉘어 있어요.</span></li>
+                  <li><span>Wi-Fi를 끄면 신호 옆에 <b class="g-b">5G</b>나 <b class="g-b">LTE</b>가 떠요.</span></li>
+                </ul>
+                <div class="g-status" role="img" aria-label="상태 표시줄 예시 — 신호 표시가 위아래 두 칸으로 나뉘고 5G 가 뜬 모습. 위 칸은 여행용 eSIM, 아래 칸은 한국 회선">
+                  <div class="g-status__bar"><span>9:41</span><span class="g-status__right"><span class="g-dual" aria-hidden="true"><b></b><b></b><b></b><b></b></span><span class="g-status__net">5G</span><span class="g-status__bat" aria-hidden="true"></span></span></div>
+                  <span class="g-status__cap">위 칸 = 여행용 eSIM · 아래 칸 = 한국 회선</span>
+                </div>
+                <span class="mk-fc mk-fc--reuse">재사용 · GuideStatusBar(CSS 그림)</span>
+                <div class="g-note g-note--info">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>
+                  <div class="g-note__body">
+                    <p><b class="g-b">신호가 한 칸뿐인가요?</b> 여행용 회선이 꺼져 있거나 설치되지 않은 거예요. 확인 1부터 다시 봐 주세요.</p>
+                  </div>
+                </div>
+              </section>
+
+              <section class="g-sec">
+                <h2 class="g-sec__title">그래도 연결이 안 되나요?</h2>
+                <p class="g-sec__lede">연결이 불안정하면 현지 통신사를 바꿔 보세요.</p>
+                <div class="g-more">
+                  <a class="n-link-card" href="#"><span class="n-link-card__icon">📶</span><span class="n-link-card__text"><span class="n-link-card__label" style="font-size: 15px">현지 통신사 바꾸기</span><span class="n-link-card__sub" style="font-size: 13px; color: #737373">설정에서 통신사를 직접 골라요</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
+                  <a class="n-link-card" href="#"><span class="n-link-card__icon"><img src="../../apps/client/public/icons/apple.svg" alt="" width="20" height="20" /></span><span class="n-link-card__text"><span class="n-link-card__label" style="font-size: 15px">설치 가이드 문제 해결</span><span class="n-link-card__sub" style="font-size: 13px; color: #737373">자주 받는 문의 6가지</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
+                </div>
+                <span class="mk-fc mk-fc--new">카드 아이콘(📶)은 자리 표시 — 구현 때 heroicon</span>
+                <section class="g-cs">
+                  <h2 class="g-cs__title">그래도 해결되지 않으면 문의해 주세요</h2>
+                  <p class="g-cs__lede">설정 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.</p>
+                  <ul class="g-cs__cards">
+                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--kakao" aria-hidden="true">TALK</span><span class="g-cs__text"><span class="g-cs__name">카카오톡 채널</span><span class="g-cs__handle">@이심마니</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
+                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--naver" aria-hidden="true">N</span><span class="g-cs__text"><span class="g-cs__name">네이버 톡톡</span><span class="g-cs__handle">스마트스토어 채팅 문의</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
+                  </ul>
+                  <a class="g-cs__more" href="#">고객센터 전체 보기</a>
+                </section>
+              </section>
+            </article>
+            <div class="mk-foot">사업자정보 푸터 (생략)</div>
+            <nav class="mk-tab" aria-label="하단 탭(그림)">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955a1.126 1.126 0 0 1 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75" /></svg>홈</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" /></svg>내 eSIM</span>
+              <span class="on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.25 4.533A9.707 9.707 0 0 0 6 3a9.735 9.735 0 0 0-3.25.555.75.75 0 0 0-.5.707v14.25a.75.75 0 0 0 1 .707A8.237 8.237 0 0 1 6 18.75c1.995 0 3.823.707 5.25 1.886V4.533ZM12.75 20.636A8.214 8.214 0 0 1 18 18.75c.966 0 1.89.166 2.75.47a.75.75 0 0 0 1-.708V4.262a.75.75 0 0 0-.5-.707A9.735 9.735 0 0 0 18 3a9.707 9.707 0 0 0-5.25 1.533v16.103Z" /></svg>가이드</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>마이</span>
+            </nav>
+          </div>
+        </section>
+
+        <!-- ------------------------------------------------ ② 안드로이드 설치 확인 -->
+        <section class="mk-col" aria-label="안드로이드 설치 확인 목업">
+          <p class="mk-cap">② 안드로이드 설치 확인<code>/guide/check/android</code></p>
+          <div class="mk-phone">
+            <div class="mk-sh"><span class="mk-logo">이심마니</span><span class="mk-sh__r"><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg></span><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></span></span></div>
+            <article class="g-article">
+              <header class="g-hero">
+                <p class="g-hero__eyebrow">Install check · Android</p>
+                <h1 class="g-hero__title">안드로이드 eSIM 설치 확인</h1>
+                <p class="g-hero__lede">
+                  현지에 도착해 모바일 데이터를 <span class="g-nw">eSIM 1</span>로 바꾼 뒤, 아래 화면과 비교해 확인해 주세요.<br />갤럭시 화면으로
+                  안내해요. 설치 방법은 <a class="g-hero__link" href="/guide/android">안드로이드 설치 가이드</a>에서 볼 수 있어요.
+                </p>
+                <nav class="g-os" aria-label="기기 종류"><a class="g-os__tab" href="#">아이폰</a><a class="g-os__tab g-os__tab--on" aria-current="page" href="#">안드로이드</a></nav>
+              </header>
+              <nav class="g-jump g-jump--under-header" aria-label="이 페이지 안에서 이동">
+                <a href="#ac-sim" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">확인 1</span> SIM 관리자</span></a
+                ><a href="#ac-roaming" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">확인 2</span> 데이터 로밍</span></a>
+              </nav>
+              <p class="g-hero__hint">화면의 빨간 테두리가 확인할 곳이에요.</p>
+
+              <section id="ac-sim" class="g-sec">
+                <span class="g-badge">확인 1</span>
+                <h2 class="g-sec__title">SIM 관리자</h2>
+                <p class="g-sec__path">
+                  <span class="g-path"><span class="g-nw">설정</span><span class="g-path__sep"> › </span><span class="g-nw">연결</span><span class="g-path__sep"> › </span><span class="g-nw">SIM 관리자<span class="g-path__p">를</span></span></span>
+                  열어요.
+                </p>
+                <ul class="g-points">
+                  <li><span>여행용 eSIM(<span class="g-nw">eSIM 1</span>)이 켜져 있어요.</span></li>
+                  <li><span>주 사용 SIM 카드의 <span class="g-nw"><span class="g-ui">모바일 데이터</span>가</span> <span class="g-nw">eSIM 1</span>이에요.</span></li>
+                  <li><span>같은 화면 아래 <span class="g-nw"><span class="g-ui">데이터 전환</span>은</span> 꺼져 있어요.</span></li>
+                </ul>
+                <figure class="g-shot"><img class="g-shot__img" src="../../apps/client/public/guide-screens/aos-sim-esim1.v1.png" alt="SIM 관리자 화면 — 켜진 eSIM 1 표시" width="368" height="449" /></figure>
+                <span class="mk-fc mk-fc--reuse">재사용 · aos-sim-esim1.v1.png</span>
+                <figure class="g-shot" data-mk-screen="aos-sim" data-state="arrival" data-hl="mobile-data,switch" data-ar="0.82" data-focus="90">
+                  <div class="shot__win" role="img" aria-label="SIM 관리자 화면 아래 — 모바일 데이터 eSIM 1 · 데이터 전환 스위치 표시"></div>
+                </figure>
+                <span class="mk-fc mk-fc--new">새 화면 · aos-sim · arrival · 강조 2</span>
+                <div class="g-note g-note--info">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>
+                  <div class="g-note__body">
+                    <p><b class="g-b">eSIM 이름은 폰마다 달라요.</b> 여행용 eSIM 이름과 모바일 데이터에 고른 이름이 같으면 돼요.</p>
+                  </div>
+                </div>
+                <div class="g-note g-note--warn mk-add">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+                  <div class="g-note__body">
+                    <p><b class="g-b">다른 여행용 eSIM이 더 보이나요?</b> 이번에 설치한 것 말고 다른 여행용 eSIM은 꺼 두세요. 지우지 않아도 돼요.</p>
+                    <p>어느 회선인지 모르겠으면 <b class="g-b">지우지 말고</b> 고객센터로 문의해 주세요. 한 번 지운 eSIM은 다시 설치할 수 없어요.</p>
+                  </div>
+                </div>
+                <span class="mk-fc mk-fc--new">Q5 회신 A안 — 옛 «이름이 다르면 삭제 후 재설치» 대신</span>
+
+              </section>
+
+              <section id="ac-roaming" class="g-sec g-sec--alt">
+                <span class="g-badge">확인 2</span>
+                <h2 class="g-sec__title">데이터 로밍</h2>
+                <p class="g-sec__path">
+                  <span class="g-path"><span class="g-nw">설정</span><span class="g-path__sep"> › </span><span class="g-nw">연결</span><span class="g-path__sep"> › </span><span class="g-nw">해외 로밍<span class="g-path__p">을</span></span></span>
+                  열어요.
+                </p>
+                <ul class="g-points">
+                  <li><span><span class="g-nw"><span class="g-ui">데이터 로밍 eSIM 1</span>이</span> 켜져 있어요.</span></li>
+                  <li><span><span class="g-nw"><span class="g-ui">데이터 로밍 SIM 1</span>은</span> 꺼져 있어요.</span></li>
+                </ul>
+                <figure class="g-shot"><img class="g-shot__img" src="../../apps/client/public/guide-screens/aos-roaming-esim.v1.png" alt="해외 로밍 화면 — 데이터 로밍 eSIM 1 스위치 표시" width="368" height="449" /></figure>
+                <span class="mk-fc mk-fc--reuse">재사용 · aos-roaming-esim.v1.png</span>
+                <div class="g-note g-note--info">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>
+                  <div class="g-note__body">
+                    <p>
+                      <b class="g-b">SKT 폰은 메뉴가 달라요.</b>
+                      <span class="g-path"><span class="g-nw">설정</span><span class="g-path__sep"> › </span><span class="g-nw">T로밍</span><span class="g-path__sep"> › </span><span class="g-nw">로밍 상세 설정<span class="g-path__p">에서</span></span></span>
+                      데이터 로밍을 확인해 주세요.
+                    </p>
+                  </div>
+                </div>
+                <div class="g-note g-note--warn">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+                  <div class="g-note__body">
+                    <p><b class="g-b">데이터 로밍 SIM 1은 꺼 두세요.</b> 켜져 있으면 통신사 로밍 요금이 나올 수 있어요.</p>
+                    <p><b class="g-b">데이터 전환도 꺼 두세요.</b> 켜 두면 데이터가 국내 SIM으로 넘어갈 수 있어요.</p>
+                  </div>
+                </div>
+                <span class="mk-fc mk-fc--reuse">가이드 STEP 3 경고 두 줄 그대로</span>
+              </section>
+
+              <section class="g-sec">
+                <h2 class="g-sec__title">그래도 연결이 안 되나요?</h2>
+                <p class="g-sec__lede">연결이 불안정하면 현지 통신사를 바꿔 보세요.</p>
+                <div class="g-more">
+                  <a class="n-link-card" href="#"><span class="n-link-card__icon">📶</span><span class="n-link-card__text"><span class="n-link-card__label" style="font-size: 15px">현지 통신사 바꾸기</span><span class="n-link-card__sub" style="font-size: 13px; color: #737373">설정에서 통신사를 직접 골라요</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
+                  <a class="n-link-card" href="#"><span class="n-link-card__icon"><img src="../../apps/client/public/icons/android.svg" alt="" width="20" height="20" /></span><span class="n-link-card__text"><span class="n-link-card__label" style="font-size: 15px">설치 가이드 문제 해결</span><span class="n-link-card__sub" style="font-size: 13px; color: #737373">자주 받는 문의 5가지</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
+                </div>
+                <section class="g-cs">
+                  <h2 class="g-cs__title">그래도 해결되지 않으면 문의해 주세요</h2>
+                  <p class="g-cs__lede">설정 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.</p>
+                  <ul class="g-cs__cards">
+                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--kakao" aria-hidden="true">TALK</span><span class="g-cs__text"><span class="g-cs__name">카카오톡 채널</span><span class="g-cs__handle">@이심마니</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
+                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--naver" aria-hidden="true">N</span><span class="g-cs__text"><span class="g-cs__name">네이버 톡톡</span><span class="g-cs__handle">스마트스토어 채팅 문의</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
+                  </ul>
+                  <a class="g-cs__more" href="#">고객센터 전체 보기</a>
+                </section>
+              </section>
+            </article>
+            <div class="mk-foot">사업자정보 푸터 (생략)</div>
+            <nav class="mk-tab" aria-label="하단 탭(그림)"><span>홈</span><span>내 eSIM</span><span class="on">가이드</span><span>마이</span></nav>
+          </div>
+        </section>
+
+        <!-- ------------------------------------------------ ③ 통신사 바꾸기 · 아이폰 -->
+        <section class="mk-col" aria-label="통신사 바꾸기 아이폰 목업">
+          <p class="mk-cap">③ 현지 통신사 바꾸기 · 아이폰<code>/guide/network/ios</code></p>
+          <div class="mk-phone">
+            <div class="mk-sh"><span class="mk-logo">이심마니</span><span class="mk-sh__r"><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg></span><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></span></span></div>
+            <article class="g-article">
+              <header class="g-hero">
+                <p class="g-hero__eyebrow">Network · iOS</p>
+                <h1 class="g-hero__title">현지 통신사 바꾸기</h1>
+                <p class="g-hero__lede">나라와 지역에 따라 잘 잡히는 통신사가 달라요.<br />연결이 불안정하면 다른 통신사로 바꿔 보세요.</p>
+                <nav class="g-os" aria-label="기기 종류"><a class="g-os__tab g-os__tab--on" aria-current="page" href="#">아이폰</a><a class="g-os__tab" href="#">안드로이드</a></nav>
+              </header>
+              <p class="g-hero__hint" style="padding-top: 16px">화면의 빨간 테두리는 설명이 가리키는 곳이에요.</p>
+
+              <section class="g-sec" style="padding-top: 8px">
+                <div class="g-note g-note--tip" style="margin-top: 0">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" /></svg>
+                  <div class="g-note__body">
+                    <p><b class="g-b">여행용 eSIM은 한 나라에서 여러 통신사에 연결할 수 있어요.</b> 통신사마다 잘 잡히는 곳이 달라, 신호가 약한 곳에서는 바꾸면 나아질 수 있어요.</p>
+                    <p class="mk-add">나라별로 연결되는 통신사는 상품 페이지의 ‘현지 통신사’에서 볼 수 있어요. <a class="g-more__link" href="/search">나라 검색하기</a></p>
+                  </div>
+                </div>
+                <span class="mk-fc mk-fc--new">Q8 일반화 · Q4 (b) 안</span>
+
+                <ol class="g-steps g-sec__steps" role="list" style="margin-top: 28px">
+                  <li class="g-step">
+                    <div class="g-step__text">
+                      <span class="g-step__num">1</span>
+                      <p class="g-step__p">
+                        <span class="g-path"><span class="g-nw">설정</span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러<span class="g-path__p">에서</span></span></span>
+                        여행용 회선을 누르고 <span class="g-nw"><span class="g-ui">네트워크 선택</span>을</span> 눌러요.
+                      </p>
+                    </div>
+                    <figure class="g-shot" data-mk-screen="ios-line" data-hl="network" data-ar="0.82" data-focus="36">
+                      <div class="shot__win" role="img" aria-label="여행용 회선 세부 화면 — 네트워크 선택 표시"></div>
+                    </figure>
+                    <span class="mk-fc mk-fc--new">새 화면 · ios-line · 강조 network</span>
+                  </li>
+                  <li class="g-step">
+                    <div class="g-step__text">
+                      <span class="g-step__num">2</span>
+                      <p class="g-step__p"><span class="g-nw"><span class="g-ui">자동</span>을</span> 꺼요.<span class="g-step__sub">잠시 기다리면 고를 수 있는 통신사 목록이 나와요.</span></p>
+                    </div>
+                    <figure class="g-shot"><img class="g-shot__img" src="../../apps/client/public/guide-screens/ios-network-auto.v1.png" alt="네트워크 선택 화면 — 자동 스위치 표시" width="368" height="449" /></figure>
+                    <span class="mk-fc mk-fc--reuse">재사용 · ios-network-auto.v1.png</span>
+                  </li>
+                  <li class="g-step">
+                    <div class="g-step__text">
+                      <span class="g-step__num">3</span>
+                      <p class="g-step__p">목록에서 다른 통신사를 골라요.<span class="g-step__sub">연결까지 길게는 10분 정도 걸릴 수 있어요. 바로 연결되지 않아도 잠시 기다려 주세요.</span></p>
+                    </div>
+                  </li>
+                </ol>
+                <div class="g-note g-note--info">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>
+                  <div class="g-note__body"><p>고른 통신사로도 안 되면 다시 자동으로 돌려 주세요.</p></div>
+                </div>
+                <span class="mk-fc mk-fc--reuse">가이드 문제 해결 Q5 문장 그대로</span>
+              </section>
+
+              <section class="g-sec g-sec--alt">
+                <div class="g-more">
+                  <a class="n-link-card" href="#"><span class="n-link-card__icon">✅</span><span class="n-link-card__text"><span class="n-link-card__label" style="font-size: 15px">아이폰 설치 확인</span><span class="n-link-card__sub" style="font-size: 13px; color: #737373">셀룰러 · 회선 · 데이터 설정을 화면과 비교</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
+                </div>
+                <section class="g-cs">
+                  <h2 class="g-cs__title">그래도 해결되지 않으면 문의해 주세요</h2>
+                  <p class="g-cs__lede">설정 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.</p>
+                  <ul class="g-cs__cards">
+                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--kakao" aria-hidden="true">TALK</span><span class="g-cs__text"><span class="g-cs__name">카카오톡 채널</span><span class="g-cs__handle">@이심마니</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
+                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--naver" aria-hidden="true">N</span><span class="g-cs__text"><span class="g-cs__name">네이버 톡톡</span><span class="g-cs__handle">스마트스토어 채팅 문의</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
+                  </ul>
+                  <a class="g-cs__more" href="#">고객센터 전체 보기</a>
+                </section>
+              </section>
+            </article>
+            <div class="mk-foot">사업자정보 푸터 (생략)</div>
+            <nav class="mk-tab" aria-label="하단 탭(그림)"><span>홈</span><span>내 eSIM</span><span class="on">가이드</span><span>마이</span></nav>
+          </div>
+        </section>
+
+        <!-- ------------------------------------------------ ③ 통신사 바꾸기 · 안드로이드 -->
+        <section class="mk-col" aria-label="통신사 바꾸기 안드로이드 목업">
+          <p class="mk-cap">③ 현지 통신사 바꾸기 · 안드로이드<code>/guide/network/android</code></p>
+          <div class="mk-phone">
+            <div class="mk-sh"><span class="mk-logo">이심마니</span><span class="mk-sh__r"><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg></span><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></span></span></div>
+            <article class="g-article">
+              <header class="g-hero">
+                <p class="g-hero__eyebrow">Network · Android</p>
+                <h1 class="g-hero__title">현지 통신사 바꾸기</h1>
+                <p class="g-hero__lede">나라와 지역에 따라 잘 잡히는 통신사가 달라요.<br />연결이 불안정하면 다른 통신사로 바꿔 보세요.</p>
+                <nav class="g-os" aria-label="기기 종류"><a class="g-os__tab" href="#">아이폰</a><a class="g-os__tab g-os__tab--on" aria-current="page" href="#">안드로이드</a></nav>
+              </header>
+              <p class="g-hero__hint" style="padding-top: 16px">화면의 빨간 테두리는 설명이 가리키는 곳이에요.</p>
+
+              <section class="g-sec" style="padding-top: 8px">
+                <div class="g-note g-note--tip" style="margin-top: 0">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" /></svg>
+                  <div class="g-note__body">
+                    <p><b class="g-b">여행용 eSIM은 한 나라에서 여러 통신사에 연결할 수 있어요.</b> 통신사마다 잘 잡히는 곳이 달라, 신호가 약한 곳에서는 바꾸면 나아질 수 있어요.</p>
+                    <p class="mk-add">나라별로 연결되는 통신사는 상품 페이지의 ‘현지 통신사’에서 볼 수 있어요. <a class="g-more__link" href="/search">나라 검색하기</a></p>
+                  </div>
+                </div>
+
+                <ol class="g-steps g-sec__steps" role="list" style="margin-top: 28px">
+                  <li class="g-step">
+                    <div class="g-step__text">
+                      <span class="g-step__num">1</span>
+                      <p class="g-step__p">
+                        <span class="g-path"><span class="g-nw">설정</span><span class="g-path__sep"> › </span><span class="g-nw">연결</span><span class="g-path__sep"> › </span><span class="g-nw">모바일 네트워크</span><span class="g-path__sep"> › </span><span class="g-nw">로밍 이동통신사 선택<span class="g-path__p">을</span></span></span>
+                        눌러요.
+                      </p>
+                    </div>
+                    <div class="mk-tbd">
+                      <b>[Q6] SKT 폰 대체 경로 한 줄 후보</b> — 옛 글은 «설정 → T로밍(또는 해외로밍) → 로밍 이동통신사 선택». 가이드 2609
+                      확인본에는 T로밍 쪽 «로밍 이동통신사 선택» 근거가 없어 지금은 넣지 않았습니다(데이터 로밍의 T로밍 경로만 확인됨).
+                    </div>
+                  </li>
+                  <li class="g-step">
+                    <div class="g-step__text">
+                      <span class="g-step__num">2</span>
+                      <p class="g-step__p">위 탭에서 <span class="g-nw"><span class="g-ui">eSIM 1</span>을</span> 누르고 <span class="g-nw"><span class="g-ui">자동 선택</span>을</span> 꺼요.<span class="g-step__sub">잠시 기다리면 고를 수 있는 통신사 목록이 나와요.</span></p>
+                    </div>
+                    <figure class="g-shot"><img class="g-shot__img" src="../../apps/client/public/guide-screens/aos-carrier-auto.v1.png" alt="로밍 이동통신사 선택 화면 — 자동 선택 스위치 표시" width="368" height="449" /></figure>
+                    <span class="mk-fc mk-fc--reuse">재사용 · aos-carrier-auto.v1.png</span>
+                  </li>
+                  <li class="g-step">
+                    <div class="g-step__text">
+                      <span class="g-step__num">3</span>
+                      <p class="g-step__p">목록에서 다른 통신사를 골라요.<span class="g-step__sub">연결까지 길게는 10분 정도 걸릴 수 있어요. 바로 연결되지 않아도 잠시 기다려 주세요.</span></p>
+                    </div>
+                  </li>
+                </ol>
+                <div class="g-note g-note--info">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="g-note__icon"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>
+                  <div class="g-note__body"><p>고른 통신사로도 안 되면 다시 자동 선택으로 돌려 주세요.</p></div>
+                </div>
+                <span class="mk-fc mk-fc--reuse">가이드 문제 해결 Q4 문장 그대로</span>
+              </section>
+
+              <section class="g-sec g-sec--alt">
+                <div class="g-more">
+                  <a class="n-link-card" href="#"><span class="n-link-card__icon">✅</span><span class="n-link-card__text"><span class="n-link-card__label" style="font-size: 15px">안드로이드 설치 확인</span><span class="n-link-card__sub" style="font-size: 13px; color: #737373">SIM 관리자 · 데이터 로밍을 화면과 비교</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
+                </div>
+                <section class="g-cs">
+                  <h2 class="g-cs__title">그래도 해결되지 않으면 문의해 주세요</h2>
+                  <p class="g-cs__lede">설정 화면을 캡처해 보내 주시면 더 빨리 도와드릴 수 있어요.</p>
+                  <ul class="g-cs__cards">
+                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--kakao" aria-hidden="true">TALK</span><span class="g-cs__text"><span class="g-cs__name">카카오톡 채널</span><span class="g-cs__handle">@이심마니</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
+                    <li><a class="g-cs__card" href="#"><span class="g-cs__icon g-cs__icon--naver" aria-hidden="true">N</span><span class="g-cs__text"><span class="g-cs__name">네이버 톡톡</span><span class="g-cs__handle">스마트스토어 채팅 문의</span></span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="g-cs__chev"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></a></li>
+                  </ul>
+                  <a class="g-cs__more" href="#">고객센터 전체 보기</a>
+                </section>
+              </section>
+            </article>
+            <div class="mk-foot">사업자정보 푸터 (생략)</div>
+            <nav class="mk-tab" aria-label="하단 탭(그림)"><span>홈</span><span>내 eSIM</span><span class="on">가이드</span><span>마이</span></nav>
+          </div>
+        </section>
+      </div>
+
+      <!-- =============================================================== 진입점 -->
+      <h2 class="mk-h2" id="entry">진입점 (Q3 추천안) — 가이드 허브 + 가이드 문제 해결</h2>
+      <p class="mk-lead">
+        보라 점선이 기존 가이드에 더하는 곳입니다. 허브에는 «설치한 뒤에» 칸을 두고 줄마다 OS 두 칸으로 바로 갑니다(정적 페이지라
+        기기 자동 판별은 하지 않습니다). 가이드 문제 해결에는 «신호는 뜨는데 인터넷이 안 되나요?» 에 설치 확인 링크, «연결이 계속 안
+        되거나 너무 느린가요?» 에 통신사 바꾸기 링크를 답 아래 붙입니다(«내 eSIM 조회하기» 와 같은 모양). 발급 완료 화면 · 마이 ·
+        알림톡은 이번 범위 밖으로 둡니다.
+      </p>
+      <div class="mk-board">
+        <section class="mk-col" aria-label="가이드 허브 목업">
+          <p class="mk-cap">가이드 허브<code>/guide</code></p>
+          <div class="mk-phone">
+            <div class="mk-sh"><span class="mk-logo">이심마니</span><span class="mk-sh__r"><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg></span><span><svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></span></span></div>
+            <div class="guide-page">
+              <h1 class="guide-page__title">설치 가이드</h1>
+              <p class="guide-page__desc">아이폰과 안드로이드 설치 방법을 출국 전 설치부터 현지에서 켜기까지 순서대로 안내해요.</p>
+              <div class="guide-page__cards">
+                <a class="n-link-card" href="#"><span class="n-link-card__icon"><img src="../../apps/client/public/icons/apple.svg" alt="" width="20" height="20" /></span><span class="n-link-card__text"><span class="n-link-card__label">아이폰 설치 가이드</span><span class="n-link-card__sub">QR 스캔 · QR 길게 누르기 · 코드 입력</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
+                <a class="n-link-card" href="#"><span class="n-link-card__icon"><img src="../../apps/client/public/icons/android.svg" alt="" width="20" height="20" /></span><span class="n-link-card__text"><span class="n-link-card__label">안드로이드 설치 가이드</span><span class="n-link-card__sub">갤럭시 기준 · QR 스캔 · QR 이미지 · 코드 입력</span></span><span class="n-link-card__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg></span></a>
+              </div>
+              <div class="mk-add" style="margin-top: 28px">
+                <h2 class="guide-page__h2" style="margin-top: 0">설치한 뒤에</h2>
+                <ul class="g-after">
+                  <li>
+                    <span class="g-after__t">설치 확인하기</span>
+                    <span class="g-after__sub">현지에서 연결이 안 될 때 설정 화면과 비교해요.</span>
+                    <span class="g-after__os"><a href="#">아이폰</a><a href="#">안드로이드</a></span>
+                  </li>
+                  <li>
+                    <span class="g-after__t">현지 통신사 바꾸기</span>
+                    <span class="g-after__sub">연결이 불안정할 때 통신사를 직접 골라요.</span>
+                    <span class="g-after__os"><a href="#">아이폰</a><a href="#">안드로이드</a></span>
+                  </li>
+                </ul>
+              </div>
+              <h2 class="guide-page__h2">이렇게 진행돼요</h2>
+              <ol class="g-flow">
+                <li class="g-flow__item"><span class="g-flow__step">STEP 1</span><span class="g-flow__title">집에서 설치</span><span class="g-flow__meta"><span class="g-flow__nw">출국 전 ·</span> <span class="g-flow__nw">5분</span></span></li>
+                <li class="g-flow__item"><span class="g-flow__step">STEP 2</span><span class="g-flow__title">회선 설정</span><span class="g-flow__meta"><span class="g-flow__nw">설치 직후 ·</span> <span class="g-flow__nw">1분</span></span></li>
+                <li class="g-flow__item"><span class="g-flow__step">STEP 3</span><span class="g-flow__title">현지에서 켜기</span><span class="g-flow__meta"><span class="g-flow__nw">도착 후 ·</span> <span class="g-flow__nw">1분</span></span></li>
+              </ol>
+              <p class="guide-page__note">설치만으로는 사용일수가 시작되지 않아요.</p>
+              <a class="guide-page__link" href="#">지원 기기 확인</a>
+            </div>
+            <div class="mk-foot">… 문의 · 사업자정보 푸터 (생략)</div>
+            <nav class="mk-tab" aria-label="하단 탭(그림)"><span>홈</span><span>내 eSIM</span><span class="on">가이드</span><span>마이</span></nav>
+          </div>
+        </section>
+
+        <section class="mk-col" aria-label="가이드 문제 해결 목업">
+          <p class="mk-cap">아이폰 가이드 · 문제 해결 일부<code>/guide/ios#help</code></p>
+          <div class="mk-phone">
+            <article class="g-article">
+              <section class="g-sec">
+                <span class="g-badge">문제 해결</span>
+                <h2 class="g-sec__title">설치나 연결이 잘 안 되나요?</h2>
+                <p class="g-sec__lede">자주 받는 문의를 모았어요. 대부분 여기서 해결돼요.</p>
+                <div class="g-faqs">
+                  <div class="g-faq">
+                    <h3 class="g-faq__q"><span class="g-faq__n">Q4</span> <span>현지에서 신호는 뜨는데 인터넷이 안 되나요?</span></h3>
+                    <div class="g-faq__a">
+                      <p>새 회선의 <span class="g-nw"><span class="g-ui">데이터 로밍</span>이</span> 켜져 있는지, 셀룰러 데이터가 새 회선으로 되어 있는지 다시 확인해 주세요.</p>
+                      <p>그래도 안 되면 비행기 모드를 2~3번 켰다 끄고, 폰을 다시 켜 주세요.</p>
+                      <a class="g-faq__link mk-add" href="#">설치 상태 화면으로 확인하기</a>
+                    </div>
+                  </div>
+                  <div class="g-faq">
+                    <h3 class="g-faq__q"><span class="g-faq__n">Q5</span> <span>연결이 계속 안 되거나 너무 느린가요?</span></h3>
+                    <div class="g-faq__a">
+                      <p>현지 통신사를 직접 골라 보세요. <span class="g-path"><span class="g-nw">설정</span><span class="g-path__sep"> › </span><span class="g-nw">셀룰러</span><span class="g-path__sep"> › </span><span class="g-nw">새 회선</span><span class="g-path__sep"> › </span><span class="g-nw">네트워크 선택<span class="g-path__p">에서</span></span></span> <span class="g-nw"><span class="g-ui">자동</span>을</span> 끄면 통신사 목록이 나와요.</p>
+                      <p>고른 통신사로도 안 되면 다시 자동으로 돌려 주세요.</p>
+                      <a class="g-faq__link mk-add" href="#">통신사 바꾸는 방법 자세히 보기</a>
+                    </div>
+                    <figure class="g-shot g-faq__shot"><img class="g-shot__img" src="../../apps/client/public/guide-screens/ios-network-auto.v1.png" alt="네트워크 선택 화면 — 자동 스위치 표시" width="368" height="449" /></figure>
+                  </div>
+                </div>
+              </section>
+            </article>
+          </div>
+          <p class="mk-lead" style="margin-top: 10px">안드로이드 가이드는 Q3 · Q4 에 같은 두 링크(→ 안드로이드 판). 발급 화면 시트 안에서는 새 탭으로 엽니다(QR 화면을 떠나지 않게 — 가이드 시트 규칙과 같음).</p>
+        </section>
+
+        <!-- =============================================================== 전용판 -->
+        <section class="mk-col" aria-label="전용판 목업" id="bare">
+          <p class="mk-cap">전용판 (Q2 추천안) — 헤더 · 하단 탭 없음<code>/install-guide/check/ios</code></p>
+          <div class="mk-phone mk-crop">
+            <article class="g-article">
+              <header class="g-hero">
+                <p class="g-hero__eyebrow">Install check · iOS</p>
+                <h1 class="g-hero__title">아이폰 eSIM 설치 확인</h1>
+                <p class="g-hero__lede">현지에 도착해 여행용 eSIM을 켠 뒤, 아래 화면과 비교해 확인해 주세요.<br />설치 방법은 <a class="g-hero__link" href="/install-guide/ios">아이폰 설치 가이드</a>에서 볼 수 있어요.</p>
+                <nav class="g-os" aria-label="기기 종류"><a class="g-os__tab g-os__tab--on" href="#">아이폰</a><a class="g-os__tab" href="#">안드로이드</a></nav>
+              </header>
+              <nav class="g-jump" aria-label="이 페이지 안에서 이동">
+                <a href="#" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">확인 1</span> 셀룰러</span></a
+                ><a href="#" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">확인 2</span> 회선</span></a
+                ><a href="#" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">확인 3</span> 데이터</span></a
+                ><a href="#" class="g-jump__chip"><span class="g-jump__label"><span class="g-jump__step">확인 4</span> 신호</span></a>
+              </nav>
+              <p class="g-hero__hint">화면의 빨간 테두리가 확인할 곳이에요.</p>
+              <section class="g-sec">
+                <span class="g-badge">확인 1</span>
+                <h2 class="g-sec__title">셀룰러 화면</h2>
+                <p class="g-sec__path">… 본문은 사이트판과 같음 …</p>
+              </section>
+            </article>
+          </div>
+          <p class="mk-lead" style="margin-top: 10px">
+            가이드 전용판(/install-guide/ios)과 같은 규칙: flow 레이아웃 · 작은 푸터 · OS 전환과 «설치 가이드» 링크는 전용판끼리 ·
+            canonical 은 사이트판 · sitemap 제외 · 프리렌더. 알림톡 · CS 문구에서 거는 주소입니다. 발급 화면 하단 시트판은 만들지
+            않습니다.
+          </p>
+        </section>
+      </div>
+
+      <!-- =============================================================== 주소 -->
+      <h2 class="mk-h2" id="url">주소 (Q1)</h2>
+      <div class="mk-card">
+        <table class="mk-t">
+          <thead>
+            <tr>
+              <th style="width: 18%">페이지</th>
+              <th style="width: 24%">(a) 옛 경로 그대로</th>
+              <th class="rec">(b) 가이드 체계 <span class="mk-pill mk-pill--rec">추천</span> — 사이트판 · 전용판</th>
+              <th style="width: 26%">(c) 섞기 — 사이트판은 (b) · 옛 경로를 전용판으로</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>아이폰 설치 확인</td>
+              <td><code>/simple-check/simple-check-ios</code></td>
+              <td class="rec"><code>/guide/check/ios</code> · <code>/install-guide/check/ios</code></td>
+              <td><code>/guide/check/ios</code> · <code>/simple-check/simple-check-ios</code></td>
+            </tr>
+            <tr>
+              <td>안드로이드 설치 확인</td>
+              <td><code>/simple-check/simple-check-android</code></td>
+              <td class="rec"><code>/guide/check/android</code> · <code>/install-guide/check/android</code></td>
+              <td><code>/guide/check/android</code> · <code>/simple-check/simple-check-android</code></td>
+            </tr>
+            <tr>
+              <td>통신사 변경</td>
+              <td><code>/change-network</code> (두 OS 한 페이지)</td>
+              <td class="rec"><code>/guide/network/ios</code> · <code>/guide/network/android</code> · 전용판 <code>/install-guide/network/{ios,android}</code></td>
+              <td><code>/guide/network/{ios,android}</code> · <code>/change-network</code> (한 주소에 OS 둘 — 전용판만 모양이 달라짐)</td>
+            </tr>
+            <tr>
+              <td>근거</td>
+              <td>나간 CS 문구 · 알림톡 링크를 도메인만 바꾸면 됨. 대신 가이드와 주소 규칙이 갈리고 이름이 중복(simple-check/simple-check-…)</td>
+              <td class="rec">«설치가이드와 동일» — 가이드(/guide/&lt;os&gt; · /install-guide/&lt;os&gt;) 규칙 그대로. 옛 링크는 어차피 도메인을 바꿔야 해서 경로까지 바꾸는 비용이 같음. 파일은 <code>pages/guide/check/*</code> · <code>pages/guide/network/*</code> — 기존 /guide/ios 와 안 겹침</td>
+              <td>옛 문구 호환은 좋지만 전용판 주소 규칙이 둘로 나뉨(/install-guide/… 와 /simple-check/…) · /change-network 만 OS 탭 규칙 예외</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- =============================================================== 옛 글과 달라지는 곳 -->
+      <h2 class="mk-h2" id="diff">옛 글과 달라지는 곳 — 결정 표 초안 (Q6 · Q7 · Q8)</h2>
+      <p class="mk-lead">«무엇을 켜고 끄는지» 는 옛 글 그대로 두고, 경로 · 화면 글자는 설치 가이드 2609(iOS 26 · One UI 7~8 확인본)에, 문체는 가이드 «~해요» 에 맞춥니다. 승인되면 spec §8 결정 표로 옮깁니다.</p>
+      <div class="mk-card">
+        <table class="mk-t">
+          <thead>
+            <tr>
+              <th style="width: 4%">#</th>
+              <th style="width: 30%">옛 글</th>
+              <th style="width: 34%">새 글 (목업)</th>
+              <th>근거</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>확인 시점 명시 없음(캡처는 도착 뒤 상태)</td><td>머리에 «현지에 도착해 … 켠 뒤» · 한국에서는 ‘활성화 중…’ · 메인이 정상</td><td>가이드 STEP 2 는 출국 전 셀룰러 데이터를 메인으로 둔다 — 시점을 안 밝히면 서로 반대로 읽힘</td></tr>
+            <tr><td>2</td><td>«셀룰러 데이터는 설치된 이심(보조)» · «메인과 보조 모두 켬»</td><td>«여행용 회선» · 이름은 폰이 붙임(‘여행’ · ‘보조’)</td><td>iOS 26 은 새 회선 이름을 자동으로 붙임(가이드 화면 ‘여행’)</td></tr>
+            <tr><td>3</td><td>«기본음성회선»</td><td>«기본 음성 회선»</td><td>화면 글자</td></tr>
+            <tr><td>4</td><td>«음성 및 데이터 5G 자동»</td><td>유지 — 새 화면 값도 «5G 자동»</td><td>무엇을 확인하는지는 그대로(Q7). 가이드 화면 템플릿 값은 «5G» 라 확인 페이지용 변형을 추가</td></tr>
+            <tr><td>5</td><td>«데이터 전환 허용 켬 → 국내 로밍 요금 과다 청구»</td><td>가이드 경고 두 줄 그대로(한국 회선 데이터 로밍 · 전환 허용)</td><td>같은 경고를 두 곳에서 다르게 쓰지 않음 · 경고 두 줄은 빼지 않는 규칙</td></tr>
+            <tr><td>6</td><td>«두줄 / 한줄 · 5G, LTE, 또는 3G»</td><td>«위아래 두 칸 · 5G나 LTE» + 가이드 상태 표시줄 그림</td><td>가이드 STEP 3 6번과 같은 문장 · 같은 그림</td></tr>
+            <tr><td>7</td><td>안드로이드 «설정 → T로밍(또는 해외로밍) · SK: 로밍 상세 설정 / KT &amp; LG: 데이터 로밍»</td><td>«설정 › 연결 › 해외 로밍 › 데이터 로밍 eSIM 1» + «SKT 폰은 설정 › T로밍 › 로밍 상세 설정»</td><td>One UI 7~8 확인본(SIM별 스위치) · SKT 경로는 확인본에 있음</td></tr>
+            <tr><td>8</td><td>안드로이드 통신사 변경 «설정 → T로밍(또는 해외로밍) → 로밍 이동통신사 선택»</td><td>«설정 › 연결 › 모바일 네트워크 › 로밍 이동통신사 선택» (SKT 대체 경로는 근거 없어 뺌)</td><td>가이드 문제 해결 Q4 · 화면 aos-carrier 와 같은 경로</td></tr>
+            <tr><td>9</td><td>아이폰 통신사 변경 5단계 · 안드로이드 6단계(글만)</td><td>3단계씩 + 화면 (아이폰 2장 · 안드로이드 1장)</td><td>가이드 단계 문체(누를 이름 형광 밑줄 · 경로 굵게)</td></tr>
+            <tr><td>10</td><td>«유럽은 … 음영지역 … 최대한 많은 통신사와 계약»</td><td>«나라와 지역에 따라 잘 잡히는 통신사가 달라요» · «한 나라에서 여러 통신사에 연결할 수 있어요»</td><td>판매 국가가 유럽 밖에도 있음(Q8) · «계약» 표현은 벤더 사실 확인 없이 쓰지 않음 — 상품 상세 «현지 통신사» 칩과 같은 수준의 사실만</td></tr>
+            <tr><td>11</td><td>«국가별 통신사 목록 바로가기»(/network-list)</td><td>Q4 — 목업은 (b) «상품 페이지의 ‘현지 통신사’» + 나라 검색 링크</td><td>/network-list 는 범위 밖 페이지 · 옛 사이트 링크 금지(테스트)</td></tr>
+            <tr><td>12</td><td>옛 사이트 «설치가이드» 링크</td><td>사이트판 → /guide/&lt;os&gt; · 전용판 → /install-guide/&lt;os&gt;</td><td>apps/client 전체에서 «super.site» 금지(guide.test.ts)</td></tr>
+            <tr><td>13</td><td>네트워크 이름(Connect · StarHub · PLAY · Plus) · «CMHK · CMLink 면 삭제 후 재설치»</td><td>이름 판별 없음 — «다른 여행용 eSIM 은 꺼 두세요(지우지 않아도 돼요)» · «모르겠으면 지우지 말고 고객센터»</td><td>manager 회신(10-14): 우리 eSIM 만의 고정 이름이 없고(스폰서 단위 · 바뀔 수 있음) 공개도 비권장 · 옛 판별은 우리 eSIM 을 지우게 만듦(재설치 불가) — 가이드 «끄고 설치» 원칙과 같게</td></tr>
+            <tr><td>14</td><td>«통신사 변경 후 10분»</td><td>그대로 + «안 되면 다시 자동으로» 한 줄</td><td>가이드 문제 해결의 같은 문장</td></tr>
+            <tr><td>15</td><td>오타 StartHub · 껴저 · «되었는 아래»</td><td>고침</td><td>Q7</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- =============================================================== 폰 화면 목록 -->
+      <h2 class="mk-h2" id="figs">폰 화면 목록</h2>
+      <div class="mk-card">
+        <table class="mk-t">
+          <thead>
+            <tr><th style="width: 13%">구분</th><th style="width: 30%">키</th><th>화면 · 상태 · 강조</th><th style="width: 24%">쓰는 곳</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="mk-k mk-k--reuse">재사용</span></td><td><code>ios-celldata-travel</code></td><td>그대로</td><td>① 확인 3</td></tr>
+            <tr><td><span class="mk-k mk-k--reuse">재사용</span></td><td><code>ios-network-auto</code></td><td>그대로</td><td>③ 아이폰 2</td></tr>
+            <tr><td><span class="mk-k mk-k--reuse">재사용</span></td><td><code>aos-sim-esim1</code></td><td>그대로</td><td>② 확인 1</td></tr>
+            <tr><td><span class="mk-k mk-k--reuse">재사용</span></td><td><code>aos-roaming-esim</code></td><td>그대로</td><td>② 확인 2</td></tr>
+            <tr><td><span class="mk-k mk-k--reuse">재사용</span></td><td><code>aos-carrier-auto</code></td><td>그대로</td><td>③ 안드로이드 2</td></tr>
+            <tr><td><span class="mk-k mk-k--reuse">재사용</span></td><td>GuideStatusBar</td><td>CSS 그림 그대로</td><td>① 확인 4</td></tr>
+            <tr><td><span class="mk-k mk-k--new">새 화면</span></td><td><code>ios-cellular-arrival</code></td><td>ios-cellular · <b>arrival</b>(템플릿에 이미 있음) · 셀룰러 데이터 · 기본 음성 회선* · 메인* · 여행</td><td>① 확인 1</td></tr>
+            <tr><td><span class="mk-k mk-k--new">새 화면</span></td><td><code>ios-line-check</code></td><td>ios-line · 새 상태 «check»(음성 및 데이터 «5G 자동»)* · 이 회선 켜기 · 음성 및 데이터* · 데이터 로밍</td><td>① 확인 2</td></tr>
+            <tr><td><span class="mk-k mk-k--new">새 화면</span></td><td><code>ios-line-network</code></td><td>ios-line · 네트워크 선택(강조 키 이미 있음)</td><td>③ 아이폰 1</td></tr>
+            <tr><td><span class="mk-k mk-k--new">새 화면</span></td><td><code>aos-sim-arrival-data</code></td><td>aos-sim · <b>arrival</b>(템플릿에 이미 있음) · 모바일 데이터 eSIM 1 · 데이터 전환</td><td>② 확인 1</td></tr>
+            <tr><td>—</td><td>—</td><td>Q5 회신으로 «네트워크 이름» 화면은 만들지 않음</td><td>—</td></tr>
+          </tbody>
+        </table>
+        <p class="mk-lead" style="margin: 12px 0 0">
+          * 템플릿(scripts/guide-screens/screens.js) 변경: 강조 키 3개(기본 음성 회선 · 메인 · 음성 및 데이터) + ios-line «check» 상태. 기존 38장은
+          모양이 그대로이고, 템플릿 지문이 바뀌어 다시 굽기만 합니다(figures.lock.json). 이 목업은 같은 템플릿을 브라우저에서 바로 그리고, * 강조 · 값은
+          목업 쪽에서 덧칠했습니다.
+        </p>
+      </div>
+
+      <!-- =============================================================== 질문 -->
+      <h2 class="mk-h2" id="qs">질문 Q1~Q9 — 추천안</h2>
+      <div class="mk-card">
+        <div class="mk-q"><span class="mk-q__n">Q1</span><div><p><b>주소</b> — (b) 가이드 체계 <span class="mk-pill mk-pill--rec">추천</span></p><p>/guide/check/&lt;os&gt; · /guide/network/&lt;os&gt; + 전용판 /install-guide/check/&lt;os&gt; · /install-guide/network/&lt;os&gt;. 비교는 «주소» 표.</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q2</span><div><p><b>판</b> — 사이트판 + 전용판 <span class="mk-pill mk-pill--rec">추천</span></p><p>발급 화면 하단 시트판은 만들지 않음(시트 안 링크는 새 탭으로 사이트판).</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q3</span><div><p><b>진입점</b> — 허브 «설치한 뒤에» + 가이드 문제 해결 링크 <span class="mk-pill mk-pill--rec">추천</span></p><p>발급 완료 화면 · 마이 · 알림톡/CS 문구 변경은 범위 밖.</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q4</span><div><p><b>«국가별 통신사 목록»</b> — (b) 상품 페이지 «현지 통신사» 안내 + 나라 검색 링크 <span class="mk-pill mk-pill--rec">추천</span></p><p>(a) 빼기 · (c) /network-list 도 옮기기(범위 커짐). 원가 기준 망 목록은 고객용으로 쓰지 않는다는 manager 판단(09-13)이 있어 (c) 는 데이터 출처부터 새로 정해야 함.</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q5</span><div><p><b>네트워크 이름</b> — 이름으로 가려내지 않고 «다른 여행용 eSIM 은 꺼 두기» (manager A안) <span class="mk-pill mk-pill--rec">추천</span></p><p>manager 회신 10-14: 지금 고객 eSIM 은 전부 Sparks · 화면 글자는 실기기 미확인 · 우리만의 고정 이름 없음(같은 스폰서 · 옛 Maya 와 겹치고 배치마다 바뀔 수 있음) · 공개 비권장 · 옛 «다른 이름이면 삭제 후 재설치» 는 틀렸고 위험. 다른 안: B 설치 때 레이블 고정(가이드 변경 · 실기기 선행) · C ICCID 대조(발급 화면에 ICCID 없음).</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q6</span><div><p><b>경로 · 화면 기준</b> — 설치 가이드 2609 에 맞춤 <span class="mk-pill mk-pill--rec">추천</span></p><p>옛 글과 달라지는 곳은 «결정 표 초안» 15줄.</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q7</span><div><p><b>문체 · 오타</b> — «~해요» 로 다듬고 오타 고침 · 켜고 끄는 내용은 그대로 <span class="mk-pill mk-pill--rec">추천</span></p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q8</span><div><p><b>«유럽은…» 문장</b> — 나라 · 지역 일반으로 <span class="mk-pill mk-pill--rec">추천</span></p><p>«계약» 표현도 빼고 «한 나라에서 여러 통신사에 연결할 수 있어요» 로.</p></div></div>
+        <div class="mk-q"><span class="mk-q__n">Q9</span><div><p><b>OS 묶음</b> — 통신사 변경도 가이드처럼 OS 전환(두 페이지) <span class="mk-pill mk-pill--rec">추천</span></p><p>원본처럼 한 페이지에 두 OS 를 담으면 주소 하나로 끝나지만, 가이드 · 확인 페이지와 모양이 달라지고 자기 OS 를 찾아 내려가야 함.</p></div></div>
+      </div>
+    </div>
+
+    <script src="../../apps/client/scripts/guide-screens/screens.js"></script>
+    <script>
+      // 새 화면 — 가이드 화면 템플릿(screens.js)을 그대로 불러 그린다. data-xhl · data-xval 은 목업 덧칠(구현 때 템플릿에 키 · 상태를 더한다)
+      const rowLabel = (row) => {
+        const t = row.querySelector('.i-row__t, .a-row__t')
+        if (!t) return ''
+        const c = t.cloneNode(true)
+        c.querySelectorAll('.i-row__sub, .a-row__sub, .i-tag').forEach((n) => n.remove())
+        return c.textContent.trim()
+      }
+      const findRow = (win, label) => [...win.querySelectorAll('.i-row, .a-row')].find((r) => rowLabel(r) === label)
+      document.querySelectorAll('figure[data-mk-screen]').forEach((fig) => {
+        const win = fig.querySelector('.shot__win')
+        fig.dataset.screen = fig.dataset.mkScreen
+        if (!window.IG_renderScreen || !window.IG_renderScreen(fig, win)) {
+          win.textContent = '화면 없음: ' + fig.dataset.mkScreen
+          return
+        }
+        ;(fig.dataset.xval || '').split('|').filter(Boolean).forEach((pair) => {
+          const [label, value] = pair.split('=')
+          const v = findRow(win, label)?.querySelector('.i-row__v')
+          if (v) v.textContent = value
+        })
+        ;(fig.dataset.xhl || '').split('|').filter(Boolean).forEach((label) => {
+          const row = findRow(win, label)
+          if (!row) return console.warn('목업 강조 대상 없음', label)
+          row.classList.add('is-hl')
+          const ring = document.createElement('span')
+          ring.className = 'hl-ring'
+          row.appendChild(ring)
+        })
+      })
+
+      const btn = document.getElementById('mk-clean')
+      const set = (on) => {
+        document.body.classList.toggle('mk-clean', !on)
+        btn.setAttribute('aria-pressed', String(on))
+        btn.textContent = on ? '주석 숨기기' : '주석 보이기'
+      }
+      set(true)
+      btn.addEventListener('click', () => set(btn.getAttribute('aria-pressed') !== 'true'))
+    </script>
+  </body>
+</html>
