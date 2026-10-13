@@ -39,6 +39,15 @@ spec `nomacom-wiki wiki/frontend/specs/client/2026-10-05-client-guide.md` · pla
 - 화면 템플릿(`scripts/guide-screens/screens.js` · `ui.css`)은 2609 사본 — «우리 발급 화면» 3종은 지금 `/view/{orderId}` 글자 · 모양을 따른다. **발급 화면을 고치면 이 3종도 고쳐 다시 굽는다**(«아이폰 수동 설치» · «LPA 전체» · «QR 코드 다운로드» 는 가이드 본문도 쓴다).
 - 이미지 안에 실제 전화번호 · 코드 · 공급사 주소 조각 · 스캔되는 QR · Apple/삼성 로고를 넣지 않는다.
 
+### 설치 확인 · 현지 통신사 바꾸기 · 나라별 현지 통신사 (client-guide-check · 2026-10-14)
+
+spec `esmn-wiki wiki/frontend/specs/client/2026-10-14-client-guide-check.md` · plan 같은 이름 `-plan.md`. 옛 가이드 사이트의 «간단 설치 확인» · «통신사 변경» · «국가별 통신사» 를 옮긴 페이지 — 사이트판 `/guide/check/{ios,android}` · `/guide/network`(두 OS 한 페이지) · `/guide/carriers`, 전용판은 같은 이름으로 `/install-guide/…`(flow · canonical = 사이트판 · sitemap 제외).
+
+- **본문 = `GuideCheckArticle`** — 설치 가이드와 같은 틀(머리 · OS 전환 · sticky 칩 줄 · 구간 · 안내 · 화면 · 문의)에 구간 구성만 다르다. 틀 CSS 는 `GuideArticle` 값 **복제** — `guide-frame-css.test.ts` 가 같은 값인지 본다(공용 CSS 로 빼면 설치 가이드 스타일 골든이 바뀐다). 한쪽 틀을 고치면 다른 쪽도.
+- **문안 `app/content/guide/check.ts`** — 요금 경고 두 줄은 가이드 STEP 3 객체를 그대로 쓴다. 이름으로 우리 eSIM 을 가려내지 않고(공급사 · 홈망 · 옛 네트워크 이름 0) eSIM 을 지우라고 하지 않는다(spec D-6 — `check.test.ts` 금지 글자).
+- **문제 해결 링크** — `GuideFaq.link.bareTo` 가 있으면 전용판은 그 주소 · 발급/본인 확인 화면 시트는 그 주소를 새 탭으로, 없으면(«내 eSIM 조회하기») 시트에서 숨긴다.
+- **나라별 통신사** = 카탈로그 K1 `operators` · `network`(상품 상세 «현지 통신사» 칩과 같은 값)를 페이지 전용 라우트 `server/api/catalog/carriers` 로 — 검증기가 «같은 나라는 zone 마다 통신사 · 망이 같다» 를 막는다. «(추천)» 은 없다(근거 자료 없음).
+
 ## 4-step 가드 (K8 · 2026-09-23)
 
 페이지별 `onMounted` 가드는 없다 — `app/middleware/order-flow.ts` 가 4페이지(`definePageMeta({ middleware: 'order-flow' })`)를 지킨다.
