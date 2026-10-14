@@ -21,6 +21,32 @@ const NuxtLink = defineComponent({
 })
 
 describe('/guide 허브', () => {
+  it('«설치한 뒤에»(client-guide-check S-6) — 줄 2 · 버튼 3 · 목적지 · OS 카드(NLinkCard)는 2 그대로 · «이렇게 진행돼요» 앞', async () => {
+    const Page = (await import('./index.vue')).default
+    const w = mount(Page, { global: { stubs: { NuxtLink } } })
+    const h2 = w.findAll('h2.guide-page__h2').map((x) => x.text())
+    expect(h2.slice(0, 2)).toEqual(['설치한 뒤에', '이렇게 진행돼요'])
+    expect(
+      w.findAll('.g-after__row').map((r) => [
+        r.find('.g-after__t').text(),
+        r.find('.g-after__sub').text(),
+        r.findAll('a.g-after__btn').map((a) => `${a.text()}→${a.attributes('href')}`),
+      ]),
+    ).toEqual([
+      [
+        '설치 확인하기',
+        '현지에서 연결이 안 될 때 설정 화면과 비교해요.',
+        ['아이폰→/guide/check/ios', '안드로이드→/guide/check/android'],
+      ],
+      [
+        '현지 통신사 바꾸기',
+        '연결이 불안정할 때 통신사를 직접 골라요. 아이폰 · 안드로이드 한 페이지예요.',
+        ['통신사 바꾸는 방법 보기→/guide/network'],
+      ],
+    ])
+    expect(w.findAll('a.n-link-card')).toHaveLength(2)
+  })
+
   it('OS 카드 순서 · 이름 · 경로 · 흐름 3단계 · 지원 기기 · 허브용 문의 제목 · 설명은 STATIC_DESCRIPTIONS', async () => {
     const Page = (await import('./index.vue')).default
     const w = mount(Page, { global: { stubs: { NuxtLink } } })

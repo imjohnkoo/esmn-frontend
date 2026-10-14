@@ -3,9 +3,10 @@
 // 본문은 /guide/ios · /guide/android (외부 가이드 사이트는 쓰지 않는다 — F-8).
 import { NLinkCard } from '@imjohnkoo/design-vue'
 import { STATIC_DESCRIPTIONS } from '#shared/catalog/seo'
+import GuideAfter from '~/components/guide/GuideAfter.vue'
 import GuideContact from '~/components/guide/GuideContact.vue'
 import GuideFlow from '~/components/guide/GuideFlow.vue'
-import { GUIDE_CONTACT, GUIDE_HUB, GUIDE_PAGES } from '~/content/guide/common'
+import { GUIDE_AFTER, GUIDE_CONTACT, GUIDE_HUB, GUIDE_PAGES } from '~/content/guide/common'
 import type { GuideOs } from '~/content/guide/types'
 
 // canonical · 설명 — sitemap 에 든 정적 페이지(catalog F-9)
@@ -40,6 +41,10 @@ const OS_ORDER: GuideOs[] = ['ios', 'android']
         </NLinkCard>
       </NuxtLink>
     </div>
+
+    <!-- 설치한 뒤에 — 설치 확인 · 현지 통신사 바꾸기(client-guide-check S-6) -->
+    <h2 class="guide-page__h2">{{ GUIDE_AFTER.title }}</h2>
+    <GuideAfter :rows="GUIDE_AFTER.rows" />
 
     <h2 class="guide-page__h2">이렇게 진행돼요</h2>
     <GuideFlow />

@@ -22,12 +22,16 @@ import { parseCatalog } from './validate'
 const catalog = fixtureCatalog()
 
 describe('정적 페이지 목록 (spec S-6)', () => {
-  it('법정 3종 · 가이드 허브 + OS 2(client-guide F-7) · 지원 기기 — 일곱 경로(사업자정보 페이지는 없다 — client-shell D-39)', () => {
+  it('법정 3종 · 가이드 허브 + OS 2(client-guide F-7) · 지원 기기 · 설치 확인 2 · 통신사 바꾸기 · 나라별 통신사(client-guide-check F-8) — 열한 경로(사업자정보 페이지는 없다 — client-shell D-39)', () => {
     expect([...STATIC_ROUTES].sort()).toEqual(
       [
         '/guide',
         '/guide/android',
+        '/guide/carriers',
+        '/guide/check/android',
+        '/guide/check/ios',
         '/guide/ios',
+        '/guide/network',
         '/privacy',
         '/refund',
         '/supported-devices',
@@ -47,6 +51,10 @@ describe('정적 페이지 결선 — 각 페이지가 자기 경로의 설명�
     ['guide/index.vue', '/guide'],
     ['guide/ios.vue', '/guide/ios'],
     ['guide/android.vue', '/guide/android'],
+    ['guide/check/ios.vue', '/guide/check/ios'],
+    ['guide/check/android.vue', '/guide/check/android'],
+    ['guide/network.vue', '/guide/network'],
+    ['guide/carriers.vue', '/guide/carriers'],
   ] as const)('%s → useCatalogSeo(설명 = STATIC_DESCRIPTIONS[%s]) 한 번', (f, route) => {
     const src = page(f)
     const calls = src.match(/useCatalogSeo\(\{[^}]*\}\)/g) ?? []
@@ -73,7 +81,11 @@ describe('정적 페이지 결선 — 각 페이지가 자기 경로의 설명�
     expect([...STATIC_ROUTES].sort()).toEqual([
       '/guide',
       '/guide/android',
+      '/guide/carriers',
+      '/guide/check/android',
+      '/guide/check/ios',
       '/guide/ios',
+      '/guide/network',
       '/privacy',
       '/refund',
       '/supported-devices',
@@ -86,17 +98,21 @@ describe('정적 페이지 결선 — 각 페이지가 자기 경로의 설명�
 })
 
 describe('프리렌더 · sitemap (catalog spec F-9 · E2E-15)', () => {
-  it('프리렌더 = 홈 · 검색 · 국가 전수 · 상품 전수 · 정적 7 · 전용판 3(가이드 2 · 지원 기기 — client-guide D-24) — 전부 소문자 · 중복 없음', () => {
+  it('프리렌더 = 홈 · 검색 · 국가 전수 · 상품 전수 · 정적 11 · 전용판 7(가이드 2 · 지원 기기 — client-guide D-24 · 설치 확인 2 · 통신사 바꾸기 · 나라별 통신사 — client-guide-check S-5) — 전부 소문자 · 중복 없음', () => {
     const routes = prerenderRoutes(catalog)
     expect(routes).toHaveLength(
-      2 + countriesOf(catalog).length + catalog.zones.length + STATIC_ROUTES.length + 3,
+      2 + countriesOf(catalog).length + catalog.zones.length + STATIC_ROUTES.length + 7,
     )
-    expect(routes.slice(-3)).toEqual([
+    expect(routes.slice(-7)).toEqual([
       '/install-guide/ios',
       '/install-guide/android',
       '/install-guide/devices',
+      '/install-guide/check/ios',
+      '/install-guide/check/android',
+      '/install-guide/network',
+      '/install-guide/carriers',
     ])
-    expect(routes.slice(-3)).toEqual([...GUIDE_BARE_ROUTES])
+    expect(routes.slice(-7)).toEqual([...GUIDE_BARE_ROUTES])
     expect(new Set(routes).size).toBe(routes.length)
     for (const r of routes) expect(r).toBe(r.toLowerCase())
     expect(routes).toContain('/countries/fra')

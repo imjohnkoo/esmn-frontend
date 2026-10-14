@@ -87,7 +87,7 @@ describe('푸터를 끄는 페이지는 본인 확인 화면 하나(D-20)', () =
     )
   })
 
-  it('다른 flow 화면(details · select-date · view · checkout-preview · 가이드 전용판)은 flow 레이아웃 그대로 — 푸터 있음', () => {
+  it('다른 flow 화면(details · select-date · view · checkout-preview · 가이드 · 설치 확인 · 통신사 전용판)은 flow 레이아웃 그대로 — 푸터 있음', () => {
     const flow = walk(PAGES).filter((f) =>
       /definePageMeta\(\{ layout: 'flow'/.test(readFileSync(f, 'utf8')),
     )
@@ -96,8 +96,12 @@ describe('푸터를 끄는 페이지는 본인 확인 화면 하나(D-20)', () =
         'checkout-preview.vue',
         'details/[orderId].vue',
         'install-guide/android.vue',
+        'install-guide/carriers.vue',
+        'install-guide/check/android.vue',
+        'install-guide/check/ios.vue',
         'install-guide/devices.vue',
         'install-guide/ios.vue',
+        'install-guide/network.vue',
         'select-date/[orderId].vue',
         'verify/[orderId].vue',
         'view/[orderId].vue',

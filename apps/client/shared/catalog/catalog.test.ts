@@ -213,6 +213,28 @@ describe('parseCatalog — 깨진 입력은 빌드를 멈춘다', () => {
         (zoneRaw(r, 'EU340').countries.find((c: any) => c.iso3 === 'FRA').nameKr = '프랑스공화국'),
       /FRA 가 다른 zone 과 다르다/,
     ],
+    // client-guide-check D-15 — 나라별 현지 통신사 페이지는 나라마다 한 줄(첫 zone 값)이라 zone 마다 같아야 한다
+    [
+      '같은 나라 통신사가 zone 마다 다름',
+      (r) =>
+        (zoneRaw(r, 'EU340').countries.find((c: any) => c.iso3 === 'FRA').operators = ['Orange']),
+      /FRA 가 다른 zone 과 다르다/,
+    ],
+    // 이어 붙인 글자로 비교하면 같아 보이는 경계(QA ⑥ — 칩 1개 «A, B» 와 칩 2개 «A» · «B»)
+    [
+      '같은 나라 통신사가 한 칸 «A, B» 와 두 칸 «A» · «B»',
+      (r) => {
+        const zones = r.zones.filter((z: any) => z.countries.some((c: any) => c.iso3 === 'FRA'))
+        zones[0].countries.find((c: any) => c.iso3 === 'FRA').operators = ['Orange', 'SFR']
+        zones[1].countries.find((c: any) => c.iso3 === 'FRA').operators = ['Orange, SFR']
+      },
+      /FRA 가 다른 zone 과 다르다/,
+    ],
+    [
+      '같은 나라 망이 zone 마다 다름',
+      (r) => (zoneRaw(r, 'EU340').countries.find((c: any) => c.iso3 === 'FRA').network = '4G/LTE'),
+      /FRA 가 다른 zone 과 다르다/,
+    ],
     ['나라 0', (r) => (zoneRaw(r, 'THA00').countries = []), /나라가 없다/],
     ['iso3 모양', (r) => (zoneRaw(r, 'THA00').countries[0].iso3 = 'TH'), /iso3 모양/],
     [

@@ -5,7 +5,15 @@ import { defineComponent, h, ref } from 'vue'
 import { readFileSync } from 'node:fs'
 import { GUIDE_BARE_ROUTES, STATIC_ROUTES } from '#shared/catalog/seo'
 import { isNoindexPath } from '#shared/utils/robots'
-import { DEVICES_BARE, DEVICES_PAGE, GUIDE_BARE, GUIDE_SECTIONS } from '~/content/guide/common'
+import {
+  DEVICES_BARE,
+  DEVICES_PAGE,
+  GUIDE_BARE,
+  GUIDE_CARRIERS,
+  GUIDE_CHECK,
+  GUIDE_NETWORK,
+  GUIDE_SECTIONS,
+} from '~/content/guide/common'
 // 페이지는 파일 수집 때 import 한다(guide-pages.test.ts 와 같은 이유 — 테스트 안 동적 import 는 바쁜 기계에서 제한 시간을 넘긴다)
 import SiteDevicesPage from '../supported-devices.vue'
 import AndroidPage from './android.vue'
@@ -125,7 +133,15 @@ describe.each([
 
 describe('전용판 경로 · 레이아웃(D-14)', () => {
   it('경로 = 콘텐츠 정의(GUIDE_BARE) = 프리렌더 목록(GUIDE_BARE_ROUTES)', () => {
-    expect([GUIDE_BARE.ios, GUIDE_BARE.android, DEVICES_BARE]).toEqual([...GUIDE_BARE_ROUTES])
+    expect([
+      GUIDE_BARE.ios,
+      GUIDE_BARE.android,
+      DEVICES_BARE,
+      GUIDE_CHECK.ios.bare,
+      GUIDE_CHECK.android.bare,
+      GUIDE_NETWORK.bare,
+      GUIDE_CARRIERS.bare,
+    ]).toEqual([...GUIDE_BARE_ROUTES])
   })
 
   it('flow 레이아웃 = 사이트 헤더 · 하단 탭 없음 · 사업자정보 푸터(작은 판) 있음(K5 — 전용판은 끄지 않는다 · D-20 은 본인 확인 화면만)', () => {

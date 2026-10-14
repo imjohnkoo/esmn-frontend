@@ -326,8 +326,38 @@ describe.each([
     expect(w.find('.g-cs__more').attributes('href')).toBe('/my#cs')
   })
 
-  it('«QR 코드를 잃어버렸나요?» 답에 내 eSIM 조회 링크(D-4)', () => {
-    expect(w.findAll('.g-faq__link').map((a) => a.attributes('href'))).toEqual(['/my-esim'])
+  it('문제 해결 링크 — «신호는 뜨는데 인터넷이 안 되나요?» → 설치 확인 · «연결이 계속 안 되거나 너무 느린가요?» → 통신사 바꾸기의 그 OS 구간(client-guide-check S-6) · «QR 코드를 잃어버렸나요?» → 내 eSIM 조회(D-4)', () => {
+    const faqs = w.findAll('.g-faq')
+    const linkOf = (q: string) => {
+      const f = faqs.find((x) => x.find('.g-faq__q').text().includes(q))!
+      const a = f.find('.g-faq__link')
+      return a.exists() ? [a.text(), a.attributes('href'), a.attributes('target')] : null
+    }
+    expect(linkOf('신호는 뜨는데 인터넷이 안 되나요?')).toEqual([
+      '설치 상태 화면으로 확인하기',
+      `/guide/check/${os}`,
+      undefined,
+    ])
+    expect(linkOf('연결이 계속 안 되거나 너무 느린가요?')).toEqual([
+      '통신사 바꾸는 방법 자세히 보기',
+      `/guide/network#${os}`,
+      undefined,
+    ])
+    expect(linkOf('QR 코드를 잃어버렸나요?')).toEqual(['내 eSIM 조회하기', '/my-esim', undefined])
+    expect(w.findAll('.g-faq__link').map((a) => a.attributes('href'))).toEqual([
+      `/guide/check/${os}`,
+      `/guide/network#${os}`,
+      '/my-esim',
+    ])
+  })
+
+  it('전용판 — 설치 확인 · 통신사 바꾸기 링크는 전용판 주소(같은 탭) · 내 eSIM 조회는 사이트 페이지 그대로(client-guide-check S-5 · S-6)', () => {
+    const bare = mount(GuideArticle, { props: { content, mode: 'bare' }, global: { stubs } })
+    expect(bare.findAll('.g-faq__link').map((a) => [a.attributes('href'), a.attributes('target')])).toEqual([
+      [`/install-guide/check/${os}`, undefined],
+      [`/install-guide/network#${os}`, undefined],
+      ['/my-esim', undefined],
+    ])
   })
 })
 

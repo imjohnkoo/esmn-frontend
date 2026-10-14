@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from '
 import { describe, expect, it } from 'vitest'
 import { STATIC_ROUTES } from '#shared/catalog/seo'
 import { ANDROID_GUIDE } from './android'
+import { CHECK_ANDROID, CHECK_IOS, NETWORK_GUIDE } from './check'
 // 생성 스크립트의 지문 계산을 그대로 쓴다(같은 계산이어야 대조가 된다)
 import { guideFigureHash, guideInputsHash, sha256 } from '../../../scripts/guide-screens/lock.mjs'
 import * as COMMON from './common'
@@ -19,7 +20,7 @@ import { guidePlainText, parseGuideInline } from './inline'
 import lockJson from './figures.lock.json'
 import { guideGolden } from './golden'
 import { IOS_GUIDE } from './ios'
-import type { GuideContent, GuideStep } from './types'
+import type { GuideCheckContent, GuideContent, GuideStep } from './types'
 
 /** client-guide spec F-2 · F-3 · F-6 · F-8 · DoD 2 · 5 · 6 · 불변식 */
 const GUIDES = { ios: IOS_GUIDE, android: ANDROID_GUIDE } as const
@@ -230,6 +231,22 @@ describe.each(Object.entries(GUIDES))('%s 가이드 콘텐츠', (os, g) => {
   })
 })
 
+describe('설치 가이드 안내 상자에는 링크가 없다(client-guide-check — GuideArticle 은 GuideNote 의 링크 줄을 그리지 않는다)', () => {
+  it.each([
+    ['ios', IOS_GUIDE],
+    ['android', ANDROID_GUIDE],
+  ] as const)('%s', (_os, g) => {
+    const notes = [
+      ...g.step1.methods.flatMap((m) => (m.note ? [m.note] : [])),
+      ...g.step1.notes,
+      ...g.step2.notes,
+      ...g.step3.notes,
+    ]
+    expect(notes.length).toBeGreaterThan(3)
+    for (const n of notes) expect(n.link, n.lines[0]).toBeUndefined()
+  })
+})
+
 describe('공통 문안(허브 · 카드 · 흐름 · 문의) — 본문과 같은 카피 불변식', () => {
   const all = JSON.stringify(COMMON)
   it('자정 · iPhone · URL · 전화번호 0', () => {
@@ -256,7 +273,17 @@ describe('공통 문안(허브 · 카드 · 흐름 · 문의) — 본문과 같�
 })
 
 describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
-  const used = new Set([...figuresOf(IOS_GUIDE), ...figuresOf(ANDROID_GUIDE)])
+  // 설치 확인 · 통신사 바꾸기 페이지가 쓰는 창도 «쓰는 창»(client-guide-check F-6)
+  const checkFigures = (c: GuideCheckContent) =>
+    c.sections.flatMap((s) => [
+      ...(s.figures ?? []),
+      ...(s.steps ?? []).flatMap((st) => (st.figure ? [st.figure] : [])),
+    ])
+  const used = new Set([
+    ...figuresOf(IOS_GUIDE),
+    ...figuresOf(ANDROID_GUIDE),
+    ...[CHECK_IOS, CHECK_ANDROID, NETWORK_GUIDE].flatMap(checkFigures),
+  ])
   const keys = Object.keys(GUIDE_FIGURES) as FigureKey[]
 
   it('매니페스트의 창은 전부 어딘가에서 쓴다(안 쓰는 창 0)', () => {
@@ -383,6 +410,8 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
       '데이터 로밍 SIM 1': 'false', // android «데이터 로밍 SIM 1은 꺼 두세요»
       '데이터 로밍 eSIM 1': 'true', // android «데이터 로밍 eSIM 1을 미리 켜 두세요»
       'eSIM 1': 'true', // android «eSIM 1이 켜져 있으면»
+      자동: 'false', // 통신사 바꾸기 «자동을 꺼요»(client-guide-check S-3)
+      '자동 선택': 'false', // 통신사 바꾸기 «자동 선택을 꺼요»
     } as const
     for (const [label, on] of Object.entries(want)) {
       const got = sw(label)
@@ -396,6 +425,25 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
     expect(body).toContain('{{데이터 전환}}은 꺼 두세요')
     expect(body).toContain('**데이터 로밍 SIM 1은 꺼 두세요.**')
     expect(body).toContain('{{데이터 로밍 eSIM 1}}을 미리 켜 두세요')
+    // 설치 확인 · 통신사 바꾸기도 같은 행동(client-guide-check S-1~S-3)
+    const check = [CHECK_IOS, CHECK_ANDROID, NETWORK_GUIDE].flatMap((c) => strings(c as never)).join('\n')
+    expect(check).toContain('{{이 회선 켜기}}가 켜져 있어요.')
+    expect(check).toContain('{{데이터 로밍}}이 켜져 있어요.')
+    expect(check).toContain('{{셀룰러 데이터 전환 허용}}은 꺼져 있어요.')
+    expect(check).toContain('{{데이터 전환}}은 꺼져 있어요.')
+    expect(check).toContain('{{데이터 로밍 SIM 1}}은 꺼져 있어요.')
+    expect(check).toContain('{{데이터 로밍 eSIM 1}}이 켜져 있어요.')
+    expect(check).toContain('{{자동}}을 꺼요.')
+    expect(check).toContain('{{자동 선택}}을 꺼요.')
+  })
+
+  it('설치 확인 화면의 «음성 및 데이터» 값 = 본문 «5G 자동»(client-guide-check D-12 · D-17 — 템플릿을 원본으로 다시 복사해 와도 조용히 «5G» 로 바뀌지 않게)', () => {
+    const screens = read('scripts/guide-screens/screens.js')
+    expect(screens).toContain("iRow('음성 및 데이터', st === 'check' ? '5G 자동' : '5G', { chev: true, k: 'voice-data' })")
+    expect(GUIDE_FIGURES['ios-line-check']).toMatchObject({ screen: 'ios-line', state: 'check' })
+    expect(GUIDE_FIGURES['ios-line-check'].hl).toContain('voice-data')
+    const check = strings(CHECK_IOS as never).join('\n')
+    expect(check).toContain('{{음성 및 데이터}}는 **5G 자동**이에요.')
   })
 
   it('src 는 /guide-screens/<키>.<버전>.png (CloudFront 캐시 무효화가 필요 없게 버전 접미 — Proposal K4)', () => {

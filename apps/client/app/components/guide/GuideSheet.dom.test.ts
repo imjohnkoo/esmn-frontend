@@ -177,6 +177,8 @@ describe('발급 화면을 떠나는 링크 — 숨기거나 새 탭', () => {
     const links = $$<HTMLAnchorElement>('.guide-sheet a[href]')
     expect(links.map((a) => a.getAttribute('href'))).toEqual([
       '/install-guide/devices', // 메뉴 없는 지원 기기 판(D-24)
+      '/install-guide/check/android', // 문제 해결 — 메뉴 없는 설치 확인 판(client-guide-check D-13)
+      '/install-guide/network#android', // 문제 해결 — 메뉴 없는 통신사 바꾸기 판(client-guide-check D-13)
       SUPPORT_KAKAO_URL,
       SMARTSTORE_URL,
       '/my#cs',
@@ -188,6 +190,11 @@ describe('발급 화면을 떠나는 링크 — 숨기거나 새 탭', () => {
     const devices = $$<HTMLAnchorElement>('.guide-sheet a.g-check__link')
     expect(devices.map((a) => a.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
       '지원 기기 확인하기(새 창)',
+    ])
+    const faq = $$<HTMLAnchorElement>('.guide-sheet a.g-faq__link')
+    expect(faq.map((a) => a.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+      '설치 상태 화면으로 확인하기(새 창)',
+      '통신사 바꾸는 방법 자세히 보기(새 창)',
     ])
     const more = $$<HTMLAnchorElement>('.guide-sheet a.g-cs__more')
     expect(more).toHaveLength(1)

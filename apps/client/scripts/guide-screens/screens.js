@@ -6,7 +6,8 @@
    ① «우리 발급 화면» 3종(web-qr · web-codes-ios · web-codes-aos) — 지금 발급 화면 /view/{orderId} 의 글자 · 배치
    ② 길게 누르기 화면 — 주소창 app.esimmany.com · 뒤 페이지 QR 숨김(w-page--behind — QR 이 두 개로 보이지 않게)
    ③ aos-code-input 의 입력 칸 안내 예시 주소를 가린 값(LPA:1$••••$•••• · https://••••)으로
-   원본을 다시 복사해 올 때(spec D-8) 이 세 곳을 되살린다 — guide.test.ts 가 ① 글자 · ③ 가림을 검사한다.
+   ④ 설치 확인 페이지용(client-guide-check D-12) — 강조 키 voice · main · voice-data, ios-line 의 check 상태(음성 및 데이터 «5G 자동»)
+   원본을 다시 복사해 올 때(spec D-8) 이 네 곳을 되살린다 — guide.test.ts 가 ① 글자 · ③ 가림을 검사한다.
    이 파일은 render.mjs 가 harness.html 에서 읽어 PNG 로 굽는다 — 사이트가 직접 싣지 않는다.
 
    <figure class="shot" data-screen="ios-cellular" data-state="pre"
@@ -113,9 +114,9 @@
           })
     return `${iStatus({ dual: after, net: after ? '' : '5G' })}${iNav('셀룰러')}
       <div class="i-group">${iRow('셀룰러 데이터', after && state === 'arrival' ? '여행' : '메인', { chev: true, k: 'cell-data' })}${iRow('개인용 핫스팟', '끔', { chev: true })}</div>
-      ${after ? `<div class="i-group">${iRow('기본 음성 회선', '메인', { chev: true })}</div>` : ''}
+      ${after ? `<div class="i-group">${iRow('기본 음성 회선', '메인', { chev: true, k: 'voice' })}</div>` : ''}
       <div class="i-cap">SIMs</div>
-      <div class="i-group">${iRow('<span class="i-tag">메인</span>메인', '켬', { sub: MASK, chev: true })}${after ? newLine : ''}${iRow('eSIM 추가', '', { link: true, k: 'esim-add' })}</div>`
+      <div class="i-group">${iRow('<span class="i-tag">메인</span>메인', '켬', { sub: MASK, chev: true, k: 'main' })}${after ? newLine : ''}${iRow('eSIM 추가', '', { link: true, k: 'esim-add' })}</div>`
   }
 
   const SCREENS = {
@@ -263,12 +264,13 @@
                 <div class="i-bottom" style="display:grid;gap:12px"><div class="i-btn i-btn--blue" data-k="lowdata-on">저데이터 모드 켜기</div><div class="i-btn i-btn--gray" data-k="not-now">지금 안 함</div></div></div>`,
     },
 
+    // check — 설치 확인 페이지(client-guide-check D-12): 음성 및 데이터 값 «5G 자동»(나머지 글자 · 모양 그대로)
     'ios-line': {
       os: 'ios',
-      build: () => `${iStatus({ dual: true })}${iNav('여행')}
+      build: (st) => `${iStatus({ dual: true })}${iNav('여행')}
         <div class="i-group">${iRow('이 회선 켜기', '', { sw: true, k: 'line-on' })}</div>
         <div class="i-cap">여행</div>
-        <div class="i-group">${iRow('네트워크 선택', '자동', { chev: true, k: 'network' })}${iRow('셀룰러 요금제 레이블', '여행', { chev: true })}${iRow('음성 및 데이터', '5G', { chev: true })}${iRow('데이터 로밍', '', { sw: true, k: 'roaming' })}</div>`,
+        <div class="i-group">${iRow('네트워크 선택', '자동', { chev: true, k: 'network' })}${iRow('셀룰러 요금제 레이블', '여행', { chev: true })}${iRow('음성 및 데이터', st === 'check' ? '5G 자동' : '5G', { chev: true, k: 'voice-data' })}${iRow('데이터 로밍', '', { sw: true, k: 'roaming' })}</div>`,
     },
 
     'ios-celldata': {
