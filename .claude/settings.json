@@ -63,7 +63,7 @@
       "Bash(gh api*)",
       "Bash(git -C /Users/johnkoo/dev/current-projects/esmn-wiki *)",
       "Bash(python3 /Users/johnkoo/dev/current-projects/esmn-wiki/scripts/*)",
-      "Bash(python3 /Users/johnkoo/dev/current-projects/nomacom-manager/scripts/*)"
+      "Bash(python3 /Users/johnkoo/dev/current-projects/esmn-manager/scripts/*)"
     ],
     "ask": [
       "Bash(git worktree remove*)"
@@ -85,7 +85,7 @@
     ],
     "additionalDirectories": [
       "/Users/johnkoo/dev/current-projects/esmn-wiki",
-      "/Users/johnkoo/dev/current-projects/nomacom-manager/docs/weekly"
+      "/Users/johnkoo/dev/current-projects/esmn-manager/docs/weekly"
     ]
   },
   "attribution": {
