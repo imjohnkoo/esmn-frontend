@@ -23,6 +23,7 @@ describe('GuideCarriers', () => {
     w.findAll('.g-carriers__row').forEach((li, i) => {
       const r = rows[i]!
       expect(li.findAll('img').length, r.iso3).toBe(1)
+      expect(li.find('img').attributes('width'), r.iso3).toBe('20')
       expect(norm(li.find('.g-carriers__name').text())).toBe(r.nameKr)
       const ops = li.findAll('.g-carriers__op:not(.g-carriers__op--muted)').map((o) => o.text())
       expect(ops).toEqual(r.operators ?? [OPERATOR_FALLBACK])

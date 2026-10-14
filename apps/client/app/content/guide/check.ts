@@ -5,10 +5,9 @@
  */
 import { OPERATOR_NOTE } from '../product-detail'
 import { ANDROID_GUIDE } from './android'
-import { GUIDE_BARE, GUIDE_CARRIERS, GUIDE_CHECK, GUIDE_NETWORK, GUIDE_PAGES } from './common'
+import { AFTER_CHECK_OS, GUIDE_BARE, GUIDE_CARRIERS, GUIDE_NETWORK, GUIDE_PAGES } from './common'
 import { IOS_GUIDE } from './ios'
 import type {
-  GuideAfterRow,
   GuideCheckContent,
   GuideContent,
   GuideNote,
@@ -101,7 +100,7 @@ export const CHECK_IOS: GuideCheckContent = {
       lede: '셀룰러 화면에서 여행용 회선을 눌러 세부 화면을 열어요.',
       points: [
         '{{이 회선 켜기}}가 켜져 있어요.',
-        '{{음성 및 데이터}}는 **5G 자동**이에요.',
+        '{{음성 및 데이터}}는 **5G 자동**이에요. 5G를 지원하지 않는 아이폰(11 이하 · SE 2세대)은 **LTE**로 보여요.',
         '{{데이터 로밍}}이 켜져 있어요. **가장 중요해요.**',
       ],
       figures: ['ios-line-check'],
@@ -237,14 +236,6 @@ export const CHECK_ANDROID: GuideCheckContent = {
 }
 
 // ---------------------------------------------------------------- S-3 현지 통신사 바꾸기
-const AFTER_CHECK_OS = [
-  { label: GUIDE_PAGES.ios.short, page: GUIDE_CHECK.ios.page, bare: GUIDE_CHECK.ios.bare },
-  {
-    label: GUIDE_PAGES.android.short,
-    page: GUIDE_CHECK.android.page,
-    bare: GUIDE_CHECK.android.bare,
-  },
-] as const
 
 export const NETWORK_GUIDE: GuideCheckContent = {
   key: 'network',
@@ -368,23 +359,4 @@ export const CARRIERS_GUIDE: GuideCheckContent = {
   ],
   sections: [],
   end: { alt: true, cards: [] },
-}
-
-// ---------------------------------------------------------------- S-6 허브 «설치한 뒤에»
-export const GUIDE_AFTER: { title: string; rows: readonly GuideAfterRow[] } = {
-  title: '설치한 뒤에',
-  rows: [
-    {
-      title: '설치 확인하기',
-      sub: '현지에서 연결이 안 될 때 설정 화면과 비교해요.',
-      buttons: AFTER_CHECK_OS,
-    },
-    {
-      title: '현지 통신사 바꾸기',
-      sub: '연결이 불안정할 때 통신사를 직접 골라요. 아이폰 · 안드로이드 한 페이지예요.',
-      buttons: [
-        { label: '통신사 바꾸는 방법 보기', page: GUIDE_NETWORK.page, bare: GUIDE_NETWORK.bare },
-      ],
-    },
-  ],
 }

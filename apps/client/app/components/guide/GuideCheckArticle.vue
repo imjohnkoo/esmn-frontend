@@ -27,7 +27,7 @@ const CARD_ICONS = { network: SignalIcon, help: LifebuoyIcon, carriers: GlobeAlt
 </script>
 
 <template>
-  <article class="g-article">
+  <article class="g-article" :class="`g-article--chips-${content.chips.length}`">
     <header class="g-hero">
       <p class="g-hero__eyebrow">{{ content.eyebrow }}</p>
       <h1 class="g-hero__title">{{ content.title }}</h1>
@@ -318,6 +318,25 @@ const CARD_ICONS = { network: SignalIcon, help: LifebuoyIcon, carriers: GlobeAlt
 }
 
 /* ===== 이 페이지들에만 ===== */
+/* 칩 줄 높이(--g-jump-h — 착지 · 포커스 여백)는 칩 수 · 글자에 따라 다르다(QA ⑥ R3 실측 — 설치 가이드 STEP 칩 4 는 폭 350 이하에서 두 줄):
+   칩 2(안드로이드 확인 · 통신사 바꾸기)는 폭 320 에서도 한 줄 53px · «확인 n» 칩 4(아이폰 확인)는 폭 354 이하에서 두 줄 72px ·
+   칩 없음(나라별 통신사)은 0 */
+@media (max-width: 350px) {
+  .g-article--chips-2 {
+    --g-jump-h: 53px;
+  }
+}
+
+@media (max-width: 354px) {
+  .g-article--chips-4 {
+    --g-jump-h: 72px;
+  }
+}
+
+.g-article--chips-0 {
+  --g-jump-h: 0px;
+}
+
 /* 머리 설명 안 링크 · 안내 상자 링크 — 설치 가이드 링크(지원 기기 확인하기 · 내 eSIM 조회하기)와 같은 보라 밑줄 */
 .g-hero__link,
 .g-note__link {

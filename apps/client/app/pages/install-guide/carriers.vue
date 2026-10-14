@@ -17,7 +17,7 @@ useCatalogSeo(
 const { data: groups, error } = await useFetch<CarrierGroup[]>('/api/catalog/carriers', {
   key: 'catalog-carriers',
 })
-if (error.value || !groups.value)
+if (error.value || !groups.value?.length)
   throw createError({ statusCode: 500, statusMessage: 'Carriers unavailable', fatal: true })
 </script>
 

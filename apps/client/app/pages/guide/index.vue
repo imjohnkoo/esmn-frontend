@@ -6,8 +6,7 @@ import { STATIC_DESCRIPTIONS } from '#shared/catalog/seo'
 import GuideAfter from '~/components/guide/GuideAfter.vue'
 import GuideContact from '~/components/guide/GuideContact.vue'
 import GuideFlow from '~/components/guide/GuideFlow.vue'
-import { GUIDE_AFTER } from '~/content/guide/check'
-import { GUIDE_CONTACT, GUIDE_HUB, GUIDE_PAGES } from '~/content/guide/common'
+import { GUIDE_AFTER, GUIDE_CONTACT, GUIDE_HUB, GUIDE_PAGES } from '~/content/guide/common'
 import type { GuideOs } from '~/content/guide/types'
 
 // canonical · 설명 — sitemap 에 든 정적 페이지(catalog F-9)

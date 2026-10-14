@@ -231,6 +231,22 @@ describe.each(Object.entries(GUIDES))('%s 가이드 콘텐츠', (os, g) => {
   })
 })
 
+describe('설치 가이드 안내 상자에는 링크가 없다(client-guide-check — GuideArticle 은 GuideNote 의 링크 줄을 그리지 않는다)', () => {
+  it.each([
+    ['ios', IOS_GUIDE],
+    ['android', ANDROID_GUIDE],
+  ] as const)('%s', (_os, g) => {
+    const notes = [
+      ...g.step1.methods.flatMap((m) => (m.note ? [m.note] : [])),
+      ...g.step1.notes,
+      ...g.step2.notes,
+      ...g.step3.notes,
+    ]
+    expect(notes.length).toBeGreaterThan(3)
+    for (const n of notes) expect(n.link, n.lines[0]).toBeUndefined()
+  })
+})
+
 describe('공통 문안(허브 · 카드 · 흐름 · 문의) — 본문과 같은 카피 불변식', () => {
   const all = JSON.stringify(COMMON)
   it('자정 · iPhone · URL · 전화번호 0', () => {
@@ -419,6 +435,15 @@ describe('화면 창 매니페스트 ↔ PNG (spec F-3 · DoD 2)', () => {
     expect(check).toContain('{{데이터 로밍 eSIM 1}}이 켜져 있어요.')
     expect(check).toContain('{{자동}}을 꺼요.')
     expect(check).toContain('{{자동 선택}}을 꺼요.')
+  })
+
+  it('설치 확인 화면의 «음성 및 데이터» 값 = 본문 «5G 자동»(client-guide-check D-12 · D-17 — 템플릿을 원본으로 다시 복사해 와도 조용히 «5G» 로 바뀌지 않게)', () => {
+    const screens = read('scripts/guide-screens/screens.js')
+    expect(screens).toContain("iRow('음성 및 데이터', st === 'check' ? '5G 자동' : '5G', { chev: true, k: 'voice-data' })")
+    expect(GUIDE_FIGURES['ios-line-check']).toMatchObject({ screen: 'ios-line', state: 'check' })
+    expect(GUIDE_FIGURES['ios-line-check'].hl).toContain('voice-data')
+    const check = strings(CHECK_IOS as never).join('\n')
+    expect(check).toContain('{{음성 및 데이터}}는 **5G 자동**이에요.')
   })
 
   it('src 는 /guide-screens/<키>.<버전>.png (CloudFront 캐시 무효화가 필요 없게 버전 접미 — Proposal K4)', () => {

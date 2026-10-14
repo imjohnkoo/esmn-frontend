@@ -12,7 +12,7 @@ const { data: groups, error } = await useFetch<CarrierGroup[]>('/api/catalog/car
   key: 'catalog-carriers',
 })
 // 목록이 없으면 빈 페이지 대신 500(프리렌더 실패 — /search 와 같은 fail-closed)
-if (error.value || !groups.value)
+if (error.value || !groups.value?.length)
   throw createError({ statusCode: 500, statusMessage: 'Carriers unavailable', fatal: true })
 </script>
 

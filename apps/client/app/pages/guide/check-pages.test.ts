@@ -166,11 +166,15 @@ describe('나라별 현지 통신사 — 데이터 라우트 · 같은 key · �
   })
 
   it.each([
-    ['라우트 오류', { data: ref(null), error: ref(new Error('x')) }],
-    ['빈 응답', { data: ref(null), error: ref(null) }],
-  ])('%s → 500 으로 던진다(빈 목록 페이지를 만들지 않는다)', async (_n, res) => {
+    ['사이트판 · 라우트 오류', SiteCarriers, { data: ref(null), error: ref(new Error('x')) }],
+    ['사이트판 · 빈 응답', SiteCarriers, { data: ref(null), error: ref(null) }],
+    ['사이트판 · 빈 목록', SiteCarriers, { data: ref([]), error: ref(null) }],
+    ['전용판 · 라우트 오류', BareCarriers, { data: ref(null), error: ref(new Error('x')) }],
+    ['전용판 · 빈 응답', BareCarriers, { data: ref(null), error: ref(null) }],
+    ['전용판 · 빈 목록', BareCarriers, { data: ref([]), error: ref(null) }],
+  ] as const)('%s → 500 으로 던진다(빈 목록 페이지를 만들지 않는다)', async (_n, P, res) => {
     fetch.mockResolvedValue(res)
-    const { errors } = await mountPage(SiteCarriers)
+    const { errors } = await mountPage(P)
     expect(createError).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 500, fatal: true }))
     expect(errors.length).toBe(1)
   })

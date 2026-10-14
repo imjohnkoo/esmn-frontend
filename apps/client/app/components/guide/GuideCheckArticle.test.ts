@@ -116,13 +116,28 @@ describe('링크 목적지 — 사이트판 / 전용판(S-5 — 메뉴 없는 �
     ])
   })
 
-  it('안드로이드 설치 확인 — OS 전환 «안드로이드» 가 지금 페이지', () => {
+  it('안드로이드 설치 확인 — 머리 링크 · OS 전환 · 끝 카드 · 고객센터(«안드로이드» 가 지금 페이지)', () => {
+    expect(hrefs(CHECK_ANDROID, 'page')).toEqual([
+      '/guide/android',
+      '/guide/check/ios',
+      '/guide/check/android',
+      '/guide/network#android',
+      '/guide/android#help',
+      '/my#cs',
+    ])
+    expect(hrefs(CHECK_ANDROID, 'bare')).toEqual([
+      '/install-guide/android',
+      '/install-guide/check/ios',
+      '/install-guide/check/android',
+      '/install-guide/network#android',
+      '/install-guide/android#help',
+      '/my#cs',
+    ])
     const w = render(CHECK_ANDROID)
     expect(w.findAll('.g-os__tab').map((t) => [t.text(), t.attributes('aria-current')])).toEqual([
       ['아이폰', undefined],
       ['안드로이드', 'page'],
     ])
-    expect(hrefs(CHECK_ANDROID, 'bare')).toContain('/install-guide/android#help')
   })
 
   it('통신사 바꾸기 — OS 전환 없음 · 칩 2 · tip 링크 · 설치 확인 두 칸 · 나라별 통신사 카드', () => {
@@ -175,5 +190,51 @@ describe('칩 글자 — «확인 n» 은 붙여 둔다(설치 가이드 «STEP 
       ['확인 1', '확인 1 SIM 관리자'],
       ['확인 2', '확인 2 데이터 로밍'],
     ])
+  })
+})
+
+describe('배치 — spec §⑤ 순서 · 바탕 · 그림 · 문의 제목(QA ⑥ R3 · R5)', () => {
+  const kids = (el: Element) => [...el.children].map((c) => c.className.split(' ')[0])
+  it('구간 안 순서 = 배지 → 제목 → 설명 → 확인 목록 → 화면 → 안내 상자', () => {
+    const w = render(CHECK_IOS)
+    expect(kids(w.find('#cellular').element)).toEqual([
+      'g-badge',
+      'g-sec__title',
+      'g-sec__lede',
+      'g-points',
+      'g-shot',
+      'g-note',
+      'g-note',
+    ])
+    expect(kids(w.find('#signal').element)).toEqual(['g-badge', 'g-sec__title', 'g-sec__lede', 'g-points', 'g-status', 'g-note'])
+    const a = render(CHECK_ANDROID)
+    expect(kids(a.find('#sim').element)).toEqual([
+      'g-badge',
+      'g-sec__title',
+      'g-sec__lede',
+      'g-points',
+      'g-shot',
+      'g-shot',
+      'g-note',
+      'g-note',
+    ])
+  })
+  it('끝 구간 바탕 — 설치 확인 흰색 · 통신사 바꾸기 회색', () => {
+    const end = (c: GuideCheckContent) => render(c).find('.g-sec--end').classes().includes('g-sec--alt')
+    expect([end(CHECK_IOS), end(CHECK_ANDROID), end(NETWORK_GUIDE)]).toEqual([false, false, true])
+  })
+  it('상태 표시줄 그림은 아이폰 판(위아래 두 칸 · 여행용 eSIM 캡션)', () => {
+    const s = render(CHECK_IOS).find('.g-status')
+    expect(s.attributes('aria-label')).toContain('위아래 두 칸')
+    expect(s.find('.g-dual').exists()).toBe(true)
+  })
+  it('문의 블록 제목 = «그래도 해결되지 않으면 문의해 주세요»', () => {
+    for (const c of [CHECK_IOS, CHECK_ANDROID, NETWORK_GUIDE])
+      expect(render(c).find('#guide-cs-title').text()).toBe('그래도 해결되지 않으면 문의해 주세요')
+  })
+  it('칩 수 표식(칩 줄 높이 — guide-frame-css.test)', () => {
+    expect(render(CHECK_IOS).find('article').classes()).toContain('g-article--chips-4')
+    expect(render(CHECK_ANDROID).find('article').classes()).toContain('g-article--chips-2')
+    expect(render(NETWORK_GUIDE).find('article').classes()).toContain('g-article--chips-2')
   })
 })

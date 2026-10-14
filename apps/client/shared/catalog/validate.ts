@@ -111,7 +111,8 @@ function check(c: AdaptedCatalog, issues: string[]) {
       if (k.nameKr.trim() === '') issues.push(`${at}: ${k.iso3} 이름이 없다`)
       if (inZone.has(k.iso3)) issues.push(`${at}: 나라 ${k.iso3} 중복`)
       inZone.add(k.iso3)
-      const id = `${k.iso2} ${k.nameKr} | ${k.operators?.join(', ') ?? '-'} | ${k.network ?? '-'}`
+      // 값 그대로 비교(이어 붙인 글자는 «A, B» 한 칸과 «A» · «B» 두 칸 · null 과 «-» 를 같게 본다 — QA ⑥ R7)
+      const id = JSON.stringify([k.iso2, k.nameKr, k.operators, k.network])
       const seen = countryOf.get(k.iso3)
       if (seen === undefined) countryOf.set(k.iso3, id)
       else if (seen !== id) issues.push(`${at}: ${k.iso3} 가 다른 zone 과 다르다(${id} ≠ ${seen})`)

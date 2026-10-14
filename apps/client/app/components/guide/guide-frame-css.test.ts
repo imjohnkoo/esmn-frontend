@@ -9,11 +9,12 @@ const read = (f: string) =>
   readFileSync(`${process.cwd()}/app/components/${f.includes('/') ? f : `guide/${f}`}`, 'utf8')
 
 /** `<style scoped>` 의 규칙 → { 선택자: 정렬한 선언 } (@media 안 규칙은 «@media … 선택자») */
-function rules(file: string): Map<string, string> {
+function rules(file: string): Map<string, string> & { seen: string[] } {
   const css = (read(file).split('<style scoped>')[1] ?? '')
     .replace(/<\/style>\s*$/, '')
     .replace(/\/\*[\s\S]*?\*\//g, '')
   const out = new Map<string, string>()
+  const seen: string[] = []
   const add = (prefix: string, body: string) => {
     for (const m of body.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
       const sel = prefix + m[1]!.replace(/\s+/g, ' ').trim()
@@ -23,13 +24,14 @@ function rules(file: string): Map<string, string> {
         .filter(Boolean)
         .sort()
         .join('; ')
+      seen.push(sel)
       out.set(sel, decl)
     }
   }
   const media = /@media([^{]+)\{((?:[^{}]*\{[^{}]*\})*)\s*\}/g
   for (const m of css.matchAll(media)) add(`@media ${m[1]!.replace(/\s+/g, ' ').trim()} `, m[2]!)
   add('', css.replace(media, ''))
-  return out
+  return Object.assign(out, { seen })
 }
 
 const FRAME = [
@@ -87,5 +89,35 @@ describe('나라별 통신사 칩 = 상품 상세 «현지 통신사» 칩(clien
     const base = rules('catalog/ProductSections.vue')
     expect(mine.get('.g-carriers__op')).toBe(base.get('.sec__op'))
     expect(mine.get('.g-carriers__op--muted')).toBe(base.get('.sec__op--muted'))
+  })
+})
+
+describe('틀을 다른 선택자로 덮어쓰지 않는다(QA ⑥ R4 — 값 대조만으로는 «덧붙여 덮어쓰기» 를 못 잡는다)', () => {
+  const mine = rules('GuideCheckArticle.vue')
+  // 틀(FRAME) 밖에 둘 수 있는 규칙 — 새 조각(링크 · 안내 줄 · 더 보기 카드) · 칩 수에 따른 칩 줄 높이만
+  const EXTRA = [
+    '.g-article :is(h1, h2, .g-hero__lede, .g-sec__lede)',
+    '.g-hero__link, .g-note__link',
+    '.g-note__more',
+    '@media (max-width: 350px) .g-article--chips-2',
+    '@media (max-width: 354px) .g-article--chips-4',
+    '.g-article--chips-0',
+    '.g-sec--intro',
+    '.g-sec--intro > :first-child',
+    '.g-sec--intro-solo',
+    '.g-sec :deep(.g-points + .g-shot), .g-sec :deep(.g-points + .g-status)',
+    '.g-more',
+    '.g-more :deep(.n-link-card__label)',
+    '.g-more :deep(.n-link-card__sub)',
+    '.g-more__icon',
+  ]
+  it('선택자 = 틀 + 허용 목록(그 밖 0) · 같은 선택자 두 번 0', () => {
+    expect([...mine.seen].sort()).toEqual([...FRAME, ...EXTRA].sort())
+    expect(new Set(mine.seen).size).toBe(mine.seen.length)
+  })
+  it('칩 줄 높이 — 칩 2 는 폭 320 에서도 53px · «확인 n» 칩 4 는 폭 354 이하 72px · 칩 없음 0(QA ⑥ R3 실측)', () => {
+    expect(mine.get('@media (max-width: 350px) .g-article--chips-2')).toBe('--g-jump-h: 53px')
+    expect(mine.get('@media (max-width: 354px) .g-article--chips-4')).toBe('--g-jump-h: 72px')
+    expect(mine.get('.g-article--chips-0')).toBe('--g-jump-h: 0px')
   })
 })

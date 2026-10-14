@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { STATIC_DESCRIPTIONS } from '#shared/catalog/seo'
 import { OPERATOR_NOTE } from '../product-detail'
 import { ANDROID_GUIDE } from './android'
 import {
@@ -6,11 +8,10 @@ import {
   CHECK_ANDROID,
   CHECK_CONTACT_LEDE,
   CHECK_IOS,
-  GUIDE_AFTER,
   NETWORK_GUIDE,
 } from './check'
-import { GUIDE_CARRIERS, GUIDE_CHECK, GUIDE_NETWORK } from './common'
-import type { FigureKey } from './figures'
+import { GUIDE_AFTER, GUIDE_CARRIERS, GUIDE_CHECK, GUIDE_NETWORK } from './common'
+import { GUIDE_FIGURES, type FigureKey } from './figures'
 import { guidePlainText, parseGuideInline } from './inline'
 import { IOS_GUIDE } from './ios'
 import type { GuideCheckContent, GuideLink } from './types'
@@ -227,20 +228,302 @@ describe('문장 — 파서 · 표기 · spec 글자', () => {
   })
 })
 
-describe('금지 글자(F-10 · 불변식)', () => {
-  const plain = plainAll()
-  it('공급사 · 홈망 · 옛 네트워크 이름 0 (D-6)', () => {
-    expect(plain).not.toMatch(
-      /sparks?|maya|telco-?vision|polkomtel|tsim|airalo|스파크|마야|티심|connect|starhub|start ?hub|\bplay\b|\bplus\b|cmhk|cmlink/i,
-    )
+describe('금지 글자(F-10 · 불변식) — 새 콘텐츠 · 새 화면 대체 글 · 새 페이지 · 컴포넌트 소스(주석 제외)', () => {
+  // 검사 대상 1 — 콘텐츠 문장 + 새로 굽는 화면 4장의 대체 글 + 새 페이지 설명(SEO)
+  const NEW_FIGURES = [
+    'ios-cellular-arrival',
+    'ios-line-check',
+    'ios-line-network',
+    'aos-sim-arrival-data',
+  ] as const
+  const NEW_ROUTES = ['/guide/check/ios', '/guide/check/android', '/guide/network', '/guide/carriers'] as const
+  const content = [
+    plainAll(),
+    ...NEW_FIGURES.map((k) => GUIDE_FIGURES[k].alt),
+    ...NEW_ROUTES.map((r) => STATIC_DESCRIPTIONS[r]),
+  ].join('\n')
+  // 검사 대상 2 — 새 페이지 · 컴포넌트 소스(주석은 뺀다 — «사업자정보» 안 «자정» 같은 오탐)
+  const SOURCES = [
+    'app/components/guide/GuideCheckArticle.vue',
+    'app/components/guide/GuidePoints.vue',
+    'app/components/guide/GuideAfter.vue',
+    'app/components/guide/GuideCarriers.vue',
+    'app/pages/guide/check/ios.vue',
+    'app/pages/guide/check/android.vue',
+    'app/pages/guide/network.vue',
+    'app/pages/guide/carriers.vue',
+    'app/pages/install-guide/check/ios.vue',
+    'app/pages/install-guide/check/android.vue',
+    'app/pages/install-guide/network.vue',
+    'app/pages/install-guide/carriers.vue',
+  ]
+  const source = SOURCES.map((f) =>
+    readFileSync(new URL(`../../../${f}`, import.meta.url), 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, ''),
+  ).join('\n')
+  const ALL_TEXT = [content, source] as const
+
+  // 지우지 말라는 문장만 허용(D-6) — 그 밖의 «지우 · 지워 · 지운 · 지울 · 삭제 · (다시 · 새로) 설치 · 다시 깔» 은 전부 삭제 권유로 본다
+  const ALLOWED_DELETE = [
+    '지우지 않아도 돼요',
+    '지우지 말고',
+    '한 번 지운 eSIM은 다시 설치할 수 없어요',
+  ]
+  const NAMES =
+    /sparks?|maya|telco-?vision|polkomtel|tsim|airalo|connect|star ?hub|start ?hub|\bplay\b|\bplus\b|cmhk|cm ?link|스파크|마야|티심|에어알로|텔코 ?비전|폴콤텔|커넥트|스타 ?허브|플레이|플러스|씨엠 ?링크|씨엠에이치케이/i
+  const DELETE = /지우|지워|지운|지울|삭제|재설치|다시 설치|새로 설치|다시 깔/
+  const MIDNIGHT =
+    /자정|0시|날짜가 바뀌|매일|하루씩|그때부터 사용일수|설치하면 사용일수가 시작|켜면 사용일수가 시작/
+
+  it('검사 대상이 실제로 읽혔다(소스 12 · 화면 대체 글 4 · 설명 4)', () => {
+    expect(source).toContain('GuideCheckArticle')
+    expect(source.match(/<template>/g)?.length).toBe(SOURCES.length)
+    for (const k of NEW_FIGURES) expect(GUIDE_FIGURES[k].alt.length, k).toBeGreaterThan(5)
+    for (const r of NEW_ROUTES) expect(STATIC_DESCRIPTIONS[r], r).toBeTruthy()
   })
-  it('eSIM 을 지우라는 문장 0 (D-6)', () => {
-    expect(plain).not.toMatch(/지우(고|세요|면 돼|셔도)|삭제(하|해|후)|재설치/)
+  it.each(['콘텐츠', '소스'] as const)('%s — 공급사 · 홈망 · 옛 네트워크 이름 0(영문 · 한글 음역 — D-6)', (k) => {
+    expect(ALL_TEXT[k === '콘텐츠' ? 0 : 1]).not.toMatch(NAMES)
   })
-  it('자정 기준 · 재개통 · iPhone · 옛 사이트 · URL · 전화 0', () => {
-    expect(plain).not.toMatch(/자정|0시|매일|하루씩|재개통|나라마다 다시|국가마다 다시/)
-    expect(plain).not.toContain('iPhone')
-    expect(plain).not.toMatch(/super\.site|https?:\/\/|\b01[016789][-\s]?\d{3,4}[-\s]?\d{4}\b/)
-    expect(plain).not.toMatch(/\(추천\)|계약/)
+  it.each(['콘텐츠', '소스'] as const)('%s — eSIM 을 지우라는 문장 0 (D-6 — 허용 세 마디 밖)', (k) => {
+    let text = ALL_TEXT[k === '콘텐츠' ? 0 : 1]
+    for (const a of ALLOWED_DELETE) text = text.split(a).join('')
+    expect(text).not.toMatch(DELETE)
+  })
+  it('허용 세 마디는 실제로 쓰인다(지우지 말라는 안내가 사라지지 않게)', () => {
+    for (const a of ALLOWED_DELETE) expect(content).toContain(a)
+  })
+  it.each(['콘텐츠', '소스'] as const)('%s — 자정 기준 · 재개통 · iPhone · 옛 사이트 · URL · 전화 · «(추천)» · «계약» 0', (k) => {
+    const text = ALL_TEXT[k === '콘텐츠' ? 0 : 1]
+    expect(text).not.toMatch(MIDNIGHT)
+    expect(text).not.toMatch(/재개통|나라마다 다시|국가마다 다시/)
+    expect(text).not.toContain('iPhone')
+    expect(text).not.toMatch(/super\.site|https?:\/\/|\b01[016789][-\s]?\d{3,4}[-\s]?\d{4}\b/)
+    expect(text).not.toMatch(/\(추천\)|계약/)
+  })
+  it('검사가 실제로 잡는다 — 바꿔 쓴 삭제 권유 · 한글 음역 이름(QA ⑥ 변이 문장)', () => {
+    for (const bad of [
+      '안 되면 이 eSIM을 지워 주세요.',
+      '안 되면 eSIM을 삭제 후 QR로 다시 설치해 주세요.',
+      '지운 뒤 QR 코드로 다시 깔아 주세요.',
+      '{{eSIM 삭제}}를 눌러요.',
+    ])
+      expect(guidePlainText(bad)).toMatch(DELETE)
+    expect('네트워크 이름이 커넥트 · 스타허브 · 플레이면 저희 eSIM이에요.').toMatch(NAMES)
+    expect('날짜가 바뀌면 사용일수가 하루 줄어요').toMatch(MIDNIGHT)
+  })
+})
+
+/**
+ * spec §⑤ 글자 그대로(S-1 · S-2 · S-3) — 구간마다 설명 · 확인 목록 · 단계 · 안내 상자 문단을 표기를 벗긴 글자로 고정한다
+ * (QA ⑥ — 콘텐츠 ↔ 렌더 대조는 콘텐츠를 비추므로, 문장이 뒤집혀도(«메인» → «여행» · «두 칸» → «한 칸») 잡지 못했다)
+ */
+describe('spec §⑤ 문장 고정', () => {
+  const p = (s: string) => guidePlainText(s)
+  const view = (c: GuideCheckContent) => ({
+    lede: c.lede.map((l) => (typeof l === 'string' ? p(l) : `${l.before}${l.link.label}${l.after} → ${l.link.page}`)),
+    sections: c.sections.map((s) => ({
+      lede: s.lede ? p(s.lede) : null,
+      points: (s.points ?? []).map(p),
+      steps: (s.steps ?? []).map((st) => (st.sub ? `${p(st.text)} | ${p(st.sub)}` : p(st.text))),
+      notes: (s.notes ?? []).map((n) => n.lines.map(p)),
+    })),
+  })
+  const OTHER = [
+    '다른 여행용 eSIM이 더 보이나요? 이번에 설치한 것 말고 다른 여행용 eSIM은 꺼 두세요. 지우지 않아도 돼요.',
+    '어느 회선인지 모르겠으면 지우지 말고 고객센터로 문의해 주세요. 한 번 지운 eSIM은 다시 설치할 수 없어요.',
+  ]
+
+  it('S-1 아이폰 설치 확인', () => {
+    expect(view(CHECK_IOS)).toEqual({
+      lede: [
+        '현지에 도착해 여행용 eSIM을 켠 뒤, 아래 화면과 비교해 확인해 주세요.',
+        '설치 방법은 아이폰 설치 가이드에서 볼 수 있어요. → /guide/ios',
+      ],
+      sections: [
+        {
+          lede: '설정 › 셀룰러를 열어 세 가지를 확인해요.',
+          points: [
+            '셀룰러 데이터가 여행용 회선이에요.',
+            'SIMs의 메인과 여행용 회선이 모두 켬이에요.',
+            '기본 음성 회선은 메인이에요.',
+          ],
+          steps: [],
+          notes: [
+            [
+              '여행용 회선 이름은 폰이 붙여요. ‘여행’ · ‘보조’처럼 폰마다 달라도 괜찮아요.',
+              '한국에서는 여행용 회선이 ‘활성화 중…’으로 보이고 셀룰러 데이터는 메인이에요. 정상이에요.',
+            ],
+            OTHER,
+          ],
+        },
+        {
+          lede: '셀룰러 화면에서 여행용 회선을 눌러 세부 화면을 열어요.',
+          points: [
+            '이 회선 켜기가 켜져 있어요.',
+            '음성 및 데이터는 5G 자동이에요. 5G를 지원하지 않는 아이폰(11 이하 · SE 2세대)은 LTE로 보여요.',
+            '데이터 로밍이 켜져 있어요. 가장 중요해요.',
+          ],
+          steps: [],
+          notes: [],
+        },
+        {
+          lede: '설정 › 셀룰러 › 셀룰러 데이터를 열어요.',
+          points: ['여행용 회선에 체크 표시가 있어요.', '셀룰러 데이터 전환 허용은 꺼져 있어요.'],
+          steps: [],
+          notes: [
+            [
+              '한국 회선의 데이터 로밍은 꺼 두세요. 켜져 있으면 통신사 로밍 요금이 나올 수 있어요.',
+              '셀룰러 데이터 전환 허용도 꺼 두세요. 켜 두면 데이터가 한국 회선으로 넘어갈 수 있어요.',
+            ],
+          ],
+        },
+        {
+          lede: '화면 맨 위 상태 표시줄을 봐요.',
+          points: ['신호 표시가 위아래 두 칸으로 나뉘어 있어요.', 'Wi-Fi를 끄면 신호 옆에 5G나 LTE가 떠요.'],
+          steps: [],
+          notes: [
+            [
+              '신호가 한 칸뿐인가요? 여행용 회선이 꺼져 있거나 설치되지 않은 거예요. 확인 1부터 다시 봐 주세요.',
+            ],
+          ],
+        },
+      ],
+    })
+    expect([CHECK_IOS.eyebrow, CHECK_IOS.title, CHECK_IOS.hint]).toEqual([
+      'Install check · iOS',
+      '아이폰 eSIM 설치 확인',
+      '화면의 빨간 테두리가 확인할 곳이에요.',
+    ])
+    expect([CHECK_IOS.end.title, CHECK_IOS.end.lede, CHECK_IOS.end.alt]).toEqual([
+      '그래도 연결이 안 되나요?',
+      '연결이 불안정하면 현지 통신사를 바꿔 보세요.',
+      false,
+    ])
+  })
+
+  it('S-2 안드로이드 설치 확인', () => {
+    expect(view(CHECK_ANDROID)).toEqual({
+      lede: [
+        '현지에 도착해 모바일 데이터를 eSIM 1로 바꾼 뒤, 아래 화면과 비교해 확인해 주세요.',
+        '갤럭시 화면으로 안내해요. 설치 방법은 안드로이드 설치 가이드에서 볼 수 있어요. → /guide/android',
+      ],
+      sections: [
+        {
+          lede: '설정 › 연결 › SIM 관리자를 열어요.',
+          points: [
+            '여행용 eSIM(eSIM 1)이 켜져 있어요.',
+            '주 사용 SIM 카드의 모바일 데이터가 eSIM 1이에요.',
+            '같은 화면 아래 데이터 전환은 꺼져 있어요.',
+          ],
+          steps: [],
+          notes: [
+            ['eSIM 이름은 폰마다 달라요. 여행용 eSIM 이름과 모바일 데이터에 고른 이름이 같으면 돼요.'],
+            OTHER,
+          ],
+        },
+        {
+          lede: '설정 › 연결 › 해외 로밍을 열어요.',
+          points: ['데이터 로밍 eSIM 1이 켜져 있어요.', '데이터 로밍 SIM 1은 꺼져 있어요.'],
+          steps: [],
+          notes: [
+            ['SKT 폰은 메뉴가 달라요. 설정 › T로밍 › 로밍 상세 설정에서 데이터 로밍을 확인해 주세요.'],
+            [
+              '데이터 로밍 SIM 1은 꺼 두세요. 켜져 있으면 통신사 로밍 요금이 나올 수 있어요.',
+              '데이터 전환도 꺼 두세요. 켜 두면 데이터가 국내 SIM으로 넘어갈 수 있어요.',
+            ],
+          ],
+        },
+      ],
+    })
+    expect([CHECK_ANDROID.eyebrow, CHECK_ANDROID.title, CHECK_ANDROID.hint, CHECK_ANDROID.end.alt]).toEqual([
+      'Install check · Android',
+      '안드로이드 eSIM 설치 확인',
+      '화면의 빨간 테두리가 확인할 곳이에요.',
+      false,
+    ])
+  })
+
+  it('S-3 현지 통신사 바꾸기', () => {
+    const wait = '잠시 기다리면 고를 수 있는 통신사 목록이 나와요.'
+    const done =
+      '목록에서 다른 통신사를 골라요. | 연결까지 길게는 10분 정도 걸릴 수 있어요. 바로 연결되지 않아도 잠시 기다려 주세요.'
+    expect(view(NETWORK_GUIDE)).toEqual({
+      lede: ['나라와 지역에 따라 잘 잡히는 통신사가 달라요.', '연결이 불안정하면 다른 통신사로 바꿔 보세요.'],
+      sections: [
+        {
+          lede: null,
+          points: [],
+          steps: [
+            '설정 › 셀룰러에서 여행용 회선을 누르고 네트워크 선택을 눌러요.',
+            `자동을 꺼요. | ${wait}`,
+            done,
+          ],
+          notes: [
+            [
+              '고른 통신사로도 안 되면 다시 자동으로 돌려 주세요.',
+              '다른 나라로 옮기기 전에는 자동을 다시 켜 두세요. 자동이면 폰이 그 나라 통신사로 알아서 바꿔요.',
+            ],
+          ],
+        },
+        {
+          lede: '갤럭시 화면으로 안내해요. 다른 안드로이드 폰은 메뉴 이름이 조금 다를 수 있어요.',
+          points: [],
+          steps: [
+            '설정 › 연결 › 모바일 네트워크 › 로밍 이동통신사 선택을 눌러요. | SKT 폰은 설정 › T로밍 › 로밍 이동통신사 선택에 있어요.',
+            `위 탭에서 eSIM 1을 누르고 자동 선택을 꺼요. | ${wait}`,
+            done,
+          ],
+          notes: [
+            [
+              '고른 통신사로도 안 되면 다시 자동 선택으로 돌려 주세요.',
+              '다른 나라로 옮기기 전에는 자동 선택을 다시 켜 두세요. 자동이면 폰이 그 나라 통신사로 알아서 바꿔요.',
+            ],
+          ],
+        },
+      ],
+    })
+    expect([
+      NETWORK_GUIDE.eyebrow,
+      NETWORK_GUIDE.title,
+      NETWORK_GUIDE.hint,
+      NETWORK_GUIDE.sections.map((s) => `${s.badge}|${s.title}`),
+      NETWORK_GUIDE.end.alt,
+      NETWORK_GUIDE.end.after?.map((r) => `${r.title}|${r.sub}`),
+      NETWORK_GUIDE.end.cards.map((c) => `${c.label}|${c.sub}|${c.page}`),
+    ]).toEqual([
+      'Change network',
+      '현지 통신사 바꾸기',
+      '화면의 빨간 테두리는 설명이 가리키는 곳이에요.',
+      ['아이폰|아이폰에서 바꾸기', '안드로이드|안드로이드에서 바꾸기'],
+      true,
+      ['설치 확인하기|설정을 화면과 비교해요.'],
+      ['나라별 현지 통신사|나라마다 연결할 수 있는 통신사|/guide/carriers'],
+    ])
+  })
+
+  it('S-4 나라별 현지 통신사 머리 · S-1/S-2 구간 배지 · 제목', () => {
+    expect([CARRIERS_GUIDE.eyebrow, CARRIERS_GUIDE.title, ...CARRIERS_GUIDE.lede]).toEqual([
+      'Carriers',
+      '나라별 현지 통신사',
+      '여행용 eSIM이 나라마다 연결할 수 있는 통신사예요.',
+      '연결이 불안정하면 이 중 다른 통신사로 바꿔 보세요.',
+    ])
+    expect(CARRIERS_GUIDE.intro?.[0]?.link?.link).toEqual({
+      label: '통신사 바꾸는 방법 보기',
+      page: '/guide/network',
+      bare: '/install-guide/network',
+    })
+    expect(CHECK_IOS.sections.map((s) => `${s.badge}|${s.title}`)).toEqual([
+      '확인 1|셀룰러 화면',
+      '확인 2|여행용 회선 설정',
+      '확인 3|셀룰러 데이터',
+      '확인 4|신호 표시',
+    ])
+    expect(CHECK_ANDROID.sections.map((s) => `${s.badge}|${s.title}`)).toEqual([
+      '확인 1|SIM 관리자',
+      '확인 2|데이터 로밍',
+    ])
   })
 })

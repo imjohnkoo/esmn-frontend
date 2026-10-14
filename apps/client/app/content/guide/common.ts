@@ -2,7 +2,7 @@
  * 설치 가이드 공통 문안(client-guide spec S-1 · S-2 · S-3) — 허브 · OS 페이지가 같이 쓴다.
  * 3단계 흐름 · 문의 문장은 2609 판(`design/install-guide/{ios,android}.html` @ eb96d75) 글자 그대로.
  */
-import type { GuideOs } from './types'
+import type { GuideAfterRow, GuideOs } from './types'
 
 export const GUIDE_FLOW = [
   { step: 'STEP 1', title: '집에서 설치', meta: '출국 전 · 5분' },
@@ -64,6 +64,36 @@ export const GUIDE_CHECK: Record<GuideOs, { page: string; bare: string }> = {
 }
 export const GUIDE_NETWORK = { page: '/guide/network', bare: '/install-guide/network' } as const
 export const GUIDE_CARRIERS = { page: '/guide/carriers', bare: '/install-guide/carriers' } as const
+
+/** «설치 확인하기» OS 두 칸(client-guide-check S-6 · S-3 끝) */
+export const AFTER_CHECK_OS = [
+  { label: GUIDE_PAGES.ios.short, page: GUIDE_CHECK.ios.page, bare: GUIDE_CHECK.ios.bare },
+  {
+    label: GUIDE_PAGES.android.short,
+    page: GUIDE_CHECK.android.page,
+    bare: GUIDE_CHECK.android.bare,
+  },
+] as const
+
+/**
+ * 허브 «설치한 뒤에»(client-guide-check S-6) — 허브가 가이드 본문 문안(ios · android · check)을 싣지 않게 여기에 둔다
+ * (QA ⑥ — check.ts 에서 가져오면 허브 번들에 약 34KB 가 딸려 온다)
+ */
+export const GUIDE_AFTER: { title: string; rows: readonly GuideAfterRow[] } = {
+  title: '설치한 뒤에',
+  rows: [
+    {
+      title: '설치 확인하기',
+      sub: '현지에서 연결이 안 될 때 설정 화면과 비교해요.',
+      buttons: AFTER_CHECK_OS,
+    },
+    {
+      title: '현지 통신사 바꾸기',
+      sub: '연결이 불안정할 때 통신사를 직접 골라요. 아이폰 · 안드로이드 한 페이지예요.',
+      buttons: [{ label: '통신사 바꾸는 방법 보기', page: GUIDE_NETWORK.page, bare: GUIDE_NETWORK.bare }],
+    },
+  ],
+}
 
 export const GUIDE_HUB = {
   title: '설치 가이드',
