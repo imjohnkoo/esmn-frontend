@@ -13,6 +13,16 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css', '@imjohnkoo/design-vue/style.css'],
 
+  // favicon(public/ — 16·32·48 ICO · 아이폰 180 PNG). app.vue 가 아니라 여기 — error.vue 는 app.vue 대신 그려진다
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', href: '/favicon.ico' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+      ],
+    },
+  },
+
   vite: {
     plugins: [tailwindcss()],
   },
