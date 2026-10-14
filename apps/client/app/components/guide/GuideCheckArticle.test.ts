@@ -232,6 +232,20 @@ describe('배치 — spec §⑤ 순서 · 바탕 · 그림 · 문의 제목(QA �
     for (const c of [CHECK_IOS, CHECK_ANDROID, NETWORK_GUIDE])
       expect(render(c).find('#guide-cs-title').text()).toBe('그래도 해결되지 않으면 문의해 주세요')
   })
+  it('OS 전환 «지금» — 아이폰 확인은 아이폰 · 안드로이드 확인은 안드로이드(aria-current)', () => {
+    const cur = (c: GuideCheckContent) =>
+      render(c)
+        .findAll('.g-os__tab')
+        .map((t) => [t.text(), t.attributes('aria-current') ?? null])
+    expect(cur(CHECK_IOS)).toEqual([
+      ['아이폰', 'page'],
+      ['안드로이드', null],
+    ])
+    expect(cur(CHECK_ANDROID)).toEqual([
+      ['아이폰', null],
+      ['안드로이드', 'page'],
+    ])
+  })
   it('칩 수 표식(칩 줄 높이 — guide-frame-css.test)', () => {
     expect(render(CHECK_IOS).find('article').classes()).toContain('g-article--chips-4')
     expect(render(CHECK_ANDROID).find('article').classes()).toContain('g-article--chips-2')

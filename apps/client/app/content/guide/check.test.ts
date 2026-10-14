@@ -239,6 +239,8 @@ describe('금지 글자(F-10 · 불변식) — 새 콘텐츠 · 새 화면 대�
   const NEW_ROUTES = ['/guide/check/ios', '/guide/check/android', '/guide/network', '/guide/carriers'] as const
   const content = [
     plainAll(),
+    // 설치 가이드에 더한 문제 해결 링크 이름(S-6)
+    ...[IOS_GUIDE, ANDROID_GUIDE].flatMap((g) => g.help.faqs.flatMap((f) => (f.link ? [f.link.label] : []))),
     ...NEW_FIGURES.map((k) => GUIDE_FIGURES[k].alt),
     ...NEW_ROUTES.map((r) => STATIC_DESCRIPTIONS[r]),
   ].join('\n')
@@ -272,8 +274,8 @@ describe('금지 글자(F-10 · 불변식) — 새 콘텐츠 · 새 화면 대�
     '한 번 지운 eSIM은 다시 설치할 수 없어요',
   ]
   const NAMES =
-    /sparks?|maya|telco-?vision|polkomtel|tsim|airalo|connect|star ?hub|start ?hub|\bplay\b|\bplus\b|cmhk|cm ?link|스파크|마야|티심|에어알로|텔코 ?비전|폴콤텔|커넥트|스타 ?허브|플레이|플러스|씨엠 ?링크|씨엠에이치케이/i
-  const DELETE = /지우|지워|지운|지울|삭제|재설치|다시 설치|새로 설치|다시 깔/
+    /sparks?|maya|telco[- ]?vision|polkomtel|tsim|airalo|connect|star ?hub|start ?hub|\bplay\b|\bplus\b|cmhk|cm ?link|스파크|마야|티심|에어알로|텔코 ?비전|폴콤텔|커넥트|스타 ?허브|플레이|플러스|씨엠 ?링크|씨엠에이치케이/i
+  const DELETE = /지우|지워|지운|지울|삭제|제거|초기화|재설치|다시 설치|새로 설치|다시 깔|delete|remove|erase/i
   const MIDNIGHT =
     /자정|0시|날짜가 바뀌|매일|하루씩|그때부터 사용일수|설치하면 사용일수가 시작|켜면 사용일수가 시작/
 
@@ -301,6 +303,7 @@ describe('금지 글자(F-10 · 불변식) — 새 콘텐츠 · 새 화면 대�
     expect(text).not.toContain('iPhone')
     expect(text).not.toMatch(/super\.site|https?:\/\/|\b01[016789][-\s]?\d{3,4}[-\s]?\d{4}\b/)
     expect(text).not.toMatch(/\(추천\)|계약/)
+    if (k === '콘텐츠') expect(text).not.toMatch(/\b[a-z0-9-]+\.(com|net|io|global|kr|co|org)\b/i)
   })
   it('검사가 실제로 잡는다 — 바꿔 쓴 삭제 권유 · 한글 음역 이름(QA ⑥ 변이 문장)', () => {
     for (const bad of [
@@ -311,6 +314,8 @@ describe('금지 글자(F-10 · 불변식) — 새 콘텐츠 · 새 화면 대�
     ])
       expect(guidePlainText(bad)).toMatch(DELETE)
     expect('네트워크 이름이 커넥트 · 스타허브 · 플레이면 저희 eSIM이에요.').toMatch(NAMES)
+    expect('Telco Vision 회선').toMatch(NAMES)
+    for (const bad of ['안 되면 eSIM을 제거해 보세요', '설정을 초기화해 보세요']) expect(bad).toMatch(DELETE)
     expect('날짜가 바뀌면 사용일수가 하루 줄어요').toMatch(MIDNIGHT)
   })
 })
@@ -327,10 +332,11 @@ describe('spec §⑤ 문장 고정', () => {
       lede: s.lede ? p(s.lede) : null,
       points: (s.points ?? []).map(p),
       steps: (s.steps ?? []).map((st) => (st.sub ? `${p(st.text)} | ${p(st.sub)}` : p(st.text))),
-      notes: (s.notes ?? []).map((n) => n.lines.map(p)),
+      notes: (s.notes ?? []).map((n) => [`(${n.tone})`, ...n.lines.map(p)]),
     })),
   })
   const OTHER = [
+    '(warn)',
     '다른 여행용 eSIM이 더 보이나요? 이번에 설치한 것 말고 다른 여행용 eSIM은 꺼 두세요. 지우지 않아도 돼요.',
     '어느 회선인지 모르겠으면 지우지 말고 고객센터로 문의해 주세요. 한 번 지운 eSIM은 다시 설치할 수 없어요.',
   ]
@@ -352,6 +358,7 @@ describe('spec §⑤ 문장 고정', () => {
           steps: [],
           notes: [
             [
+              '(info)',
               '여행용 회선 이름은 폰이 붙여요. ‘여행’ · ‘보조’처럼 폰마다 달라도 괜찮아요.',
               '한국에서는 여행용 회선이 ‘활성화 중…’으로 보이고 셀룰러 데이터는 메인이에요. 정상이에요.',
             ],
@@ -374,6 +381,7 @@ describe('spec §⑤ 문장 고정', () => {
           steps: [],
           notes: [
             [
+              '(warn)',
               '한국 회선의 데이터 로밍은 꺼 두세요. 켜져 있으면 통신사 로밍 요금이 나올 수 있어요.',
               '셀룰러 데이터 전환 허용도 꺼 두세요. 켜 두면 데이터가 한국 회선으로 넘어갈 수 있어요.',
             ],
@@ -385,6 +393,7 @@ describe('spec §⑤ 문장 고정', () => {
           steps: [],
           notes: [
             [
+              '(info)',
               '신호가 한 칸뿐인가요? 여행용 회선이 꺼져 있거나 설치되지 않은 거예요. 확인 1부터 다시 봐 주세요.',
             ],
           ],
@@ -419,7 +428,7 @@ describe('spec §⑤ 문장 고정', () => {
           ],
           steps: [],
           notes: [
-            ['eSIM 이름은 폰마다 달라요. 여행용 eSIM 이름과 모바일 데이터에 고른 이름이 같으면 돼요.'],
+            ['(info)', 'eSIM 이름은 폰마다 달라요. 여행용 eSIM 이름과 모바일 데이터에 고른 이름이 같으면 돼요.'],
             OTHER,
           ],
         },
@@ -428,8 +437,9 @@ describe('spec §⑤ 문장 고정', () => {
           points: ['데이터 로밍 eSIM 1이 켜져 있어요.', '데이터 로밍 SIM 1은 꺼져 있어요.'],
           steps: [],
           notes: [
-            ['SKT 폰은 메뉴가 달라요. 설정 › T로밍 › 로밍 상세 설정에서 데이터 로밍을 확인해 주세요.'],
+            ['(info)', 'SKT 폰은 메뉴가 달라요. 설정 › T로밍 › 로밍 상세 설정에서 데이터 로밍을 확인해 주세요.'],
             [
+              '(warn)',
               '데이터 로밍 SIM 1은 꺼 두세요. 켜져 있으면 통신사 로밍 요금이 나올 수 있어요.',
               '데이터 전환도 꺼 두세요. 켜 두면 데이터가 국내 SIM으로 넘어갈 수 있어요.',
             ],
@@ -462,6 +472,7 @@ describe('spec §⑤ 문장 고정', () => {
           ],
           notes: [
             [
+              '(info)',
               '고른 통신사로도 안 되면 다시 자동으로 돌려 주세요.',
               '다른 나라로 옮기기 전에는 자동을 다시 켜 두세요. 자동이면 폰이 그 나라 통신사로 알아서 바꿔요.',
             ],
@@ -477,6 +488,7 @@ describe('spec §⑤ 문장 고정', () => {
           ],
           notes: [
             [
+              '(info)',
               '고른 통신사로도 안 되면 다시 자동 선택으로 돌려 주세요.',
               '다른 나라로 옮기기 전에는 자동 선택을 다시 켜 두세요. 자동이면 폰이 그 나라 통신사로 알아서 바꿔요.',
             ],
@@ -501,6 +513,27 @@ describe('spec §⑤ 문장 고정', () => {
       ['설치 확인하기|설정을 화면과 비교해요.'],
       ['나라별 현지 통신사|나라마다 연결할 수 있는 통신사|/guide/carriers'],
     ])
+  })
+
+  it('페이지 OS(머리 OS 전환의 «지금») · 새 화면 대체 글(spec F-6 표)', () => {
+    expect([CHECK_IOS.os, CHECK_ANDROID.os, NETWORK_GUIDE.os, CARRIERS_GUIDE.os]).toEqual([
+      'ios',
+      'android',
+      undefined,
+      undefined,
+    ])
+    expect(
+      (['ios-cellular-arrival', 'ios-line-check', 'ios-line-network', 'aos-sim-arrival-data'] as const).map(
+        (k) => GUIDE_FIGURES[k].alt,
+      ),
+    ).toEqual([
+      '설정 › 셀룰러 화면 — 셀룰러 데이터 여행 · 기본 음성 회선 메인 · 두 회선 켬 표시',
+      '여행용 회선 세부 화면 — 이 회선 켜기 · 음성 및 데이터 5G 자동 · 데이터 로밍 표시',
+      '여행용 회선 세부 화면 — 네트워크 선택 표시',
+      'SIM 관리자 화면 아래 — 모바일 데이터 eSIM 1 · 데이터 전환 스위치 표시',
+    ])
+    expect(CARRIERS_GUIDE.intro?.map((n) => n.tone)).toEqual(['info'])
+    expect(NETWORK_GUIDE.intro?.map((n) => n.tone)).toEqual(['tip'])
   })
 
   it('S-4 나라별 현지 통신사 머리 · S-1/S-2 구간 배지 · 제목', () => {

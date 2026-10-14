@@ -220,6 +220,16 @@ describe('parseCatalog — 깨진 입력은 빌드를 멈춘다', () => {
         (zoneRaw(r, 'EU340').countries.find((c: any) => c.iso3 === 'FRA').operators = ['Orange']),
       /FRA 가 다른 zone 과 다르다/,
     ],
+    // 이어 붙인 글자로 비교하면 같아 보이는 경계(QA ⑥ — 칩 1개 «A, B» 와 칩 2개 «A» · «B»)
+    [
+      '같은 나라 통신사가 한 칸 «A, B» 와 두 칸 «A» · «B»',
+      (r) => {
+        const zones = r.zones.filter((z: any) => z.countries.some((c: any) => c.iso3 === 'FRA'))
+        zones[0].countries.find((c: any) => c.iso3 === 'FRA').operators = ['Orange', 'SFR']
+        zones[1].countries.find((c: any) => c.iso3 === 'FRA').operators = ['Orange, SFR']
+      },
+      /FRA 가 다른 zone 과 다르다/,
+    ],
     [
       '같은 나라 망이 zone 마다 다름',
       (r) => (zoneRaw(r, 'EU340').countries.find((c: any) => c.iso3 === 'FRA').network = '4G/LTE'),

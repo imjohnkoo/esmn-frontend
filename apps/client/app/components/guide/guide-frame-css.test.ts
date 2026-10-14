@@ -5,8 +5,9 @@ import { describe, expect, it } from 'vitest'
  * client-guide-check 불변식 «같은 모양» · plan §2.1 — 새 본문(GuideCheckArticle)은 설치 가이드 본문(GuideArticle)의 틀 CSS 를
  * 복제한다(GuideArticle 골든을 흔들지 않으려고). 복제가 어긋나면 여기서 실패한다 — 한쪽을 고치면 다른 쪽도 같이.
  */
+// 이 테스트 파일 기준 경로(작업 폴더와 무관 — 리포 복사본에서 돌려도 그 복사본을 읽는다)
 const read = (f: string) =>
-  readFileSync(`${process.cwd()}/app/components/${f.includes('/') ? f : `guide/${f}`}`, 'utf8')
+  readFileSync(new URL(f.includes('/') ? `../${f}` : `./${f}`, import.meta.url), 'utf8')
 
 /** `<style scoped>` 의 규칙 → { 선택자: 정렬한 선언 } (@media 안 규칙은 «@media … 선택자») */
 function rules(file: string): Map<string, string> & { seen: string[] } {
@@ -111,6 +112,39 @@ describe('틀을 다른 선택자로 덮어쓰지 않는다(QA ⑥ R4 — 값 �
     '.g-more :deep(.n-link-card__sub)',
     '.g-more__icon',
   ]
+  it('허용 목록 규칙의 값도 고정(틀 요소 .g-sec 를 건드리는 규칙 포함)', () => {
+    expect(Object.fromEntries(EXTRA.map((sel) => [sel, mine.get(sel)]))).toEqual({
+      '.g-article :is(h1, h2, .g-hero__lede, .g-sec__lede)': 'text-wrap: balance',
+      '.g-hero__link, .g-note__link':
+        'color: var(--n-color-primary-600, #5025e8); font-weight: 700; text-decoration: underline; text-underline-offset: 3px',
+      '.g-note__more': 'margin: 6px 0 0',
+      '@media (max-width: 350px) .g-article--chips-2': '--g-jump-h: 53px',
+      '@media (max-width: 354px) .g-article--chips-4': '--g-jump-h: 72px',
+      '.g-article--chips-0': '--g-jump-h: 0px',
+      '.g-sec--intro': 'padding-top: 0',
+      '.g-sec--intro > :first-child': 'margin-top: 0',
+      '.g-sec--intro-solo': 'padding-top: 20px',
+      '.g-sec :deep(.g-points + .g-shot), .g-sec :deep(.g-points + .g-status)': 'margin-top: 16px',
+      '.g-more': 'display: grid; gap: 10px; margin-top: 10px',
+      '.g-more :deep(.n-link-card__label)': 'font-size: 15px',
+      '.g-more :deep(.n-link-card__sub)':
+        'color: var(--n-color-neutral-500, #737373); font-size: 13px; line-height: 1.6',
+      '.g-more__icon': 'color: var(--n-color-primary-600, #5025e8); height: 20px; width: 20px',
+    })
+  })
+  it('설치 가이드 본문의 틀 규칙은 전부 FRAME 에 있다(GuideArticle 에 새 틀 규칙이 생기면 여기서 멈추고 복제를 같이 고친다)', () => {
+    const base = rules('GuideArticle.vue')
+    // 설치 가이드에만 있는 구성(흐름 · 확인 카드 · 방법 카드 · 문제 해결 · 머리 안 흐름)은 틀이 아니다
+    const ONLY_GUIDE = /^(\.g-hero__flow|\.g-check|\.g-alert|\.g-method|\.g-pill|\.g-faq|\.g-checks)|\.g-method /
+    const frameLike = base.seen.filter(
+      (sel) =>
+        /^(@media [^ ]+ [^ ]+ )?\.(g-article|g-hero|g-os|g-jump|g-sec|g-badge)/.test(sel) &&
+        !ONLY_GUIDE.test(sel.replace(/^@media \([^)]*\) /, '')) &&
+        // 줄 길이 고르기 대상은 가이드에 방법 카드가 더 있어 따로 대조한다(위 «제목 · 설명 줄 길이 고르기»)
+        sel !== '.g-article :is(h1, h2, .g-hero__lede, .g-sec__lede, .g-method__title, .g-method__desc)',
+    )
+    expect(frameLike.sort()).toEqual([...FRAME].sort())
+  })
   it('선택자 = 틀 + 허용 목록(그 밖 0) · 같은 선택자 두 번 0', () => {
     expect([...mine.seen].sort()).toEqual([...FRAME, ...EXTRA].sort())
     expect(new Set(mine.seen).size).toBe(mine.seen.length)
