@@ -56,7 +56,8 @@ function jump(id: string) {
 </script>
 
 <template>
-  <NBottomSheet v-model="isOpen" :title="title" closable>
+  <!-- 전체 화면 높이(client-guide D-26 — 길게 읽는 가이드는 화면 맨 위까지) -->
+  <NBottomSheet v-model="isOpen" :title="title" closable full-height>
     <!-- 본문 스크롤 영역 — 키보드로도 스크롤(포커스 가능 · 영역 이름 = 시트 제목) -->
     <div ref="scroller" class="guide-sheet" tabindex="0" role="region" :aria-label="title">
       <GuideArticle :content="content" mode="sheet" @os="switchOs" @jump="jump" />
@@ -66,12 +67,12 @@ function jump(id: string) {
 
 <style scoped>
 .guide-sheet {
-  /* 본문만 스크롤 — 제목 · X 는 시트 위에 남는다. 시트 최대 높이(90%) 안에 머리(손잡이 · 제목 · X ≈ 100px)까지 */
+  /* 본문만 스크롤 — 제목 · X 는 시트 위에 남는다. 시트는 전체 화면 높이(D-26 · DS fullHeight)이고 이 영역이 제목 줄 아래 남은 높이를 채운다 */
   /* 위치 기준 — 화면낭독용 숨김 글자(position: absolute — 단계 «번.» · «(새 창)»)가 시트 틀이 아니라 이 영역 안에 놓이게.
      없으면 그 글자들이 본문 길이만큼 아래에 놓여 시트 틀(overflow: auto)이 따로 스크롤되고 제목 · X 가 밀려 올라간다(QA ⑥ R1 M1) */
   position: relative;
-  max-height: calc(90vh - 112px);
-  max-height: calc(90dvh - 112px);
+  flex: 1;
+  min-height: 0;
   margin: 0 -20px;
   overflow-y: auto;
   overscroll-behavior: contain;

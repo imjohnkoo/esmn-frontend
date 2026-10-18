@@ -163,6 +163,22 @@ describe('DocSheet — 키마다 그 문서', () => {
     expect(title()).toBe('eSIM 지원 기기')
     expect(body()).toContain('갤럭시 (국내판)')
   })
+
+  it('지원 기기(설명서)만 전체 화면 높이 시트(client-guide D-26) — 법정 3종은 지금 높이 그대로 · 열린 채 바꿔도 따라간다', async () => {
+    const full = () => [
+      sheet()?.classList.contains('n-bottom-sheet__content--full'),
+      document.body.querySelector('.legal-sheet')?.classList.contains('legal-sheet--full'),
+    ]
+    for (const [key, on] of [['devices', true], ['terms', false], ['privacy', false], ['refund', false]] as const) {
+      const { wrapper } = await host(key)
+      expect(full(), key).toEqual([on, on])
+      wrapper.unmount()
+    }
+    const { key } = await host('terms')
+    key.value = 'devices'
+    await settle()
+    expect(full()).toEqual([true, true])
+  })
 })
 
 describe('IssueConsentLabel — 링크마다 그 문서를 연다', () => {

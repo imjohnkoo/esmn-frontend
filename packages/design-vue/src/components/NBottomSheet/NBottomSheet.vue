@@ -5,8 +5,11 @@
         <DialogOverlay v-if="open" class="n-bottom-sheet__overlay" />
       </Transition>
       <Transition name="n-bottom-sheet-content">
-        <DialogContent v-if="open" class="n-bottom-sheet__content">
-          <div v-if="grip" class="n-bottom-sheet__grip" aria-hidden="true" />
+        <DialogContent
+          v-if="open"
+          :class="['n-bottom-sheet__content', { 'n-bottom-sheet__content--full': fullHeight }]"
+        >
+          <div v-if="grip && !fullHeight" class="n-bottom-sheet__grip" aria-hidden="true" />
           <header
             v-if="title || $slots.header || closable"
             :class="['n-bottom-sheet__header', { 'n-bottom-sheet__header--closable': closable }]"
@@ -59,6 +62,8 @@ export interface NBottomSheetProps {
   closable?: boolean
   /** X 버튼 접근 이름 */
   closeLabel?: string
+  /** 전체 화면 높이 — 설치 가이드 · 설명서처럼 길게 읽는 시트. 화면 맨 위까지 올라오고(손잡이 · 위 모서리 둥글림 없음) 본문 칸이 남은 높이를 채운다 */
+  fullHeight?: boolean
 }
 
 withDefaults(defineProps<NBottomSheetProps>(), {
@@ -67,6 +72,7 @@ withDefaults(defineProps<NBottomSheetProps>(), {
   maxWidth: 420,
   closable: false,
   closeLabel: '닫기',
+  fullHeight: false,
 })
 
 const open = defineModel<boolean>({ default: false })
@@ -110,6 +116,25 @@ const open = defineModel<boolean>({ default: false })
   );
   max-height: 90vh;
   overflow: auto;
+}
+
+/* 전체 화면 높이(fullHeight — 0.7.3). 높이 단위(vh · dvh)가 아니라 top: 0 으로 화면 위아래를 채운다 — 휴대폰 브라우저 주소창 · 앱 내 브라우저 막대가
+   늘고 줄어도 제목 · X 가 화면 안에 남는다. 본문 칸은 남은 높이를 채우기만 하고, 스크롤은 본문 안 스크롤 영역(flex: 1 · min-height: 0)이 맡는다
+   (없으면 기본 시트처럼 시트 틀이 스크롤). 본문 칸에 overflow 를 주지 않는다 — 좌우 음수 여백으로 시트 끝까지 까는 본문이 칸 밖으로 20px 나가
+   가로로 밀린다 */
+.n-bottom-sheet__content--full {
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: none;
+  border-radius: 0;
+}
+
+.n-bottom-sheet__content--full .n-bottom-sheet__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .n-bottom-sheet__content:focus {
