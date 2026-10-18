@@ -241,12 +241,23 @@ describe('시트 모양(S-4)', () => {
     readFileSync(`${process.cwd()}/app/components/guide/GuideSheet.vue`, 'utf8').split(
       '<style scoped>',
     )[1] ?? ''
-  it('본문만 스크롤 · 시트 높이 90% 안 · 본문 제목 줄(h1)은 시트 제목과 겹쳐 숨김', () => {
+  it('본문만 스크롤 · 본문 제목 줄(h1)은 시트 제목과 겹쳐 숨김', () => {
     const box = css.match(/\.guide-sheet \{([^}]*)\}/)?.[1] ?? ''
     expect(box).toMatch(/overflow-y: auto;/)
     // 위치 기준 — 화면낭독용 숨김 글자(absolute)가 시트 틀이 아니라 이 영역 안에 놓이게(없으면 시트 틀이 따로 스크롤 — QA ⑥ R1 M1 · 실측은 walk)
     expect(box).toMatch(/position: relative;/)
-    expect(box).toMatch(/max-height: calc\(90dvh - 112px\);/)
     expect(css).toMatch(/\.guide-sheet :deep\(\.g-hero__title\) \{\s*display: none;\s*\}/)
+  })
+
+  it('전체 화면 높이(D-26) — DS fullHeight 시트 · 본문 영역이 제목 줄 아래 남은 높이를 채운다(옛 «최대 90%» 상한 없음)', async () => {
+    const box = css.match(/\.guide-sheet \{([^}]*)\}/)?.[1] ?? ''
+    expect(box).toMatch(/flex: 1;/)
+    expect(box).toMatch(/min-height: 0;/)
+    expect(box).not.toMatch(/max-height/)
+    await host('ios')
+    const sheet = $('.n-bottom-sheet__content')!
+    expect(sheet.classList.contains('n-bottom-sheet__content--full')).toBe(true)
+    expect(sheet.querySelector('.n-bottom-sheet__grip')).toBeNull()
+    expect(region().parentElement?.classList.contains('n-bottom-sheet__body')).toBe(true)
   })
 })

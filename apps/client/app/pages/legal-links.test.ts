@@ -146,6 +146,9 @@ describe('발급기 법정 링크(F-20)', () => {
     const devices = find(sheet, (n) => n.tag === 'SupportedDevicesContent')!
     expect(devices.props!.some((p) => p.type === 7 && p.rawName === 'v-else')).toBe(true)
     expect(sheet.props!.some((p) => p.type === 6 && p.name === 'closable')).toBe(true)
+    // 설명서(지원 기기)만 전체 화면 높이(client-guide D-26) — 법정 3종은 아래 최대 높이 그대로
+    expect(dir(sheet, ':full-height')).toBe('full')
+    expect(src).toMatch(/const full = computed\(\(\) => shown\.value === 'devices'\)/)
     const md = find(sheet, (n) => n.tag === 'LegalMarkdown')!
     expect([dir(md, ':doc'), dir(md, 'v-if')]).toEqual(['doc', 'doc'])
     expect(src).toMatch(/const DOCS = \{ terms: TERMS_DOC, privacy: PRIVACY_DOC, refund: REFUND_DOC \} as const/)
@@ -158,6 +161,8 @@ describe('발급기 법정 링크(F-20)', () => {
     const body = find(sheet, (n) => cls(n) === 'legal-sheet')!
     expect([attr(body, 'tabindex'), attr(body, 'role'), dir(body, ':aria-label')]).toEqual(['0', 'region', 'title'])
     expect(src).toMatch(/max-height: min\(68dvh, calc\(90dvh - 112px\)\);/)
+    expect(dir(body, ':class')).toBe("{ 'legal-sheet--full': full }")
+    expect(src).toMatch(/\.legal-sheet--full \{[^}]*flex: 1;[^}]*min-height: 0;[^}]*max-height: none;[^}]*\}/)
   })
 
   it('select-date 확인 팝업(템플릿 AST) — 요약 → 고지(D-42) · 스크롤 영역 배선 · 동의 체크는 밖(compact 면 안) · 체크 전 발급 비활성', () => {

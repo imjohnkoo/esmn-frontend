@@ -24,6 +24,8 @@ watch(selected, (key) => {
 }, { immediate: true })
 const doc = computed(() => (shown.value === 'devices' ? null : DOCS[shown.value]))
 const title = computed(() => doc.value?.title ?? DEVICES_TITLE)
+// 설명서(지원 기기)는 전체 화면 높이 시트 — 법정 3종은 지금 높이 그대로(client-guide D-26)
+const full = computed(() => shown.value === 'devices')
 
 const isOpen = computed({
   get: () => selected.value !== null,
@@ -34,9 +36,9 @@ const isOpen = computed({
 </script>
 
 <template>
-  <NBottomSheet v-model="isOpen" :title="title" closable>
+  <NBottomSheet v-model="isOpen" :title="title" closable :full-height="full">
     <!-- 본문 스크롤 영역 — 키보드로도 스크롤(포커스 가능 · 영역 이름 = 문서 제목) -->
-    <div class="legal-sheet" tabindex="0" role="region" :aria-label="title">
+    <div class="legal-sheet" :class="{ 'legal-sheet--full': full }" tabindex="0" role="region" :aria-label="title">
       <LegalMarkdown v-if="doc" :doc="doc" />
       <SupportedDevicesContent v-else />
     </div>
@@ -57,6 +59,12 @@ const isOpen = computed({
   overflow-y: auto;
   overscroll-behavior: contain;
   text-align: left;
+}
+.legal-sheet--full {
+  /* 지원 기기(설명서)는 전체 화면 높이 시트(client-guide D-26) — 위 최대 높이 대신 제목 줄 아래 남은 높이를 채운다 */
+  flex: 1;
+  min-height: 0;
+  max-height: none;
 }
 .legal-sheet :deep(.legal-md) {
   padding-top: 0;
