@@ -4,6 +4,7 @@ import {
   NPageHeading,
   NInfoChip,
   NStatusPill,
+  NBadge,
   NButton,
   NAlertDialog,
   NConfirmDialog,
@@ -13,7 +14,8 @@ import { useOrderStore } from '~/stores/order'
 import { useApi } from '~/composables/useApi'
 import { useFlowSession } from '~/composables/useFlowSession'
 import { formatDateString } from '~/utils/date'
-import { decideSelection, isFullyIssued } from '~/utils/flow-guard'
+import { decideSelection, findProductOrder, isFullyIssued } from '~/utils/flow-guard'
+import { orderDays, sortOrdersForDisplay } from '~/utils/order-display'
 import type { Order } from '~/types/order'
 
 const route = useRoute()
@@ -24,18 +26,22 @@ const flowSession = useFlowSession()
 
 const orderId = computed(() => Number(route.params.orderId))
 
+// 같은 상품의 일수만 다른 상품주문을 가르도록 일수순으로 그린다(H-015) — 저장소 순서(= 응답 순서)는 그대로라
+// 화면 위치와 저장소 위치가 다르다. 카드 버튼은 위치가 아니라 상품주문번호로 상품을 집는다
+const displayOrders = computed(() => sortOrdersForDisplay(orderStore.orders ?? []))
+
 const isNoOrderAlertVisible = ref(false)
 const isCancelledOrderVisible = ref(false)
 const isLoadingVisible = ref(false)
 const isWithdrawCancelVisible = ref(false)
-const withdrawTargetIndex = ref<number | null>(null)
+const withdrawTargetId = ref<number | null>(null)
 const isWithdrawingVisible = ref(false)
 const withdrawErrorTitle = ref('')
 const withdrawErrorDesc = ref('')
 const isWithdrawErrorVisible = ref(false)
 
-const openWithdrawCancelDialog = (idx: number) => {
-  withdrawTargetIndex.value = idx
+const openWithdrawCancelDialog = (productOrderId: number) => {
+  withdrawTargetId.value = productOrderId
   isWithdrawCancelVisible.value = true
 }
 
@@ -54,8 +60,7 @@ const refreshOrders = async (receiverName: string, receiverPhoneNumber: string) 
 }
 
 const handleWithdrawCancel = async () => {
-  const idx = withdrawTargetIndex.value
-  const target = idx != null ? orderStore.orders?.[idx] : undefined
+  const target = findProductOrder(orderStore.orders, withdrawTargetId.value)
   if (!target || !target.cancelWithdrawable) return
 
   isWithdrawingVisible.value = true
@@ -114,11 +119,12 @@ const handleWithdrawCancel = async () => {
 const isPartiallyIssued = (order: Order) =>
   (order.esims?.length ?? 0) > 0 && !isFullyIssued(order)
 
-const handleSelectOrder = async (idx: number) => {
+const handleSelectOrder = async (productOrderId: number) => {
   const orders = orderStore.orders
+  const picked = findProductOrder(orders, productOrderId)
 
   // 취소된 상품주문은 진행 불가 (버튼 disabled 의 이중 방어)
-  if (orders?.[idx]?.cancelled) return
+  if (picked?.cancelled) return
 
   if (!orders) {
     isNoOrderAlertVisible.value = true
@@ -135,13 +141,13 @@ const handleSelectOrder = async (idx: number) => {
   try {
     const verifyDto = {
       orderId: orderId.value,
-      phoneNumber: orders[idx]?.receiverPhoneNumber || '',
-      fullName: orders[idx]?.receiverName || '',
+      phoneNumber: picked?.receiverPhoneNumber || '',
+      fullName: picked?.receiverName || '',
     }
 
     const response = await api.verifyOrder(verifyDto)
     // 새 응답에서 productOrderId 로 찾아 진행 · 취소 · 없음을 가른다 — 위치(idx)로 집지 않는다 (flow-guard 순수함수)
-    const outcome = decideSelection(response, orders[idx]?.productOrderId)
+    const outcome = decideSelection(response, productOrderId)
 
     if (outcome.kind === 'proceed') {
       const { target } = outcome
@@ -220,9 +226,9 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
       </NInfoChip>
     </div>
 
-    <ul v-if="orderStore.orders && orderStore.orders.length > 0" class="details-page__list">
+    <ul v-if="displayOrders.length > 0" class="details-page__list">
       <li
-        v-for="(order, index) in orderStore.orders"
+        v-for="order in displayOrders"
         :key="order.productOrderId"
         class="details-page__card"
       >
@@ -238,9 +244,20 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
           </span>
         </div>
 
-        <h3 class="details-page__plan">{{ order.planNameKr }}</h3>
+        <!-- 일수는 제목 줄 오른쪽 끝 배지로만(H-015 D-1 · D-2) — 같은 상품의 일수만 다른 상품주문을 가른다 -->
+        <h3 class="details-page__plan">
+          {{ order.planNameKr }}
+          <NBadge
+            v-if="orderDays(order)"
+            class="details-page__days"
+            color="primary"
+            variant="subtle"
+            size="md"
+            :label="orderDays(order)"
+          />
+        </h3>
         <p class="details-page__meta">
-          {{ order.planDataTypeKr }} · {{ order.planDataLimitKr }} · {{ order.planDataDuration }}일
+          {{ order.planDataTypeKr }} · {{ order.planDataLimitKr }}
         </p>
 
         <div class="details-page__countries">
@@ -265,7 +282,12 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
             class="details-page__action-row"
           >
             <NButton variant="secondary" size="lg" full-width disabled>취소된 주문</NButton>
-            <NButton variant="danger" size="lg" full-width @click="openWithdrawCancelDialog(index)">
+            <NButton
+              variant="danger"
+              size="lg"
+              full-width
+              @click="openWithdrawCancelDialog(order.productOrderId)"
+            >
               취소철회
             </NButton>
           </div>
@@ -283,7 +305,7 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
             :variant="isFullyIssued(order) ? 'success' : 'primary'"
             size="lg"
             full-width
-            @click="handleSelectOrder(index)"
+            @click="handleSelectOrder(order.productOrderId)"
           >
             {{
               isFullyIssued(order)
@@ -404,12 +426,23 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
 }
 
 .details-page__plan {
+  /* 이름 · 일수 배지 한 줄 — 배지는 오른쪽 끝(H-015 D-1) */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin: 14px 0 0;
   font-size: 18px;
   font-weight: 700;
   color: #0f172a;
   letter-spacing: -0.01em;
   line-height: 1.35;
+}
+
+/* 일수 배지 — DS 기본 굵기(500)보다 굵게 · 이름이 길어도 줄지 않게 */
+.details-page__plan .details-page__days {
+  flex-shrink: 0;
+  font-weight: 700;
 }
 
 .details-page__meta {

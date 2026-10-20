@@ -10,6 +10,7 @@ import {
 } from '@imjohnkoo/design-vue'
 import GuideCards from '~/components/guide/GuideCards.vue'
 import { useOrderStore } from '~/stores/order'
+import { orderLabel, qrFileName } from '~/utils/order-display'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,13 +27,16 @@ const toggle = (idx: number) => {
 }
 
 const downloadQR = (index: number) => {
-  const canvas = document.querySelector(`#qr-code-${index} canvas`) as HTMLCanvasElement
-  if (!canvas) return
+  // qrcode-vue3 는 QR 을 <img>(PNG data URL)로 그린다 — canvas 를 찾던 동안에는 아무것도 내려받지 않았다(H-015 회신).
+  // 라이브러리를 올리면 이 가정을 다시 본다 — 테스트 대역도 <img> 라 그림 방식이 바뀌어도 테스트는 초록이다
+  const img = document.querySelector<HTMLImageElement>(`#qr-code-${index} img`)
+  if (!img?.src || !order.value) return
 
-  const pngUrl = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream')
+  const pngUrl = img.src.replace('image/png', 'image/octet-stream')
   const downloadLink = document.createElement('a')
   downloadLink.href = pngUrl
-  downloadLink.download = `qr-code-${index + 1}.png`
+  // 상품주문끼리 겹치지 않는 이름(H-015 D-4) — 칩 글자 + 상품주문번호 + eSIM 번호
+  downloadLink.download = qrFileName(order.value, index)
   document.body.appendChild(downloadLink)
   downloadLink.click()
   document.body.removeChild(downloadLink)
@@ -75,7 +79,8 @@ definePageMeta({ layout: 'flow', middleware: 'order-flow' })
           </svg>
         </template>
       </NInfoChip>
-      <NInfoChip :value="order.planNameKr">
+      <!-- 상품 = 이름 · 일수 · 용량(H-015 D-3) — 7일권 · 8일권 QR 화면이 칩으로 갈린다 -->
+      <NInfoChip :value="orderLabel(order)">
         <template #icon>
           <svg
             width="14"
