@@ -116,7 +116,7 @@ m8-frontend 에서 미포팅: `notion-workflow.md` (nomacom 개발 워크플로�
 - 외부 API 레퍼런스(Maya·Spark·TSim·eSIM Access · 네이버 커머스 · Shopify)는 별도 리포 **`api-docs`**(`~/dev/current-projects/api-docs` · private `imjohnkoo/api-docs`) — 인용 `[repo://api-docs/<path>@<sha>](https://github.com/imjohnkoo/api-docs/blob/<sha>/<path>)`(esmn-wiki repos.yaml `kind: reference`, 2026-10-14). «우리가 어떻게 쓰나» 요약은 위키 `wiki/entities/`.
 - 작업 전: `$NOMACOM_WIKI/index.md` → `wiki/frontend/README.md`(내 문서 전체 목록) → `wiki/contracts/CHANGELOG.md`(backend↔frontend 계약을 건드리면 한 줄 추가).
 - 인용은 `[repo://<repo>/<path>#Lx-Ly@<sha>](GitHub 퍼머링크)`, 위키 안은 상대경로. PR 설명에 참조 문서를 인용한다.
-- 주간 SoT 는 `$NOMACOM_MANAGER/docs/weekly/frontend-current-week.md`(fallback `~/dev/current-projects/nomacom-manager` — `nomacom-weekly` 스킬로 자기 트랙 행만), 서버 관측·운영 AC 판정은 nomacom-manager 의 monitor 세션(`nomacom-monitor` 스텁이 진입점).
+- 주간 SoT 는 `$NOMACOM_MANAGER/docs/weekly/frontend-current-week.md`(fallback `~/dev/current-projects/esmn-manager` — `nomacom-weekly` 스킬로 자기 트랙 행만), 서버 관측·운영 AC 판정은 nomacom-manager 의 monitor 세션(`nomacom-monitor` 스텁이 진입점).
 
 ## Hooks & 권한
 
