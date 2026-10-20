@@ -168,6 +168,52 @@ describe('② 이심 선택 — 같은 상품 7일권 · 8일권', () => {
     expect(flow.select).toHaveBeenCalledWith(ORDER_ID, fra10.productOrderId)
     expect(router.push).toHaveBeenCalledWith(`/select-date/${ORDER_ID}`)
   })
+
+  it('철회 가능한 카드가 둘이어도 누른 카드의 상품주문을 철회한다(첫 철회 가능 카드가 아니라)', async () => {
+    const cze5 = order({
+      productOrderId: ORDER_ID + 4,
+      planNameKr: '체코',
+      planDataDuration: 5,
+      planCountriesKr: ['체코'],
+      cancelled: true,
+      cancelWithdrawable: true,
+    })
+    api.withdrawCancel.mockResolvedValue({})
+    api.verifyOrder.mockResolvedValue({
+      verified: true,
+      cancelled: false,
+      details: [cze5, day8, { ...fra10, cancelled: false, cancelWithdrawable: false }],
+    })
+    await render([cze5, day8, fra10])
+    buttonOf(cards()[2]!, '취소철회')!.click()
+    await flushPromises()
+    ;[...document.body.querySelectorAll<HTMLButtonElement>('button')]
+      .find((b) => text(b) === '철회하기')!
+      .click()
+    await flushPromises()
+    expect(api.withdrawCancel).toHaveBeenCalledTimes(1)
+    expect(api.withdrawCancel.mock.calls[0]![0].productOrderId).toBe(fra10.productOrderId)
+  })
+
+  // 같은 처리 함수의 다른 갈래 — 전량 발급은 QR 화면, 부분 발급은 사용 시작일 화면으로
+  it.each<[string, Order[], string]>([
+    ['QR 코드 보기', [day8, { ...day7, esims: [esim(1)] }], `/view/${ORDER_ID}`],
+    [
+      '이어서 발급하기',
+      [fra10, day8, { ...day7, quantity: 2, esims: [esim(1)] }],
+      `/select-date/${ORDER_ID}`,
+    ],
+  ])('첫 카드(7일권) «%s» → 저장소 위치와 달라도 7일권으로 간다', async (label, orders, path) => {
+    api.verifyOrder.mockResolvedValue({ verified: true, cancelled: false, details: orders })
+    await render(orders)
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    buttonOf(cards()[0]!, label)!.click()
+    await vi.advanceTimersByTimeAsync(1500)
+    await flushPromises()
+    expect(flow.select).toHaveBeenCalledWith(ORDER_ID, day7.productOrderId)
+    expect(useOrderStore().singleOrder?.productOrderId).toBe(day7.productOrderId)
+    expect(router.push).toHaveBeenCalledWith(path)
+  })
 })
 
 describe('② 그대로인 것(R6)', () => {

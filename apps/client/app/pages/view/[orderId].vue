@@ -27,7 +27,8 @@ const toggle = (idx: number) => {
 }
 
 const downloadQR = (index: number) => {
-  // qrcode-vue3 는 QR 을 <img>(PNG data URL)로 그린다 — canvas 를 찾던 동안에는 아무것도 내려받지 않았다(H-015 회신)
+  // qrcode-vue3 는 QR 을 <img>(PNG data URL)로 그린다 — canvas 를 찾던 동안에는 아무것도 내려받지 않았다(H-015 회신).
+  // 라이브러리를 올리면 이 가정을 다시 본다 — 테스트 대역도 <img> 라 그림 방식이 바뀌어도 테스트는 초록이다
   const img = document.querySelector<HTMLImageElement>(`#qr-code-${index} img`)
   if (!img?.src || !order.value) return
 

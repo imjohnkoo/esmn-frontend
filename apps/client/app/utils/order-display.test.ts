@@ -68,6 +68,18 @@ describe('orderDays · orderCapacity', () => {
     expect(orderCapacity(order({ planDataLimitKr: '10기가 종량제' }))).toBe('10기가 종량제')
     expect(orderCapacity(order({ planDataLimitKr: '' }))).toBe('')
   })
+
+  it('«+» 앞뒤 공백이 없거나 전각 «＋» 여도 속도 글자를 싣지 않는다', () => {
+    expect(orderCapacity(order({ planDataLimitKr: '매일 2기가+무제한 500Kbps' }))).toBe(
+      '매일 2기가',
+    )
+    expect(orderCapacity(order({ planDataLimitKr: '매일 2기가 ＋ 무제한 500Kbps' }))).toBe(
+      '매일 2기가',
+    )
+    expect(qrFileName(order({ planDataLimitKr: '매일 2기가+무제한 500Kbps' }), 0)).not.toMatch(
+      /Kbps|\+/,
+    )
+  })
 })
 
 describe('orderLabel — ③ · ④ 상품 칩', () => {
