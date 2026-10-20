@@ -19,6 +19,7 @@ import { useOrderStore } from '~/stores/order'
 import { useApi } from '~/composables/useApi'
 import type { Order } from '~/types/order'
 import { findProductOrder } from '~/utils/flow-guard'
+import { orderLabel } from '~/utils/order-display'
 
 const route = useRoute()
 const router = useRouter()
@@ -326,7 +327,8 @@ const noticeSheet = (href: string) => (href === '/supported-devices' ? () => ope
           </svg>
         </template>
       </NInfoChip>
-      <NInfoChip v-if="order" :value="order.planNameKr">
+      <!-- 상품 = 이름 · 일수 · 용량(H-015 D-3) — 같은 상품의 일수 · 용량만 다른 상품주문을 가른다 -->
+      <NInfoChip v-if="order" :value="orderLabel(order)">
         <template #icon>
           <svg
             width="14"
