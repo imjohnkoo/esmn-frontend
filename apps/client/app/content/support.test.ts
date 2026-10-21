@@ -51,7 +51,7 @@ describe('supportRows', () => {
     expect(rows.kakao).toMatchObject({ text: '@이심마니', href: 'https://pf.kakao.com/_TjTCG' })
     expect(rows.naver?.href).toBe(SMARTSTORE_URL)
     expect(rows.phone).toMatchObject({ text: '070-8064-5232', href: 'tel:070-8064-5232' })
-    expect(rows.email).toMatchObject({ text: 'esimmany@naver.com', href: 'mailto:esimmany@naver.com' })
+    expect(rows.email).toMatchObject({ text: 'help@nomacom.net', href: 'mailto:help@nomacom.net' }) // D-57
     expect(rows.hours).toMatchObject({ text: '평일 09:00–18:00, 주말·공휴일 휴무', href: null })
   })
 

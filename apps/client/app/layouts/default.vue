@@ -16,7 +16,7 @@ useHead({ htmlAttrs: { class: 'has-shell-chrome' } })
     <main class="layout-default__main">
       <slot />
     </main>
-    <SiteFooter />
+    <SiteFooter support />
     <div class="layout-default__tab-space" aria-hidden="true" />
     <BottomTabBar />
   </div>

@@ -1,6 +1,6 @@
 /**
  * 고객센터 채널(client-shell spec S-3 · F-12) — 마이(/my#cs) · 검색 화면이 읽는다.
- * 값은 legal-pages 정본 그대로 — support.test.ts 가 생성물(content/legal/business · refund · privacy) 글자와 대조한다(정본 밖 값은 카카오톡 채널 URL 하나 — John 결정 D-54).
+ * 값은 legal-pages 정본 그대로 — support.test.ts 가 생성물(content/legal/business · refund · privacy) 글자와 대조한다(정본 밖 값은 카카오톡 채널 URL — John 결정 D-54 · 이메일 — D-57, 푸터 04 1절 줄은 게시 수정으로 같은 글자).
  * 순서는 04 3절 권장 배치(카카오톡 채널 → 전화 → 이메일 → 네이버 톡톡) + 운영 시간.
  * 카카오톡 채널 URL 은 정본에 아직 없다 — John 결정 글자(spec D-54 · 2026-10-03) 그대로 둔다(정본 rev 가 오면 대조로 바꾼다).
  */
@@ -8,7 +8,8 @@ import { displayValue, isPending, type ContentValue } from './pending'
 
 export const SMARTSTORE_URL = 'https://smartstore.naver.com/esimmany'
 export const SUPPORT_PHONE = '070-8064-5232'
-export const SUPPORT_EMAIL = 'esimmany@naver.com'
+/** 이메일(spec D-57 — John 2026-10-21 «이메일은 help@nomacom.net으로 변경해») — 정본 04 는 esimmany@naver.com(정본 rev 요청) */
+export const SUPPORT_EMAIL = 'help@nomacom.net'
 export const SUPPORT_HOURS = '평일 09:00–18:00, 주말·공휴일 휴무'
 export const SUPPORT_KAKAO = '@이심마니'
 /** 카카오톡 채널 URL(spec D-54 — John 2026-10-03 채널 URL 지정 · 2026-10-04 «https로 변경해» — 공용 Wi-Fi 첫 요청 평문 방지) */

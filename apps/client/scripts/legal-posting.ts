@@ -196,7 +196,11 @@ export const BLOCK_RULES: Record<BlockKey, BlockRules> = {
     // 값 채움(spec D-54 — John 2026-10-03 «AWS는 AWS로 표기»): 호스팅 서비스 = AWS(정본 rev 가 오면 지운다)
     fills: { 0: 'AWS' },
     // 게시 수정(spec D-40 — John 2026-10-04 «신고기관 붙임»): 통신판매업 줄에 신고기관(전자상거래법 13조①3호 · 정본 04 2절 표의 값)(정본 rev 가 오면 지운다)
-    edits: [{ line: 'f71a51520585665b3445cb4cd65f00ed0f47d05d9046ce297b748a7cf32934dc', from: '1950 호', to: '1950 호 (경기도 광주시)' }],
+    // 게시 수정(spec D-57 — John 2026-10-21 «이메일은 help@nomacom.net으로 변경해»): 연락처 줄의 이메일(정본 rev 가 오면 지운다)
+    edits: [
+      { line: 'f71a51520585665b3445cb4cd65f00ed0f47d05d9046ce297b748a7cf32934dc', from: '1950 호', to: '1950 호 (경기도 광주시)' },
+      { line: '7ae9879dc035cc7df9502875b589d0c2a10e7d9c12926edab0beb1a745f78901', from: 'esimmany@naver.com', to: 'help@nomacom.net' },
+    ],
   },
   // 05-A — 발급 화면 고지(제목 · 안내 5줄 — F-21) · 환불 안내(14행 · D-32) · 동의 체크 문구(19행 · D-35)
   'issue-notice': {
@@ -314,7 +318,8 @@ export const FORBIDDEN: readonly RegExp[] = [
   /\b[A-Z]-?\d{1,2}\b/,
   /\br\d{1,2}\b/,
   // 개발 경로 · 파일 · 리포 이름 — 링크가 아닌 «/경로» 표기 포함(08 D절)
-  /apps\/|server\/api|\/api\/v\d|checkout-preview|\.vue\b|\.mjs\b|\.ts\b|\.md\b|legal-pages|nomacom|esim-manager/i,
+  // nomacom 은 공개 이메일 help@nomacom.net(spec D-57) 그 주소 하나만 예외 — 다른 nomacom 글자(nomacom-client · nomacom.net 만 · help@nomacom-x)는 그대로 막는다
+  /apps\/|server\/api|\/api\/v\d|checkout-preview|\.vue\b|\.mjs\b|\.ts\b|\.md\b|legal-pages|(?<!help@)nomacom|nomacom(?!\.net\b)|esim-manager/i,
   /(?:^|[\s«「]|(?<!\])\()\/(?:checkout-preview|business|support|refund|terms|privacy|my|verify|details|select-date|view)\b/,
   // 경쟁사 이름
   /유심사|도시락|로밍도깨비|로깨비|말톡/,
