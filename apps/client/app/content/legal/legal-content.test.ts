@@ -241,6 +241,7 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
       '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', // D-54 솔라피
       '357c59c7a3e6de6021f376c2b7fb02291d79a54f1c67e1a3335eb395aec8bc7a', // D-31 1장 발급 행
       '6fa32529429fd9304adf05649670af702b36f2ebea2b2e146dd449bc3521802c', // D-31 9장①
+      '186cb96abb02a3f18804d1be56210d755d086d302042bf6846ff87870f595b45', // D-57 10장 책임자 전자우편
     ])
     expect(DOC_RULES.privacy.edits?.[0]).toEqual({ line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' })
     expect(BLOCK_RULES.business.edits).toEqual([

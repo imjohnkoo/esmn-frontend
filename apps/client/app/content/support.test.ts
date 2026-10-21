@@ -43,6 +43,12 @@ describe('고객센터 값 = 정본(04) — 손으로 적은 값이 정본 밖�
     expect(SUPPORT_KAKAO_URL).toBe('https://pf.kakao.com/_TjTCG') // 정본 밖 값 — John 결정(D-54 · 정본 rev 요청)
     expect(SUPPORT_CHANNELS.find((c) => c.key === 'kakao')?.href).toBe(SUPPORT_KAKAO_URL)
   })
+  it('이메일 = help@nomacom.net(D-57) — 푸터 04 1절 · 방침 10장 책임자 연락처 · 고객센터가 같은 글자 · 옛 주소는 어디에도 없다', () => {
+    expect(SUPPORT_EMAIL).toBe('help@nomacom.net')
+    expect(PRIVACY_DOC.markdown).toContain(`| 연락처 | 전화 ${SUPPORT_PHONE} · 전자우편 ${SUPPORT_EMAIL} |`)
+    for (const text of [Object.values(BUSINESS_INFO).join('\n'), PRIVACY_DOC.markdown, REFUND_DOC.markdown])
+      expect(text).not.toContain('esimmany@naver.com')
+  })
 })
 
 describe('supportRows', () => {

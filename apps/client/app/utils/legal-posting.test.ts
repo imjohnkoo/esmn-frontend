@@ -678,11 +678,11 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
     for (const r of all)
       for (const h of [...r.notes, ...r.placeholders]) expect(h).toMatch(/^[0-9a-f]{64}$/)
   })
-  it('게시 수정 줄은 sha256 · 수정은 결정된 문서 · 조각에만(terms 1건 D-33 · privacy 3건 D-54 솔라피 + D-31 흐름 쿠키 2줄 · refund 1건 D-41 · business 2건 D-40 · D-57 이메일)', () => {
+  it('게시 수정 줄은 sha256 · 수정은 결정된 문서 · 조각에만(terms 1건 D-33 · privacy 4건 D-54 솔라피 + D-31 흐름 쿠키 2줄 + D-57 10장 이메일 · refund 1건 D-41 · business 2건 D-40 · D-57 이메일)', () => {
     for (const r of all) for (const e of r.edits ?? []) expect(e.line).toMatch(/^[0-9a-f]{64}$/)
     expect(Object.fromEntries(Object.entries(DOC_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
       terms: 1,
-      privacy: 3,
+      privacy: 4,
       refund: 1,
     })
     expect(Object.fromEntries(Object.entries(BLOCK_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
@@ -744,7 +744,7 @@ describe('moduleSource · blockModuleSource — 생성 모듈', () => {
     expect(refund).not.toMatch(/값 채움/)
     const privacy = moduleSource('privacy', posting, '02_x.md · legal-pages @abc1234', 'P')
     expect(privacy).toMatch(/^\/\/ 값 채움 2건 — /m)
-    expect(privacy).toMatch(/^\/\/ 게시 수정 3건 — /m)
+    expect(privacy).toMatch(/^\/\/ 게시 수정 4건 — /m)
     const block = { lines: { a: 'x' }, pendingCount: 0 }
     const business = blockModuleSource('business', block, '04_x.md ## 1. · legal-pages @abc1234', 'P')
     expect(business).toMatch(/^\/\/ 값 채움 1건 — /m)
