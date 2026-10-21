@@ -241,9 +241,13 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
       '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', // D-54 솔라피
       '357c59c7a3e6de6021f376c2b7fb02291d79a54f1c67e1a3335eb395aec8bc7a', // D-31 1장 발급 행
       '6fa32529429fd9304adf05649670af702b36f2ebea2b2e146dd449bc3521802c', // D-31 9장①
+      '186cb96abb02a3f18804d1be56210d755d086d302042bf6846ff87870f595b45', // D-57 10장 책임자 전자우편
     ])
     expect(DOC_RULES.privacy.edits?.[0]).toEqual({ line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' })
-    expect(BLOCK_RULES.business.edits).toEqual([{ line: 'f71a51520585665b3445cb4cd65f00ed0f47d05d9046ce297b748a7cf32934dc', from: '1950 호', to: '1950 호 (경기도 광주시)' }])
+    expect(BLOCK_RULES.business.edits).toEqual([
+      { line: 'f71a51520585665b3445cb4cd65f00ed0f47d05d9046ce297b748a7cf32934dc', from: '1950 호', to: '1950 호 (경기도 광주시)' }, // D-40
+      { line: '7ae9879dc035cc7df9502875b589d0c2a10e7d9c12926edab0beb1a745f78901', from: 'esimmany@naver.com', to: 'help@nomacom.net' }, // D-57
+    ])
   })
   it('규칙의 게시 수정 글자 = 생성물(규칙만 고치고 다시 가져오지 않으면 빨개진다)', () => {
     const docs = { terms: TERMS_DOC.markdown, privacy: PRIVACY_DOC.markdown, refund: REFUND_DOC.markdown } as const
@@ -262,7 +266,7 @@ describe('푸터 사업자정보(04 1절) — 법정 표시 항목(D-11) · `/bu
     ['통신판매업 신고번호 · 신고기관(D-40)', '통신판매업신고: 제 2023-경기광주-1950 호 (경기도 광주시)'],
     ['사업장 소재지', '주소: 제주특별자치도 제주시 신대로 145'],
     ['전화', '전화: 070-8064-5232'],
-    ['이메일', '이메일: esimmany@naver.com'],
+    ['이메일(D-57 게시 수정)', '이메일: help@nomacom.net'],
     ['개인정보보호책임자', '개인정보보호책임자: 구장회'],
     ['호스팅 서비스 제공자', '호스팅 서비스: '],
   ])('%s', (_, item) => {
@@ -290,9 +294,9 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
   })
   it('사업자정보 생성물 머리 — 값 채움 1건(D-54 호스팅 AWS)', () => {
     expect(/^\/\/ 값 채움 (\d+)건 — /m.exec(read('./business.ts'))?.[1]).toBe('1')
-    // 블록 게시 수정도 머리줄에 드러난다 — 규칙의 수정 건수와 같다(D-40)
+    // 블록 게시 수정도 머리줄에 드러난다 — 규칙의 수정 건수와 같다(D-40 · D-57)
     expect(/^\/\/ 게시 수정 (\d+)건 — /m.exec(read('./business.ts'))?.[1]).toBe(String(BLOCK_RULES.business.edits?.length))
-    expect(BLOCK_RULES.business.edits).toHaveLength(1)
+    expect(BLOCK_RULES.business.edits).toHaveLength(2)
   })
   it('사업자정보 7줄 — 순서 · 공정위 조회 링크 · 호스팅 = AWS(D-54 값 채움 · 값 자리 0)', () => {
     expect(Object.keys(BUSINESS_INFO)).toEqual([

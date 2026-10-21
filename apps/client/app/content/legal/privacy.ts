@@ -1,9 +1,9 @@
 // 생성물 — scripts/legal-import.mjs 가 legal-pages 정본에서 게시 규칙(08 D절)을 적용해 만든다.
 // 손으로 고치지 말 것 — 정본을 고친 뒤 `yarn workspace nomacom-client legal:import --from <정본 폴더>` 로 다시 만든다.
 // 정본: 02_개인정보처리방침.md · legal-pages @f64203c
-// sha256(본문): 09d4545fde2c3455ca9fe3a27a4935e4f4415cc2292c7d539b3d245fb0d208ea
+// sha256(본문): 0d53326cc76cbabd633f7032b591faed3efd7557abfaf255877caaabdd4b4cc6
 // 값 채움 2건 — 정본의 값 자리를 결정 글자로(규칙 scripts/legal-posting.ts 의 fills · spec D-54)
-// 게시 수정 3건 — 정본과 다른 글자(규칙 scripts/legal-posting.ts 의 edits · spec 결정)
+// 게시 수정 4건 — 정본과 다른 글자(규칙 scripts/legal-posting.ts 의 edits · spec 결정)
 import type { LegalMarkdownDoc } from '../../utils/legal-markdown'
 
 export const PRIVACY_DOC: LegalMarkdownDoc = {
@@ -117,7 +117,7 @@ export const PRIVACY_DOC: LegalMarkdownDoc = {
 | 구분 | 내용 |
 | --- | --- |
 | 개인정보 보호책임자 | 구장회 (대표) |
-| 연락처 | 전화 070-8064-5232 · 전자우편 esimmany@naver.com |
+| 연락처 | 전화 070-8064-5232 · 전자우편 help@nomacom.net |
 
 정보주체는 서비스를 이용하면서 발생한 모든 개인정보 보호 관련 문의, 불만 처리, 피해 구제 등에 관한 사항을 개인정보 보호책임자에게 문의할 수 있으며, 회사는 지체 없이 답변·처리합니다.
 
