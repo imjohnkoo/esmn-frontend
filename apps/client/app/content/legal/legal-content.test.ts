@@ -247,6 +247,7 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
     expect(BLOCK_RULES.business.edits).toEqual([
       { line: 'f71a51520585665b3445cb4cd65f00ed0f47d05d9046ce297b748a7cf32934dc', from: '1950 호', to: '1950 호 (경기도 광주시)' }, // D-40
       { line: '7ae9879dc035cc7df9502875b589d0c2a10e7d9c12926edab0beb1a745f78901', from: 'esimmany@naver.com', to: 'help@nomacom.net' }, // D-57
+      { line: '4c384c49fb44c8eab8b6fb8050a7bb1250b80d554b4e9e5d15714082d5e2d0c4', from: '상호: 노마컴', to: '상호: 노마컴 (Nomacom Inc)' }, // D-58
     ])
   })
   it('규칙의 게시 수정 글자 = 생성물(규칙만 고치고 다시 가져오지 않으면 빨개진다)', () => {
@@ -260,7 +261,7 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
 describe('푸터 사업자정보(04 1절) — 법정 표시 항목(D-11) · `/business` 가 없으니(D-39) 푸터가 유일한 표시 · 통신판매업 신고기관 이름은 D-40', () => {
   const lines = Object.values(BUSINESS_INFO)
   it.each([
-    ['상호', '상호: 노마컴'],
+    ['상호(D-58 영문 상호)', '상호: 노마컴 (Nomacom Inc)'],
     ['대표자', '대표: 구장회'],
     ['사업자등록번호', '사업자등록번호: 704-24-01747'],
     ['통신판매업 신고번호 · 신고기관(D-40)', '통신판매업신고: 제 2023-경기광주-1950 호 (경기도 광주시)'],
@@ -294,9 +295,9 @@ describe('조각 — 사업자정보(04 1절 · D-36) · 발급 화면 고지(05
   })
   it('사업자정보 생성물 머리 — 값 채움 1건(D-54 호스팅 AWS)', () => {
     expect(/^\/\/ 값 채움 (\d+)건 — /m.exec(read('./business.ts'))?.[1]).toBe('1')
-    // 블록 게시 수정도 머리줄에 드러난다 — 규칙의 수정 건수와 같다(D-40 · D-57)
+    // 블록 게시 수정도 머리줄에 드러난다 — 규칙의 수정 건수와 같다(D-40 · D-57 · D-58)
     expect(/^\/\/ 게시 수정 (\d+)건 — /m.exec(read('./business.ts'))?.[1]).toBe(String(BLOCK_RULES.business.edits?.length))
-    expect(BLOCK_RULES.business.edits).toHaveLength(2)
+    expect(BLOCK_RULES.business.edits).toHaveLength(3)
   })
   it('사업자정보 7줄 — 순서 · 공정위 조회 링크 · 호스팅 = AWS(D-54 값 채움 · 값 자리 0)', () => {
     expect(Object.keys(BUSINESS_INFO)).toEqual([
