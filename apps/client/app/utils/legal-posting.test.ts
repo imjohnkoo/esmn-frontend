@@ -546,6 +546,8 @@ describe('forbiddenIn — 공개 금지어(공급사 명칭 영문 · 한글 · 
     'nomacom-manager',
     'nomacom.net',
     'help@nomacom-client',
+    'Nomacom Corp',
+    'nomacom Incident',
     'nomacom_flow 쿠키',
     'esim-manager',
     '유심사',
@@ -667,6 +669,7 @@ describe('forbiddenIn — 공개 금지어(공급사 명칭 영문 · 한글 · 
     '5G 망',
     '보존합니다',
     '이메일: help@nomacom.net', // 공개 이메일(spec D-57) — 이 주소 하나만
+    '상호: 노마컴 (Nomacom Inc)', // 영문 상호(spec D-58)
   ])('%s 는 걸리지 않는다', (t) => {
     expect(forbiddenIn(t)).toEqual([])
   })
@@ -678,7 +681,7 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
     for (const r of all)
       for (const h of [...r.notes, ...r.placeholders]) expect(h).toMatch(/^[0-9a-f]{64}$/)
   })
-  it('게시 수정 줄은 sha256 · 수정은 결정된 문서 · 조각에만(terms 1건 D-33 · privacy 4건 D-54 솔라피 + D-31 흐름 쿠키 2줄 + D-57 10장 이메일 · refund 1건 D-41 · business 2건 D-40 · D-57 이메일)', () => {
+  it('게시 수정 줄은 sha256 · 수정은 결정된 문서 · 조각에만(terms 1건 D-33 · privacy 4건 D-54 솔라피 + D-31 흐름 쿠키 2줄 + D-57 10장 이메일 · refund 1건 D-41 · business 3건 D-40 · D-57 이메일 · D-58 영문 상호)', () => {
     for (const r of all) for (const e of r.edits ?? []) expect(e.line).toMatch(/^[0-9a-f]{64}$/)
     expect(Object.fromEntries(Object.entries(DOC_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
       terms: 1,
@@ -686,7 +689,7 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
       refund: 1,
     })
     expect(Object.fromEntries(Object.entries(BLOCK_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
-      business: 2,
+      business: 3,
       'issue-notice': 0,
       'checkout-notice': 0,
     })
@@ -748,7 +751,7 @@ describe('moduleSource · blockModuleSource — 생성 모듈', () => {
     const block = { lines: { a: 'x' }, pendingCount: 0 }
     const business = blockModuleSource('business', block, '04_x.md ## 1. · legal-pages @abc1234', 'P')
     expect(business).toMatch(/^\/\/ 값 채움 1건 — /m)
-    expect(business).toMatch(/^\/\/ 게시 수정 2건 — /m)
+    expect(business).toMatch(/^\/\/ 게시 수정 3건 — /m)
     expect(blockModuleSource('issue-notice', block, '05_x.md ## A. · legal-pages @abc1234', 'P')).not.toMatch(/값 채움|게시 수정/)
   })
   it('본문의 백슬래시는 템플릿 문자열에서 그대로 살아남는다', () => {
