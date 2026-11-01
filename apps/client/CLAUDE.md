@@ -160,10 +160,16 @@ apps/client/
 | ------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/api/health`             | GET    | `{ status: 'ok', app: 'nomacom-client', commit, timestamp }`                                                                                                                                                                                                           |
 | `/api/v1/verify`          | POST   | 수신자 대조 후 주문 상세 + esims + planType 반환. planTypes 는 `inArray` 일괄 조회 (N+1 없음). `productOrderId` 로 필터 가능                                                                                                                                           |
-| `/api/v1/activate`        | POST   | 수신자 대조 (403) → 부족분만 발급 — planType `provider` 로 Maya `createEsim`(esim + plan 쌍 트랜잭션 insert) 또는 Spark(`utils/spark-issuance.ts` — 원장 · 동시성 규약). 전량 발급돼 있으면 기존 상태로 idempotent 성공. 같은 주문의 동시 요청은 in-flight lock 직렬화 |
+| `/api/v1/activate`        | POST   | 동의(`consent` 판 · 해시) 검증 400 → 수신자 대조 (403) → provider `spark` 만(그 밖 400) → 새 eSIM 이 생길 요청이면 `consent_log` 1행 → 부족분만 Spark 발급(`utils/spark-issuance.ts` — 원장 · 동시성 규약). 전량 발급돼 있으면 기존 상태로 idempotent 성공(행 0). 같은 주문의 동시 요청은 in-flight lock 직렬화. Maya 분기 코드는 남아 있지만 닿지 않는다 |
 | `/api/v1/withdraw-cancel` | POST   | 수신자 대조 + 취소요청 상태 사전 체크 후 backend 내부 endpoint 에 위임(Naver 발송처리 · DB 갱신은 backend 소유). 내부 env 없으면 503                                                                                                                                   |
 
 ### activate 신뢰성 설계 (변경 시 유지할 불변식)
+
+- **발급 동의 기록(client-consent-log · 2026-11-01)** — spec `esmn-wiki wiki/frontend/specs/client/2026-11-01-client-consent-log.md`. `consent_log` INSERT 는 **거절 판정을 모두 지난 뒤 · 벤더 호출 전 한 자리**(provider 가드 뒤 · `existingCount < quantity` 일 때만). INSERT 실패 = 500 `CONSENT_LOG_FAILED` · 벤더 0 — 동의 기록 없는 발급 0. 발급 트랜잭션에 묶지 않는다(동의는 했으므로 발급이 뒤에서 실패해도 행은 남는다 · UNIQUE 없음이 계약). 새 거절 판정을 넣으면 INSERT **앞**에 둔다(거절에는 행 0).
+- **동의 판 · 해시 = `shared/consent/issue-consent.ts` 한 곳** — `IssueConsentLabel` 렌더 글자(textContent → NFC → 공백 접기 → trim)의 SHA-256 상수. 글자를 바꾸면 `IssueConsentLabel.hash.dom.test.ts` 가 깨진다 → `textVersion` 과 `textHash` 를 함께 올린다(상수만 고치지 말 것). 고지 줄(`NOTICE_LINES`)은 해시에 넣지 않는다(spec D-20).
+- **`ip_hash`** = HMAC-SHA256(`PII_HMAC_KEY` base64 디코드 32바이트, IP) hex — IP 는 `X-Forwarded-For` **맨 오른쪽**(CloudFront 가 붙인 viewer IP · 맨 왼쪽은 고객이 꾸밀 수 있다), 없으면 소켓 주소. 키가 없으면 NULL + `CONSENT_IP_HASH_SKIPPED` 경고(발급은 진행). 평문 IP 는 DB · 로그 0. ⚠️ 원본 `client-origin.esimmany.com:3000` 이 공개라 CloudFront 를 안 거친 요청은 XFF 를 꾸밀 수 있다(증빙 품질 한계).
+- **화면** — 서버는 동의 400 · 기록 500 에만 `data.code`(`CONSENT_REQUIRED` · `CONSENT_LOG_FAILED`)를 단다. 발급 확인 팝업은 그 두 코드만 «잠시 후 다시 시도해 주세요» → 팝업 복귀(체크 유지 · 이동 0 — `app/utils/issue-failure.ts`), 그 밖은 기존 «주문 정보를 찾을 수 없어요» → 본인 확인. 체크 상태는 저장하지 않는다(팝업을 열 때마다 다시 체크). mobile 은 동의 UI 가 없어 consent 없이 부른다 → 400(알려진 영향 · mobile 트랙 몫).
+- **`consent_log` 스키마 주인은 backend entity + 위키 SQL** — Drizzle 미러(`schema.ts` `consentLog`)는 따라가기만. 로컬 walk DB 는 `client-walk-db.sh consent-sql <위키 migrations>` 로 실 DDL 을 쓴다(`schema` 는 이 표를 만들지 않는다). 행은 5년 보존이라 DROP · DELETE 금지.
 
 - **Maya 발급 성공분은 반드시 즉시 DB 기록** — Maya 호출은 외부 side-effect 라 DB 트랜잭션으로 원자성 확보 불가. 트랜잭션은 esim + plan 쌍 원자화에만 사용
 - **재시도 = 재개** — 기존 발급 수 `existingCount` 부터 루프 시작 (`generateEsimTag(order, i)` 의 인덱스 연속성 유지). 중간 실패 후 재시도해도 초과 발급 없음
