@@ -37,10 +37,11 @@ run() { # run <expect: allow|block> <command>
   local expect="$1" cmd="$2" out actual
   # 훅은 이 테스트를 돌린 bash 로 부른다(/bin/bash test.sh 가 정말 3.2 로 돌게 — shebang 의 env bash 를 타지 않는다)
   out=$(jq -n --arg c "$cmd" --arg d "$REPO" '{cwd: $d, tool_input: {command: $c}}' | "$BASH" "$HOOK")
-  # 차단 = permissionDecision deny 인 JSON 하나 · 통과 = 빈 출력. 그 밖의 출력은 실패로 센다
-  if [[ -z "$out" ]]; then
+  # 차단 = permissionDecision deny 인 JSON 하나 · 통과 = 빈 출력(스캐너) 또는 permissionDecision allow(승인 예외 — 브리프 v5). 그 밖의 출력은 실패로 센다
+  local dec; dec=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)
+  if [[ -z "$out" || "$dec" == allow ]]; then
     actual="allow"
-  elif [[ "$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)" == deny ]]; then
+  elif [[ "$dec" == deny ]]; then
     actual="block"
   else
     actual="bad-output"
@@ -165,6 +166,9 @@ ap_run() { # ap_run <허브 스텁> <expect> <command>
 }
 ap_calls() { wc -l < "$APH/ok/calls" 2>/dev/null | tr -d ' ' || echo 0; }
 ap_run ok allow "$AP_CMD"                                                   # ① 허용 형태 · verify exit 0
+# ① 통과는 allow JSON 을 명시 출력한다(권한 창을 건너뛴다 — 브리프 v5)
+out=$(jq -n --arg c "$AP_CMD" --arg d "$REPO" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+if [[ "$(printf '%s' "$out" | jq -c .)" == '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"승인 ID AP-20261102-001 verify ok — prod 승격 1회"}}' ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 승인 통과 출력이 allow JSON 이 아니다: $out"; fi
 # ① 스텁이 받은 argv = verify <ID> --action prod-promote --target esmn-frontend@<그 sha>:prod --consume
 ap_last=$(tail -n 1 "$APH/ok/calls" 2>/dev/null)
 if [[ "$(printf '%s' "$ap_last" | jq -c .argv)" == "[\"verify\",\"AP-20261102-001\",\"--action\",\"prod-promote\",\"--target\",\"esmn-frontend@$AP_SHA:prod\",\"--consume\"]" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify argv 가 다르다: $ap_last"; fi

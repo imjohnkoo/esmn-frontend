@@ -124,7 +124,8 @@ block() {
 
 # ⭐ 2026-11 승인 예외 1단(ROLE-LAYER D21 · R1-5) — 스캐너 앞. 명령 전체가 정확히 이 한 형태일 때만(앞뒤 공백 외 다른 글자 · 세그먼트 · 리다이렉트 없음):
 #     ESMN_APPROVAL_ID=AP-<영숫자·하이픈> git push origin <40자 소문자 hex>:prod      (또는 :refs/heads/prod)
-#   허브 approval.py verify --consume 이 그 sha 에 묶인 prod-promote 승인을 확인하고 once 사용을 원장에 기록하면(exit 0) 통과 — 같은 ID 두 번째는
+#   허브 approval.py verify --consume 이 그 sha 에 묶인 prod-promote 승인을 확인하고 once 사용을 원장에 기록하면(exit 0) permissionDecision allow 를
+#   명시 출력해 통과(권한 창을 건너뛴다 — 소모된 ID 가 창 거부로 헛되이 사라지지 않게 · 브리프 v5) — 같은 ID 두 번째는
 #   허브가 거부한다 · 그 밖(verify ≠ 0 · 스크립트 없음 · 10초 초과)은 차단. 허브는 고정 경로(세션 env 의 NOMACOM_MANAGER 를 믿지 않는다 —
 #   GUARD_PROD_PUSH_HUB 는 테스트 전용)이고, 저장소 · 정책 경로 env(ESMN_APPROVAL_DIR · ESMN_PM_REGISTRY · ESMN_APPROVAL_POLICY)는 지우고 ·
 #   python3 -I(PYTHONPATH · PYTHONSTARTUP · 사용자 site · cwd 무시)로 부른다. 사유는 stderr 마지막 줄(Traceback 첫 줄 말고).
@@ -152,7 +153,11 @@ if (( ${#cmd} <= 256 )) && [[ "$cmd" =~ $approval_re ]]; then
   wait "$ap_pid" 2>/dev/null; ap_rc=$?
   kill "$ap_watch" 2>/dev/null; wait "$ap_watch" 2>/dev/null
   ap_msg=$(tail -n 1 "$ap_err" 2>/dev/null); rm -f "$ap_err"
-  (( ap_rc == 0 )) && exit 0
+  # 통과는 allow 를 명시 출력한다 — --consume 이 이미 ID 를 썼으므로 뒤의 권한 창에서 거부되면 승인이 헛되이 사라진다(브리프 v5)
+  if (( ap_rc == 0 )); then
+    jq -cn --arg r "승인 ID $ap_id verify ok — prod 승격 1회" '{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow", "permissionDecisionReason": $r}}'
+    exit 0
+  fi
   (( ap_rc == 137 )) && ap_msg="10초 안에 끝나지 않았습니다"
   block "$PROD_MSG — 승인 ID $ap_id · verify 실패(exit $ap_rc): ${ap_msg:-사유 없음}"
 fi
