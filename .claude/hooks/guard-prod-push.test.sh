@@ -12,6 +12,8 @@
 set -u
 
 HOOK="$(cd "$(dirname "$0")" && pwd)/guard-prod-push.sh"
+# 승인 예외는 훅 입력 cwd 의 origin 을 본다 — 어디서 돌려도 같게 이 리포 루트를 넘긴다
+REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 pass=0
 fail=0
 
@@ -34,7 +36,7 @@ export GUARD_PROD_PUSH_HUB="$APH/ok"
 run() { # run <expect: allow|block> <command>
   local expect="$1" cmd="$2" out actual
   # 훅은 이 테스트를 돌린 bash 로 부른다(/bin/bash test.sh 가 정말 3.2 로 돌게 — shebang 의 env bash 를 타지 않는다)
-  out=$(jq -n --arg c "$cmd" '{tool_input: {command: $c}}' | "$BASH" "$HOOK")
+  out=$(jq -n --arg c "$cmd" --arg d "$REPO" '{cwd: $d, tool_input: {command: $c}}' | "$BASH" "$HOOK")
   # 차단 = permissionDecision deny 인 JSON 하나 · 통과 = 빈 출력. 그 밖의 출력은 실패로 센다
   if [[ -z "$out" ]]; then
     actual="allow"
@@ -185,22 +187,33 @@ if ((SECONDS > 20)); then fail=$((fail + 1)); echo "  ⛔ verify 시간 초과�
 # 예외 꼴이지만 verify 전에 막는 것 — 승인을 써 버리지 않는다(QA ⑥ minor 2 · 보안 리뷰): 끝 CR · NUL · 다른 리포 origin · GIT_DIR
 ap_n=$(ap_calls)
 ap_run ok block "$AP_CMD"$'\r'
-out=$(printf '{"tool_input":{"command":"%s\\u0000"}}' "$AP_CMD" | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+out=$(printf '{"cwd":"%s","tool_input":{"command":"%s\\u0000"}}' "$REPO" "$AP_CMD" | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
 if [[ "$out" == *'"deny"'* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ NUL 든 승인 꼴이 통과했다"; fi
-ap_other=$(mktemp -d); git -C "$ap_other" init -q && git -C "$ap_other" remote add origin git@github.com:imjohnkoo/esmn-backend.git
-out=$(jq -n --arg c "$AP_CMD" --arg d "$ap_other" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
-if [[ "$out" == *'"deny"'*"origin push URL"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 다른 리포 origin 에서 승인 꼴이 통과했다: $out"; fi
+ap_origin() { # ap_origin <push URL…> — 그 origin 을 단 임시 리포에서 승인 꼴은 verify 전에 막혀야 한다
+  local d u out; d=$(mktemp -d); git -C "$d" init -q; git -C "$d" remote add origin "$1"
+  for u in "${@:2}"; do git -C "$d" config --add remote.origin.pushurl "$u"; done
+  [[ $# -gt 1 ]] && git -C "$d" config --add remote.origin.pushurl "$1"
+  out=$(jq -n --arg c "$AP_CMD" --arg d "$d" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+  if [[ "$out" == *'"deny"'*"origin push URL"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ origin 이 $* 인데 승인 꼴이 통과했다: $out"; fi
+}
+ap_origin git@github.com:imjohnkoo/esmn-backend.git
+ap_origin https://evil.example/imjohnkoo/esmn-frontend
+ap_origin git@github.com:evil/imjohnkoo/esmn-frontend.git
+ap_origin /tmp/x/imjohnkoo/nomacom-frontend
+ap_origin git@github.com:imjohnkoo/esmn-frontend.git git@evil:x/y.git        # pushurl 둘 — git 은 둘 다에 민다
 GIT_DIR=/tmp/x ap_run ok block "$AP_CMD"
 if [[ "$(ap_calls)" == "$ap_n" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify 전에 막을 꼴이 verify 를 불렀다"; fi
 # 끝 공백이 길어도 빨리 판정한다(256자 넘으면 예외 판정 자체를 하지 않는다 — 다듬기가 600초를 넘겨 판정 없이 통과하던 QA ⑥ major)
+#   큰 글은 표준 입력으로 JSON 을 만든다(리눅스는 인자 하나가 128KB 를 넘지 못한다 — jq 가 못 떠 빈 출력이 «allow» 로 세지던 것)
 SECONDS=0
-ap_run ok block "git push origin HEAD:prod$(printf '%*s' 200000 '')"
+out=$(printf 'git push origin HEAD:prod%*s' 200000 '' | jq -Rs '{tool_input: {command: .}}' | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+if [[ "$out" == *'"deny"'* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 끝 공백 20만 자 prod push 가 막히지 않았다"; fi
 if ((SECONDS > 20)); then fail=$((fail + 1)); echo "  ⛔ 끝 공백 20만 자 판정이 느리다: ${SECONDS}초"; fi
 # verify 가 죽으면 사유는 stderr 마지막 줄(Traceback 첫 줄 말고)
-ap_reason=$(jq -n --arg c "$AP_CMD" '{tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/crash" "$BASH" "$HOOK" | jq -r '.hookSpecificOutput.permissionDecisionReason')
+ap_reason=$(jq -n --arg c "$AP_CMD" --arg d "$REPO" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/crash" "$BASH" "$HOOK" | jq -r '.hookSpecificOutput.permissionDecisionReason')
 if [[ "$ap_reason" == *"RuntimeError: stub crash"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify 크래시 사유가 마지막 줄이 아니다: $ap_reason"; fi
 # 차단 사유에 verify stderr 한 줄이 실린다
-ap_reason=$(jq -n --arg c "$AP_CMD" '{tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/deny" "$BASH" "$HOOK" | jq -r '.hookSpecificOutput.permissionDecisionReason')
+ap_reason=$(jq -n --arg c "$AP_CMD" --arg d "$REPO" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/deny" "$BASH" "$HOOK" | jq -r '.hookSpecificOutput.permissionDecisionReason')
 if [[ "$ap_reason" == *"verify 실패"*"승인 아님: target 불일치"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify 실패 사유가 없다: $ap_reason"; fi
 
 # 꾸민 큰 입력 — 600초 제한을 넘겨 판정 없이 통과(fail-open)하지 않는다(13회차 minor 8): heredoc 본문 400개 · 명령 치환 1만 개 ·
