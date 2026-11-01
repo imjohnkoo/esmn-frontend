@@ -7,6 +7,8 @@ import { matchesOrderContact } from '../../utils/verification'
 import { issueSparkUnit } from '../../utils/spark-issuance'
 import { logEvent } from '../../utils/issuance-log'
 import { isOrderCancelled } from '../../utils/order-status'
+import { checkIssueConsent, hashIp, viewerIp } from '../../utils/issue-consent'
+import { ISSUE_CONSENT, type IssueConsent } from '../../../shared/consent/issue-consent'
 
 // 같은 productOrderId 에 대한 동시 발급 요청 직렬화 (더블클릭/재시도 race 방어).
 // 단일 Nitro 인스턴스 (CodeDeploy EC2 1대) 전제 — 다중 인스턴스 확장 시 DB 레벨
@@ -34,6 +36,7 @@ interface ActivateOrderRequest {
   endDate: string
   startTimeZone: string
   totalPaymentAmount: number
+  consent: IssueConsent
 }
 
 interface EsimResponse {
@@ -74,6 +77,8 @@ interface ActivateOrderResponse {
 }
 
 export default defineEventHandler(async (event): Promise<ActivateOrderResponse> => {
+  // consent_log.accepted_at — 서버가 요청을 받은 시각(클라이언트 시계 불신 · 락 대기 전)
+  const acceptedAt = new Date()
   const body = await readBody<ActivateOrderRequest>(event)
 
   // Validate required fields
@@ -89,6 +94,16 @@ export default defineEventHandler(async (event): Promise<ActivateOrderResponse> 
       statusCode: 400,
       message: 'Missing required fields',
     })
+  }
+
+  // 발급 필수 동의(client-consent-log spec F-4) — 판 · 해시가 서버 상수와 같을 때만. 화면은 data.code 로 «다시 시도» 를 가린다(D-21)
+  const consentCheck = checkIssueConsent(body.consent)
+  if (consentCheck !== 'ok') {
+    logEvent('ORDER_ACTIVATE_REJECTED', 'warn', 'issue consent missing or mismatched', {
+      productOrderId: body.productOrderId,
+      reason: consentCheck === 'missing' ? 'CONSENT_MISSING' : 'CONSENT_MISMATCH',
+    })
+    throw createError({ statusCode: 400, message: 'Consent required', data: { code: 'CONSENT_REQUIRED' } })
   }
 
   const db = useDB()
@@ -171,14 +186,18 @@ export default defineEventHandler(async (event): Promise<ActivateOrderResponse> 
       })
     }
 
-    // 벤더 라우팅 (backend Spark Wave 1) — NULL ≡ maya, 'spark' 는 네이티브 Spark
-    // 발급 경로, 그 외 미지 벤더는 발급 사고 방지 위해 409 fail-closed
-    const provider = planType.provider ?? 'maya'
-    if (provider !== 'maya' && provider !== 'spark') {
-      throw createError({
-        statusCode: 409,
-        message: `Plan type is routed to provider '${provider}' and cannot be issued here`,
+    // 벤더 라우팅 — 'spark' 만 발급한다(client-consent-log spec F-5 · D-8). Maya 는 2026-10 종료라 NULL(옛 «NULL ≡ maya») ·
+    // 'maya' · 미지 벤더 모두 동의 기록 전에 400 — 종료된 Maya 로 보내 발급이 실패하고 Maya tag(구매자 정보)가 나가는 길을 닫는다.
+    // Maya 분기 코드는 아래에 남아 있지만 닿지 않는다(삭제는 별 정리 트랙)
+    const provider: string | null = planType.provider
+    if (provider !== 'spark') {
+      logEvent('ORDER_ACTIVATE_REJECTED', 'warn', 'plan type is not issuable', {
+        productOrderId: body.productOrderId,
+        planTypeId: planType.planTypeId,
+        dbProvider: planType.provider,
+        reason: 'PROVIDER_NOT_ISSUABLE',
       })
+      throw createError({ statusCode: 400, message: 'Plan type is not issuable' })
     }
 
     const quantity = order.quantity || 1
@@ -192,6 +211,42 @@ export default defineEventHandler(async (event): Promise<ActivateOrderResponse> 
       quantity,
       existingEsimCount: existingCount,
     })
+
+    // 동의 기록(spec F-6 · I-1 · I-2) — 거절 판정을 모두 지난 뒤 · 벤더 호출 전 한 자리. 새 eSIM 이 생길 요청만(전량 발급 재조회는 행 0 — D-1).
+    // 실패하면 발급하지 않는다(동의 기록 없는 발급 0). 발급 루프와 트랜잭션으로 묶지 않는다 — 동의는 했으므로 발급이 뒤에서 실패해도 행은 남는다(I-8)
+    if (existingCount < quantity) {
+      const ip = viewerIp(getRequestHeader(event, 'x-forwarded-for'), event.node.req.socket?.remoteAddress)
+      const ipHash = ip ? hashIp(ip, process.env.PII_HMAC_KEY) : null
+      if (ip && !ipHash) {
+        // 평문 IP 는 로그에도 남기지 않는다(I-3)
+        logEvent('CONSENT_IP_HASH_SKIPPED', 'warn', 'PII_HMAC_KEY missing or not 32 bytes — ip_hash NULL', {
+          productOrderId: body.productOrderId,
+        })
+      }
+      try {
+        await db.insert(schema.consentLog).values({
+          channel: 'naver-smartstore',
+          // DB 주문 행의 값 — 바디 orderId 는 대조되지 않은 값이다(D-18)
+          orderRef: order.orderId == null ? null : String(order.orderId),
+          productOrderId: order.productOrderId,
+          consentKind: ISSUE_CONSENT.kind,
+          textVersion: ISSUE_CONSENT.textVersion,
+          textHash: ISSUE_CONSENT.textHash,
+          lineCount: quantity,
+          acceptedAt,
+          actor: 'customer',
+          ipHash,
+          userAgent: getRequestHeader(event, 'user-agent') ?? null,
+        })
+      } catch (e) {
+        // drizzle 은 쿼리 원문 · 파라미터(ip_hash · UA)를 message 에 싣는다 — DB 원인(cause)만 남긴다
+        const cause = (e as { cause?: { message?: string } }).cause?.message ?? (e as Error).message
+        logEvent('CONSENT_LOG_FAILED', 'error', String(cause).split('\n')[0]!, {
+          productOrderId: body.productOrderId,
+        })
+        throw createError({ statusCode: 500, message: 'Failed to record consent', data: { code: 'CONSENT_LOG_FAILED' } })
+      }
+    }
 
     // 발급 완료 후 최신 상태 재조회 → 응답 (Maya/Spark 공용)
     const buildResponse = async (): Promise<ActivateOrderResponse> => {

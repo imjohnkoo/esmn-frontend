@@ -17,6 +17,8 @@
 #        bash .claude/scripts/client-walk-db.sh schema    # 표 만들기(apps/client/server/db/schema.ts — 컨테이너 안)
 #        bash .claude/scripts/client-walk-db.sh seed      # 가짜 주문 ① 발급 완료 · ② 미발급
 #        bash .claude/scripts/client-walk-db.sh counts    # E2E-7 — esim · plan · esim_issuance 행 수(주문별)
+#        bash .claude/scripts/client-walk-db.sh consent-sql <위키 wiki/backend/migrations 폴더>
+#             # consent_log(+ MEMBER ALTER) — 이 표의 주인은 위키 SQL 이라 schema(Drizzle export)는 만들지 않는다(client-consent-log spec E2E-0)
 # 그다음: bash .claude/scripts/client-walk-server.sh dev <port> "$(bash .claude/scripts/client-walk-db.sh url)"
 # 회귀: bash .claude/scripts/client-walk-db.test.sh
 set -euo pipefail
@@ -41,6 +43,9 @@ psql_in() {
 # 준비 판정 — 컨테이너 env 를 버리고 컨테이너 안 루프백 TCP 로(첫 기동의 임시 init 서버는 TCP 를 열지 않는다 — listen_addresses='')
 isready_in() { docker exec "$NAME" env -i PATH=/usr/local/bin:/usr/bin:/bin pg_isready -h 127.0.0.1 -p 5432 -U walk -d walk; }
 NODE="$(command -v node || true)"
+# 위키 마이그레이션 SQL 이 만드는 표 — schema(Drizzle export)는 만들지 않고 표 집합 대조에서도 뺀다(consent-sql 이 만든다)
+WIKI_TABLES='consent_log service_user service_user_identity service_user_order_link service_user_session'
+CONSENT_SQL_FILES='2026-10-01-consent-log-migration.sql 2026-10-15-member-account-migration.sql'
 
 # docker 대상 = 이 기계의 데몬(unix 소켓)만 — 원격 데몬이면 컨테이너 · 가짜 행이 남의 기계에 생긴다
 check_docker() {
@@ -58,7 +63,7 @@ check_bind() {
 }
 
 case "${1:-}" in
-  up | schema | seed | counts) check_docker ;;
+  up | schema | seed | counts | consent-sql) check_docker ;;
 esac
 
 case "${1:-}" in
@@ -92,6 +97,12 @@ case "${1:-}" in
       refuse "스키마 SQL 을 만들지 못했다"
     # 주석을 먼저 걷고(주석 안의 «;» 로 문장 경계를 속이지 못하게) — 검사하는 글자 = 넣는 글자
     sql="$(sed -E 's/--.*$//' <<<"$sql")"
+    # 위키 소유 표의 CREATE TABLE 문장은 뺀다(그 표는 consent-sql 이 위키 SQL 그대로 만든다 — 미러가 아니라 실 DDL 로 시험)
+    sql="$(awk -v skip="$WIKI_TABLES" 'BEGIN { RS = ";"; ORS = ""; n = split(skip, t, " ") } {
+      s = $0; gsub(/^[ \t\n]+/, "", s); drop = 0
+      for (i = 1; i <= n; i++) if (index(s, "CREATE TABLE \"" t[i] "\" (") == 1) drop = 1
+      if (!drop && s != "") print $0 ";"
+    }' <<<"$sql")"
     [[ "$sql" == *'CREATE TABLE'* ]] || refuse "스키마 SQL 에 CREATE TABLE 이 없다"
     ! grep -qE '^[[:space:]]*\\' <<<"$sql" || refuse "스키마 SQL 에 psql 메타 명령(\\ 줄)이 있다"
     # 문장(; 로 나눔)마다 허용 머리로 시작해야 한다 — 들여쓴 DROP · 쪼개진 조각도 거부. ⚠️ 보장은 «문장 머리» 까지(머리 뒤 내용은 보지 않는다) —
@@ -104,7 +115,7 @@ case "${1:-}" in
     want="$(grep -oE '^CREATE TABLE "[^"]+"' <<<"$sql" | sed -E 's/^CREATE TABLE "([^"]+)"$/\1/' | sort)"
     have="$(psql_in -At -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY 1")" ||
       refuse "표 목록을 읽지 못했다"
-    have="$(sort <<<"$have")"
+    have="$(grep -vxF -f <(tr ' ' '\n' <<<"$WIKI_TABLES") <<<"$have" | sort || true)"
     if [[ -n "$have" ]]; then
       # 이미 있으면 같은 표 이름 집합일 때만 «있음» — 반쯤 만든 스키마 · 표가 늘거나 준 스키마는 거부(지우는 명령은 없다 — 사람이 정리).
       # ⚠️ 열 구성까지는 대조하지 않는다 — schema.ts 가 기존 표의 열을 바꾸면 컨테이너를 새로 만들어야 한다
@@ -119,9 +130,11 @@ case "${1:-}" in
   seed)
     check_bind
     psql_in <<'SQL'
-INSERT INTO "plan-type" ("planTypeId", "planNameKr", "planDataTypeKr", "planDataLimitKr", "planDataDuration",
+-- provider: WALK-FRA-7D = spark(발급 경로) · WALK-FRA-7D-NULL = NULL(발급 불가 — client-consent-log spec F-5 · E2E-4)
+INSERT INTO "plan-type" ("planTypeId", "provider", "planNameKr", "planDataTypeKr", "planDataLimitKr", "planDataDuration",
   "planCountriesKr", "planCountriesEng", "planCountriesIso", "timeZones")
-VALUES ('WALK-FRA-7D', '프랑스 eSIM', '매일 1GB', '1GB', 7, ARRAY['프랑스'], ARRAY['France'], ARRAY['FRA'], ARRAY['Europe/Paris'])
+VALUES ('WALK-FRA-7D', 'spark', '프랑스 eSIM', '매일 1GB', '1GB', 7, ARRAY['프랑스'], ARRAY['France'], ARRAY['FRA'], ARRAY['Europe/Paris']),
+  ('WALK-FRA-7D-NULL', NULL, '프랑스 eSIM', '매일 1GB', '1GB', 7, ARRAY['프랑스'], ARRAY['France'], ARRAY['FRA'], ARRAY['Europe/Paris'])
 ON CONFLICT ("planTypeId") DO NOTHING;
 
 INSERT INTO "order" ("productOrderId", "orderId", "productOrderStatus", "productName", "productOption", "placeOrderDate",
@@ -130,7 +143,9 @@ VALUES
   (2026092300000102, 2026092300000101, 'PAYED', '프랑스 eSIM 무제한', '매일 1GB · 7일', now(), 1, 4900, 'WALK-FRA-7D',
    '테스트고객', '010-0000-0001', '테스트고객', '010-0000-0001'),
   (2026092300000202, 2026092300000201, 'PAYED', '프랑스 eSIM 무제한', '매일 1GB · 7일', now(), 1, 4900, 'WALK-FRA-7D',
-   '테스트고객', '010-0000-0002', '테스트고객', '010-0000-0002')
+   '테스트고객', '010-0000-0002', '테스트고객', '010-0000-0002'),
+  (2026092300000302, 2026092300000301, 'PAYED', '프랑스 eSIM 무제한', '매일 1GB · 7일', now(), 1, 4900, 'WALK-FRA-7D-NULL',
+   '테스트고객', '010-0000-0003', '테스트고객', '010-0000-0003')
 ON CONFLICT ("productOrderId") DO NOTHING;
 
 INSERT INTO "esim" ("esimId", "apn", "manualCode", "smdpAddress", "networkStatus", "serviceStatus", "activationCode", "orderProductOrderId")
@@ -138,7 +153,20 @@ VALUES ('WALK-ESIM-0001', 'walk.apn', 'WALK-MANUAL-0001', 'smdp.walk.invalid', '
   'LPA:1$smdp.walk.invalid$WALK-MANUAL-0001', 2026092300000102)
 ON CONFLICT ("esimId") DO NOTHING;
 SQL
-    echo "✔ 가짜 주문 — ① 2026092300000101(발급 완료 1) · ② 2026092300000201(미발급) · 테스트고객 / 010-0000-0001 · 0002"
+    echo "✔ 가짜 주문 — ① 2026092300000101(발급 완료 1) · ② 2026092300000201(미발급) · ③ 2026092300000301(provider NULL · 발급 불가) · 테스트고객 / 010-0000-0001 · 0002 · 0003"
+    ;;
+  consent-sql)
+    check_bind
+    dir="${2:-}"
+    [[ -n "$dir" && -d "$dir" ]] || refuse "위키 migrations 폴더를 준다(예: \$NOMACOM_WIKI/wiki/backend/migrations)"
+    for f in $CONSENT_SQL_FILES; do
+      [[ -f "$dir/$f" ]] || refuse "$dir/$f 가 없다"
+      ! grep -qE '^[[:space:]]*\\' "$dir/$f" || refuse "$f 에 psql 메타 명령(\\ 줄)이 있다"
+    done
+    # 순서대로 — 둘째 파일의 가드 ①이 consent_log 선행을 검사한다 · 파일마다 BEGIN/COMMIT · IF NOT EXISTS 라 다시 돌려도 무해
+    for f in $CONSENT_SQL_FILES; do psql_in -q <"$dir/$f" >/dev/null; done
+    # SQL 파일 검증 쿼리 1 — 14컬럼(이름 · 형 · 길이 · NULL)
+    psql_in -At -c "SELECT column_name, data_type, character_maximum_length, is_nullable FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'consent_log' ORDER BY ordinal_position"
     ;;
   counts)
     psql_in -At <<'SQL'
@@ -150,7 +178,7 @@ UNION ALL SELECT 'esim 전체', count(*) FROM "esim";
 SQL
     ;;
   *)
-    echo "사용: $0 up | schema | seed | counts | url" >&2
+    echo "사용: $0 up | schema | seed | counts | consent-sql <migrations 폴더> | url" >&2
     exit 2
     ;;
 esac

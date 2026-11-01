@@ -10,6 +10,8 @@ import {
   serial,
   jsonb,
   numeric,
+  char,
+  smallint,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
@@ -224,6 +226,27 @@ export const sparkPlans = pgTable('spark_plan', {
   startTimeUtc: timestamp('start_time_utc', { withTimezone: true }), // 사용자 입력 -12h
   costEur: numeric('cost_eur'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+// 발급 동의 기록(client-consent-log spec F-1) — write: client(발급 동의 INSERT · activate) · backend read 0 · 보존 5년(전자상거래법 6조 — DROP · DELETE 금지).
+// 스키마 주인 = backend entity(consent-log.entity.ts) + 위키 마이그레이션 SQL — drizzle-kit push 금지. 이 표는 snake_case(TypeORM camelCase 아님).
+// prod 실측(2026-11-01) 14컬럼 미러 · FK/UNIQUE/CHECK 없음(INSERT 실패 = 발급 차단이라 두지 않는다). service_user_id 는 MEMBER 소관 — 이 트랙은 쓰지 않는다
+export const consentLog = pgTable('consent_log', {
+  consentLogId: bigserial('consent_log_id', { mode: 'number' }).primaryKey(),
+  channel: varchar('channel', { length: 32 }).notNull(),
+  orderRef: varchar('order_ref', { length: 64 }),
+  // 네이버 상품주문번호 16자리 < 2^53 — orders.productOrderId 와 같은 선언
+  productOrderId: bigint('product_order_id', { mode: 'number' }),
+  consentKind: varchar('consent_kind', { length: 32 }).notNull(),
+  textVersion: varchar('text_version', { length: 32 }).notNull(),
+  textHash: char('text_hash', { length: 64 }).notNull(),
+  lineCount: smallint('line_count'),
+  acceptedAt: timestamp('accepted_at', { withTimezone: true }).notNull(),
+  actor: varchar('actor', { length: 32 }).notNull(),
+  ipHash: char('ip_hash', { length: 64 }),
+  userAgent: varchar('user_agent'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  serviceUserId: bigint('service_user_id', { mode: 'number' }),
 })
 
 export const ordersRelations = relations(orders, ({ many }) => ({

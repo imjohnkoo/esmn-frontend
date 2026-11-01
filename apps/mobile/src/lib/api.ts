@@ -60,8 +60,10 @@ export const api = {
   verifyOrder(body: VerifyOrderRequest): Promise<VerifyOrderResponse> {
     return request<VerifyOrderRequest, VerifyOrderResponse>('/api/v1/verify', 'POST', body)
   },
-  activateOrder(body: ActivateOrderRequest): Promise<ActivateOrderResponse> {
-    return request<ActivateOrderRequest, ActivateOrderResponse>('/api/v1/activate', 'POST', body)
+  // consent 없이 보낸다 — mobile 은 발급 동의 UI 가 없어 동의를 꾸며 보내지 않는다. 서버는 400(CONSENT_REQUIRED)으로 거절한다
+  // (client-consent-log spec F-8 · 알려진 영향 — 동의 UI 는 mobile 트랙 몫)
+  activateOrder(body: Omit<ActivateOrderRequest, 'consent'>): Promise<ActivateOrderResponse> {
+    return request<Omit<ActivateOrderRequest, 'consent'>, ActivateOrderResponse>('/api/v1/activate', 'POST', body)
   },
   health(): Promise<{ status: string; app: string; commit: string; timestamp: string }> {
     return request<undefined, { status: string; app: string; commit: string; timestamp: string }>(

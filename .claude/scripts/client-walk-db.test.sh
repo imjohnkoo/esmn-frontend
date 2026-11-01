@@ -217,6 +217,52 @@ echo "0.0.0.0:55432" >"$FAKE/port"
 [[ "$(run schema)" == 2 ]] && ok || ng "schema(묶임 다름) — exit 2"
 expect_calls "schema(묶임 다름)" "docker port nomacom-walk-pg 5432/tcp"
 
+# ── schema — 위키 소유 표(consent_log · service_user*)는 Drizzle export 에서 빼고 표 집합 대조에서도 뺀다(client-consent-log E2E-0)
+reset_state
+printf '%s\n%s\n' "$GOOD_SQL" 'CREATE TABLE "consent_log" (
+	"consent_log_id" bigserial PRIMARY KEY NOT NULL
+);' >"$FAKE/export.sql"
+[[ "$(run schema)" == 0 ]] && ok || ng "schema(consent_log 포함 export) — exit 0"
+applied="$(cat "$FAKE/applied.sql" 2>/dev/null)"
+grep -q 'consent_log' <<<"$applied" && ng "schema — consent_log 는 만들지 않는다(위키 SQL 몫)" || ok
+grep -q '^CREATE TABLE "esim"' <<<"$applied" && ok || ng "schema — 나머지 표는 그대로 만든다"
+reset_state
+printf '%s\n%s\n' "$GOOD_SQL" 'CREATE TABLE "consent_log" ("a" int);' >"$FAKE/export.sql"
+printf '%s\n' consent_log esim service_user service_user_identity service_user_order_link service_user_session >"$FAKE/tables"
+[[ "$(run schema)" == 0 ]] && ok || ng "schema(위키 표가 더 있음) — 같은 집합으로 보고 건너뜀"
+grep -q -- '-q -c' <<<"$(calls)" && ng "schema(위키 표가 더 있음) — 넣으면 안 됨" || ok
+
+# ── consent-sql — 위키 SQL 2개를 순서대로 컨테이너 안 psql 표준 입력으로 · 검증 쿼리 · 그 밖의 호출 0
+MIG="$FAKE/migrations"
+mkdir -p "$MIG"
+printf 'BEGIN;\nCREATE TABLE IF NOT EXISTS consent_log (x int);\nCOMMIT;\n' >"$MIG/2026-10-01-consent-log-migration.sql"
+printf 'BEGIN;\nALTER TABLE consent_log ALTER COLUMN x DROP NOT NULL;\nCOMMIT;\n' >"$MIG/2026-10-15-member-account-migration.sql"
+reset_state
+[[ "$(run consent-sql "$MIG")" == 0 ]] && ok || ng "consent-sql — exit 0"
+expect_calls "consent-sql" "docker port nomacom-walk-pg 5432/tcp
+$P -q
+$P -q
+$P -At -c SELECT column_name, data_type, character_maximum_length, is_nullable FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'consent_log' ORDER BY ordinal_position"
+reset_state
+[[ "$(run consent-sql)" == 2 ]] && ok || ng "consent-sql(폴더 없음) — exit 2"
+expect_calls "consent-sql(폴더 없음)" "docker port nomacom-walk-pg 5432/tcp"
+reset_state
+mv "$MIG/2026-10-15-member-account-migration.sql" "$MIG/member.sql.old"
+[[ "$(run consent-sql "$MIG")" == 2 ]] && ok || ng "consent-sql(파일 하나 없음) — exit 2 · 아무것도 넣지 않는다"
+expect_calls "consent-sql(파일 하나 없음)" "docker port nomacom-walk-pg 5432/tcp"
+printf '\\! nc -z gateway.docker.internal 55432\n' >"$MIG/2026-10-15-member-account-migration.sql"
+reset_state
+[[ "$(run consent-sql "$MIG")" == 2 ]] && ok || ng "consent-sql(메타 명령 줄) — exit 2"
+expect_calls "consent-sql(메타 명령 줄)" "docker port nomacom-walk-pg 5432/tcp"
+reset_state
+echo "0.0.0.0:55432" >"$FAKE/port"
+[[ "$(run consent-sql "$MIG")" == 2 ]] && ok || ng "consent-sql(묶임 다름) — exit 2"
+for cmd in consent-sql; do
+  reset_state
+  [[ "$(DOCKER_HOST=tcp://remote.example:2376 run "$cmd" "$MIG")" == 2 ]] && ok || ng "DOCKER_HOST 원격 · $cmd — exit 2"
+  expect_calls "DOCKER_HOST 원격 · $cmd" ""
+done
+
 # ── seed · counts — 컨테이너 안 psql 한 번씩만
 reset_state
 [[ "$(run seed)" == 0 ]] && ok || ng "seed — exit 0"
@@ -225,6 +271,7 @@ $P"
 grep -q "ON CONFLICT" "$FAKE/seed.sql" 2>/dev/null && ok || ng "seed — SQL 이 컨테이너 psql 의 표준 입력으로"
 grep -qE '^[[:space:]]*\\' "$FAKE/seed.sql" && ng "seed — psql 메타 명령 줄 금지" || ok
 # 전화번호 꼴(하이픈 · 공백 · +82 무관)은 전부 010-0000-xxxx 대역 — 숫자만 남겨 01X 로 시작하는 10~11자리를 모은다
+grep -q "'WALK-FRA-7D', 'spark'" "$FAKE/seed.sql" && grep -q "'WALK-FRA-7D-NULL', NULL" "$FAKE/seed.sql" && ok || ng "seed — provider spark · NULL 상품 둘"
 phones="$(grep -oE "(\+82[ .-]?|0)1[016789][ .-]?[0-9]{3,4}[ .-]?[0-9]{4}" "$FAKE/seed.sql" | tr -d ' +.-' | sed -E 's/^82/0/' | sort -u)"
 [[ -n "$phones" ]] && ! grep -qvE '^0100000[0-9]{4}$' <<<"$phones" && ok || ng "seed — 전화는 010-0000-xxxx 대역만: $phones"
 reset_state
