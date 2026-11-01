@@ -155,7 +155,8 @@ if (( ${#cmd} <= 256 )) && [[ "$cmd" =~ $approval_re ]]; then
   ap_msg=$(tail -n 1 "$ap_err" 2>/dev/null); rm -f "$ap_err"
   # 통과는 allow 를 명시 출력한다 — --consume 이 이미 ID 를 썼으므로 뒤의 권한 창에서 거부되면 승인이 헛되이 사라진다(브리프 v5)
   if (( ap_rc == 0 )); then
-    jq -cn --arg r "승인 ID $ap_id verify ok — prod 승격 1회" '{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow", "permissionDecisionReason": $r}}'
+    # 고정 글로 낸다(ID 는 영숫자 · 하이픈뿐 — jq 가 여기서 실패해 «소모된 ID + 권한 창» 이 되지 않게)
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"승인 ID %s verify ok — prod 승격 1회"}}\n' "$ap_id"
     exit 0
   fi
   (( ap_rc == 137 )) && ap_msg="10초 안에 끝나지 않았습니다"

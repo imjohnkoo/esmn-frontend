@@ -33,14 +33,17 @@ mkstub "$APH/crash" 'raise RuntimeError("stub crash")'
 mkdir -p "$APH/missing"
 export GUARD_PROD_PUSH_HUB="$APH/ok"
 
-run() { # run <expect: allow|block> <command>
+run() { # run <expect: allow|approve|block> <command> — approve = 승인 예외의 permissionDecision allow(그 밖의 통과는 빈 출력이어야 한다)
   local expect="$1" cmd="$2" out actual
   # 훅은 이 테스트를 돌린 bash 로 부른다(/bin/bash test.sh 가 정말 3.2 로 돌게 — shebang 의 env bash 를 타지 않는다)
   out=$(jq -n --arg c "$cmd" --arg d "$REPO" '{cwd: $d, tool_input: {command: $c}}' | "$BASH" "$HOOK")
-  # 차단 = permissionDecision deny 인 JSON 하나 · 통과 = 빈 출력(스캐너) 또는 permissionDecision allow(승인 예외 — 브리프 v5). 그 밖의 출력은 실패로 센다
+  # 차단 = permissionDecision deny 인 JSON 하나 · 통과 = 빈 출력 · 승인 예외 통과 = permissionDecision allow(브리프 v5 — approve 로 따로 센다:
+  #   스캐너 통과가 allow 를 내기 시작하면 권한 창이 전부 사라지므로 allow 케이스는 빈 출력만 받는다). 그 밖의 출력은 실패로 센다
   local dec; dec=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)
-  if [[ -z "$out" || "$dec" == allow ]]; then
+  if [[ -z "$out" ]]; then
     actual="allow"
+  elif [[ "$dec" == allow ]]; then
+    actual="approve"
   elif [[ "$dec" == deny ]]; then
     actual="block"
   else
@@ -165,19 +168,19 @@ ap_run() { # ap_run <허브 스텁> <expect> <command>
   GUARD_PROD_PUSH_HUB="$APH/$1" run "$2" "$3"
 }
 ap_calls() { wc -l < "$APH/ok/calls" 2>/dev/null | tr -d ' ' || echo 0; }
-ap_run ok allow "$AP_CMD"                                                   # ① 허용 형태 · verify exit 0
+ap_run ok approve "$AP_CMD"                                                   # ① 허용 형태 · verify exit 0
 # ① 통과는 allow JSON 을 명시 출력한다(권한 창을 건너뛴다 — 브리프 v5)
 out=$(jq -n --arg c "$AP_CMD" --arg d "$REPO" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
-if [[ "$(printf '%s' "$out" | jq -c .)" == '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"승인 ID AP-20261102-001 verify ok — prod 승격 1회"}}' ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 승인 통과 출력이 allow JSON 이 아니다: $out"; fi
+if [[ "$out" == '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"승인 ID AP-20261102-001 verify ok — prod 승격 1회"}}' ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 승인 통과 출력이 allow JSON 이 아니다: $out"; fi
 # ① 스텁이 받은 argv = verify <ID> --action prod-promote --target esmn-frontend@<그 sha>:prod --consume
 ap_last=$(tail -n 1 "$APH/ok/calls" 2>/dev/null)
 if [[ "$(printf '%s' "$ap_last" | jq -c .argv)" == "[\"verify\",\"AP-20261102-001\",\"--action\",\"prod-promote\",\"--target\",\"esmn-frontend@$AP_SHA:prod\",\"--consume\"]" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify argv 가 다르다: $ap_last"; fi
 # ⑥ 세션 env 의 저장소 · 정책 경로 · NOMACOM_MANAGER 는 verify 에 닿지 않는다(unset · 허브 고정 경로)
-ESMN_APPROVAL_DIR=/tmp/x ESMN_PM_REGISTRY=/tmp/r ESMN_APPROVAL_POLICY=/tmp/p NOMACOM_MANAGER=/tmp/evil ap_run ok allow "$AP_CMD"
+ESMN_APPROVAL_DIR=/tmp/x ESMN_PM_REGISTRY=/tmp/r ESMN_APPROVAL_POLICY=/tmp/p NOMACOM_MANAGER=/tmp/evil ap_run ok approve "$AP_CMD"
 ap_last=$(tail -n 1 "$APH/ok/calls" 2>/dev/null)
 if [[ "$(printf '%s' "$ap_last" | jq -c .env)" == "{\"ESMN_APPROVAL_DIR\":null,\"ESMN_PM_REGISTRY\":null,\"ESMN_APPROVAL_POLICY\":null,\"NOMACOM_MANAGER\":\"$APH/ok\"}" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 세션 env 가 verify 에 샜다: $ap_last"; fi
-ap_run ok allow "ESMN_APPROVAL_ID=AP-20261102-001 git push origin $AP_SHA:refs/heads/prod"
-ap_run ok allow "  $AP_CMD  "                                                # 앞뒤 공백만은 같은 형태
+ap_run ok approve "ESMN_APPROVAL_ID=AP-20261102-001 git push origin $AP_SHA:refs/heads/prod"
+ap_run ok approve "  $AP_CMD  "                                                # 앞뒤 공백만은 같은 형태
 ap_run deny block "$AP_CMD"                                                 # ② 같은 형태 · verify exit 1
 ap_n=$(ap_calls)
 ap_run ok block "git push origin $AP_SHA:prod"                              # ③ ID 없음 → 현행 차단
