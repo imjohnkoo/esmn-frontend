@@ -27,6 +27,7 @@ mkstub "$APH/ok" 'ok = len(a) == 7 and a[0] == "verify" and re.fullmatch(r"AP-[A
 sys.exit(0) if ok else (print("stub: 인자 불일치 %r" % a, file=sys.stderr), sys.exit(1))'
 mkstub "$APH/deny" 'print("승인 아님: target 불일치", file=sys.stderr); sys.exit(1)'
 mkstub "$APH/slow" 'time.sleep(30)'
+mkstub "$APH/crash" 'raise RuntimeError("stub crash")'
 mkdir -p "$APH/missing"
 export GUARD_PROD_PUSH_HUB="$APH/ok"
 
@@ -181,6 +182,23 @@ ap_run missing block "$AP_CMD"                                              # �
 SECONDS=0
 ap_run slow block "$AP_CMD"                                                 # verify 10초 초과 → 차단
 if ((SECONDS > 20)); then fail=$((fail + 1)); echo "  ⛔ verify 시간 초과가 10초에 끊기지 않았다: ${SECONDS}초"; fi
+# 예외 꼴이지만 verify 전에 막는 것 — 승인을 써 버리지 않는다(QA ⑥ minor 2 · 보안 리뷰): 끝 CR · NUL · 다른 리포 origin · GIT_DIR
+ap_n=$(ap_calls)
+ap_run ok block "$AP_CMD"$'\r'
+out=$(printf '{"tool_input":{"command":"%s\\u0000"}}' "$AP_CMD" | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+if [[ "$out" == *'"deny"'* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ NUL 든 승인 꼴이 통과했다"; fi
+ap_other=$(mktemp -d); git -C "$ap_other" init -q && git -C "$ap_other" remote add origin git@github.com:imjohnkoo/esmn-backend.git
+out=$(jq -n --arg c "$AP_CMD" --arg d "$ap_other" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+if [[ "$out" == *'"deny"'*"origin push URL"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 다른 리포 origin 에서 승인 꼴이 통과했다: $out"; fi
+GIT_DIR=/tmp/x ap_run ok block "$AP_CMD"
+if [[ "$(ap_calls)" == "$ap_n" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify 전에 막을 꼴이 verify 를 불렀다"; fi
+# 끝 공백이 길어도 빨리 판정한다(256자 넘으면 예외 판정 자체를 하지 않는다 — 다듬기가 600초를 넘겨 판정 없이 통과하던 QA ⑥ major)
+SECONDS=0
+ap_run ok block "git push origin HEAD:prod$(printf '%*s' 200000 '')"
+if ((SECONDS > 20)); then fail=$((fail + 1)); echo "  ⛔ 끝 공백 20만 자 판정이 느리다: ${SECONDS}초"; fi
+# verify 가 죽으면 사유는 stderr 마지막 줄(Traceback 첫 줄 말고)
+ap_reason=$(jq -n --arg c "$AP_CMD" '{tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/crash" "$BASH" "$HOOK" | jq -r '.hookSpecificOutput.permissionDecisionReason')
+if [[ "$ap_reason" == *"RuntimeError: stub crash"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify 크래시 사유가 마지막 줄이 아니다: $ap_reason"; fi
 # 차단 사유에 verify stderr 한 줄이 실린다
 ap_reason=$(jq -n --arg c "$AP_CMD" '{tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/deny" "$BASH" "$HOOK" | jq -r '.hookSpecificOutput.permissionDecisionReason')
 if [[ "$ap_reason" == *"verify 실패"*"승인 아님: target 불일치"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify 실패 사유가 없다: $ap_reason"; fi

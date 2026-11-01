@@ -126,24 +126,31 @@ block() {
 #     ESMN_APPROVAL_ID=AP-<영숫자·하이픈> git push origin <40자 소문자 hex>:prod      (또는 :refs/heads/prod)
 #   허브 approval.py verify --consume 이 그 sha 에 묶인 prod-promote 승인을 확인하고 once 사용을 원장에 기록하면(exit 0) 통과 — 같은 ID 두 번째는
 #   허브가 거부한다 · 그 밖(verify ≠ 0 · 스크립트 없음 · 10초 초과)은 차단. 허브는 고정 경로(세션 env 의 NOMACOM_MANAGER 를 믿지 않는다 —
-#   GUARD_PROD_PUSH_HUB 는 테스트 전용)이고, 저장소 · 정책 경로 env(ESMN_APPROVAL_DIR · ESMN_PM_REGISTRY · ESMN_APPROVAL_POLICY)는 지우고 부른다.
+#   GUARD_PROD_PUSH_HUB 는 테스트 전용)이고, 저장소 · 정책 경로 env(ESMN_APPROVAL_DIR · ESMN_PM_REGISTRY · ESMN_APPROVAL_POLICY)는 지우고 ·
+#   python3 -I(PYTHONPATH · PYTHONSTARTUP · 사용자 site · cwd 무시)로 부른다. 사유는 stderr 마지막 줄(Traceback 첫 줄 말고).
 #   형태가 안 맞으면(짧은 sha · 변수 · force · + · 세그먼트 · HEAD:prod · 다른 원격) 아래 스캐너가 지금처럼 판정한다.
+#   판정은 256자 이하에서만(긴 글을 다듬다 600초를 넘겨 판정 없이 통과하지 않게 — QA ⑥ major) · 앞뒤 공백은 공백 · 탭 · LF 만(CR · NUL 은 승인만
+#   써 버리고 prod 에 못 닿는다) · origin push URL(훅 입력의 cwd 기준)이 이 리포가 아니거나 GIT_DIR · GIT_WORK_TREE 가 있으면 verify 전에 차단(승인을 쓰지 않는다).
 PROD_MSG="prod 푸시 차단 — admin/client production 배포가 즉시 트리거됩니다. nomacomfe-prod-push-check 스킬로 pre-flight 를 마치고 사용자 명시 승인을 받으세요."
-approval_re='^ESMN_APPROVAL_ID=(AP-[A-Za-z0-9-]+) git push origin ([0-9a-f]{40}):(refs/heads/)?prod$'
-approval_cmd="${cmd#"${cmd%%[![:space:]]*}"}"; approval_cmd="${approval_cmd%"${approval_cmd##*[![:space:]]}"}"
-if [[ "$approval_cmd" =~ $approval_re ]]; then
+approval_re=$'^[ \t\n]*ESMN_APPROVAL_ID=(AP-[A-Za-z0-9-]+) git push origin ([0-9a-f]{40}):(refs/heads/)?prod[ \t\n]*$'
+if (( ${#cmd} <= 256 )) && [[ "$cmd" =~ $approval_re ]]; then
   ap_id="${BASH_REMATCH[1]}"; ap_sha="${BASH_REMATCH[2]}"
+  printf '%s' "$input" | jq -e '.tool_input.command | contains("\u0000") | not' >/dev/null 2>&1 || block "$PROD_MSG — 승인 예외: 명령에 NUL 글자가 있습니다."
+  [[ -z "${GIT_DIR+x}${GIT_WORK_TREE+x}" ]] || block "$PROD_MSG — 승인 예외: GIT_DIR · GIT_WORK_TREE 가 설정돼 있어 push 대상 리포를 확인할 수 없습니다."
+  ap_cwd=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)
+  ap_url=$(git -C "${ap_cwd:-$PWD}" remote get-url --push origin 2>/dev/null)
+  [[ "$ap_url" =~ [:/]imjohnkoo/(esmn|nomacom)-frontend(\.git)?/?$ ]] || block "$PROD_MSG — 승인 예외: origin push URL 이 esmn-frontend 가 아닙니다(${ap_url:-없음})."
   ap_hub="${GUARD_PROD_PUSH_HUB:-$HOME/dev/current-projects/esmn-manager}"
   [[ -f "$ap_hub/scripts/approval.py" ]] || block "$PROD_MSG — verify 실패: 허브 승인 스크립트가 없습니다($ap_hub/scripts/approval.py)."
   ap_err=$(mktemp) || block "$PROD_MSG — verify 실패: 임시 파일을 만들지 못했습니다."
   env -u ESMN_APPROVAL_DIR -u ESMN_PM_REGISTRY -u ESMN_APPROVAL_POLICY NOMACOM_MANAGER="$ap_hub" \
-    python3 "$ap_hub/scripts/approval.py" verify "$ap_id" --action prod-promote --target "esmn-frontend@$ap_sha:prod" --consume >/dev/null 2>"$ap_err" &
+    python3 -I "$ap_hub/scripts/approval.py" verify "$ap_id" --action prod-promote --target "esmn-frontend@$ap_sha:prod" --consume >/dev/null 2>"$ap_err" &
   ap_pid=$!
   ( sleep 10; kill -9 "$ap_pid" ) >/dev/null 2>&1 &
   ap_watch=$!
   wait "$ap_pid" 2>/dev/null; ap_rc=$?
   kill "$ap_watch" 2>/dev/null; wait "$ap_watch" 2>/dev/null
-  ap_msg=$(head -n 1 "$ap_err" 2>/dev/null); rm -f "$ap_err"
+  ap_msg=$(tail -n 1 "$ap_err" 2>/dev/null); rm -f "$ap_err"
   (( ap_rc == 0 )) && exit 0
   (( ap_rc == 137 )) && ap_msg="10초 안에 끝나지 않았습니다"
   block "$PROD_MSG — 승인 ID $ap_id · verify 실패(exit $ap_rc): ${ap_msg:-사유 없음}"
