@@ -201,6 +201,11 @@ ap_origin https://evil.example/imjohnkoo/esmn-frontend
 ap_origin git@github.com:evil/imjohnkoo/esmn-frontend.git
 ap_origin /tmp/x/imjohnkoo/nomacom-frontend
 ap_origin git@github.com:imjohnkoo/esmn-frontend.git git@evil:x/y.git        # pushurl 둘 — git 은 둘 다에 민다
+# 좋은 URL 이 첫 pushurl 이어도(--all 없이 첫 줄만 보면 통과하던 꼴 — 재검 m1) 막혀야 한다
+ap_d=$(mktemp -d); git -C "$ap_d" init -q; git -C "$ap_d" remote add origin git@github.com:imjohnkoo/esmn-frontend.git
+git -C "$ap_d" config --add remote.origin.pushurl git@github.com:imjohnkoo/esmn-frontend.git; git -C "$ap_d" config --add remote.origin.pushurl git@evil:x/y.git
+out=$(jq -n --arg c "$AP_CMD" --arg d "$ap_d" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+if [[ "$out" == *'"deny"'*"origin push URL"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 좋은 URL 뒤 다른 pushurl 이 있는데 승인 꼴이 통과했다: $out"; fi
 GIT_DIR=/tmp/x ap_run ok block "$AP_CMD"
 if [[ "$(ap_calls)" == "$ap_n" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify 전에 막을 꼴이 verify 를 불렀다"; fi
 # 끝 공백이 길어도 빨리 판정한다(256자 넘으면 예외 판정 자체를 하지 않는다 — 다듬기가 600초를 넘겨 판정 없이 통과하던 QA ⑥ major)
