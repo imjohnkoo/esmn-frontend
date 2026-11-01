@@ -122,6 +122,33 @@ block() {
   exit 0
 }
 
+# ⭐ 2026-11 승인 예외 1단(ROLE-LAYER D21 · R1-5) — 스캐너 앞. 명령 전체가 정확히 이 한 형태일 때만(앞뒤 공백 외 다른 글자 · 세그먼트 · 리다이렉트 없음):
+#     ESMN_APPROVAL_ID=AP-<영숫자·하이픈> git push origin <40자 소문자 hex>:prod      (또는 :refs/heads/prod)
+#   허브 approval.py verify --consume 이 그 sha 에 묶인 prod-promote 승인을 확인하고 once 사용을 원장에 기록하면(exit 0) 통과 — 같은 ID 두 번째는
+#   허브가 거부한다 · 그 밖(verify ≠ 0 · 스크립트 없음 · 10초 초과)은 차단. 허브는 고정 경로(세션 env 의 NOMACOM_MANAGER 를 믿지 않는다 —
+#   GUARD_PROD_PUSH_HUB 는 테스트 전용)이고, 저장소 · 정책 경로 env(ESMN_APPROVAL_DIR · ESMN_PM_REGISTRY · ESMN_APPROVAL_POLICY)는 지우고 부른다.
+#   형태가 안 맞으면(짧은 sha · 변수 · force · + · 세그먼트 · HEAD:prod · 다른 원격) 아래 스캐너가 지금처럼 판정한다.
+PROD_MSG="prod 푸시 차단 — admin/client production 배포가 즉시 트리거됩니다. nomacomfe-prod-push-check 스킬로 pre-flight 를 마치고 사용자 명시 승인을 받으세요."
+approval_re='^ESMN_APPROVAL_ID=(AP-[A-Za-z0-9-]+) git push origin ([0-9a-f]{40}):(refs/heads/)?prod$'
+approval_cmd="${cmd#"${cmd%%[![:space:]]*}"}"; approval_cmd="${approval_cmd%"${approval_cmd##*[![:space:]]}"}"
+if [[ "$approval_cmd" =~ $approval_re ]]; then
+  ap_id="${BASH_REMATCH[1]}"; ap_sha="${BASH_REMATCH[2]}"
+  ap_hub="${GUARD_PROD_PUSH_HUB:-$HOME/dev/current-projects/esmn-manager}"
+  [[ -f "$ap_hub/scripts/approval.py" ]] || block "$PROD_MSG — verify 실패: 허브 승인 스크립트가 없습니다($ap_hub/scripts/approval.py)."
+  ap_err=$(mktemp) || block "$PROD_MSG — verify 실패: 임시 파일을 만들지 못했습니다."
+  env -u ESMN_APPROVAL_DIR -u ESMN_PM_REGISTRY -u ESMN_APPROVAL_POLICY NOMACOM_MANAGER="$ap_hub" \
+    python3 "$ap_hub/scripts/approval.py" verify "$ap_id" --action prod-promote --target "esmn-frontend@$ap_sha:prod" --consume >/dev/null 2>"$ap_err" &
+  ap_pid=$!
+  ( sleep 10; kill -9 "$ap_pid" ) >/dev/null 2>&1 &
+  ap_watch=$!
+  wait "$ap_pid" 2>/dev/null; ap_rc=$?
+  kill "$ap_watch" 2>/dev/null; wait "$ap_watch" 2>/dev/null
+  ap_msg=$(head -n 1 "$ap_err" 2>/dev/null); rm -f "$ap_err"
+  (( ap_rc == 0 )) && exit 0
+  (( ap_rc == 137 )) && ap_msg="10초 안에 끝나지 않았습니다"
+  block "$PROD_MSG — 승인 ID $ap_id · verify 실패(exit $ap_rc): ${ap_msg:-사유 없음}"
+fi
+
 # 아주 긴 명령(512KB 초과 — 실제 명령 1만 6천 건 중 가장 긴 것이 34KB)은 판정 불가로 막는다. 큰 입력은 꼴에 따라 크기보다 빨리 느려져
 #   600초 제한을 넘기면 판정 없이 통과(fail-open)하기 때문이다(13회차 minor 8 — 개수 상한만으로는 모든 꼴을 막지 못한다)
 if (( ${#cmd} > 524288 )); then
@@ -652,8 +679,6 @@ scan_shell() {
   END { INNERS = ""; DEEP = 0; NSUB = 0; NUNCL = 0; RES = scan(ALL, 0); if (DEEP) exit 3; gsub(/\001/, " ", RES); gsub(/\001/, " ", INNERS); printf "%s\n%s\n", RES, INNERS }
   '
 }
-
-PROD_MSG="prod 푸시 차단 — admin/client production 배포가 즉시 트리거됩니다. nomacomfe-prod-push-check 스킬로 pre-flight 를 마치고 사용자 명시 승인을 받으세요."
 
 check_git_push() { # $1 = «git push» 뒤 인자(스캐너가 정리한 글)
   local args=" $1 "

@@ -1,7 +1,7 @@
 # 배포 흐름 (CodeDeploy + GitHub Actions)
 
 > **상태 (2026-09-02 갱신)**: 배포 자산은 **구축 완료**다 — `.github/workflows/{admin,client}-production.yml` · `appspec.yml` · `deploy/scripts/{before,after}_deploy.sh` · `apps/{admin,client}/Dockerfile` · `deploy/cloudfront/` 모두 실재한다. SSM 경로는 `.claude/rules/ssm-paths.md` 에서 확정됐다.
-> ✅ **검증 3층(2026-09-02 · INF-1~3)**: 로컬 · PR/dev CI(`ci.yml` — pull_request + dev push) · Dockerfile typecheck 게이트. ⚠️ 단 게이트는 «타입» 만 본다 — 동작 검증은 `nomacomfe-prod-push-check` 의 UI 확인 몫이고, `guard-prod-push.sh` 의 prod 차단이 사람 승인을 강제한다(남은 갭: admin staging 부재 — INF-4).
+> ✅ **검증 3층(2026-09-02 · INF-1~3)**: 로컬 · PR/dev CI(`ci.yml` — pull_request + dev push) · Dockerfile typecheck 게이트. ⚠️ 단 게이트는 «타입» 만 본다 — 동작 검증은 `nomacomfe-prod-push-check` 의 UI 확인 몫이고, `guard-prod-push.sh` 의 prod 차단이 사람 승인을 강제한다 — 2026-11 부터 승인 ID(`ESMN_APPROVAL_ID` · 허브 `approval.py verify --consume` — 한 ID 한 번)가 있는 그 sha 하나만 통과 — 워커 push 경로(ROLE-LAYER D21)(남은 갭: admin staging 부재 — INF-4).
 
 ```
 GitHub push (prod branch)
