@@ -227,7 +227,7 @@ export default defineEventHandler(async (event): Promise<ActivateOrderResponse> 
         await db.insert(schema.consentLog).values({
           channel: 'naver-smartstore',
           // DB 주문 행의 값 — 바디 orderId 는 대조되지 않은 값이다(D-18)
-          orderRef: String(order.orderId),
+          orderRef: order.orderId == null ? null : String(order.orderId),
           productOrderId: order.productOrderId,
           consentKind: ISSUE_CONSENT.kind,
           textVersion: ISSUE_CONSENT.textVersion,
@@ -239,7 +239,9 @@ export default defineEventHandler(async (event): Promise<ActivateOrderResponse> 
           userAgent: getRequestHeader(event, 'user-agent') ?? null,
         })
       } catch (e) {
-        logEvent('CONSENT_LOG_FAILED', 'error', String((e as Error).message), {
+        // drizzle 은 쿼리 원문 · 파라미터(ip_hash · UA)를 message 에 싣는다 — DB 원인(cause)만 남긴다
+        const cause = (e as { cause?: { message?: string } }).cause?.message ?? (e as Error).message
+        logEvent('CONSENT_LOG_FAILED', 'error', String(cause).split('\n')[0]!, {
           productOrderId: body.productOrderId,
         })
         throw createError({ statusCode: 500, message: 'Failed to record consent', data: { code: 'CONSENT_LOG_FAILED' } })

@@ -25,7 +25,8 @@ vi.mock('../../utils/spark-issuance', () => ({
   issueSparkUnit: (...a: unknown[]) => issueSparkUnit(...a),
 }))
 vi.mock('../../utils/maya-api', () => ({ useMayaApi: () => ({ createEsim }) }))
-vi.mock('../../utils/issuance-log', () => ({ logEvent: vi.fn() }))
+const logEvent = vi.fn()
+vi.mock('../../utils/issuance-log', () => ({ logEvent: (...a: unknown[]) => logEvent(...a) }))
 
 // Nitro 자동 import 대역
 vi.stubGlobal('defineEventHandler', (fn: unknown) => fn)
@@ -147,6 +148,7 @@ describe('activate — 동의 기록(AC-1 · AC-4 · AC-6 · I-1)', () => {
   it('정상 — consent_log 1행(§④.2 값) 뒤에 부족분만 Spark 발급', async () => {
     await handler(event(body()))
     expect(db.insert).toHaveBeenCalledTimes(1)
+    expect(db.insert).toHaveBeenCalledWith(expect.objectContaining({ _: 'consent_log' }))
     expect(insertValues).toHaveBeenCalledTimes(1)
     const row = insertValues.mock.calls[0]![0]
     expect(row).toEqual({
@@ -170,6 +172,14 @@ describe('activate — 동의 기록(AC-1 · AC-4 · AC-6 · I-1)', () => {
     db.query.orders.findFirst.mockResolvedValue({ ...ORDER, esims: [{}] })
     await handler(event(body()))
     expect(calls).toEqual(['insert', 'spark'])
+    // line_count = 주문 수량(이번에 발급할 수가 아니다 — spec §④.2)
+    expect(insertValues.mock.calls[0]![0]).toMatchObject({ lineCount: 2 })
+  })
+
+  it('DB 주문 행에 orderId 가 없으면 order_ref NULL(«null» 글자 아님)', async () => {
+    db.query.orders.findFirst.mockResolvedValue({ ...ORDER, orderId: null, esims: [] })
+    await handler(event(body()))
+    expect(insertValues.mock.calls[0]![0]).toMatchObject({ orderRef: null })
   })
 
   it('키 없음 → ip_hash NULL · UA 없음 → NULL · 발급은 진행', async () => {
@@ -180,10 +190,17 @@ describe('activate — 동의 기록(AC-1 · AC-4 · AC-6 · I-1)', () => {
   })
 
   it('INSERT 실패 → 500 CONSENT_LOG_FAILED · 벤더 0(AC-4)', async () => {
-    insertValues.mockRejectedValue(new Error('relation "consent_log" does not exist'))
+    // drizzle 오류 모양 — message 에 쿼리 · 파라미터, 원인은 cause
+    insertValues.mockRejectedValue(
+      Object.assign(new Error('Failed query: insert into "consent_log" …\nparams: naver-smartstore,9df8158b,Mozilla'), {
+        cause: new Error('relation "consent_log" does not exist'),
+      }),
+    )
     const err = await handler(event(body())).catch((e) => e)
     expect(err.statusCode).toBe(500)
     expect(err.data).toEqual({ code: 'CONSENT_LOG_FAILED' })
+    const failed = logEvent.mock.calls.find((c) => c[0] === 'CONSENT_LOG_FAILED')!
+    expect(failed[2]).toBe('relation "consent_log" does not exist') // 원인만 — 파라미터(ip_hash · UA) 0
     expect(issueSparkUnit).not.toHaveBeenCalled()
     expect(createEsim).not.toHaveBeenCalled()
   })
