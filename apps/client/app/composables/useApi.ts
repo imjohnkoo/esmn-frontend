@@ -6,6 +6,7 @@ import type {
   WithdrawCancelResponse,
 } from '~/types/api';
 import type { Order } from '~/types/order';
+import type { IssueConsent } from '#shared/consent/issue-consent';
 
 export const useApi = () => {
   const config = useRuntimeConfig();
@@ -21,9 +22,9 @@ export const useApi = () => {
   };
 
   /**
-   * Activate order and generate eSIM QR codes
+   * Activate order and generate eSIM QR codes — consent 는 고객이 체크한 발급 동의(체크된 상태에서만 부른다)
    */
-  const activateOrder = async (order: Order): Promise<ActivateOrderResponse> => {
+  const activateOrder = async (order: Order, consent: IssueConsent): Promise<ActivateOrderResponse> => {
     const requestData: ActivateOrderRequest = {
       receiverName: order.receiverName,
       receiverPhoneNumber: order.receiverPhoneNumber,
@@ -44,6 +45,7 @@ export const useApi = () => {
       endDate: order.endDate,
       startTimeZone: order.startTimeZone,
       totalPaymentAmount: order.totalPaymentAmount,
+      consent,
     };
 
     return await $fetch<ActivateOrderResponse>(`${config.public.apiBase}/activate`, {

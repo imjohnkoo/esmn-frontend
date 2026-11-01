@@ -52,6 +52,8 @@ const isIssueQrCodesVisible = ref(false)
 const isNoOrderAlertVisible = ref(false)
 const isCancelledOrderVisible = ref(false)
 const isConfirmOrderVisible = ref(false)
+// ST-4 동의 기록 실패 · 다시 시도(client-consent-log spec §⑤) — 닫으면 발급 확인 팝업으로 돌아간다(체크 유지)
+const isConsentRetryVisible = ref(false)
 
 const formatDate = (d: CalDate | null) => {
   if (!d) return ''
@@ -167,7 +169,8 @@ const onConfirm = async () => {
     if (verified && !cancelled) {
       // 요청한 상품주문번호를 먼저 잡는다 — 발급을 기다리는 동안 다른 상품을 고르면 store 가 바뀐다
       const requestedProductOrderId = orderStore.singleOrder?.productOrderId
-      const activateResponse = await api.activateOrder(orderStore.singleOrder!)
+      // 체크된 상태에서만 여기 온다(onConfirm 첫 줄) — 고객이 본 동의 판 · 해시를 함께 보낸다(client-consent-log F-3)
+      const activateResponse = await api.activateOrder(orderStore.singleOrder!, ISSUE_CONSENT)
       const { verified: activateVerified, details } = activateResponse
       // 발급한 상품주문을 productOrderId 로 찾는다(D-14 — 위치로 집지 않는다 · flow-guard 순수함수)
       const issued = findProductOrder(details, requestedProductOrderId)
@@ -213,6 +216,11 @@ const onConfirm = async () => {
     console.error(error)
     isSubmitting.value = false
     isIssueQrCodesVisible.value = false
+    // 동의 기록 문제만 «다시 시도» — 이동 없음 · 체크(isPolicyAgreed)를 건드리지 않는다(ST-4 · D-21)
+    if (issueFailureView(error) === 'consent-retry') {
+      isConsentRetryVisible.value = true
+      return
+    }
     isNoOrderAlertVisible.value = true
     setTimeout(() => {
       isNoOrderAlertVisible.value = false
@@ -230,6 +238,13 @@ import { ISSUE_NOTICE } from '~/content/legal/issue-notice'
 import { confirmScrollFit } from '~/utils/confirm-fit'
 import { renderNoticeList } from '~/utils/legal-render'
 import IssueConsentLabel from '~/components/legal/IssueConsentLabel.vue'
+import { ISSUE_CONSENT } from '#shared/consent/issue-consent'
+import { issueFailureView } from '~/utils/issue-failure'
+
+// ST-4 경고를 닫으면(확인 · X · 바깥 누름) 발급 확인 팝업으로 — 체크 상태 그대로라 버튼이 바로 활성이다
+watch(isConsentRetryVisible, (open) => {
+  if (!open) isConfirmOrderVisible.value = true
+})
 
 // 05-A 안내 중 «지원 기기 확인» 1줄만(spec D-43 · D-49 · John 2026-10-03)
 const NOTICE_LINES = [ISSUE_NOTICE.device]
@@ -596,6 +611,18 @@ const noticeSheet = (href: string) => (href === '/supported-devices' ? () => ope
       <p class="select-date-page__dialog-desc">
         주문번호를 다시 확인해 주세요.<br />본인 확인 페이지로 돌아갈게요.
       </p>
+    </NAlertDialog>
+
+    <!-- ST-4 동의 기록 실패 · 다시 시도(client-consent-log spec §⑤ · 디자인 리뷰 ②) — 이동 없음 · 자동 닫힘 없음 -->
+    <NAlertDialog
+      v-model="isConsentRetryVisible"
+      title="잠시 후 다시 시도해 주세요"
+      description="발급되지 않았어요. 다시 눌러 주세요."
+      color="warning"
+    >
+      <template #actions>
+        <NButton variant="primary" @click="isConsentRetryVisible = false">확인</NButton>
+      </template>
     </NAlertDialog>
 
     <NAlertDialog
