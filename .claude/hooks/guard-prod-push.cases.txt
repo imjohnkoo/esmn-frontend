@@ -4937,3 +4937,42 @@ EOF
 git -C /Users/johnkoo/orca/workspaces/esmn-frontend/x push origin HEAD:prod
 === block RN-R10-A42 gh workflow run via -R repo after run · esmn 쌍둥이
 gh workflow run -R imjohnkoo/esmn-frontend client-production.yml
+=== block AP-③ 승인 ID 없는 40자 sha prod push(현행 차단)
+git push origin 0123456789abcdef0123456789abcdef01234567:prod
+=== block AP-④ 승인 예외 형태 + && echo 세그먼트(예외 아님 → 스캐너)
+ESMN_APPROVAL_ID=AP-20261102-001 git push origin 0123456789abcdef0123456789abcdef01234567:prod && echo ok
+=== block AP-n1 승인 예외 형태 + ; 세그먼트
+ESMN_APPROVAL_ID=AP-20261102-001 git push origin 0123456789abcdef0123456789abcdef01234567:prod; echo ok
+=== block AP-n2 승인 예외 형태 + | 파이프
+ESMN_APPROVAL_ID=AP-20261102-001 git push origin 0123456789abcdef0123456789abcdef01234567:prod | tail -1
+=== block AP-n3 승인 예외 형태 + 리다이렉트
+ESMN_APPROVAL_ID=AP-20261102-001 git push origin 0123456789abcdef0123456789abcdef01234567:prod 2>&1
+=== block AP-n4 짧은 sha
+ESMN_APPROVAL_ID=AP-20261102-001 git push origin 0123456:prod
+=== block AP-n5 변수 sha
+ESMN_APPROVAL_ID=AP-20261102-001 git push origin $SHA:prod
+=== block AP-n6 --force
+ESMN_APPROVAL_ID=AP-20261102-001 git push --force origin 0123456789abcdef0123456789abcdef01234567:prod
+=== block AP-n7 + refspec(force)
+ESMN_APPROVAL_ID=AP-20261102-001 git push origin +0123456789abcdef0123456789abcdef01234567:prod
+=== block AP-n8 HEAD:prod
+ESMN_APPROVAL_ID=AP-20261102-001 git push origin HEAD:prod
+=== block AP-n9 다른 원격 이름
+ESMN_APPROVAL_ID=AP-20261102-001 git push upstream 0123456789abcdef0123456789abcdef01234567:prod
+=== block AP-n10 대문자 hex sha
+ESMN_APPROVAL_ID=AP-20261102-001 git push origin 0123456789ABCDEF0123456789ABCDEF01234567:prod
+=== block AP-n11 git -C 전역 옵션
+ESMN_APPROVAL_ID=AP-20261102-001 git -C /tmp/x push origin 0123456789abcdef0123456789abcdef01234567:prod
+=== block AP-n12 승인 ID 꼴 아님(AP- 없음)
+ESMN_APPROVAL_ID=20261102-001 git push origin 0123456789abcdef0123456789abcdef01234567:prod
+=== block AP-n13 env 접두
+env ESMN_APPROVAL_ID=AP-20261102-001 git push origin 0123456789abcdef0123456789abcdef01234567:prod
+=== block AP-n14 두 줄(뒤 줄에 다른 명령)
+ESMN_APPROVAL_ID=AP-20261102-001 git push origin 0123456789abcdef0123456789abcdef01234567:prod
+git push origin HEAD:prod
+=== block AP-n15 따옴표 친 ID
+ESMN_APPROVAL_ID="AP-20261102-001" git push origin 0123456789abcdef0123456789abcdef01234567:prod
+=== block AP-n16 공백 둘
+ESMN_APPROVAL_ID=AP-20261102-001 git push  origin 0123456789abcdef0123456789abcdef01234567:prod
+=== allow AP-n17 승인 ID 를 단 dev push 는 예외 밖 · 스캐너 통과(현행)
+ESMN_APPROVAL_ID=AP-20261102-001 git push origin 0123456789abcdef0123456789abcdef01234567:dev

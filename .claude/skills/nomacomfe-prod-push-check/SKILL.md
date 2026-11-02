@@ -417,6 +417,6 @@ Claude 가 실제로 실수했거나 빠질 수 있는 덫:
 - **Paths filter 에 없는 변경이 더 위험**: `turbo.json`, `tsconfig.base.json`, `.yarnrc.yml`, `apps/design-*/**` 은 workflow paths 필터에 없음 — 변경 시 **배포 안 되지만 로컬 dev 에서 깨질 수 있음**. PR 에 workflow paths 도 함께 수정해야 하는지 검토
 - **prod↔dev sync 를 찾지 말 것**: nomacom 의 `dev` 는 통합 브랜치(2026-10-04 `main` 에서 이름 변경)이고 승격은 dev → prod 한 방향이다(브랜치 모델 (b)). m8-frontend 스킬을 참조하다 prod → dev 역동기화 단계를 만들어내는 것이 대표적 오이식이다
 - **DB ownership 미확정**: m8 는 main DB 가 backend 소유라 admin/client 가 schema 변경 시 backend 합의 필수. nomacom 은 backend 가 별도 service 인지 admin server 자체에서 owns 인지 audit 필요. Phase 5 에서 이 구분 모호하면 보수적으로 "변경 보류 + 확인 요청"
-- **prod push hook 차단**: `.claude/hooks/guard-prod-push.sh` 가 `git push *prod*` 차단. 본 skill 완료 후에도 사용자 명시 승인 필요
+- **prod push hook 차단**: `.claude/hooks/guard-prod-push.sh` 가 `git push *prod*` 차단. 본 skill 완료 후 PM 중계 승인 ID → `ESMN_APPROVAL_ID=<ID> git push origin <40자 sha>:prod`(ID 없으면 차단 · 훅이 허브 고정 경로의 `approval.py verify --consume` 으로 그 sha 의 prod-promote 승인을 확인하고 once 사용을 기록 — push 가 실패하면 PM 이 새 ID 를 만든다)
 - **mobile 경로는 본 skill 범위 밖**: `apps/mobile/**` 변경은 Expo EAS / OTA 경로로 별도. CodeDeploy 파이프라인 (admin/client) 과 분리. mobile prod 배포는 EAS 채널 기준 별도 절차 필요
 - **확정된 환경값** (2026-09-02 실측): registry = DockerHub `imjohnkoo/nomacom-{admin,client}:prod` · CodeDeploy application = `nomacom-admin`/`nomacom-client`, deployment group = `prod` · SSM = `/nomacom/*` (`.claude/rules/ssm-paths.md`). 이제 placeholder 가 아니다

@@ -12,17 +12,39 @@
 set -u
 
 HOOK="$(cd "$(dirname "$0")" && pwd)/guard-prod-push.sh"
+# 승인 예외는 훅 입력 cwd 의 origin 을 본다 — 어디서 돌려도 같게 이 리포 루트를 넘긴다
+REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 pass=0
 fail=0
 
-run() { # run <expect: allow|block> <command>
+# 승인 예외 1단(2026-11 · ROLE-LAYER D21)의 허브 verify 는 스텁으로 돌린다 — 실 허브 · 원장을 건드리지 않게.
+#   기본 스텁은 «verify ok» 를 내는 쪽(argv 가 정확한 꼴 — --consume 포함 — 일 때만 exit 0)이다: 전체 케이스가 «verify 가 승인해도» 그대로
+#   판정되는지 — 예외가 정확한 한 형태 밖으로 새지 않는지 — 를 함께 증명한다. 스텁은 받은 argv · env 를 그 디렉터리의 calls 에 한 줄씩 남긴다.
+#   실행 비트는 주지 않는다(훅은 python3 로 부른다 — [ -f ] 판정)
+APH=$(mktemp -d)
+mkstub() { # mkstub <디렉터리> <파이썬 본문>
+  mkdir -p "$1/scripts"; printf '#!/usr/bin/env python3\nimport sys, re, time, os, json\na = sys.argv[1:]\nopen(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "calls"), "a").write(json.dumps({"argv": a, "env": {k: os.environ.get(k) for k in ("ESMN_APPROVAL_DIR", "ESMN_PM_REGISTRY", "ESMN_APPROVAL_POLICY", "NOMACOM_MANAGER")}}) + "\\n")\n%s\n' "$2" > "$1/scripts/approval.py"
+}
+mkstub "$APH/ok" 'ok = len(a) == 7 and a[0] == "verify" and re.fullmatch(r"AP-[A-Za-z0-9-]+", a[1]) and a[2:4] == ["--action", "prod-promote"] and a[4] == "--target" and re.fullmatch(r"esmn-frontend@[0-9a-f]{40}:prod", a[5]) and a[6] == "--consume"
+sys.exit(0) if ok else (print("stub: 인자 불일치 %r" % a, file=sys.stderr), sys.exit(1))'
+mkstub "$APH/deny" 'print("승인 아님: target 불일치", file=sys.stderr); sys.exit(1)'
+mkstub "$APH/slow" 'time.sleep(30)'
+mkstub "$APH/crash" 'raise RuntimeError("stub crash")'
+mkdir -p "$APH/missing"
+export GUARD_PROD_PUSH_HUB="$APH/ok"
+
+run() { # run <expect: allow|approve|block> <command> — approve = 승인 예외의 permissionDecision allow(그 밖의 통과는 빈 출력이어야 한다)
   local expect="$1" cmd="$2" out actual
   # 훅은 이 테스트를 돌린 bash 로 부른다(/bin/bash test.sh 가 정말 3.2 로 돌게 — shebang 의 env bash 를 타지 않는다)
-  out=$(jq -n --arg c "$cmd" '{tool_input: {command: $c}}' | "$BASH" "$HOOK")
-  # 차단 = permissionDecision deny 인 JSON 하나 · 통과 = 빈 출력. 그 밖의 출력은 실패로 센다
+  out=$(jq -n --arg c "$cmd" --arg d "$REPO" '{cwd: $d, tool_input: {command: $c}}' | "$BASH" "$HOOK")
+  # 차단 = permissionDecision deny 인 JSON 하나 · 통과 = 빈 출력 · 승인 예외 통과 = permissionDecision allow(브리프 v5 — approve 로 따로 센다:
+  #   스캐너 통과가 allow 를 내기 시작하면 권한 창이 전부 사라지므로 allow 케이스는 빈 출력만 받는다). 그 밖의 출력은 실패로 센다
+  local dec; dec=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)
   if [[ -z "$out" ]]; then
     actual="allow"
-  elif [[ "$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)" == deny ]]; then
+  elif [[ "$dec" == allow ]]; then
+    actual="approve"
+  elif [[ "$dec" == deny ]]; then
     actual="block"
   else
     actual="bad-output"
@@ -139,6 +161,73 @@ run block 'gh pr create --base prod --title x --body y'
 run block 'gh pr create -B prod'
 run block 'gh pr edit 12 --base prod'
 
+echo "== 승인 예외 1단 (ESMN_APPROVAL_ID + 허브 verify 스텁) =="
+AP_SHA=0123456789abcdef0123456789abcdef01234567
+AP_CMD="ESMN_APPROVAL_ID=AP-20261102-001 git push origin $AP_SHA:prod"
+ap_run() { # ap_run <허브 스텁> <expect> <command>
+  GUARD_PROD_PUSH_HUB="$APH/$1" run "$2" "$3"
+}
+ap_calls() { wc -l < "$APH/ok/calls" 2>/dev/null | tr -d ' ' || echo 0; }
+ap_run ok approve "$AP_CMD"                                                   # ① 허용 형태 · verify exit 0
+# ① 통과는 allow JSON 을 명시 출력한다(권한 창을 건너뛴다 — 브리프 v5)
+out=$(jq -n --arg c "$AP_CMD" --arg d "$REPO" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+if [[ "$out" == '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"승인 ID AP-20261102-001 verify ok — prod 승격 1회"}}' ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 승인 통과 출력이 allow JSON 이 아니다: $out"; fi
+# ① 스텁이 받은 argv = verify <ID> --action prod-promote --target esmn-frontend@<그 sha>:prod --consume
+ap_last=$(tail -n 1 "$APH/ok/calls" 2>/dev/null)
+if [[ "$(printf '%s' "$ap_last" | jq -c .argv)" == "[\"verify\",\"AP-20261102-001\",\"--action\",\"prod-promote\",\"--target\",\"esmn-frontend@$AP_SHA:prod\",\"--consume\"]" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify argv 가 다르다: $ap_last"; fi
+# ⑥ 세션 env 의 저장소 · 정책 경로 · NOMACOM_MANAGER 는 verify 에 닿지 않는다(unset · 허브 고정 경로)
+ESMN_APPROVAL_DIR=/tmp/x ESMN_PM_REGISTRY=/tmp/r ESMN_APPROVAL_POLICY=/tmp/p NOMACOM_MANAGER=/tmp/evil ap_run ok approve "$AP_CMD"
+ap_last=$(tail -n 1 "$APH/ok/calls" 2>/dev/null)
+if [[ "$(printf '%s' "$ap_last" | jq -c .env)" == "{\"ESMN_APPROVAL_DIR\":null,\"ESMN_PM_REGISTRY\":null,\"ESMN_APPROVAL_POLICY\":null,\"NOMACOM_MANAGER\":\"$APH/ok\"}" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 세션 env 가 verify 에 샜다: $ap_last"; fi
+ap_run ok approve "ESMN_APPROVAL_ID=AP-20261102-001 git push origin $AP_SHA:refs/heads/prod"
+ap_run ok approve "  $AP_CMD  "                                                # 앞뒤 공백만은 같은 형태
+ap_run deny block "$AP_CMD"                                                 # ② 같은 형태 · verify exit 1
+ap_n=$(ap_calls)
+ap_run ok block "git push origin $AP_SHA:prod"                              # ③ ID 없음 → 현행 차단
+ap_run ok block "$AP_CMD && echo ok"                                        # ④ 세그먼트 추가 → 스캐너 차단
+# ③ · ④ 는 예외 밖이라 verify 를 부르지도 않는다(--consume 으로 승인을 써 버리지 않게)
+if [[ "$(ap_calls)" == "$ap_n" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 예외 밖 형태가 verify 를 불렀다"; fi
+ap_run missing block "$AP_CMD"                                              # ⑤ 허브 스크립트 없음
+SECONDS=0
+ap_run slow block "$AP_CMD"                                                 # verify 10초 초과 → 차단
+if ((SECONDS > 20)); then fail=$((fail + 1)); echo "  ⛔ verify 시간 초과가 10초에 끊기지 않았다: ${SECONDS}초"; fi
+# 예외 꼴이지만 verify 전에 막는 것 — 승인을 써 버리지 않는다(QA ⑥ minor 2 · 보안 리뷰): 끝 CR · NUL · 다른 리포 origin · GIT_DIR
+ap_n=$(ap_calls)
+ap_run ok block "$AP_CMD"$'\r'
+out=$(printf '{"cwd":"%s","tool_input":{"command":"%s\\u0000"}}' "$REPO" "$AP_CMD" | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+if [[ "$out" == *'"deny"'* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ NUL 든 승인 꼴이 통과했다"; fi
+ap_origin() { # ap_origin <push URL…> — 그 origin 을 단 임시 리포에서 승인 꼴은 verify 전에 막혀야 한다
+  local d u out; d=$(mktemp -d); git -C "$d" init -q; git -C "$d" remote add origin "$1"
+  for u in "${@:2}"; do git -C "$d" config --add remote.origin.pushurl "$u"; done
+  [[ $# -gt 1 ]] && git -C "$d" config --add remote.origin.pushurl "$1"
+  out=$(jq -n --arg c "$AP_CMD" --arg d "$d" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+  if [[ "$out" == *'"deny"'*"origin push URL"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ origin 이 $* 인데 승인 꼴이 통과했다: $out"; fi
+}
+ap_origin git@github.com:imjohnkoo/esmn-backend.git
+ap_origin https://evil.example/imjohnkoo/esmn-frontend
+ap_origin git@github.com:evil/imjohnkoo/esmn-frontend.git
+ap_origin /tmp/x/imjohnkoo/nomacom-frontend
+ap_origin git@github.com:imjohnkoo/esmn-frontend.git git@evil:x/y.git        # pushurl 둘 — git 은 둘 다에 민다
+# 좋은 URL 이 첫 pushurl 이어도(--all 없이 첫 줄만 보면 통과하던 꼴 — 재검 m1) 막혀야 한다
+ap_d=$(mktemp -d); git -C "$ap_d" init -q; git -C "$ap_d" remote add origin git@github.com:imjohnkoo/esmn-frontend.git
+git -C "$ap_d" config --add remote.origin.pushurl git@github.com:imjohnkoo/esmn-frontend.git; git -C "$ap_d" config --add remote.origin.pushurl git@evil:x/y.git
+out=$(jq -n --arg c "$AP_CMD" --arg d "$ap_d" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+if [[ "$out" == *'"deny"'*"origin push URL"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 좋은 URL 뒤 다른 pushurl 이 있는데 승인 꼴이 통과했다: $out"; fi
+GIT_DIR=/tmp/x ap_run ok block "$AP_CMD"
+if [[ "$(ap_calls)" == "$ap_n" ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify 전에 막을 꼴이 verify 를 불렀다"; fi
+# 끝 공백이 길어도 빨리 판정한다(256자 넘으면 예외 판정 자체를 하지 않는다 — 다듬기가 600초를 넘겨 판정 없이 통과하던 QA ⑥ major)
+#   큰 글은 표준 입력으로 JSON 을 만든다(리눅스는 인자 하나가 128KB 를 넘지 못한다 — jq 가 못 떠 빈 출력이 «allow» 로 세지던 것)
+SECONDS=0
+out=$(printf 'git push origin HEAD:prod%*s' 200000 '' | jq -Rs '{tool_input: {command: .}}' | GUARD_PROD_PUSH_HUB="$APH/ok" "$BASH" "$HOOK")
+if [[ "$out" == *'"deny"'* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ 끝 공백 20만 자 prod push 가 막히지 않았다"; fi
+if ((SECONDS > 20)); then fail=$((fail + 1)); echo "  ⛔ 끝 공백 20만 자 판정이 느리다: ${SECONDS}초"; fi
+# verify 가 죽으면 사유는 stderr 마지막 줄(Traceback 첫 줄 말고)
+ap_reason=$(jq -n --arg c "$AP_CMD" --arg d "$REPO" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/crash" "$BASH" "$HOOK" | jq -r '.hookSpecificOutput.permissionDecisionReason')
+if [[ "$ap_reason" == *"RuntimeError: stub crash"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify 크래시 사유가 마지막 줄이 아니다: $ap_reason"; fi
+# 차단 사유에 verify stderr 한 줄이 실린다
+ap_reason=$(jq -n --arg c "$AP_CMD" --arg d "$REPO" '{cwd: $d, tool_input: {command: $c}}' | GUARD_PROD_PUSH_HUB="$APH/deny" "$BASH" "$HOOK" | jq -r '.hookSpecificOutput.permissionDecisionReason')
+if [[ "$ap_reason" == *"verify 실패"*"승인 아님: target 불일치"* ]]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "  ⛔ verify 실패 사유가 없다: $ap_reason"; fi
+
 # 꾸민 큰 입력 — 600초 제한을 넘겨 판정 없이 통과(fail-open)하지 않는다(13회차 minor 8): heredoc 본문 400개 · 명령 치환 1만 개 ·
 #   닫히지 않은 $( 64개 · 명령 512KB 를 넘으면 판정 불가로 막고, push-option · gh -R 2,000개는 빨리 판정한다(bash 3.2 에서 483초였다).
 #   큰 글은 인자가 아니라 표준 입력으로 JSON 을 만든다(리눅스는 인자 하나가 128KB 를 넘지 못한다)
@@ -244,6 +333,7 @@ fc "tr 소문자 변환만 실패(gh api 판정)" "$FC/trlow" "gh api repos/o/r/
 fc "tr 마지막 평탄화만 실패" "$FC/trflat"
 fc "wc 실패(써 두는 파일 수 세기)" "$FC/badwc" "$(printf 'cat <<%sEOF%s\nhi\nEOF' "'" "'")"
 
+rm -rf "$APH"
 echo
 printf 'pass=%d fail=%d\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]] || exit 1
