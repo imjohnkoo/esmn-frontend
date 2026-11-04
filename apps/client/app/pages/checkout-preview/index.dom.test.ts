@@ -1,21 +1,44 @@
 // @vitest-environment happy-dom
-// 테스트 체크아웃 동작(client-shell spec F-19 · F-22 · D-38 (b)) — 페이지를 실제로 마운트하고 결제 SDK 는 가짜로 바꿔 끼운다.
-// 보는 것: 동의 전에는 어떤 버튼 · 링크 · 경로로도 SDK 호출 0 · 렌더된 동의 블록 글자 = 05-B · 필수 2개(약관 · 14세) 뒤에만 결제 버튼 활성 ·
-// 동의 기본 해제 · 선택(마케팅)은 결제와 무관 · 키가 비면 동의해도 호출 0.
+// 테스트 체크아웃 동작(client-shell spec F-19 · F-22 · D-38 (b) · D-59) — 페이지를 실제로 마운트하고 토스 SDK 는 가짜로 바꿔 끼운다.
+// 보는 것: 동의 전에는 어떤 버튼 · 링크 · 경로로도 결제 요청 0 · 렌더된 동의 블록 글자 = 05-B · 필수 2개(약관 · 14세) ∧ 위젯 준비 뒤에만 결제 버튼 활성 ·
+// 동의 기본 해제 · 선택(마케팅)은 결제와 무관 · 키가 비면 SDK 로드 0 · 동의해도 요청 0.
 // 소스 배선(문구 출처 · 결제 경로 · 블록 밖 글자)은 legal-links.test.ts 가 정적으로, 실제 결제창은 walk(E2E-6)가 본다.
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { CHECKOUT_NOTICE } from '~/content/legal/checkout-notice'
+import { PENDING_PAYMENT_KEY } from '~/utils/checkout-preview'
 import { checkoutPreviewFromCatalog } from '#shared/catalog/preview'
 import { fixtureRaw } from '#shared/catalog/test-data'
 import { parseCatalog } from '#shared/catalog/validate'
-import Page from './checkout-preview.vue'
+import Page from './index.vue'
 
-const sdk = vi.hoisted(() => ({ requestPayment: vi.fn(async () => undefined) }))
-vi.mock('@portone/browser-sdk/v2', () => sdk)
+// 위젯 가짜 — 두 render 는 테스트가 끝낼 때까지 걸어 둘 수 있다(위젯 미준비 상태)
+const sdk = vi.hoisted(() => {
+  // 약관 위젯 — 실제 위젯처럼(⑦ walk 실측) 필수 약관이 체크된 채 그려지고, 구독해도 처음 상태를 알리지 않는다 · 바뀔 때만 emit
+  const agreement = {
+    emit: null as null | ((s: { agreedRequiredTerms: boolean }) => void),
+    on: vi.fn((_name: string, cb: (s: { agreedRequiredTerms: boolean }) => void) => {
+      agreement.emit = cb
+    }),
+  }
+  const widgets = {
+    agreement,
+    setAmount: vi.fn(async () => undefined),
+    renderPaymentMethods: vi.fn(async () => ({})),
+    renderAgreement: vi.fn(async () => agreement),
+    requestPayment: vi.fn(async () => undefined),
+  }
+  const toss = { widgets: vi.fn(() => widgets) }
+  return { widgets, toss, loadTossPayments: vi.fn(async () => toss), ANONYMOUS: '@@ANONYMOUS' }
+})
+vi.mock('@tosspayments/tosspayments-sdk', () => ({
+  loadTossPayments: sdk.loadTossPayments,
+  ANONYMOUS: sdk.ANONYMOUS,
+}))
+const requestPayment = sdk.widgets.requestPayment
 
-const portone = { storeId: 'store-test-only', testChannelKey: 'channel-key-test-only' }
+const toss = { clientKey: 'test_ck_test_only' }
 // 상품 = 빌드 모듈이 앱 설정에 넣는 값(catalog F-12) — 여기서는 카탈로그 픽스처로 같은 함수를 돌린다
 const PREVIEW_ITEM = checkoutPreviewFromCatalog(parseCatalog(fixtureRaw()))
 const navigateTo = vi.fn()
@@ -29,18 +52,18 @@ Object.assign(globalThis, {
   definePageMeta: () => {},
   useHead: () => {},
   useRoute: () => route,
-  useRuntimeConfig: () => ({ public: { portone } }),
+  useRuntimeConfig: () => ({ public: { toss } }),
   useAppConfig: () => ({ checkoutPreview: PREVIEW_ITEM }),
   navigateTo,
 })
 
 enableAutoUnmount(afterEach)
 beforeEach(() => {
-  sdk.requestPayment.mockClear()
-  navigateTo.mockClear()
+  vi.clearAllMocks()
+  sdk.widgets.renderPaymentMethods.mockImplementation(async () => ({}))
+  sessionStorage.clear()
   route.query = {}
-  portone.storeId = 'store-test-only'
-  portone.testChannelKey = 'channel-key-test-only'
+  toss.clientKey = 'test_ck_test_only'
 })
 
 const settle = async () => {
@@ -96,7 +119,7 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
     payButton().click()
     await settle()
     await forcePay()
-    expect(sdk.requestPayment).not.toHaveBeenCalled()
+    expect(requestPayment).not.toHaveBeenCalled()
   })
 
   it('동의 전 화면의 모든 링크 · 버튼(결제 버튼 제외 — 체크는 원래 상태로 되돌림)을 눌러도 SDK 호출 0', async () => {
@@ -113,7 +136,7 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
       b.click()
       await settle()
     }
-    expect(sdk.requestPayment).not.toHaveBeenCalled()
+    expect(requestPayment).not.toHaveBeenCalled()
     expect(payButton().disabled).toBe(true)
   })
 
@@ -163,7 +186,7 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
             b.getAttribute('aria-checked'),
           ),
         ).toEqual(['false', 'false', 'false'])
-        expect(sdk.requestPayment).not.toHaveBeenCalled()
+        expect(requestPayment).not.toHaveBeenCalled()
       } finally {
         vi.useRealTimers()
       }
@@ -181,7 +204,7 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
     for (const c of checks) await toggle(c)
     expect(payButton().disabled).toBe(true)
     await forcePay()
-    expect(sdk.requestPayment).not.toHaveBeenCalled()
+    expect(requestPayment).not.toHaveBeenCalled()
   })
 
   it('필수 2개를 체크하면 활성 — 선택(마케팅)은 켜든 끄든 무관 · 필수를 다시 끄면 비활성', async () => {
@@ -196,55 +219,127 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
     await toggle(AGE)
     expect(payButton().disabled).toBe(true)
     await forcePay()
-    expect(sdk.requestPayment).not.toHaveBeenCalled()
+    expect(requestPayment).not.toHaveBeenCalled()
   })
 
-  it('필수 2개 뒤 결제 버튼 → SDK 한 번(테스트 키 · 카드 · 원화 · 금액 · 복귀 주소 · 리디렉트 강제)', async () => {
+  it('진입 시 위젯을 그린다 — 클라이언트 키 · 비회원(ANONYMOUS) · 원화 금액 · 결제수단 DEFAULT · 약관 AGREEMENT', async () => {
+    await render()
+    expect(sdk.loadTossPayments).toHaveBeenCalledWith('test_ck_test_only')
+    expect(sdk.toss.widgets).toHaveBeenCalledWith({ customerKey: '@@ANONYMOUS' })
+    expect(sdk.widgets.setAmount).toHaveBeenCalledWith({
+      currency: 'KRW',
+      value: PREVIEW_ITEM.amount,
+    })
+    expect(sdk.widgets.renderPaymentMethods).toHaveBeenCalledWith({
+      selector: '#payment-method',
+      variantKey: 'DEFAULT',
+    })
+    expect(sdk.widgets.renderAgreement).toHaveBeenCalledWith({
+      selector: '#agreement',
+      variantKey: 'AGREEMENT',
+    })
+    expect(document.body.querySelector('#payment-method')).not.toBeNull()
+    expect(document.body.querySelector('#agreement')).not.toBeNull()
+    // 우리 «신용 · 체크카드» 라디오는 없다 — 결제수단은 위젯이 그린다
+    expect(document.body.textContent).not.toContain('신용 · 체크카드')
+  })
+
+  it('위젯이 아직 준비되지 않았으면 필수 2개를 체크해도 비활성 · 억지로 불러도 결제 요청 0 — 준비되면 활성', async () => {
+    let finish!: () => void
+    sdk.widgets.renderPaymentMethods.mockImplementation(
+      () => new Promise((resolve) => (finish = () => resolve({}))),
+    )
+    await render()
+    await toggle(TERMS)
+    await toggle(AGE)
+    expect(payButton().disabled).toBe(true)
+    await forcePay()
+    expect(requestPayment).not.toHaveBeenCalled()
+    finish()
+    await settle()
+    expect(payButton().disabled).toBe(false)
+  })
+
+  it('토스 약관 위젯에서 필수 약관을 끄면 비활성 · 억지로 불러도 요청 0 — 다시 켜면 활성', async () => {
+    await render()
+    expect(sdk.widgets.agreement.on).toHaveBeenCalledWith(
+      'agreementStatusChange',
+      expect.any(Function),
+    )
+    await toggle(TERMS)
+    await toggle(AGE)
+    expect(payButton().disabled).toBe(false)
+    sdk.widgets.agreement.emit!({ agreedRequiredTerms: false })
+    await settle()
+    expect(payButton().disabled).toBe(true)
+    await forcePay()
+    expect(requestPayment).not.toHaveBeenCalled()
+    sdk.widgets.agreement.emit!({ agreedRequiredTerms: true })
+    await settle()
+    expect(payButton().disabled).toBe(false)
+  })
+
+  it('위젯 로드가 실패하면 비활성 · 결제 수단 자리에 안내', async () => {
+    sdk.widgets.renderAgreement.mockImplementationOnce(async () => {
+      throw new Error('위젯 로드 실패')
+    })
+    await render()
+    await toggle(TERMS)
+    await toggle(AGE)
+    expect(payButton().disabled).toBe(true)
+    expect(document.body.textContent).toContain('결제창을 불러오지 못했어요. 새로고침해 주세요.')
+    expect(document.body.textContent).not.toContain('위젯 로드 실패')
+  })
+
+  it('필수 2개 ∧ 위젯 준비 뒤 결제 버튼 → 결제 요청 한 번(주문번호 · 주문명 · 복귀 주소 2 · 고객 정보 0) · 주문번호를 이 탭에 기억', async () => {
     await render()
     await toggle(TERMS)
     await toggle(AGE)
     payButton().click()
     await settle()
-    expect(sdk.requestPayment).toHaveBeenCalledTimes(1)
-    expect(sdk.requestPayment).toHaveBeenCalledWith(
-      expect.objectContaining({
-        storeId: 'store-test-only',
-        channelKey: 'channel-key-test-only',
-        orderName: PREVIEW_ITEM.orderName,
-        totalAmount: PREVIEW_ITEM.amount,
-        currency: 'KRW',
-        payMethod: 'CARD',
-        redirectUrl: `${window.location.origin}/checkout-preview`,
-        forceRedirect: true,
-        paymentId: expect.stringMatching(/^[A-Za-z0-9_-]{6,64}$/),
-      }),
-    )
-    // 응답 없음(리디렉트 중) — 다시 눌러도 두 번째 호출 없음(로딩 중)
+    expect(requestPayment).toHaveBeenCalledTimes(1)
+    const [req] = requestPayment.mock.calls[0] as unknown as [Record<string, unknown>]
+    expect(req).toEqual({
+      orderId: expect.stringMatching(/^pv-\d+-[0-9a-f]{24}$/),
+      orderName: PREVIEW_ITEM.orderName,
+      successUrl: `${window.location.origin}/checkout-preview/success`,
+      failUrl: `${window.location.origin}/checkout-preview/fail`,
+    })
+    expect(sessionStorage.getItem(PENDING_PAYMENT_KEY)).toBe(req.orderId)
+    // 반환 = 리디렉트 중 — 다시 눌러도 두 번째 호출 없음(로딩 중)
     payButton().click()
     await settle()
-    expect(sdk.requestPayment).toHaveBeenCalledTimes(1)
+    expect(requestPayment).toHaveBeenCalledTimes(1)
   })
 
-  it.each([
-    ['채널키', 'testChannelKey'],
-    ['상점 ID', 'storeId'],
-  ] as const)(
-    '키가 비면(%s) 필수 2개를 체크해도 비활성 · «결제 설정을 준비하고 있어요.» · 억지로 불러도 SDK 호출 0',
-    async (_name, key) => {
-      portone[key] = ''
-      await render()
-      await toggle(TERMS)
-      await toggle(AGE)
-      expect(payButton().disabled).toBe(true)
-      expect(document.body.textContent).toContain('결제 설정을 준비하고 있어요.')
-      await forcePay()
-      expect(sdk.requestPayment).not.toHaveBeenCalled()
-    },
-  )
+  it('결제 요청이 거절되면 사유 한 줄 · 버튼이 다시 활성', async () => {
+    requestPayment.mockImplementationOnce(async () => {
+      throw new Error('결제 요청 실패')
+    })
+    await render()
+    await toggle(TERMS)
+    await toggle(AGE)
+    payButton().click()
+    await settle()
+    expect(document.body.textContent).toContain('결제창을 열지 못했어요. (결제 요청 실패)')
+    expect(payButton().disabled).toBe(false)
+  })
+
+  it('키가 비면 SDK 를 불러오지 않는다 · 필수 2개를 체크해도 비활성 · «결제 설정을 준비하고 있어요.» · 억지로 불러도 요청 0', async () => {
+    toss.clientKey = ''
+    await render()
+    await toggle(TERMS)
+    await toggle(AGE)
+    expect(sdk.loadTossPayments).not.toHaveBeenCalled()
+    expect(payButton().disabled).toBe(true)
+    expect(document.body.textContent).toContain('결제 설정을 준비하고 있어요.')
+    await forcePay()
+    expect(requestPayment).not.toHaveBeenCalled()
+  })
 })
 
 describe('테스트 체크아웃 — 바깥에서 들어오는 길(D-38 (b) · F-19)', () => {
-  it('읽는 쿼리 키 = 복귀 결과 5키뿐 · 전역 리스너 = pageshow 하나뿐(쿼리 · 포커스 · 메시지 · 키 입력으로 동의를 미리 채우거나 결제를 부르는 길 0)', async () => {
+  it('읽는 쿼리 키 = 0 · 전역 리스너 = pageshow 하나뿐(쿼리 · 포커스 · 메시지 · 키 입력으로 동의를 미리 채우거나 결제를 부르는 길 0)', async () => {
     const readKeys = new Set<string>()
     route.query = new Proxy({} as Record<string, string>, {
       get: (t, k, r) => (typeof k === 'string' && readKeys.add(k), Reflect.get(t, k, r)),
@@ -272,13 +367,7 @@ describe('테스트 체크아웃 — 바깥에서 들어오는 길(D-38 (b) · F
     } finally {
       spies.forEach((s) => s.mockRestore())
     }
-    expect(
-      [...readKeys].filter(
-        (k) =>
-          !k.startsWith('__v_') &&
-          !['paymentId', 'code', 'message', 'pgCode', 'pgMessage'].includes(k),
-      ),
-    ).toEqual([])
+    expect([...readKeys].filter((k) => !k.startsWith('__v_'))).toEqual([])
     expect([...new Set(added)]).toEqual(['window:pageshow'])
   })
 })

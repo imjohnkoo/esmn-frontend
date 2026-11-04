@@ -3,12 +3,15 @@
  * K1 의 `PREVIEW_OPTION_CODE` 옵션(프랑스 무제한 매일 1GB · 7일)에서 **빌드 때** 계산해 앱 설정으로 주입한다
  * (`modules/catalog.ts` — 페이지는 서버를 부르지 않는다 · 링크 0 · noindex 불변식 유지).
  * 옵션명은 K1 두 칸 그대로(« · »). 카탈로그에 그 옵션이 없으면 throw — 빌드가 멈춘다(가짜 금액으로 대신하지 않는다).
- * 상품명에 «TEST» 금지 · 0원 금지 — PortOne / 토스 심사 요건.
+ * 상품명에 «TEST» 금지 · 0원 금지 — 토스 심사 요건.
  */
 import { optionLabel } from './derive'
 import type { CatalogView, Kind, OptionView } from './types'
 
 export const PREVIEW_OPTION_CODE = 'FRA00U01D07V2'
+
+/** 결제 주문번호(`pv-{ms}-{hex}`) 규칙 — 토스 orderId(6~64자 · 영숫자 · `-` `_` `=`) 안. 페이지 · 복귀 화면 · confirm 라우트가 같이 쓴다 */
+export const PAYMENT_ID_PATTERN = /^[A-Za-z0-9_-]{6,64}$/
 
 export interface PreviewItem {
   productName: string
@@ -16,7 +19,7 @@ export interface PreviewItem {
   usage: string
   quantity: 1
   amount: number
-  /** PortOne orderName — 100자 이하 */
+  /** 토스 requestPayment orderName — 100자 이하 */
   orderName: string
 }
 

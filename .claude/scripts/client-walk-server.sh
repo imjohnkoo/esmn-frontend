@@ -19,14 +19,15 @@
 #     열지 않는다. prod 모드는 DB 인자를 거부한다 — prod 빌드는 ssl:require 라 닿는 곳이 TLS 를 말하는 prod RDS 뿐이다.
 #  4. 이 워크트리의 apps/client/.env(.local) · 루트 .env(.local) 가 있으면 기동 거부. nuxt 는 apps/client 에서 dotenv 를
 #     읽는다 — 메인 클론 파일은 영향이 없어 보지 않는다(워크트리의 .env.local 심링크는 그 링크만 지운다 · 원본 금지).
-#  5. NUXT_PUBLIC_PORTONE_STORE_ID · NUXT_PUBLIC_PORTONE_TEST_CHANNEL_KEY(공개값)만 호출자 환경에서 받는다 — E2E-6 용.
+#  5. 토스 테스트 키 NUXT_PUBLIC_TOSS_CLIENT_KEY · NUXT_TOSS_SECRET_KEY 만 호출자 환경에서 받는다 — E2E-6 용(shell D-59 ·
+#     docs.tosspayments.com 문서 공개 테스트 키 — 토스 테스트 환경은 출금 없음). test_ 로 시작하지 않는 값(live_*)은 거부.
 #
 # 사용:  bash .claude/scripts/client-walk-server.sh dev  <port> [합성 DB url]   # nuxt dev(dev 는 DB ssl:false → 합성 DB 가능)
 #        bash .claude/scripts/client-walk-server.sh prod <port>                 # .output 빌드 · DB 없음(헤더 · noindex 확인용)
 #        WALK_DRY_RUN=1 bash … dev 3005                                          # 넘길 env 만 출력하고 끝
 #        브라우저는 http://127.0.0.1:<port> 로 연다(localhost 금지 — 위 2).
 # 증거:  ps -E -o command= -p <pid> | tr ' ' '\n' | sed -nE 's/^([A-Za-z_][A-Za-z0-9_]*)=.*/\1/p' | sort   # 키 이름만(값은 찍지 않는다)
-#        → PATH HOME PORT HOST NUXT_PUBLIC_GUEST_APP_ORIGIN CORS_EXTRA_ORIGINS (+ DATABASE_URL · NUXT_PUBLIC_PORTONE_*)
+#        → PATH HOME PORT HOST NUXT_PUBLIC_GUEST_APP_ORIGIN CORS_EXTRA_ORIGINS (+ DATABASE_URL · NUXT_PUBLIC_TOSS_CLIENT_KEY · NUXT_TOSS_SECRET_KEY)
 #          · DB 호스트는 ps -E … | tr ' ' '\n' | sed -nE 's#^DATABASE_URL=[^@]*@([^/]*)/.*#\1#p' = 127.0.0.1:55432
 # 회귀:  bash .claude/scripts/client-walk-server.test.sh (가짜 node 로 실제 기동 경로까지 본다)
 set -euo pipefail
@@ -73,12 +74,15 @@ ALLOW=(
   "CORS_EXTRA_ORIGINS=http://127.0.0.1:$PORT"
 )
 if [[ -n "$DB_URL" ]]; then ALLOW+=("DATABASE_URL=$DB_URL"); fi
-for key in NUXT_PUBLIC_PORTONE_STORE_ID NUXT_PUBLIC_PORTONE_TEST_CHANNEL_KEY; do
-  if [[ -n "${!key:-}" ]]; then ALLOW+=("$key=${!key}"); fi
+for key in NUXT_PUBLIC_TOSS_CLIENT_KEY NUXT_TOSS_SECRET_KEY; do
+  if [[ -n "${!key:-}" ]]; then
+    [[ "${!key}" == test_* ]] || refuse "$key 가 테스트 키(test_*)가 아니다"
+    ALLOW+=("$key=${!key}")
+  fi
 done
 
 if [[ -n "${WALK_DRY_RUN:-}" ]]; then
-  printf '%s\n' "${ALLOW[@]}" | sed -E 's/^(NUXT_PUBLIC_PORTONE_[A-Z_]+)=.*/\1=***/'
+  printf '%s\n' "${ALLOW[@]}" | sed -E 's/^(NUXT_PUBLIC_TOSS_CLIENT_KEY|NUXT_TOSS_SECRET_KEY)=.*/\1=***/'
   exit 0
 fi
 

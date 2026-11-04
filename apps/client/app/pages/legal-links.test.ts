@@ -233,7 +233,7 @@ describe('발급기 법정 링크(F-20)', () => {
   })
 
   it('체크아웃(F-22) — 동의 블록은 구조 스냅샷 · 상태는 useCheckoutConsent 하나 · 결제는 필수 2개 뒤(구문 트리) · 링크는 새 창', () => {
-    const src = read('./checkout-preview.vue')
+    const src = read('./checkout-preview/index.vue')
     const tpl = parse(src).descriptor.template!.ast! as unknown as TNode
     type Any = TNode & { content?: string | { content?: string } }
     // ① 동의 블록(05-B — 약관 · 14세 · 마케팅 · 개인정보 안내 · 결제 전 안내) = 구조 스냅샷. 태그 · 속성 · 지시자 · 보간 · 글자 하나라도
@@ -291,7 +291,7 @@ describe('발급기 법정 링크(F-20)', () => {
       'variant',
       'size',
       'full-width',
-      ':disabled=!isConfigured || !canPay',
+      ':disabled=!isConfigured || !canPay || !widgetsReady || !tossTermsAgreed',
       ':loading=isRequesting',
       '@click=onPay',
     ])
@@ -339,7 +339,7 @@ describe('발급기 법정 링크(F-20)', () => {
     expect(exprs.filter((x) => !inAgree.has(x.node) && /\b[A-Z][A-Z_]*(?:NOTICE|CONSENT|LEGAL|TERMS|PRIVACY|REFUND)\b/.test(x.exp)).map((x) => x.exp)).toEqual([])
     // 블록 밖 보간은 정해진 것만(상수 · 하위 컴포넌트로 동의 · 고지 문구를 들이는 길) · 문자열 바인딩에 법정 낱말 0 · 컴포넌트는 DS 두 개와 블록의 component 만
     expect([...new Set(exprs.filter((x) => !inAgree.has(x.node) && x.raw === '{{}}').map((x) => x.exp.trim()))].sort()).toEqual(
-      ['PREVIEW_ITEM.productName', 'PREVIEW_ITEM.optionName', 'PREVIEW_ITEM.quantity', 'PREVIEW_ITEM.usage', 'formatWon(PREVIEW_ITEM.amount)', 'result.paymentId', 'result.message', 'openError'].sort(),
+      ['PREVIEW_ITEM.productName', 'PREVIEW_ITEM.optionName', 'PREVIEW_ITEM.quantity', 'PREVIEW_ITEM.usage', 'formatWon(PREVIEW_ITEM.amount)', 'openError'].sort(),
     )
     expect(exprs.filter((x) => /['"`]/.test(x.exp) && LEGALISH.test(x.exp)).map((x) => x.exp)).toEqual([])
     expect([...new Set(allEls.map((n) => n.tag ?? '').filter((tag) => /[A-Z]|-/.test(tag)))].sort()).toEqual(['NButton', 'NCheckbox'])
@@ -405,7 +405,7 @@ describe('발급기 법정 링크(F-20)', () => {
     for (const use of canPayUses) expect(firstGuard(use), use.parent.getText(sf).slice(0, 60)).toBe(true)
     const onPay = decls.find((d) => d.name.getText(sf) === 'onPay')!
     const payBody = (onPay.initializer as ts.ArrowFunction).body as ts.Block
-    expect(payBody.statements[0]!.getText(sf)).toBe('if (!isConfigured || !canPay.value || isRequesting.value) return')
+    expect(payBody.statements[0]!.getText(sf).replace(/\s+/g, '')).toBe('if(!isConfigured||!canPay.value||!widgetsReady.value||!tossTermsAgreed.value||isRequesting.value)return')
     const requests = named('requestPayment')
     expect(requests).toHaveLength(1)
     let owner: ts.Node = requests[0]!
@@ -437,14 +437,14 @@ describe('발급기 법정 링크(F-20)', () => {
       const hit = [...guarded].filter((g) => new RegExp(`\\b${g}\\b`).test(e.exp))
       if (hit.length) {
         expect([e.raw, e.exp], `결제 핸들러를 부르는 식`).toEqual(['@click', hit[0]])
-        expect(dir(e.node, ':disabled'), `${hit[0]} 버튼`).toBe('!isConfigured || !canPay')
+        expect(dir(e.node, ':disabled'), `${hit[0]} 버튼`).toBe('!isConfigured || !canPay || !widgetsReady || !tossTermsAgreed')
       }
     }
     for (const e of exprs.filter((x) => /\bcanPay\b/.test(x.exp))) {
-      expect([e.raw, e.exp]).toEqual([':disabled', '!isConfigured || !canPay'])
+      expect([e.raw, e.exp]).toEqual([':disabled', '!isConfigured || !canPay || !widgetsReady || !tossTermsAgreed'])
       expect(guarded.has(dir(e.node, '@click') ?? ''), `${dir(e.node, '@click')} 는 첫 문장에 canPay 가드가 없다`).toBe(true)
     }
-    // 결제 SDK(PortOne — npm · CDN · window.PortOne 어떤 꼴이든)는 client 앱 브라우저 코드 전체에서 이 페이지 한 곳만
+    // 결제 SDK(토스 — npm · CDN(js.tosspayments.com) · window.TossPayments 어떤 꼴이든)는 client 앱 브라우저 코드 전체에서 이 페이지 한 곳만
     // (도우미 · 컴포저블 · .js · lib/ 로 빼 가드 밖에서 부르는 길). server/ 는 결제 검증용 server-sdk 자리라 제외 · 테스트 · 설정 키(nuxt.config)는 제외
     const CLIENT = fileURLToPath(new URL('../..', import.meta.url))
     const scan = (d: string): string[] =>
@@ -454,10 +454,12 @@ describe('발급기 법정 링크(F-20)', () => {
         return statSync(f).isDirectory() ? scan(f) : /\.(?:[cm]?[jt]sx?|vue)$/.test(n) && !/\.test\.[jt]s$/.test(n) ? [f] : []
       })
     const sdkFiles = scan(CLIENT)
-      .filter((f) => /portone/i.test(codeOnly(readFileSync(f, 'utf8'))))
+      .filter((f) => /tosspayments/i.test(codeOnly(readFileSync(f, 'utf8'))))
       .map((f) => f.slice(CLIENT.length).replace(/^\//, ''))
-    expect(sdkFiles.sort()).toEqual(['app/pages/checkout-preview.vue', 'nuxt.config.ts'])
-    expect(codeOnly(readFileSync(join(CLIENT, 'nuxt.config.ts'), 'utf8')).match(/portone/gi)).toEqual(['portone']) // runtimeConfig 키 하나
+    expect(sdkFiles.sort()).toEqual(['app/pages/checkout-preview/index.vue'])
+    expect(codeOnly(readFileSync(join(CLIENT, 'nuxt.config.ts'), 'utf8')).match(/\btoss\b/gi)).toEqual(['toss']) // 공개 runtimeConfig 키 하나
+    // 옛 PortOne 결제 경로는 어디에도 남지 않는다(D-59)
+    expect(scan(CLIENT).filter((f) => /portone/i.test(codeOnly(readFileSync(f, 'utf8'))))).toEqual([])
     // 페이지는 법정 생성물을 직접 가져오지 않는다(05-B 는 utils 의 모델로만) · useHead 로 script · style 을 넣지 않는다
     expect(sf.statements.filter(ts.isImportDeclaration).map((d) => (d.moduleSpecifier as ts.StringLiteral).text).filter((m) => /content\/legal|\/components\//.test(m))).toEqual([])
     const headKeys: string[] = []
@@ -471,7 +473,8 @@ describe('발급기 법정 링크(F-20)', () => {
     // Object 는 읽기 도우미만(entries · keys · values · fromEntries · freeze) — assign · defineProperty 로 체크 값을 쓰는 길
     for (const o of named('Object'))
       expect(ts.isPropertyAccessExpression(o.parent) && /^(?:entries|keys|values|fromEntries|freeze)$/.test(o.parent.name.text), o.parent.getText(sf)).toBe(true)
-    // 결제 SDK 는 onPay 안의 동적 import 한 곳에서만 · PortOne 은 onPay 안에서만 · 글자 키 접근 금지 — «어떤 결제 경로든» 필수 동의 뒤
+    // 결제 SDK 는 위젯 로드 함수(loadWidgets — 진입 뒤 결제수단 · 약관을 그린다 · D-59) 안의 동적 import 한 곳에서만 · 결제 요청(requestPayment)은
+    // 위에서 본 대로 onPay 안 한 곳 · SDK 이름은 loadWidgets 안에서만 · 글자 키 접근 금지 — «어떤 결제 경로든» 필수 동의 뒤
     const ownerFn = (n: ts.Node) => {
       let o: ts.Node = n
       while (o.parent && !(ts.isVariableDeclaration(o) && o.initializer && (ts.isArrowFunction(o.initializer) || ts.isFunctionExpression(o.initializer))))
@@ -486,10 +489,14 @@ describe('발급기 법정 링크(F-20)', () => {
       ts.forEachChild(n, visit2)
     }
     visit2(sf)
-    expect(sdkImports.map((n) => [n.getText(sf), ownerFn(n)])).toEqual([["import('@portone/browser-sdk/v2')", 'onPay']])
-    expect(sf.statements.filter(ts.isImportDeclaration).map((d) => (d.moduleSpecifier as ts.StringLiteral).text).filter((m) => /portone/i.test(m))).toEqual([])
-    expect(named('PortOne').map(ownerFn).every((o) => o === 'onPay')).toBe(true)
-    expect(elementAccess.filter((e) => /^PortOne\b/.test(e))).toEqual([])
+    expect(sdkImports.map((n) => [n.getText(sf), ownerFn(n)])).toEqual([["import('@tosspayments/tosspayments-sdk')", 'loadWidgets']])
+    // 정적 import 는 타입만(번들에 SDK 가 실리지 않는다)
+    expect(sf.statements.filter(ts.isImportDeclaration).filter((d) => /tosspayments/i.test((d.moduleSpecifier as ts.StringLiteral).text)).map((d) => d.importClause?.isTypeOnly === true)).toEqual([true])
+    expect(['loadTossPayments', 'ANONYMOUS'].map((n) => [n, named(n).map(ownerFn)])).toEqual([
+      ['loadTossPayments', ['loadWidgets', 'loadWidgets']],
+      ['ANONYMOUS', ['loadWidgets', 'loadWidgets']],
+    ])
+    expect(elementAccess.filter((e) => /^(?:widgets|created|toss|agreement)\b/.test(e))).toEqual([])
     expect(
       [
         'initialConsent', 'canPayWith', 'CONSENT_ITEMS', 'CHECKOUT_NOTICE', 'reactive', 'eval', 'Function', 'Reflect', 'document', 'querySelector',

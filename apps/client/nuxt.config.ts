@@ -42,19 +42,20 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // 토스 시크릿 키 — 서버 전용(confirm 라우트). SSM /nomacom/client/NUXT_TOSS_SECRET_KEY(SecureString · after_deploy.sh 가
+    // --with-decryption 으로 읽는다) → env NUXT_TOSS_SECRET_KEY 가 런타임에 덮는다. 심사 기간 test_gsk_* · 계약 뒤 live_gsk_*(코드 0)
+    tossSecretKey: '',
     public: {
       apiBase: '/api/v1',
       // 게스트 발급 호스트(K3) — 판매 사이트의 주문번호 조회가 이 호스트의 /verify/{주문번호} 로 보낸다.
       // 루프백(127.0.0.1 · localhost)에서 연 페이지는 이 값 대신 자기 출처로 보낸다(resolveGuestOrigin · catalog D-17) —
       // 프리렌더가 이 값을 빌드 때 굳히므로, 로컬 walk 가 실호스트로 나가지 않게 하려는 것이다.
       guestAppOrigin: 'https://app.esimmany.com',
-      // PortOne V2 공개값 — /checkout-preview 전용. 값은 리포에 두지 않는다(런타임 env 로만).
-      // SSM /nomacom/client/NUXT_PUBLIC_PORTONE_STORE_ID · NUXT_PUBLIC_PORTONE_TEST_CHANNEL_KEY
-      // → after_deploy.sh 가 키 이름 끝 토막을 env 이름으로 쓰므로 NUXT_PUBLIC_ 접두가 그대로 런타임 덮어쓰기가 된다.
-      // ⚠️ testChannelKey 에는 테스트 채널키만 — 실채널키는 다른 이름으로(Phase 2).
-      portone: {
-        storeId: '',
-        testChannelKey: '',
+      // 토스페이먼츠 결제위젯 클라이언트 키 — /checkout-preview 전용 공개값(shell D-12 · D-59). 값은 리포에 두지 않는다(런타임 env 로만).
+      // SSM /nomacom/client/NUXT_PUBLIC_TOSS_CLIENT_KEY(String) → after_deploy.sh 가 키 이름 끝 토막을 env 이름으로 쓴다.
+      // 심사 기간은 test_gck_* · 계약 뒤 같은 이름에 live_gck_*(코드 0). 비우면 결제 버튼 비활성
+      toss: {
+        clientKey: '',
       },
     },
   },
