@@ -522,6 +522,18 @@ describe('발급기 법정 링크(F-20)', () => {
     // (멤버 이름 자리 — config.public.toss 의 «toss» — 는 변수가 아니라 세지 않는다)
     const asVar = (n: string) => named(n).filter((i) => !(ts.isPropertyAccessExpression(i.parent) && i.parent.name === i))
     expect(SDK_OBJ.map((n) => [n, asVar(n).length])).toEqual([['toss', 2], ['created', 5], ['agreement', 2], ['widgets', 3]])
+    // 전역 객체로 SDK 를 부르는 길 0 — 스크립트가 넣는 window.TossPayments 등. window 는 이벤트 리스너 · location 에만 ·
+    // 전역 별칭 · SDK 의 다른 결제 이름은 페이지 스크립트에 한 글자도 없다
+    for (const w of named('window'))
+      expect(
+        ts.isPropertyAccessExpression(w.parent) && w.parent.expression === w && /^(?:addEventListener|removeEventListener|location)$/.test(w.parent.name.text),
+        w.parent.getText(sf),
+      ).toBe(true)
+    expect(
+      ['TossPayments', 'globalThis', 'self', 'top', 'parent', 'frames', 'opener', 'payment', 'brandpay', 'requestBillingAuth', 'requestPaymentWindow', 'requestBillingKey'].filter(
+        (n) => named(n).length,
+      ),
+    ).toEqual([])
     const sdkImportDecl = sdkImports[0]!.parent.parent // await import(…) → 변수 선언
     expect(ts.isVariableDeclaration(sdkImportDecl) && sdkImportDecl.name.getText(sf)).toBe('{ loadTossPayments, ANONYMOUS }')
     expect(

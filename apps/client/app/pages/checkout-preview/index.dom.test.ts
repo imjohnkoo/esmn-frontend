@@ -240,6 +240,10 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
       selector: '#agreement',
       variantKey: 'AGREEMENT',
     })
+    // 금액을 먼저 정하고 그린다(토스 레퍼런스 순서)
+    const order = (f: { mock: { invocationCallOrder: number[] } }) => f.mock.invocationCallOrder[0]!
+    expect(order(sdk.widgets.setAmount)).toBeLessThan(order(sdk.widgets.renderPaymentMethods))
+    expect(order(sdk.widgets.setAmount)).toBeLessThan(order(sdk.widgets.renderAgreement))
     expect(document.body.querySelector('#payment-method')).not.toBeNull()
     expect(document.body.querySelector('#agreement')).not.toBeNull()
     // 우리 «신용 · 체크카드» 라디오는 없다 — 결제수단은 위젯이 그린다
@@ -279,6 +283,18 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
     sdk.widgets.agreement.emit!({ agreedRequiredTerms: true })
     await settle()
     expect(payButton().disabled).toBe(false)
+  })
+
+  it('SDK 스크립트를 못 불러오면(차단 · 네트워크 · 잘못된 키) 비활성 · 결제 수단 자리에 안내', async () => {
+    sdk.loadTossPayments.mockImplementationOnce(async () => {
+      throw new Error('script blocked')
+    })
+    await render()
+    await toggle(TERMS)
+    await toggle(AGE)
+    expect(payButton().disabled).toBe(true)
+    expect(document.body.textContent).toContain('결제창을 불러오지 못했어요. 새로고침해 주세요.')
+    expect(document.body.textContent).not.toContain('script blocked')
   })
 
   it('위젯 로드가 실패하면 비활성 · 결제 수단 자리에 안내', async () => {

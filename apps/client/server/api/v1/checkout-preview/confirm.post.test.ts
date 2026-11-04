@@ -58,7 +58,9 @@ describe('confirm.post', () => {
 
   it.each([
     ['paymentKey 없음', { paymentKey: undefined }],
+    ['paymentKey 빈 글자', { paymentKey: '' }],
     ['paymentKey 200자 초과', { paymentKey: 'k'.repeat(201) }],
+    ['orderId 가 이 페이지 꼴(pv-{ms}-{hex24})이 아님', { orderId: 'order-0000000001' }],
     ['orderId 규칙 밖', { orderId: 'pv 1' }],
     ['amount 문자열', { amount: String(AMOUNT) }],
     ['amount 소수', { amount: AMOUNT + 0.5 }],
@@ -117,6 +119,17 @@ describe('confirm.post', () => {
   it('200 인데 승인 금액이 요청 금액과 다르면 성공으로 돌려주지 않는다(502)', async () => {
     tossReply(200, { status: 'DONE', orderId: ORDER_ID, totalAmount: AMOUNT + 1 })
     expect(await call(body())).toEqual({ status: 502, res: { code: 'AMOUNT_MISMATCH' } })
+  })
+
+  it('토스가 200 인데 본문이 JSON 이 아니면 502 UPSTREAM(500 이 아니다)', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('<html>oops</html>', { status: 200 }))
+    expect(await call(body())).toEqual({ status: 502, res: { code: 'UPSTREAM' } })
+  })
+
+  it('paymentKey 200자는 받는다(경계)', async () => {
+    tossReply(404, { code: 'NOT_FOUND_PAYMENT', message: 'x' })
+    expect((await call(body({ paymentKey: 'k'.repeat(200) }))).status).toBe(404)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('네트워크 오류 · 타임아웃 · 토스 5xx 는 502 UPSTREAM', async () => {

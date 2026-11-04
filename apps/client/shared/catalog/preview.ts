@@ -10,8 +10,11 @@ import type { CatalogView, Kind, OptionView } from './types'
 
 export const PREVIEW_OPTION_CODE = 'FRA00U01D07V2'
 
-/** 결제 주문번호(`pv-{ms}-{hex}`) 규칙 — 토스 orderId(6~64자 · 영숫자 · `-` `_` `=`) 안. 페이지 · 복귀 화면 · confirm 라우트가 같이 쓴다 */
-export const PAYMENT_ID_PATTERN = /^[A-Za-z0-9_-]{6,64}$/
+/**
+ * 결제 주문번호 `pv-{ms}-{hex 24}`(createPaymentId) 규칙 — 토스 orderId(6~64자 · 영숫자 · `-` `_` `=`) 안.
+ * 페이지 · 복귀 화면 · confirm 라우트가 같이 쓴다 — confirm 이 이 페이지가 만든 주문번호 꼴만 받게(같은 상점 키의 다른 결제 흐름 차단) 좁게 둔다
+ */
+export const PAYMENT_ID_PATTERN = /^pv-\d{1,16}-[0-9a-f]{24}$/
 
 export interface PreviewItem {
   productName: string

@@ -219,24 +219,53 @@ describe('success 복귀 — 나머지 상태', () => {
     expect(textOf()).toContain('결제 설정을 준비하고 있어요.')
   })
 
+  const DONE = {
+    status: 'DONE',
+    orderId: MINE,
+    paymentKey: 'k',
+    approvedAt: '2026-11-04T16:00:00+09:00',
+    method: '카드',
+    totalAmount: PREVIEW_ITEM.amount,
+  }
+  const mine = (over: Record<string, string> = {}) => {
+    sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
+    route.query = successQuery(over)
+  }
   it.each([
-    ['다른 창', () => (route.query = successQuery())],
+    ['success 다른 창', Success, () => (route.query = successQuery())],
+    ['success 금액 불일치', Success, () => mine({ amount: '1' })],
+    ['success 승인 완료', Success, () => (mine(), $fetch.mockResolvedValueOnce(DONE))],
     [
-      '금액 불일치',
-      () => {
-        sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
-        route.query = successQuery({ amount: '1' })
-      },
+      'success DONE 아님',
+      Success,
+      () => (mine(), $fetch.mockResolvedValueOnce({ ...DONE, status: 'WAITING_FOR_DEPOSIT' })),
     ],
-  ])('모든 결과 상태(%s)에 «다시 결제하기» → /checkout-preview', async (_n, arrange) => {
-    arrange()
-    await render(Success)
-    const retry = [...document.body.querySelectorAll('button')].find((b) =>
-      b.textContent?.includes('다시 결제하기'),
-    )!
-    retry.click()
-    expect(navigateTo).toHaveBeenCalledWith('/checkout-preview')
-  })
+    [
+      'success confirm 오류',
+      Success,
+      () => (
+        mine(),
+        $fetch.mockRejectedValueOnce(Object.assign(new Error('x'), { data: { code: 'UPSTREAM' } }))
+      ),
+    ],
+    [
+      'fail 사유',
+      Fail,
+      () => (sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE), (route.query = { code: 'C' })),
+    ],
+    ['fail 다른 창', Fail, () => (route.query = { code: 'C' })],
+  ] as const)(
+    '모든 결과 상태(%s)에 «다시 결제하기» → /checkout-preview',
+    async (_n, page, arrange) => {
+      arrange()
+      await render(page)
+      const retry = [...document.body.querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('다시 결제하기'),
+      )!
+      retry.click()
+      expect(navigateTo).toHaveBeenCalledWith('/checkout-preview')
+    },
+  )
 })
 
 describe('fail 복귀', () => {
