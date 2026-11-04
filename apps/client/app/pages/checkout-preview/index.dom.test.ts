@@ -27,7 +27,7 @@ const sdk = vi.hoisted(() => {
     setAmount: vi.fn(async () => undefined),
     renderPaymentMethods: vi.fn(async () => ({})),
     renderAgreement: vi.fn(async () => agreement),
-    requestPayment: vi.fn(async () => undefined),
+    requestPayment: vi.fn(async (_req: { orderId: string }): Promise<undefined> => undefined),
   }
   const toss = { widgets: vi.fn(() => widgets) }
   return { widgets, toss, loadTossPayments: vi.fn(async () => toss), ANONYMOUS: '@@ANONYMOUS' }
