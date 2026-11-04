@@ -129,12 +129,18 @@ describe('readSuccessReturn — success 복귀 쿼리(spec F-19 · D-59)', () =>
     ['paymentKey 200자 초과', { paymentKey: 'k'.repeat(201) }],
     ['orderId 규칙 밖', { orderId: 'pv 1<b>' }],
     ['orderId 너무 짧음', { orderId: 'pv-1' }],
+  ])('%s → null', (_n, over) => {
+    expect(readSuccessReturn(q(over))).toBeNull()
+  })
+  it.each([
     ['amount 없음', { amount: undefined }],
     ['amount 숫자 아님', { amount: '4900원' }],
     ['amount 음수', { amount: '-4900' }],
     ['amount 소수', { amount: '4900.5' }],
-  ])('%s → null', (_n, over) => {
-    expect(readSuccessReturn(q(over))).toBeNull()
+  ])('%s → 금액 NaN(판정이 «금액 다름» 으로 — spec F-19 Number(amount) 대조)', (_n, over) => {
+    const ret = readSuccessReturn(q(over))
+    expect(ret?.amount).toBeNaN()
+    expect(judgeSuccessReturn(ret, MINE, 4900)).toBe('amount')
   })
 })
 
@@ -155,11 +161,17 @@ describe('judgeSuccessReturn — confirm 을 부를지(spec F-19)', () => {
 })
 
 describe('readFailReason — fail 복귀 · confirm 오류 사유', () => {
-  it('message 80자까지 · 없으면 code · 둘 다 없으면 UNKNOWN', () => {
-    expect(readFailReason({ code: 'C', message: '사유' })).toEqual({ code: 'C', message: '사유' })
-    expect(readFailReason({ code: 'C' })).toEqual({ code: 'C', message: 'C' })
-    expect(readFailReason({})).toEqual({ code: 'UNKNOWN', message: 'UNKNOWN' })
-    expect(readFailReason({ code: 'C', message: '가'.repeat(200) }).message).toBe('가'.repeat(80))
+  it('message · code 80자까지 · message 가 없으면 한국어 대체 문장(영문 코드가 첫 줄이 되지 않게) · code 가 없으면 UNKNOWN', () => {
+    expect(readFailReason({ code: 'C', message: '사유' }, '대체')).toEqual({
+      code: 'C',
+      message: '사유',
+    })
+    expect(readFailReason({ code: 'C' }, '대체')).toEqual({ code: 'C', message: '대체' })
+    expect(readFailReason({}, '대체')).toEqual({ code: 'UNKNOWN', message: '대체' })
+    expect(readFailReason({ code: 'C', message: '가'.repeat(200) }, '대체').message).toBe(
+      '가'.repeat(80),
+    )
+    expect(readFailReason({ code: 'X'.repeat(200) }, '대체').code).toBe('X'.repeat(80))
   })
 })
 

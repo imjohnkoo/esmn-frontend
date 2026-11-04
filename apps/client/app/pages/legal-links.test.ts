@@ -497,6 +497,33 @@ describe('발급기 법정 링크(F-20)', () => {
       ['ANONYMOUS', ['loadWidgets', 'loadWidgets']],
     ])
     expect(elementAccess.filter((e) => /^(?:widgets|created|toss|agreement)\b/.test(e))).toEqual([])
+    // SDK 객체에서 쓰는 멤버는 정해진 것만 — 진입 뒤(동의 전) 도는 loadWidgets 가 다른 결제 경로(payment() · brandpay() ·
+    // requestBillingAuth …)를 열지 못하게. 별칭 · 넘겨주기도 막는다(이름 등장 수 고정) · SDK 모듈은 두 이름만 꺼낸다
+    const unwrap = (n: ts.Expression): ts.Expression => (ts.isNonNullExpression(n) ? unwrap(n.expression) : n)
+    const SDK_OBJ = ['toss', 'created', 'agreement', 'widgets']
+    const sdkMembers: string[] = []
+    const visit4 = (n: ts.Node): void => {
+      if (ts.isPropertyAccessExpression(n)) {
+        const obj = unwrap(n.expression)
+        if (ts.isIdentifier(obj) && SDK_OBJ.includes(obj.text)) sdkMembers.push(`${obj.text}.${n.name.text}@${ownerFn(n)}`)
+      }
+      ts.forEachChild(n, visit4)
+    }
+    visit4(sf)
+    expect(sdkMembers.sort()).toEqual([
+      'agreement.on@loadWidgets',
+      'created.renderAgreement@loadWidgets',
+      'created.renderPaymentMethods@loadWidgets',
+      'created.setAmount@loadWidgets',
+      'toss.widgets@loadWidgets',
+      'widgets.requestPayment@onPay',
+    ])
+    // 이름 등장 수 = 선언 + 위 멤버 접근 + «widgets = created» 한 번뿐(다른 변수 · 함수로 넘기는 길 0)
+    // (멤버 이름 자리 — config.public.toss 의 «toss» — 는 변수가 아니라 세지 않는다)
+    const asVar = (n: string) => named(n).filter((i) => !(ts.isPropertyAccessExpression(i.parent) && i.parent.name === i))
+    expect(SDK_OBJ.map((n) => [n, asVar(n).length])).toEqual([['toss', 2], ['created', 5], ['agreement', 2], ['widgets', 3]])
+    const sdkImportDecl = sdkImports[0]!.parent.parent // await import(…) → 변수 선언
+    expect(ts.isVariableDeclaration(sdkImportDecl) && sdkImportDecl.name.getText(sf)).toBe('{ loadTossPayments, ANONYMOUS }')
     expect(
       [
         'initialConsent', 'canPayWith', 'CONSENT_ITEMS', 'CHECKOUT_NOTICE', 'reactive', 'eval', 'Function', 'Reflect', 'document', 'querySelector',

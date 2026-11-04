@@ -6,13 +6,14 @@ import { NButton } from '@imjohnkoo/design-vue'
 import type { PreviewItem } from '#shared/catalog/preview'
 import {
   type ConfirmedPayment,
+  CONFIRM_FALLBACK_MESSAGE,
   NOT_CONFIGURED_MESSAGE,
+  NOT_DONE_MESSAGE,
   clearPendingPayment,
   formatApprovedAt,
   formatWon,
   judgeSuccessReturn,
   readFailReason,
-  paymentStatusLabel,
   readPendingPayment,
   readSuccessReturn,
 } from '~/utils/checkout-preview'
@@ -46,9 +47,10 @@ onMounted(async () => {
     view.value = { kind: 'foreign' }
     return
   }
+  // 이 창의 주문번호는 한 번만 쓴다 — confirm 을 부르기 **전에** 지운다(진행 중 새로고침 · 탭 복제가 confirm 을 다시 부르지 않게)
+  clearPendingPayment()
   if (verdict === 'amount') {
     view.value = { kind: 'amount' }
-    clearPendingPayment()
     return
   }
   try {
@@ -56,19 +58,23 @@ onMounted(async () => {
       method: 'POST',
       body: ret,
     })
-    view.value = { kind: 'done', payment }
+    view.value =
+      payment.status === 'DONE'
+        ? { kind: 'done', payment }
+        : { kind: 'error', code: payment.status, message: NOT_DONE_MESSAGE }
   } catch (error) {
     const data = (error as { data?: Record<string, unknown> }).data ?? {}
-    const reason = readFailReason(data)
+    const reason = readFailReason(data, CONFIRM_FALLBACK_MESSAGE)
     view.value = {
       kind: 'error',
       code: reason.code,
       message: reason.code === 'NOT_CONFIGURED' ? NOT_CONFIGURED_MESSAGE : reason.message,
     }
   }
-  clearPendingPayment()
 })
 
+// «청구되지 않아요» 는 테스트 키일 때만 — 같은 이름에 라이브 키가 들어가면 그리지 않는다(spec D-12)
+const isTestKey = useRuntimeConfig().public.toss.clientKey.startsWith('test_')
 const retry = () => navigateTo('/checkout-preview')
 // 화면 제목(문서 title 은 «결제 결과» 그대로) — 디자인 리뷰 TOSSCK
 const heading = computed(() =>
@@ -94,13 +100,13 @@ const heading = computed(() =>
       결제 금액이 상품 금액과 달라 승인하지 않았어요.
     </p>
     <template v-else-if="view.kind === 'done'">
-      <p class="pay-result__text pay-result__text--ok" role="status">
+      <p v-if="isTestKey" class="pay-result__text pay-result__text--ok" role="status">
         테스트 결제라 실제로 청구되지 않아요.
       </p>
       <dl class="pay-result__rows">
         <div class="pay-result__row">
           <dt>상태</dt>
-          <dd>{{ paymentStatusLabel(view.payment.status) }}</dd>
+          <dd>승인 완료</dd>
         </div>
         <div class="pay-result__row">
           <dt>주문번호</dt>

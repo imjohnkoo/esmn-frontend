@@ -3,7 +3,12 @@
 // 쿼리 code · message(80자). 토스 취소(PAY_PROCESS_CANCELED)는 orderId 를 싣지 않아 주문번호로 대조할 수 없다 —
 // 이 탭이 결제를 시작했을 때(sessionStorage 에 주문번호가 있을 때)만 사유를 그린다(링크로 만든 임의 문구 차단). 그린 뒤 지운다.
 import { NButton } from '@imjohnkoo/design-vue'
-import { clearPendingPayment, readFailReason, readPendingPayment } from '~/utils/checkout-preview'
+import {
+  FAIL_FALLBACK_MESSAGE,
+  clearPendingPayment,
+  readFailReason,
+  readPendingPayment,
+} from '~/utils/checkout-preview'
 
 definePageMeta({ layout: 'flow' })
 useHead({ title: '결제 결과' })
@@ -21,7 +26,7 @@ onMounted(() => {
     view.value = { kind: 'foreign' }
     return
   }
-  view.value = { kind: 'failed', ...readFailReason(route.query) }
+  view.value = { kind: 'failed', ...readFailReason(route.query, FAIL_FALLBACK_MESSAGE) }
   clearPendingPayment()
 })
 

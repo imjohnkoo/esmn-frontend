@@ -61,6 +61,8 @@ enableAutoUnmount(afterEach)
 beforeEach(() => {
   vi.clearAllMocks()
   sdk.widgets.renderPaymentMethods.mockImplementation(async () => ({}))
+  requestPayment.mockReset()
+  requestPayment.mockImplementation(async () => undefined)
   sessionStorage.clear()
   route.query = {}
   toss.clientKey = 'test_ck_test_only'
@@ -310,6 +312,70 @@ describe('테스트 체크아웃 — 동의 전 결제 0 · 필수 2개 뒤에�
     payButton().click()
     await settle()
     expect(requestPayment).toHaveBeenCalledTimes(1)
+  })
+
+  it('주문번호는 결제창을 열기 **전에** 이 탭에 적힌다(리디렉트는 돌아오지 않는다 — 뒤에 적으면 success 가 늘 «이 창 아님»)', async () => {
+    let storedAtCall: string | null = 'unset'
+    requestPayment.mockImplementationOnce(async (req: { orderId: string }) => {
+      storedAtCall = sessionStorage.getItem(PENDING_PAYMENT_KEY)
+      expect(storedAtCall).toBe(req.orderId)
+      return new Promise<undefined>(() => {}) // 페이지를 떠나는 중 — 끝나지 않는다
+    })
+    await render()
+    await toggle(TERMS)
+    await toggle(AGE)
+    payButton().click()
+    await settle()
+    expect(requestPayment).toHaveBeenCalledTimes(1)
+    expect(storedAtCall).toMatch(/^pv-\d+-[0-9a-f]{24}$/)
+  })
+
+  it('결제 핸들러를 직접 두 번 불러도 요청은 한 번 · 주문번호를 덮지 않는다(요청 중 가드)', async () => {
+    requestPayment.mockImplementation(() => new Promise<undefined>(() => {}))
+    await render()
+    await toggle(TERMS)
+    await toggle(AGE)
+    const vm = current!.vm as unknown as { onPay: () => Promise<void> }
+    void vm.onPay()
+    await settle()
+    const first = sessionStorage.getItem(PENDING_PAYMENT_KEY)
+    void vm.onPay()
+    await settle()
+    expect(requestPayment).toHaveBeenCalledTimes(1)
+    expect(sessionStorage.getItem(PENDING_PAYMENT_KEY)).toBe(first)
+  })
+
+  it('위젯 준비 전 결제 핸들러를 직접 불러도 주문번호를 만들지 않고 사유 줄도 없다(준비 가드)', async () => {
+    sdk.widgets.renderPaymentMethods.mockImplementation(() => new Promise(() => {}))
+    await render()
+    await toggle(TERMS)
+    await toggle(AGE)
+    await (current!.vm as unknown as { onPay: () => Promise<void> }).onPay()
+    await settle()
+    expect(requestPayment).not.toHaveBeenCalled()
+    expect(sessionStorage.getItem(PENDING_PAYMENT_KEY)).toBeNull()
+    expect(document.body.querySelector('[role="alert"]')).toBeNull()
+  })
+
+  it('결제창에서 뒤로 와 bfcache 로 복원되면(pageshow persisted) 로딩이 풀려 다시 누를 수 있다(D-21) — persisted 아니면 그대로', async () => {
+    requestPayment.mockImplementation(() => new Promise<undefined>(() => {}))
+    await render()
+    await toggle(TERMS)
+    await toggle(AGE)
+    payButton().click()
+    await settle()
+    expect(payButton().disabled).toBe(true)
+    const show = (persisted: boolean) => {
+      const e = new Event('pageshow') as PageTransitionEvent
+      Object.defineProperty(e, 'persisted', { value: persisted })
+      window.dispatchEvent(e)
+    }
+    show(false)
+    await settle()
+    expect(payButton().disabled).toBe(true)
+    show(true)
+    await settle()
+    expect(payButton().disabled).toBe(false)
   })
 
   it('결제 요청이 거절되면 사유 한 줄 · 버튼이 다시 활성', async () => {

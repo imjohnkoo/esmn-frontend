@@ -16,6 +16,7 @@ const MINE = 'pv-1790105212345-abababababababababababab'
 const route: { query: Record<string, string> } = { query: {} }
 const $fetch = vi.fn()
 const navigateTo = vi.fn()
+const toss = { clientKey: 'test_ck_test_only' }
 Object.assign(globalThis, {
   ref,
   computed,
@@ -24,6 +25,7 @@ Object.assign(globalThis, {
   useHead: () => {},
   useRoute: () => route,
   useAppConfig: () => ({ checkoutPreview: PREVIEW_ITEM }),
+  useRuntimeConfig: () => ({ public: { toss } }),
   $fetch,
   navigateTo,
 })
@@ -33,6 +35,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   sessionStorage.clear()
   route.query = {}
+  toss.clientKey = 'test_ck_test_only'
 })
 
 const render = async (page: typeof Success) => {
@@ -70,9 +73,21 @@ describe('success 복귀', () => {
     await render(Success)
     expect(textOf()).toContain('결제 금액이 상품 금액과 달라 승인하지 않았어요.')
     expect($fetch).not.toHaveBeenCalled()
+    expect(sessionStorage.getItem(PENDING_PAYMENT_KEY)).toBeNull()
   })
 
-  it('둘 다 맞으면 confirm 1회(본문 = 쿼리 3값 · 금액은 숫자) → 승인 표 · 기억한 주문번호를 지운다', async () => {
+  it('금액 글자가 정수가 아니면(4900.5 · abc) 이 창의 결제라도 «금액이 달라» · confirm 호출 0', async () => {
+    for (const amount of ['4900.5', 'abc']) {
+      sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
+      route.query = successQuery({ amount })
+      await render(Success)
+      expect(textOf()).toContain('결제 금액이 상품 금액과 달라 승인하지 않았어요.')
+      document.body.innerHTML = ''
+    }
+    expect($fetch).not.toHaveBeenCalled()
+  })
+
+  it('둘 다 맞으면 confirm 1회(본문 = 쿼리 3값 · 금액은 숫자) → 승인 표 · 테스트 키면 «청구되지 않아요» · 기억한 주문번호를 지운다', async () => {
     sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
     route.query = successQuery()
     $fetch.mockResolvedValueOnce({
@@ -100,6 +115,7 @@ describe('success 복귀', () => {
       `금액 ${PREVIEW_ITEM.amount.toLocaleString('ko-KR')}원`,
     ])
     expect(document.body.querySelector('h1')!.textContent).toBe('결제가 승인됐어요')
+    expect(textOf()).toContain('테스트 결제라 실제로 청구되지 않아요.')
     // 원값 DONE 은 화면에 쓰지 않는다
     expect(textOf()).not.toContain('DONE')
     expect(sessionStorage.getItem(PENDING_PAYMENT_KEY)).toBeNull()
@@ -128,6 +144,71 @@ describe('success 복귀', () => {
 })
 
 describe('success 복귀 — 나머지 상태', () => {
+  it('confirm 은 주문번호를 지운 **뒤** 부른다 — 진행 중 새로고침(다시 마운트)은 confirm 을 다시 부르지 않고 «이 창 아님»', async () => {
+    sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
+    route.query = successQuery()
+    let storedAtCall: string | null = 'unset'
+    $fetch.mockImplementation(() => {
+      storedAtCall = sessionStorage.getItem(PENDING_PAYMENT_KEY)
+      return new Promise(() => {}) // 진행 중
+    })
+    await render(Success)
+    expect(storedAtCall).toBeNull()
+    await render(Success) // 새로고침
+    expect($fetch).toHaveBeenCalledTimes(1)
+    expect(textOf()).toContain('이 창에서 시작한 결제가 아니에요.')
+    $fetch.mockReset()
+  })
+
+  it('confirm 200 이어도 상태가 DONE 이 아니면(가상계좌 입금 대기) 승인으로 그리지 않는다 — 원값은 오류 코드 줄에만', async () => {
+    sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
+    route.query = successQuery()
+    $fetch.mockResolvedValueOnce({
+      status: 'WAITING_FOR_DEPOSIT',
+      orderId: MINE,
+      paymentKey: 'tgen_test_key',
+      approvedAt: null,
+      method: '가상계좌',
+      totalAmount: PREVIEW_ITEM.amount,
+    })
+    await render(Success)
+    expect(document.body.querySelector('h1')!.textContent).toBe('결제하지 못했어요')
+    expect(textOf()).toContain('결제가 아직 완료되지 않았어요.')
+    expect(textOf()).not.toContain('승인됐어요')
+    expect(textOf()).not.toContain('1970')
+    expect(document.body.querySelector('.pay-result__code')!.textContent).toBe(
+      '오류 코드 WAITING_FOR_DEPOSIT',
+    )
+  })
+
+  it('라이브 키(test_ 아님)면 «테스트 결제라 실제로 청구되지 않아요» 를 그리지 않는다', async () => {
+    toss.clientKey = 'live_ck_x'
+    sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
+    route.query = successQuery()
+    $fetch.mockResolvedValueOnce({
+      status: 'DONE',
+      orderId: MINE,
+      paymentKey: 'k',
+      approvedAt: '2026-11-04T16:00:00+09:00',
+      method: '카드',
+      totalAmount: PREVIEW_ITEM.amount,
+    })
+    await render(Success)
+    expect(document.body.querySelector('h1')!.textContent).toBe('결제가 승인됐어요')
+    expect(textOf()).not.toContain('청구되지 않아요')
+  })
+
+  it('message 없는 오류(502 UPSTREAM · 네트워크)는 한국어 문장이 먼저 · 코드는 아래', async () => {
+    sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
+    route.query = successQuery()
+    $fetch.mockRejectedValueOnce(Object.assign(new Error('502'), { data: { code: 'UPSTREAM' } }))
+    await render(Success)
+    expect(document.body.querySelector('.pay-result__text')!.firstChild!.textContent!.trim()).toBe(
+      '승인 결과를 확인하지 못했어요.',
+    )
+    expect(document.body.querySelector('.pay-result__code')!.textContent).toBe('오류 코드 UPSTREAM')
+  })
+
   it('시크릿 키 미설정(503 NOT_CONFIGURED) → «결제 설정을 준비하고 있어요.»', async () => {
     sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
     route.query = successQuery()
@@ -169,6 +250,15 @@ describe('fail 복귀', () => {
     )
     expect(sessionStorage.getItem(PENDING_PAYMENT_KEY)).toBeNull()
     expect($fetch).not.toHaveBeenCalled()
+  })
+
+  it('message 가 없으면 «결제가 완료되지 않았어요.» 가 먼저 · 코드는 아래', async () => {
+    sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
+    route.query = { code: 'PAY_PROCESS_ABORTED' }
+    await render(Fail)
+    expect(document.body.querySelector('.pay-result__text')!.firstChild!.textContent!.trim()).toBe(
+      '결제가 완료되지 않았어요.',
+    )
   })
 
   it('이 탭이 시작한 결제가 없으면 쿼리 문구를 그리지 않는다(링크로 만든 임의 문구 차단)', async () => {

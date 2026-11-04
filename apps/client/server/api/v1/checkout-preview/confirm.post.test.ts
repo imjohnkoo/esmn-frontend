@@ -14,6 +14,7 @@ vi.stubGlobal('useRuntimeConfig', () => config)
 const fetchMock = vi.fn()
 vi.stubGlobal('fetch', fetchMock)
 
+const timeoutSpy = vi.spyOn(AbortSignal, 'timeout')
 type Event = { body: unknown; status?: number }
 const handler = (await import('./confirm.post')).default as unknown as (
   e: Event,
@@ -110,6 +111,7 @@ describe('confirm.post', () => {
       amount: AMOUNT,
     })
     expect(init.signal).toBeInstanceOf(AbortSignal)
+    expect(timeoutSpy).toHaveBeenCalledWith(10_000)
   })
 
   it('200 인데 승인 금액이 요청 금액과 다르면 성공으로 돌려주지 않는다(502)', async () => {

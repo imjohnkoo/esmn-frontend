@@ -59,15 +59,21 @@ export interface SuccessReturn {
   amount: number
 }
 
-/** success 복귀 쿼리 — 세 값이 모두 형식에 맞을 때만(아니면 null). 금액 대조는 판정(`judgeSuccessReturn`)의 몫 */
+/**
+ * success 복귀 쿼리 — paymentKey · orderId 가 형식에 맞을 때만(아니면 null). 금액은 정수 글자가 아니면 NaN —
+ * 금액 대조(spec F-19 «Number(amount) ≠ 품목 금액 → 승인하지 않음»)는 판정(`judgeSuccessReturn`)의 몫
+ */
 export function readSuccessReturn(query: Record<string, unknown>): SuccessReturn | null {
   const paymentKey = text(first(query.paymentKey))
   const orderId = text(first(query.orderId))
   const amountText = text(first(query.amount))
   if (!paymentKey || paymentKey.length > PAYMENT_KEY_MAX) return null
   if (!orderId || !PAYMENT_ID_PATTERN.test(orderId)) return null
-  if (!amountText || !/^\d{1,12}$/.test(amountText)) return null
-  return { paymentKey, orderId, amount: Number(amountText) }
+  return {
+    paymentKey,
+    orderId,
+    amount: amountText && /^\d{1,12}$/.test(amountText) ? Number(amountText) : NaN,
+  }
 }
 
 /**
@@ -84,12 +90,20 @@ export function judgeSuccessReturn(
   return 'confirm'
 }
 
-/** fail 복귀 쿼리 · confirm 오류 — 사유는 80자까지, message 가 없으면 code */
-export function readFailReason(query: Record<string, unknown>): { code: string; message: string } {
+/** fail 복귀 쿼리 · confirm 오류 — 사유는 80자까지. message 가 없으면 한국어 대체 문장(첫 줄이 영문 코드가 되지 않게 — 디자인 리뷰 TOSSCK) */
+export function readFailReason(
+  query: Record<string, unknown>,
+  fallbackMessage: string,
+): { code: string; message: string } {
   const code = text(first(query.code)) ?? 'UNKNOWN'
-  const message = text(first(query.message)) ?? code
+  const message = text(first(query.message)) ?? fallbackMessage
   return { code: code.slice(0, RESULT_MESSAGE_MAX), message: message.slice(0, RESULT_MESSAGE_MAX) }
 }
+
+export const FAIL_FALLBACK_MESSAGE = '결제가 완료되지 않았어요.'
+export const CONFIRM_FALLBACK_MESSAGE = '승인 결과를 확인하지 못했어요.'
+/** confirm 이 200 이어도 상태가 DONE 이 아니면(가상계좌 입금 대기 등) 승인으로 그리지 않는다 */
+export const NOT_DONE_MESSAGE = '결제가 아직 완료되지 않았어요.'
 
 /** confirm 라우트 응답(200) — 카드 · 영수증 · 고객 필드는 서버가 걸러 싣지 않는다 */
 export interface ConfirmedPayment {
@@ -119,11 +133,6 @@ export function formatApprovedAt(iso: string): string {
       .map((p) => [p.type, p.value]),
   )
   return `${parts.year}. ${parts.month}. ${parts.day} ${parts.hour}:${parts.minute}`
-}
-
-/** 결과 화면 상태 글자 — 토스 원값(DONE)은 그리지 않는다(디자인 리뷰 TOSSCK) */
-export function paymentStatusLabel(status: string): string {
-  return status === 'DONE' ? '승인 완료' : status
 }
 
 /** confirm 이 시크릿 키 미설정(503)으로 막혔을 때 — 체크아웃 페이지 «키 비면» 안내와 같은 문장 */
