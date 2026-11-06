@@ -97,7 +97,7 @@ f) 보고 끝에 git status --porcelain 을 다시 찍어 a) 와 같은지 적�
   (발급 · SMS · 주문 변경). 실제 고객 이름 · 전화번호를 어디에도 넣지 않는다.
 - 서버를 띄우거나 재시작하지 않는다 — spec 의 준비 단계(설치 · 빌드 · 서버 기동, 예: E2E-0)는 코딩 세션 몫이라 건너뛴다.
   대상은 코딩 세션이 봉투(.claude/scripts/client-walk-server.sh)로 띄운 <walk 서버 URL> 뿐 — ⑥ 리뷰어는 GET/HEAD/OPTIONS 만,
-  ⑦ walk 는 브라우저로 spec 절차를 걷는다(폼 제출 · POST 포함 — 봉투 서버는 벤더 · prod 에 닿지 않는다. PortOne 테스트
+  ⑦ walk 는 브라우저로 spec 절차를 걷는다(폼 제출 · POST 포함 — 봉투 서버는 벤더 · prod 에 닿지 않는다. 토스 테스트
   결제창은 코딩 세션이 테스트 키를 넣어 띄운 경우만). 주소는 http://127.0.0.1:<port> — localhost 금지(macOS 에서 ::1 로 먼저
   붙어 봉투 밖 서버에 닿는다).
 - ps -E 는 그 walk 서버 pid 에만, 키 이름만 출력 — 이 리포 밖 프로세스의 env 는 훑지 않는다(다른 앱의 비밀 값이 찍힌다).
@@ -178,7 +178,7 @@ g) Orca 브라우저 명령은 전부 --page <browserPageId> 로 고정한다 �
   (발급 · SMS · 주문 변경). 실제 고객 이름 · 전화번호를 어디에도 넣지 않는다.
 - 서버를 띄우거나 재시작하지 않는다 — spec 의 준비 단계(설치 · 빌드 · 서버 기동, 예: E2E-0)는 코딩 세션 몫이라 건너뛴다.
   대상은 코딩 세션이 봉투(.claude/scripts/client-walk-server.sh)로 띄운 <walk 서버 URL> 뿐 — ⑥ 리뷰어는 GET/HEAD/OPTIONS 만,
-  ⑦ walk 는 브라우저로 spec 절차를 걷는다(폼 제출 · POST 포함 — 봉투 서버는 벤더 · prod 에 닿지 않는다. PortOne 테스트
+  ⑦ walk 는 브라우저로 spec 절차를 걷는다(폼 제출 · POST 포함 — 봉투 서버는 벤더 · prod 에 닿지 않는다. 토스 테스트
   결제창은 코딩 세션이 테스트 키를 넣어 띄운 경우만). 주소는 http://127.0.0.1:<port> — localhost 금지(macOS 에서 ::1 로 먼저
   붙어 봉투 밖 서버에 닿는다).
 - ps -E 는 그 walk 서버 pid 에만, 키 이름만 출력 — 이 리포 밖 프로세스의 env 는 훑지 않는다(다른 앱의 비밀 값이 찍힌다).

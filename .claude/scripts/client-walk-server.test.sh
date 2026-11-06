@@ -92,9 +92,16 @@ lacks "$out" '^(SPARK|MAYA|ESIM_MANAGER)' "벤더 · 내부 키 누출(dry-run)"
 lacks "$out" 'evil\.example' "셸 CORS 값 누출(dry-run)"
 lacks "$out" '^DATABASE_URL=' "DB 인자 없는데 DATABASE_URL(dry-run)"
 
-out="$(NUXT_PUBLIC_PORTONE_STORE_ID=store-x WALK_DRY_RUN=1 bash "$S" prod 3099 2>&1)" || ng "PortOne dry-run 실패"
-has "$out" 'NUXT_PUBLIC_PORTONE_STORE_ID=***' "PortOne 공개키 통로(마스킹)"
-lacks "$out" 'NUXT_PUBLIC_PORTONE_TEST_CHANNEL_KEY' "안 준 키가 생김"
+out="$(NUXT_PUBLIC_TOSS_CLIENT_KEY=test_ck_x WALK_DRY_RUN=1 bash "$S" prod 3099 2>&1)" || ng "토스 dry-run 실패"
+has "$out" 'NUXT_PUBLIC_TOSS_CLIENT_KEY=***' "토스 클라이언트 키 통로(마스킹)"
+lacks "$out" 'test_ck_x' "토스 키 값 노출(dry-run)"
+lacks "$out" 'NUXT_TOSS_SECRET_KEY' "안 준 키가 생김"
+out="$(NUXT_TOSS_SECRET_KEY=test_sk_x WALK_DRY_RUN=1 bash "$S" prod 3099 2>&1)" || ng "토스 시크릿 dry-run 실패"
+has "$out" 'NUXT_TOSS_SECRET_KEY=***' "토스 시크릿 키 통로(마스킹)"
+lacks "$out" 'test_sk_x' "토스 시크릿 값 노출(dry-run)"
+for live in 'NUXT_PUBLIC_TOSS_CLIENT_KEY=live_ck_x' 'NUXT_TOSS_SECRET_KEY=live_sk_x' 'NUXT_TOSS_SECRET_KEY=sk_x'; do
+  if env "$live" WALK_DRY_RUN=1 bash "$S" prod 3099 >/dev/null 2>&1; then ng "테스트 키 아닌 값 통과: ${live%%=*}"; else ok; fi
+done
 
 # ── 실제 기동 줄 (dev) — env -i · 인자 · cwd
 out="$(run_real dev 3099)" || ng "dev 실제 기동 줄 실패"
@@ -145,10 +152,10 @@ DBU='postgres://walk:walk@127.0.0.1:55432/walk'
 out="$(FAKE_NET_55432="com.docker.backe" run_real dev 3099 "$DBU")" || ng "Docker 리스너 기동 줄 실패"
 has "$out" "ENV:DATABASE_URL=$DBU" "로컬 DB 리스너면 합성 DATABASE_URL 전달"
 
-# ── 실제 기동에서 PortOne 공개키 통로
-out="$(NUXT_PUBLIC_PORTONE_STORE_ID=store-x NUXT_PUBLIC_PORTONE_TEST_CHANNEL_KEY=channel-key-test-x run_real dev 3099)" || ng "PortOne 실제 기동 줄 실패"
-has "$out" 'ENV:NUXT_PUBLIC_PORTONE_STORE_ID=store-x' "실제 env PortOne storeId 전달"
-has "$out" 'ENV:NUXT_PUBLIC_PORTONE_TEST_CHANNEL_KEY=channel-key-test-x' "실제 env PortOne 테스트 채널키 전달"
+# ── 실제 기동에서 토스 테스트 키 통로
+out="$(NUXT_PUBLIC_TOSS_CLIENT_KEY=test_ck_x NUXT_TOSS_SECRET_KEY=test_sk_x run_real dev 3099)" || ng "토스 실제 기동 줄 실패"
+has "$out" 'ENV:NUXT_PUBLIC_TOSS_CLIENT_KEY=test_ck_x' "실제 env 토스 클라이언트 키 전달"
+has "$out" 'ENV:NUXT_TOSS_SECRET_KEY=test_sk_x' "실제 env 토스 시크릿 키 전달"
 
 # ── netstat 이 실패하거나 빈 출력이면 기동하지 않는다 — «리스너 없음» 으로 읽지 않게
 for broken in 'exit 1' 'exit 0'; do

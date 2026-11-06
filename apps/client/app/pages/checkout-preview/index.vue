@@ -1,17 +1,16 @@
 <script setup lang="ts">
-// 테스트 체크아웃 (K9 · spec S-7) — PG 심사 캡처 전용. 사이트 어디에서도 링크하지 않는다 · noindex.
-// 주문 저장 · 발급 · 결제 서버 호출 0 — 상품 값은 빌드 때 카탈로그(K1)에서 계산해 앱 설정으로 들어온다(catalog F-12 ·
-// modules/catalog.ts). 이 페이지는 데이터 라우트도 부르지 않는다(shell F-19 «서버 호출 0»).
-// 키는 runtimeConfig.public.portone(테스트 채널키만 — 이름에 TEST).
+// 테스트 체크아웃 (K9 · spec S-7 · D-59) — PG 심사 캡처 전용. 사이트 어디에서도 링크하지 않는다 · noindex.
+// 결제창 = 토스페이먼츠 결제위젯 v2(주문서형). 주문 저장 · 발급 0 — 승인(confirm)은 복귀 화면 /checkout-preview/success 가 한 번 부른다.
+// 상품 값은 빌드 때 카탈로그(K1)에서 계산해 앱 설정으로 들어온다(catalog F-12 · modules/catalog.ts) — 이 페이지는 데이터 라우트를 부르지 않는다.
+// 키는 runtimeConfig.public.toss.clientKey(심사 기간 test_gck_*).
 import { NButton, NCheckbox } from '@imjohnkoo/design-vue'
+import type { TossPaymentsWidgets } from '@tosspayments/tosspayments-sdk'
 import type { PreviewItem } from '#shared/catalog/preview'
 import {
-  PENDING_PAYMENT_KEY,
   createPaymentId,
   formatWon,
-  buildReturnQuery,
-  readPaymentResult,
   useCheckoutConsent,
+  writePendingPayment,
 } from '~/utils/checkout-preview'
 
 definePageMeta({ layout: 'flow' })
@@ -28,78 +27,79 @@ if (!preview)
 const PREVIEW_ITEM: PreviewItem = preview
 
 const config = useRuntimeConfig()
-const route = useRoute()
-
-const storeId = config.public.portone.storeId
-const channelKey = config.public.portone.testChannelKey
-const isConfigured = Boolean(storeId && channelKey)
+const clientKey = config.public.toss.clientKey
+const isConfigured = Boolean(clientKey)
 
 // 05-B(client-shell spec F-22) — 필수 2(이용약관 · 만 14세)가 체크돼야 결제 · 선택 1(마케팅)은 결제와 무관 · 서버 저장 0(F-19).
 // 항목 · 처음 값 · 필수 판정 · 결제 조건은 utils 의 useCheckoutConsent 하나 — 이 페이지는 체크 값을 읽거나 쓰지 않는다
 const { items: consentItems, agreed, canPay } = useCheckoutConsent()
 const isRequesting = ref(false)
 const openError = ref<string | null>(null)
-// 이 탭이 만든 결제 ID(sessionStorage) — 복귀 쿼리가 이것과 같을 때만 결과 줄을 그린다(링크로 만든 임의 문구 차단)
-const expectedPaymentId = ref<string | null>(null)
-const result = computed(() => readPaymentResult(route.query, expectedPaymentId.value))
+// 결제수단 · 약관 위젯이 둘 다 그려져야 결제 요청을 받는다 · 불러오기 실패(스크립트 차단 · 네트워크 · 잘못된 키)는 결제 수단 자리에 안내
+const widgetsReady = ref(false)
+const widgetLoadFailed = ref(false)
+// 토스 약관 위젯의 필수 약관 동의(agreementStatusChange · agreedRequiredTerms) — 안 됐으면 버튼 비활성(디자인 리뷰 TOSSCK 1).
+// 처음 값 = 동의: 위젯은 필수 약관을 체크된 채로 그리고 처음 상태를 이벤트로 알리지 않는다(2026-11-04 ⑦ walk 실측 · 상태 조회 API 없음).
+// 바뀔 때만 이벤트가 온다. 콘솔 설정으로 기본 해제가 되면 요청이 SDK 오류로 거절돼 사유 줄이 뜬다
+const tossTermsAgreed = ref(true)
+let widgets: TossPaymentsWidgets | null = null
 
-const readPendingPayment = () => {
-  try {
-    return sessionStorage.getItem(PENDING_PAYMENT_KEY)
-  } catch {
-    return null
-  }
-}
-const writePendingPayment = (paymentId: string) => {
-  try {
-    sessionStorage.setItem(PENDING_PAYMENT_KEY, paymentId)
-  } catch {
-    /* 저장이 막힌 브라우저 — 결과 줄만 안 보인다 */
-  }
+const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error))
+
+// SDK 는 클라이언트에서 페이지 진입 뒤에만 불러온다(SSR 번들 제외) — 위젯이 결제수단을 그려야 해서 클릭 전에 로드한다(D-59)
+const loadWidgets = async () => {
+  const { loadTossPayments, ANONYMOUS } = await import('@tosspayments/tosspayments-sdk')
+  const toss = await loadTossPayments(clientKey)
+  const created = toss.widgets({ customerKey: ANONYMOUS })
+  await created.setAmount({ currency: 'KRW', value: PREVIEW_ITEM.amount })
+  const [, agreement] = await Promise.all([
+    created.renderPaymentMethods({ selector: '#payment-method', variantKey: 'DEFAULT' }),
+    created.renderAgreement({ selector: '#agreement', variantKey: 'AGREEMENT' }),
+  ])
+  agreement.on('agreementStatusChange', (status) => {
+    tossTermsAgreed.value = status.agreedRequiredTerms
+  })
+  widgets = created
+  widgetsReady.value = true
 }
 
-// 결제창에서 뒤로 와 bfcache 로 복원되면 promise 가 끝나지 않은 채라 로딩으로 굳는다 — 되돌린다 (spec D-21)
+// 결제창에서 뒤로 와 bfcache 로 복원되면 리디렉트 요청이 끝나지 않은 채라 로딩으로 굳는다 — 되돌린다 (spec D-21)
 const onPageShow = (event: PageTransitionEvent) => {
   if (event.persisted) isRequesting.value = false
 }
 onMounted(() => {
-  expectedPaymentId.value = readPendingPayment()
   window.addEventListener('pageshow', onPageShow)
+  if (isConfigured)
+    loadWidgets().catch(() => {
+      widgetLoadFailed.value = true
+    })
 })
 onBeforeUnmount(() => window.removeEventListener('pageshow', onPageShow))
 
 const onPay = async () => {
-  if (!isConfigured || !canPay.value || isRequesting.value) return
+  if (
+    !isConfigured ||
+    !canPay.value ||
+    !widgetsReady.value ||
+    !tossTermsAgreed.value ||
+    isRequesting.value
+  )
+    return
   isRequesting.value = true
   openError.value = null
   try {
-    // SDK 는 클릭 때만 불러온다(SSR 번들 제외) — 첫 호출에 PortOne CDN 스크립트를 넣는다
-    const PortOne = await import('@portone/browser-sdk/v2')
-    const paymentId = createPaymentId(Date.now(), crypto.getRandomValues(new Uint8Array(12)))
-    writePendingPayment(paymentId)
-    expectedPaymentId.value = paymentId
-    const response = await PortOne.requestPayment({
-      storeId,
-      channelKey,
-      paymentId,
+    const orderId = createPaymentId(Date.now(), crypto.getRandomValues(new Uint8Array(12)))
+    writePendingPayment(orderId)
+    // 리디렉트 방식 — 결과는 success · fail 주소로 돌아온다. 고객 이름 · 이메일 · 전화는 보내지 않는다(PII 0).
+    // 반환 = 페이지를 떠나는 중 — 로딩을 유지한다(다시 누르면 주문번호가 덮인다). bfcache 복귀는 pageshow 가 푼다
+    await widgets!.requestPayment({
+      orderId,
       orderName: PREVIEW_ITEM.orderName,
-      totalAmount: PREVIEW_ITEM.amount,
-      currency: 'KRW',
-      payMethod: 'CARD',
-      redirectUrl: `${window.location.origin}/checkout-preview`,
-      // PC(iframe) · 모바일(리다이렉트) 모두 결과를 복귀 쿼리로 받는다 — 결과 처리는 readPaymentResult 하나
-      forceRedirect: true,
+      successUrl: `${window.location.origin}/checkout-preview/success`,
+      failUrl: `${window.location.origin}/checkout-preview/fail`,
     })
-    // 응답 없음 = 리디렉트로 페이지를 떠나는 중 — 로딩을 유지한다(다시 누르면 결제 ID 가 덮인다). bfcache 복귀는 pageshow 가 푼다
-    if (!response) return
-    // 창 없이 끝난 응답(창을 열기 전 오류 등)도 같은 복귀 쿼리로 — 결과 처리는 readPaymentResult 하나 (spec F-19)
-    await navigateTo(
-      { path: '/checkout-preview', query: buildReturnQuery(response, paymentId) },
-      { replace: true },
-    )
-    isRequesting.value = false
   } catch (error) {
-    openError.value = error instanceof Error ? error.message : String(error)
+    openError.value = errorText(error)
     isRequesting.value = false
   }
 }
@@ -143,11 +143,11 @@ import { renderNoticeList } from '~/utils/legal-render'
       </p>
     </section>
 
-    <section class="checkout__section" aria-labelledby="checkout-method-title">
-      <h2 id="checkout-method-title" class="checkout__label">결제 수단</h2>
-      <p class="checkout__method">
-        <span class="checkout__radio" aria-hidden="true" />
-        신용 · 체크카드
+    <!-- 결제 수단 — 토스 결제위젯 renderPaymentMethods 가 제목까지 그린다(우리 제목을 달지 않는다 · 디자인 리뷰 TOSSCK 3) -->
+    <section class="checkout__section" aria-label="결제 수단">
+      <div id="payment-method" class="checkout__widget" />
+      <p v-if="widgetLoadFailed" class="checkout__result" role="alert">
+        결제창을 불러오지 못했어요. 새로고침해 주세요.
       </p>
     </section>
 
@@ -192,12 +192,15 @@ import { renderNoticeList } from '~/utils/legal-render'
       </div>
     </section>
 
+    <!-- 토스 결제위젯 renderAgreement 가 그린다(토스 약관 — 우리 05-B 동의는 위 블록) -->
+    <div id="agreement" class="checkout__widget" />
+
     <div class="checkout__cta">
       <NButton
         variant="primary"
         size="xl"
         full-width
-        :disabled="!isConfigured || !canPay"
+        :disabled="!isConfigured || !canPay || !widgetsReady || !tossTermsAgreed"
         :loading="isRequesting"
         @click="onPay"
       >
@@ -206,17 +209,6 @@ import { renderNoticeList } from '~/utils/legal-render'
       <p v-if="!isConfigured" class="checkout__note">결제 설정을 준비하고 있어요.</p>
     </div>
 
-    <p
-      v-if="!openError && result.status === 'success'"
-      class="checkout__result checkout__result--ok"
-      role="status"
-    >
-      결제창 호출과 승인을 확인했어요. 테스트 결제라 실제로 청구되지 않아요.
-      <span class="checkout__result-id">결제 ID {{ result.paymentId }}</span>
-    </p>
-    <p v-else-if="!openError && result.status === 'failed'" class="checkout__result" role="status">
-      결제가 완료되지 않았어요. ({{ result.message }})
-    </p>
     <p v-if="openError" class="checkout__result" role="alert">
       결제창을 열지 못했어요. ({{ openError }})
     </p>
@@ -302,25 +294,16 @@ import { renderNoticeList } from '~/utils/legal-render'
   font-weight: 800;
 }
 
-.checkout__text,
-.checkout__method {
+.checkout__text {
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
   color: var(--n-color-neutral-800, #262626);
 }
 
-.checkout__method {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.checkout__radio {
-  width: 16px;
-  height: 16px;
-  border: 5px solid var(--n-color-primary-500, #6239ff);
-  border-radius: 50%;
+/* 위젯 iframe 자리 — 토스가 높이를 정한다. 프레임 폭(440px) 안에서 좌우 여백을 상쇄한다 */
+.checkout__widget {
+  margin: 0 -20px;
 }
 
 .checkout__link {
@@ -421,17 +404,5 @@ import { renderNoticeList } from '~/utils/legal-render'
   font-size: 13px;
   line-height: 1.6;
   color: var(--n-color-neutral-800, #262626);
-}
-
-.checkout__result--ok {
-  background: var(--n-color-success-50, #f0fdf4);
-}
-
-.checkout__result-id {
-  display: block;
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--n-color-neutral-500, #737373);
-  word-break: break-all;
 }
 </style>

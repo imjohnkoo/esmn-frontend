@@ -14,7 +14,7 @@ spec `nomacom-wiki wiki/frontend/specs/client/2026-09-23-client-shell.md` · pla
 - **법정 문안 · 사업자정보 = 생성물** — `app/content/legal/*.ts`(약관 · 방침 · 환불 · 푸터 04 1절 줄 · 발급 팝업 05-A · 체크아웃 05-B — `/business` 페이지 · 04 2절 표는 없다, spec D-39). ⛔ **손으로 고치지 말 것** — legal-pages 정본을 고친 뒤 `yarn workspace nomacom-client legal:import --from <정본 폴더>`(규칙 `scripts/legal-posting.ts` — 처음 보는 태그 · 공개 금지어(공급사 명칭 · 자정 기준 등) · 조각 코드 블록에서 고르지도 건너뛰지도 않은 줄이 있으면 가져오기가 실패하고 아무것도 쓰지 않는다). 정본과 다르게 게시하기로 결정한 글자는 규칙의 **게시 수정**(`DocRules.edits` — 약관 8조② 자정 예시 괄호 D-33 · 환불 3항 전화번호 D-41 · 방침 4장 알림톡 수탁자 «솔라피(주)» D-54)과 **값 채움**(`fills` — 정본 값 자리 태그를 결정 글자로: 방침 4장 «AWS» · 솔라피 칸 · 04 1절 호스팅 «AWS» D-54)으로만 — 그 줄 · 글자 · 자리가 정확히 하나일 때만 적용되고 아니면 가져오기가 멈춘다(정본 rev 가 오면 규칙을 지운다 · 생성물 머리에 «게시 수정 N건» · «값 채움 N건»). **공제 문장(3,500원 폐기 비용 · 청약철회 제한)은 정본 그대로**(spec D-28 — 옛 A5 «발급 후 공제 금지» 는 해제됐다). `legal-content.test.ts` 가 핵심 줄을 고정한다. 고객센터 값만 손으로 적은 `app/content/support.ts` — `support.test.ts` 가 생성물 글자와 대조한다. 미확정 값은 `P9_4_PENDING`(화면 «(확정 전)») — 2026-10-03 D-54 로 지금은 0. ⛔ **main 머지 게이트**: `bash .github/scripts/content-pending-gate.sh` 가 0 — 머지할 **커밋** 기준(미커밋 수정은 통과가 아니다). 부르는 곳: finish-branch Step 0 첫 항목 · prod-push-check · CI `content-gate`(알림 — required check 없음). 법정 문서 화면 = `components/legal/LegalMarkdown.vue`(부분집합 렌더러 `utils/legal-render.ts` · v-html 없음).
 - **noindex 목록 한 곳** — `shared/utils/robots.ts` 가 meta(`app.vue`) · `X-Robots-Tag`(`nuxt.config` routeRules) · `/robots.txt`(`server/routes/robots.txt.ts`) 세 출력을 만든다. 4-step 은 `Cache-Control: no-store` 도. `public/robots.txt` 를 다시 만들지 말 것(라우트보다 먼저 잡힌다).
 - **CORS** — `server/utils/cors-origins.ts`. `esimmany.com` · `app.esimmany.com` 둘 다 있어야 각 호스트의 same-origin POST 가 403 을 피한다. `www` 는 없다.
-- **테스트 체크아웃** `/checkout-preview` — PG 심사 캡처 전용. 사이트 어디에서도 링크하지 않는다 · 주문 · 결제 서버 호출 · 저장 0 · 테스트 채널키만. 상품 값(금액 · 옵션명 = K1 두 칸)은 **빌드 때** `modules/catalog.ts` 가 K1 `FRA00U01D07V2` 에서 계산해 앱 설정(`checkoutPreview`)으로 넣는다 — 페이지는 데이터 라우트도 부르지 않는다(W1-3 F-12 · shell F-19). 그 옵션이 없으면 빌드 실패.
+- **테스트 체크아웃** `/checkout-preview` — PG(토스) 심사 캡처 전용. 사이트 어디에서도 링크하지 않는다(복귀 화면의 «다시 결제하기» 도 버튼 + `navigateTo` — `href`/`to` 0) · noindex(`/checkout-preview` + `/checkout-preview/**`). 결제창 = **토스페이먼츠 결제위젯 v2(주문서형)**(shell D-59 — 2026-11-04 PortOne 에서 교체): 진입 뒤 `loadWidgets` 가 SDK 를 동적 import(SSR 번들 제외 · 정적 import 는 타입만)해 결제수단 · 약관 위젯을 그리고, 버튼 = 키 ∧ 05-B 필수 2 ∧ 위젯 준비 ∧ 토스 필수 약관(`agreementStatusChange`) · `requestPayment` 는 onPay 안 한 곳(리디렉트 — 고객 정보 0). 복귀 `/checkout-preview/success` 는 이 탭(sessionStorage)의 주문번호 ∧ 금액 일치일 때만 `POST /api/v1/checkout-preview/confirm` 1회(주문번호는 confirm **전에** 지운다 — 진행 중 새로고침 중복 confirm 방지 · DONE 아닌 200 은 승인으로 그리지 않는다 · «청구되지 않아요» 는 `test_` 키일 때만) · `/fail` 은 이 탭이 결제를 시작했을 때만 사유. **저장 0** — confirm 은 토스 승인만 하고 6필드만 돌려준다(DB · 쿠키 · 세션 · 로그 0). 상품 값(금액 · 옵션명 = K1 두 칸)은 **빌드 때** `modules/catalog.ts` 가 K1 `FRA00U01D07V2` 에서 계산해 앱 설정(`checkoutPreview`)으로 넣는다 — confirm 의 금액 대조 기준도 이 값(W1-3 F-12 · shell F-19). 그 옵션이 없으면 빌드 실패. ⚠️ 페이지는 `pages/checkout-preview/index.vue` — 같은 이름의 `checkout-preview.vue` 와 폴더가 함께 있으면 Nuxt 가 부모 라우트로 만들어 success · fail 이 안 보인다. 정적 배선 검사는 `legal-links.test.ts`(SDK 위치 · 버튼 조건 · 동의 블록 스냅샷).
 
 ## 카탈로그 — 홈 · 검색 · 국가 · 상품 상세 (W1-3 · 2026-09-23)
 
@@ -115,7 +115,7 @@ apps/client/
 │   │   ├── search.vue                 # 국가 검색(초성 · 영문 · 도시 · 별칭) — noindex
 │   │   ├── guide/{index,ios,android}.vue  # 설치 가이드 허브 · 아이폰 · 안드로이드 (client-guide)
 │   │   ├── install-guide/{ios,android,devices}.vue # 전용판(가이드 2 · 지원 기기) — flow 레이아웃 · canonical = 사이트판 (client-guide D-14 · D-18 · D-24)
-│   │   ├── checkout-preview.vue       # PG 심사용 테스트 체크아웃 (링크 0 · noindex)
+│   │   ├── checkout-preview/{index,success,fail}.vue # PG 심사용 테스트 체크아웃 · 결제 복귀 2 (링크 0 · noindex · 토스 위젯)
 │   │   ├── verify/[orderId].vue       # step 1 — 이름 + 전화번호 입력
 │   │   ├── details/[orderId].vue      # step 2 — 주문 (상품) 선택
 │   │   ├── select-date/[orderId].vue  # step 3 — 시작 국가 + 날짜 선택 → 발급
@@ -131,6 +131,7 @@ apps/client/
 ├── server/
 │   ├── api/health.get.ts              # /api/health
 │   ├── api/v1/{verify,activate,withdraw-cancel}.post.ts
+│   ├── api/v1/checkout-preview/confirm.post.ts  # 테스트 체크아웃 토스 승인 1회 · 저장 0
 │   ├── db/{index,schema}.ts           # Drizzle (order/esim/plan/plan-type)
 │   ├── middleware/{cors,auth}.ts      # cors: /api/** 화이트리스트(utils/cors-origins.ts), auth: placeholder (토큰 추출만)
 │   ├── routes/robots.txt.ts           # robots.txt (shared/utils/robots.ts 에서 생성)
@@ -161,6 +162,7 @@ apps/client/
 | `/api/health`             | GET    | `{ status: 'ok', app: 'nomacom-client', commit, timestamp }`                                                                                                                                                                                                           |
 | `/api/v1/verify`          | POST   | 수신자 대조 후 주문 상세 + esims + planType 반환. planTypes 는 `inArray` 일괄 조회 (N+1 없음). `productOrderId` 로 필터 가능                                                                                                                                           |
 | `/api/v1/activate`        | POST   | 동의(`consent` 판 · 해시) 검증 400 → 수신자 대조 (403) → provider `spark` 만(그 밖 400) → 새 eSIM 이 생길 요청이면 `consent_log` 1행 → 부족분만 Spark 발급(`utils/spark-issuance.ts` — 원장 · 동시성 규약). 전량 발급돼 있으면 기존 상태로 idempotent 성공(행 0). 같은 주문의 동시 요청은 in-flight lock 직렬화. Maya 분기 코드는 남아 있지만 닿지 않는다 |
+| `/api/v1/checkout-preview/confirm` | POST | 테스트 체크아웃 승인(shell D-59) — 본문 `{paymentKey ≤200, orderId(pv-…), amount 정수}` 검증 400 `INVALID_REQUEST` → 빌드 주입 금액과 다르면 400 `AMOUNT_MISMATCH` → 시크릿 없음 503 `NOT_CONFIGURED` → 토스 `POST /v1/payments/confirm`(Basic 시크릿: · 10초) → `{status, orderId, paymentKey, approvedAt, method, totalAmount}` 만(승인 금액 불일치 502) · 토스 4xx 는 같은 상태 `{code, message}` · 네트워크 · 5xx 502 `UPSTREAM`. 저장 0 |
 | `/api/v1/withdraw-cancel` | POST   | 수신자 대조 + 취소요청 상태 사전 체크 후 backend 내부 endpoint 에 위임(Naver 발송처리 · DB 갱신은 backend 소유). 내부 env 없으면 503                                                                                                                                   |
 
 ### activate 신뢰성 설계 (변경 시 유지할 불변식)
@@ -193,9 +195,9 @@ apps/client/
 | `ESIM_MANAGER_INTERNAL_ENDPOINT` · `ESIM_MANAGER_INTERNAL_SECRET`                                             | 취소철회 backend 위임                                                                                                                         |
 | `CORS_EXTRA_ORIGINS`                                                                                          | `/api/**` 허용 origin 추가(쉼표 구분 · `server/utils/cors-origins.ts`). 로컬 walk 는 봉투 스크립트가 `http://127.0.0.1:<port>` 한 값만 넣는다 |
 | `NUXT_PUBLIC_GUEST_APP_ORIGIN`                                                                                | runtimeConfig — 주문번호 조회가 보내는 발급 호스트. 기본 `https://app.esimmany.com`, 로컬 walk 는 봉투 스크립트가 `http://127.0.0.1:<port>`(자기 포트)로 넣는다 |
-| `NUXT_PUBLIC_PORTONE_STORE_ID` · `NUXT_PUBLIC_PORTONE_TEST_CHANNEL_KEY`                                       | runtimeConfig — `/checkout-preview` 전용 공개값. SSM `/nomacom/client/` 에 같은 이름(키 끝 토막 = env 이름). ⚠️ 테스트 채널키만               |
+| `NUXT_PUBLIC_TOSS_CLIENT_KEY` · `NUXT_TOSS_SECRET_KEY` | runtimeConfig `public.toss.clientKey` · 서버 전용 `tossSecretKey` — `/checkout-preview` 토스 결제위젯 · confirm(shell D-12 · D-59). SSM `/nomacom/client/` 에 같은 이름(String · SecureString — `after_deploy.sh` 는 `--with-decryption`). 심사 기간 `test_*` · 계약 뒤 같은 이름에 `live_*`(코드 0). 로컬 walk 봉투는 `test_*` 만 받는다 |
 
-서버 키는 `process.env` 직접 참조, `NUXT_PUBLIC_*` 는 runtimeConfig 런타임 덮어쓰기. prod 는 `/nomacom/shared/maya/*`, `/nomacom/shared/db/*`, `/nomacom/client/*` SSM 경로에서 `after_deploy.sh` 가 주입. 상세는 `.claude/rules/ssm-paths.md`.
+서버 키는 `process.env` 직접 참조(토스 시크릿만 runtimeConfig `tossSecretKey` ← `NUXT_TOSS_SECRET_KEY`), `NUXT_PUBLIC_*` 는 runtimeConfig 런타임 덮어쓰기. prod 는 `/nomacom/shared/maya/*`, `/nomacom/shared/db/*`, `/nomacom/client/*` SSM 경로에서 `after_deploy.sh` 가 주입. 상세는 `.claude/rules/ssm-paths.md`.
 
 ## Key Commands
 

@@ -241,7 +241,8 @@ describe('가격 리터럴 0 (spec 불변식 2 · DoD 2)', () => {
     for (const f of [
       'app/pages/products/[zone].vue',
       'app/pages/index.vue',
-      'app/pages/checkout-preview.vue',
+      'app/pages/checkout-preview/index.vue',
+      'app/pages/checkout-preview/success.vue',
       'app/content/product-detail.ts',
       'app/content/catalog-upcoming.json',
       'app/assets/css/main.css',

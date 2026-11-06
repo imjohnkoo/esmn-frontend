@@ -22,6 +22,8 @@ export const NOINDEX_ROUTES = [
   '/my/**',
   '/my-esim',
   '/checkout-preview',
+  // 결제 복귀 화면 success · fail(shell D-59) — Disallow 는 위 줄 접두가 덮는다
+  '/checkout-preview/**',
   // 국가 검색 — 입력으로 그리는 얇은 페이지(catalog spec D-12). 국가 · 상품 페이지가 색인 대상이다
   '/search',
 ] as const

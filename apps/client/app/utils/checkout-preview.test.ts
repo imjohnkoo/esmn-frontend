@@ -7,12 +7,14 @@ import {
   BEFORE_NOTICE,
   CONSENT_ITEMS,
   PRIVACY_NOTICE,
-  buildReturnQuery,
   canPayWith,
   createPaymentId,
   formatWon,
   initialConsent,
-  readPaymentResult,
+  formatApprovedAt,
+  judgeSuccessReturn,
+  readFailReason,
+  readSuccessReturn,
   splitConsent,
   useCheckoutConsent,
 } from './checkout-preview'
@@ -107,88 +109,77 @@ describe('상품 값 (PG 심사 요건 · catalog F-12)', () => {
   })
 })
 
-describe('readPaymentResult', () => {
-  const MINE = 'pv-1790105212345-abababababababababababab'
+const MINE = 'pv-1790105212345-abababababababababababab'
 
-  it('쿼리가 없거나 이 탭의 결제 ID 가 없으면 none', () => {
-    expect(readPaymentResult({}, MINE)).toEqual({ status: 'none' })
-    expect(readPaymentResult({ paymentId: MINE }, null)).toEqual({ status: 'none' })
+describe('readSuccessReturn — success 복귀 쿼리(spec F-19 · D-59)', () => {
+  const q = (over: Record<string, unknown> = {}) => ({
+    paymentKey: 'tgen_key',
+    orderId: MINE,
+    amount: '4900',
+    ...over,
   })
-
-  it('링크로 만든 임의 쿼리는 그리지 않는다 — ID 불일치 · 형식 밖 (반사 텍스트 차단)', () => {
-    expect(
-      readPaymentResult(
-        { paymentId: '입금확인요망', code: 'X', message: '010-0000-0000 으로 연락' },
-        MINE,
-      ),
-    ).toEqual({ status: 'none' })
-    expect(readPaymentResult({ paymentId: 'pv-1-00', code: 'X', message: '가짜' }, MINE)).toEqual({
-      status: 'none',
-    })
+  it('세 값이 형식에 맞으면 금액은 숫자로', () => {
+    expect(readSuccessReturn(q())).toEqual({ paymentKey: 'tgen_key', orderId: MINE, amount: 4900 })
   })
-
-  it('형식 밖 ID 는 이 탭의 값과 같아도 그리지 않는다 (형식 검사 단독)', () => {
-    for (const bad of ['pv 1', 'pv-1-<b>', 'x'.repeat(65), 'abc']) {
-      expect(readPaymentResult({ paymentId: bad }, bad)).toEqual({ status: 'none' })
-    }
+  it('배열 쿼리는 첫 값만', () => {
+    expect(readSuccessReturn(q({ orderId: [MINE, 'pv-2-00'] }))?.orderId).toBe(MINE)
   })
-
-  it('이 탭의 ID + code 없음 → success', () => {
-    expect(readPaymentResult({ paymentId: MINE }, MINE)).toEqual({
-      status: 'success',
-      paymentId: MINE,
-    })
+  it.each([
+    ['paymentKey 없음', { paymentKey: undefined }],
+    ['paymentKey 200자 초과', { paymentKey: 'k'.repeat(201) }],
+    ['orderId 규칙 밖', { orderId: 'pv 1<b>' }],
+    ['orderId 너무 짧음', { orderId: 'pv-1' }],
+  ])('%s → null', (_n, over) => {
+    expect(readSuccessReturn(q(over))).toBeNull()
   })
-
-  it('이 탭의 ID + code → failed · message 우선 → pgMessage → code · 80자 상한', () => {
-    expect(
-      readPaymentResult(
-        { paymentId: MINE, code: 'FAILURE_TYPE_PG', message: '사용자가 결제를 취소했습니다' },
-        MINE,
-      ),
-    ).toEqual({ status: 'failed', paymentId: MINE, message: '사용자가 결제를 취소했습니다' })
-    expect(
-      readPaymentResult({ paymentId: MINE, code: 'X', pgMessage: 'PG 사유' }, MINE),
-    ).toMatchObject({
-      message: 'PG 사유',
-    })
-    expect(readPaymentResult({ paymentId: MINE, code: 'X' }, MINE)).toMatchObject({ message: 'X' })
-    const long = readPaymentResult({ paymentId: MINE, code: 'X', message: '가'.repeat(200) }, MINE)
-    expect(long.status === 'failed' ? long.message.length : -1).toBe(80)
-  })
-
-  it('배열 쿼리는 첫 값', () => {
-    expect(readPaymentResult({ paymentId: [MINE, 'pv-2-00'] }, MINE)).toEqual({
-      status: 'success',
-      paymentId: MINE,
-    })
+  it.each([
+    ['amount 없음', { amount: undefined }],
+    ['amount 숫자 아님', { amount: '4900원' }],
+    ['amount 음수', { amount: '-4900' }],
+    ['amount 소수', { amount: '4900.5' }],
+  ])('%s → 금액 NaN(판정이 «금액 다름» 으로 — spec F-19 Number(amount) 대조)', (_n, over) => {
+    const ret = readSuccessReturn(q(over))
+    expect(ret?.amount).toBeNaN()
+    expect(judgeSuccessReturn(ret, MINE, 4900)).toBe('amount')
   })
 })
 
-describe('buildReturnQuery (창 없이 끝난 응답 — spec F-19)', () => {
-  const LOCAL = 'pv-1790105212345-abababababababababababab'
-
-  it('5필드를 그대로 싣는다', () => {
-    expect(
-      buildReturnQuery(
-        { paymentId: LOCAL, code: 'C', message: 'M', pgCode: 'PC', pgMessage: 'PM' },
-        LOCAL,
-      ),
-    ).toEqual({ paymentId: LOCAL, code: 'C', message: 'M', pgCode: 'PC', pgMessage: 'PM' })
+describe('judgeSuccessReturn — confirm 을 부를지(spec F-19)', () => {
+  const ret = { paymentKey: 'k', orderId: MINE, amount: 4900 }
+  it('이 탭이 만든 주문번호 ∧ 금액 일치 → confirm', () => {
+    expect(judgeSuccessReturn(ret, MINE, 4900)).toBe('confirm')
   })
-
-  it('응답에 결제 ID 가 없거나 비면 이 탭의 ID — 결과 줄이 사라지지 않는다', () => {
-    expect(buildReturnQuery({ code: 'C' }, LOCAL).paymentId).toBe(LOCAL)
-    expect(buildReturnQuery({ paymentId: '', code: 'C' }, LOCAL).paymentId).toBe(LOCAL)
+  it('주문번호가 다르거나 · 이 탭에 없거나 · 쿼리가 형식 밖이면 foreign(금액보다 먼저)', () => {
+    expect(judgeSuccessReturn(ret, 'pv-2-000000', 4900)).toBe('foreign')
+    expect(judgeSuccessReturn(ret, null, 4900)).toBe('foreign')
+    expect(judgeSuccessReturn(null, MINE, 4900)).toBe('foreign')
+    expect(judgeSuccessReturn({ ...ret, amount: 1 }, null, 4900)).toBe('foreign')
   })
+  it('금액이 다르면 amount', () => {
+    expect(judgeSuccessReturn({ ...ret, amount: 4800 }, MINE, 4900)).toBe('amount')
+  })
+})
 
-  it('readPaymentResult 와 이어진다 — 창 전 오류는 실패 줄 · pgMessage 대체', () => {
-    const query = buildReturnQuery({ code: 'FAILURE', pgMessage: 'PG 사유' }, LOCAL)
-    expect(readPaymentResult(query, LOCAL)).toEqual({
-      status: 'failed',
-      paymentId: LOCAL,
-      message: 'PG 사유',
+describe('readFailReason — fail 복귀 · confirm 오류 사유', () => {
+  it('message · code 80자까지 · message 가 없으면 한국어 대체 문장(영문 코드가 첫 줄이 되지 않게) · code 가 없으면 UNKNOWN', () => {
+    expect(readFailReason({ code: 'C', message: '사유' }, '대체')).toEqual({
+      code: 'C',
+      message: '사유',
     })
+    expect(readFailReason({ code: 'C' }, '대체')).toEqual({ code: 'C', message: '대체' })
+    expect(readFailReason({}, '대체')).toEqual({ code: 'UNKNOWN', message: '대체' })
+    expect(readFailReason({ code: 'C', message: '가'.repeat(200) }, '대체').message).toBe(
+      '가'.repeat(80),
+    )
+    expect(readFailReason({ code: 'X'.repeat(200) }, '대체').code).toBe('X'.repeat(80))
+  })
+})
+
+describe('formatApprovedAt — 승인 시각은 Asia/Seoul', () => {
+  it('ISO → 한국 시각 · 읽을 수 없으면 그대로', () => {
+    expect(formatApprovedAt('2026-11-04T07:05:00Z')).toBe('2026. 11. 04 16:05')
+    expect(formatApprovedAt('2026-12-31T15:30:00Z')).toBe('2027. 01. 01 00:30')
+    expect(formatApprovedAt('not-a-date')).toBe('not-a-date')
   })
 })
 

@@ -21,6 +21,8 @@ describe('isNoindexPath', () => {
     '/my-esim',
     '/checkout-preview',
     '/checkout-preview?paymentId=pv-1&code=FAILURE',
+    '/checkout-preview/success?paymentKey=k&orderId=pv-1-00&amount=4900',
+    '/checkout-preview/fail',
     '/search',
     '/search?q=fr',
   ])('%s 는 noindex', (path) => {
@@ -110,6 +112,7 @@ describe('robots.txt', () => {
       '/my/x',
       '/my-esim',
       '/checkout-preview',
+      '/checkout-preview/success',
       '/search',
     ]
     for (const path of samples) {

@@ -93,7 +93,9 @@ describe('푸터를 끄는 페이지는 본인 확인 화면 하나(D-20)', () =
     )
     expect(flow.map((f) => relative(PAGES, f)).sort()).toEqual(
       [
-        'checkout-preview.vue',
+        'checkout-preview/fail.vue',
+        'checkout-preview/index.vue',
+        'checkout-preview/success.vue',
         'details/[orderId].vue',
         'install-guide/android.vue',
         'install-guide/carriers.vue',

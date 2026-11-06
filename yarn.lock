@@ -5068,13 +5068,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@portone/browser-sdk@npm:^0.1.11":
-  version: 0.1.11
-  resolution: "@portone/browser-sdk@npm:0.1.11"
-  checksum: 10c0/000c1371b18f63c505e7d76760e905320cb9954ae2333986b7f4639568e804da654ba68a42bc8cc172851f18fa12ab29b1b6a12e1bb43b8bb50239d68164dda0
-  languageName: node
-  linkType: hard
-
 "@radix-ui/primitive@npm:1.1.3":
   version: 1.1.3
   resolution: "@radix-ui/primitive@npm:1.1.3"
@@ -7165,6 +7158,13 @@ __metadata:
   peerDependencies:
     vue: ^2.7.0 || ^3.0.0
   checksum: 10c0/d036bc1dccd221185bfac6bf7d43bf259000b18c6b4049f581f5de2d4d766c99317ae40643130747050417629f73120ae0d13ea82840827f8d80471669690fb3
+  languageName: node
+  linkType: hard
+
+"@tosspayments/tosspayments-sdk@npm:^2.10.0":
+  version: 2.10.0
+  resolution: "@tosspayments/tosspayments-sdk@npm:2.10.0"
+  checksum: 10c0/47190fc4b6bda8886923fd1c460db0128551d442546c24f49368afbc1e17c95fe6708c858a4d3011d4aa7f9b9c72c83aadfee0b0559a0643f7cbd7ad603f9b08
   languageName: node
   linkType: hard
 
@@ -16321,8 +16321,8 @@ __metadata:
     "@imjohnkoo/design-tokens": "workspace:*"
     "@imjohnkoo/design-vue": "workspace:*"
     "@pinia/nuxt": "npm:^0.11.3"
-    "@portone/browser-sdk": "npm:^0.1.11"
     "@tailwindcss/vite": "npm:^4"
+    "@tosspayments/tosspayments-sdk": "npm:^2.10.0"
     "@vitejs/plugin-vue": "npm:^6.0.4"
     "@vue/compiler-sfc": "npm:3.5.32"
     "@vue/test-utils": "npm:^2.4.10"
