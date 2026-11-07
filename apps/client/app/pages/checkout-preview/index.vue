@@ -1,30 +1,23 @@
 <script setup lang="ts">
-// 테스트 체크아웃 (K9 · spec S-7 · D-59) — PG 심사 캡처용. 사이트의 링크는 구매 시트 보조 버튼 하나뿐(테스트 키일 때만 · D-60) · noindex.
+// 테스트 체크아웃 (K9 · spec S-7 · D-59) — «구매하기» 가 고른 옵션으로 오거나(테스트 키일 때만 · D-60) URL 직접(심사 품목) · noindex.
 // 결제창 = 토스페이먼츠 결제위젯 v2(주문서형). 주문 저장 · 발급 0 — 승인(confirm)은 복귀 화면 /checkout-preview/success 가 한 번 부른다.
-// 상품 값은 빌드 때 카탈로그(K1)에서 계산해 앱 설정으로 들어온다(catalog F-12 · modules/catalog.ts) — 이 페이지는 데이터 라우트를 부르지 않는다.
+// 상품 값은 미들웨어(middleware/checkout-preview.ts)가 서버 카탈로그에서 받아 넘긴다 — 모르는 코드 · test_ 아닌 키는 여기까지 오지 않는다.
 // 키는 runtimeConfig.public.toss.clientKey(심사 기간 test_gck_*).
 import { NButton, NCheckbox } from '@imjohnkoo/design-vue'
 import type { TossPaymentsWidgets } from '@tosspayments/tosspayments-sdk'
-import type { PreviewItem } from '#shared/catalog/preview'
+import { CHECKOUT_ITEM_STATE, type PreviewItem } from '#shared/catalog/preview'
 import {
   createPaymentId,
   formatWon,
   useCheckoutConsent,
+  writePendingItem,
   writePendingPayment,
 } from '~/utils/checkout-preview'
 
-definePageMeta({ layout: 'flow' })
+definePageMeta({ layout: 'flow', middleware: 'checkout-preview' })
 useHead({ title: '결제하기' })
 
-// 빌드 모듈이 넣지 못했으면(카탈로그에 심사용 옵션 없음 — 빌드가 이미 멈췄어야 한다) 가짜 금액 대신 500
-const preview = (useAppConfig() as { checkoutPreview?: PreviewItem }).checkoutPreview
-if (!preview)
-  throw createError({
-    statusCode: 500,
-    statusMessage: 'Checkout preview item missing',
-    fatal: true,
-  })
-const PREVIEW_ITEM: PreviewItem = preview
+const PREVIEW_ITEM = useState<PreviewItem>(CHECKOUT_ITEM_STATE).value
 
 const config = useRuntimeConfig()
 const clientKey = config.public.toss.clientKey
@@ -89,6 +82,7 @@ const onPay = async () => {
   openError.value = null
   try {
     const orderId = createPaymentId(Date.now(), crypto.getRandomValues(new Uint8Array(12)))
+    writePendingItem({ optionCode: PREVIEW_ITEM.optionCode, amount: PREVIEW_ITEM.amount })
     writePendingPayment(orderId)
     // 리디렉트 방식 — 결과는 success · fail 주소로 돌아온다. 고객 이름 · 이메일 · 전화는 보내지 않는다(PII 0).
     // 반환 = 페이지를 떠나는 중 — 로딩을 유지한다(다시 누르면 주문번호가 덮인다). bfcache 복귀는 pageshow 가 푼다

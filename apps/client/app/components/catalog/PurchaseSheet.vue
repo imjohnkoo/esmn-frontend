@@ -2,7 +2,6 @@
 // 구매 시트(catalog spec S-5 · F-8 · Proposal K2) — 유심사 수량 시트 자리. 선택 요약 + K2 원문 + 3초 카운트다운 →
 // **같은 탭** location.assign(naverUrl)(새 창은 팝업 차단). 취소 · ESC · 바깥 → 닫힘 + 중지. bfcache 복귀 시 닫힌다.
 // «지금 이동» · 카운트다운 끝 → «이동하고 있어요» 로 멈추고 이동은 한 번만. 결선은 PurchaseSheet.test.ts(vue 명시 import).
-// 보조 버튼 «카드 결제 테스트»(shell D-60) — 서버가 테스트 키라고 답할 때만. 이 페이지는 프리렌더라 runtimeConfig 가 빈 값으로 굳어 직접 읽지 못한다.
 import { NBottomSheet, NButton } from '@imjohnkoo/design-vue'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
@@ -23,16 +22,14 @@ const open = defineModel<boolean>({ default: false })
 const remaining = ref(COUNTDOWN_SECONDS)
 let timer: Countdown | undefined
 let going = false
-const testCheckout = ref(false)
 
-function leave(url: string) {
-  if (going) return // 느린 네트워크에서 다시 눌러도 한 번만
-  timer?.stop()
+function go() {
+  if (going) return // 느린 네트워크에서 «지금 이동» 을 다시 눌러도 한 번만
   going = true
+  timer?.stop()
   remaining.value = 0 // «이동하고 있어요»
-  window.location.assign(url)
+  window.location.assign(props.naverUrl)
 }
-const go = () => leave(props.naverUrl)
 
 // immediate — 열린 채로 마운트돼도 센다
 watch(
@@ -53,14 +50,9 @@ function onPageShow(e: PageTransitionEvent) {
 function onVisibility() {
   if (going && document.visibilityState === 'visible') open.value = false
 }
-onMounted(async () => {
+onMounted(() => {
   window.addEventListener('pageshow', onPageShow)
   document.addEventListener('visibilitychange', onVisibility)
-  // 시트를 열기 전에 물어 둔다 — 연 뒤에 나타나면 «취소» 가 밀려 올라간다. 실패하면 버튼 없음
-  testCheckout.value = await $fetch<{ testKey: boolean }>('/api/v1/checkout-preview/test-key').then(
-    (res) => res.testKey === true,
-    () => false,
-  )
 })
 onBeforeUnmount(() => {
   timer?.stop()
@@ -83,12 +75,6 @@ onBeforeUnmount(() => {
       <div class="purchase__actions">
         <NButton full-width size="lg" @click="go">지금 이동</NButton>
         <NButton full-width size="lg" variant="outline" @click="open = false">취소</NButton>
-        <template v-if="testCheckout">
-          <hr class="purchase__rule" />
-          <NButton full-width size="md" variant="ghost" @click="leave('/checkout-preview')">
-            카드 결제 테스트
-          </NButton>
-        </template>
       </div>
     </template>
   </NBottomSheet>
@@ -143,13 +129,5 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 8px;
   width: 100%;
-}
-
-/* 위아래 12px = 줄 간격 8px + 4px */
-.purchase__rule {
-  width: 100%;
-  margin: 4px 0;
-  border: 0;
-  border-top: 1px solid var(--n-color-neutral-200, #e5e5e5);
 }
 </style>

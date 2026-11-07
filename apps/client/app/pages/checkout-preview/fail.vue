@@ -3,10 +3,12 @@
 // 쿼리 code · message(80자). 토스 취소(PAY_PROCESS_CANCELED)는 orderId 를 싣지 않아 주문번호로 대조할 수 없다 —
 // 이 탭이 결제를 시작했을 때(sessionStorage 에 주문번호가 있을 때)만 사유를 그린다(링크로 만든 임의 문구 차단). 그린 뒤 지운다.
 import { NButton } from '@imjohnkoo/design-vue'
+import { checkoutUrl } from '#shared/catalog/preview'
 import {
   FAIL_FALLBACK_MESSAGE,
   clearPendingPayment,
   readFailReason,
+  readPendingItem,
   readPendingPayment,
 } from '~/utils/checkout-preview'
 
@@ -30,7 +32,7 @@ onMounted(() => {
   clearPendingPayment()
 })
 
-const retry = () => navigateTo('/checkout-preview')
+const retry = () => navigateTo(checkoutUrl(readPendingItem()?.optionCode))
 // 화면 제목(문서 title 은 «결제 결과» 그대로) — 디자인 리뷰 TOSSCK
 const heading = computed(() => (view.value.kind === 'failed' ? '결제하지 못했어요' : '결제 결과'))
 </script>

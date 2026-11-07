@@ -1,11 +1,11 @@
 // 테스트 체크아웃 결제 승인(client-shell spec F-19 · D-59) — success 복귀 화면이 한 번 부른다.
 // 토스 confirm 1회 · 저장 0(DB · 쿠키 · 세션 쓰기 없음). 응답은 승인 확인에 필요한 6필드만 — 카드 · 영수증 · 고객 필드는 싣지 않는다.
 // 토스는 결제 요청 전 orderId · amount 를 서버에 저장해 대조하라고 권하지만 이 페이지는 «저장 0»(심사 전용 · 실상품 1개 고정)이라
-// 빌드 주입 금액(app config checkoutPreview)과의 일치로 대신한다.
+// 옵션 코드로 찾은 서버 카탈로그 금액과의 일치로 대신한다(shell D-60). 코드는 클라이언트가 보낸 값이라 «그 코드의 판매가 = 승인 금액» 까지만 보장한다.
 // ponytail: 저장 없는 금액 대조 — Wave 2 실주문은 결제 요청 전 저장 · 대조로 바꾼다(spec §6 비기능).
 // 로그에 시크릿 · 카드 정보를 남기지 않는다(이 핸들러는 아무것도 로그하지 않는다).
 import type { H3Event } from 'h3'
-import { PAYMENT_ID_PATTERN, type PreviewItem } from '../../../../shared/catalog/preview'
+import { PAYMENT_ID_PATTERN, previewLookup } from '../../../../shared/catalog/preview'
 
 const TOSS_CONFIRM_URL = 'https://api.tosspayments.com/v1/payments/confirm'
 const TIMEOUT_MS = 10_000
@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
   const paymentKey = body?.paymentKey
   const orderId = body?.orderId
   const amount = body?.amount
+  const optionCode = body?.optionCode
   if (
     typeof paymentKey !== 'string' ||
     !paymentKey ||
@@ -28,12 +29,13 @@ export default defineEventHandler(async (event) => {
     typeof orderId !== 'string' ||
     !PAYMENT_ID_PATTERN.test(orderId) ||
     typeof amount !== 'number' ||
-    !Number.isSafeInteger(amount)
+    !Number.isSafeInteger(amount) ||
+    typeof optionCode !== 'string'
   )
     return fail(event, 400, 'INVALID_REQUEST')
 
-  const preview = (useAppConfig() as { checkoutPreview?: PreviewItem }).checkoutPreview
-  if (!preview || amount !== preview.amount) return fail(event, 400, 'AMOUNT_MISMATCH')
+  const lookup = previewLookup(await useCatalog(), optionCode)
+  if (!lookup || amount !== lookup.item.amount) return fail(event, 400, 'AMOUNT_MISMATCH')
 
   const secretKey = (useRuntimeConfig(event) as { tossSecretKey?: string }).tossSecretKey
   if (!secretKey) return fail(event, 503, 'NOT_CONFIGURED')

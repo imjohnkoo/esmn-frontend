@@ -1,9 +1,11 @@
 <script setup lang="ts">
 // 상품 상세(catalog spec S-4 · F-6 · F-8) — 유심사 배치: 히어로 → 종류 밑줄 탭 → 사용 기간 드롭다운 → 데이터 용량 가격 카드
-// → 하단 고정 «구매하기» → 구매 시트(K2 · 3초 뒤 같은 탭에서 스마트스토어). 선택 상태는 URL 에 싣지 않는다(프리렌더 1벌).
+// → 하단 고정 «구매하기» → 테스트 키면 결제 페이지(shell D-60) · 그 밖에는 구매 시트(K2 · 3초 뒤 같은 탭에서 스마트스토어).
+// 선택 상태는 URL 에 싣지 않는다(프리렌더 1벌).
 // 가격은 K1 최종가만(D-2). 안내 섹션(D-4)은 선택기 아래.
 import { ChevronLeftIcon } from '@heroicons/vue/24/outline'
 import { thumbUrl, type AssetManifest } from '#shared/catalog/assets'
+import { CHECKOUT_TEST_KEY_ROUTE, checkoutUrl } from '#shared/catalog/preview'
 import { zoneMeta } from '#shared/catalog/seo'
 import {
   initialSelection,
@@ -90,6 +92,24 @@ onMounted(() => {
 const sheetOpen = ref(false)
 // 구매 시트 값(요약 · K1 최종가 · 옵션명 · 링크)은 순수 함수 하나에서 — picker.test 가 K1 원본과 대조한다
 const purchase = computed(() => purchaseSheetProps(zone, sel.value))
+
+// 키 판정은 서버에 묻는다 — 이 페이지는 프리렌더라 runtimeConfig 의 키가 빈 값으로 굳어 있다. 답을 못 받으면 시트(스토어 동선).
+// 이동은 전체 문서 이동이어야 한다 — SPA 이동이면 결제 페이지가 이 문서의 빈 키를 물려받는다
+let asking = false
+async function buy() {
+  const code = option.value?.code
+  if (asking || !code) return
+  asking = true
+  const testKey = await $fetch<{ testKey: boolean }>(CHECKOUT_TEST_KEY_ROUTE, {
+    timeout: 3000,
+  }).then(
+    (res) => res.testKey === true,
+    () => false,
+  )
+  asking = false
+  if (testKey) window.location.assign(checkoutUrl(code))
+  else sheetOpen.value = true
+}
 </script>
 
 <template>
@@ -142,9 +162,7 @@ const purchase = computed(() => purchaseSheetProps(zone, sel.value))
     <ProductSections :zone="zone" :kind="kind" />
 
     <div class="product__buybar">
-      <button type="button" class="product__buy" :disabled="!option" @click="sheetOpen = true">
-        구매하기
-      </button>
+      <button type="button" class="product__buy" :disabled="!option" @click="buy">구매하기</button>
     </div>
 
     <PurchaseSheet v-if="purchase" v-model="sheetOpen" v-bind="purchase" />

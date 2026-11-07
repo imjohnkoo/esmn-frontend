@@ -1,4 +1,4 @@
-// 구매 시트 보조 버튼 표시 판정(client-shell spec D-60) — Nitro 자동 import 는 대역.
+// «구매하기» 분기 판정(client-shell spec D-60) — Nitro 자동 import 는 대역.
 import { describe, expect, it, vi } from 'vitest'
 
 const config = { public: { toss: { clientKey: '' } } }

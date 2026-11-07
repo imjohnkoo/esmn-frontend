@@ -9,7 +9,28 @@ vi.stubGlobal('readBody', async (e: { body: unknown }) => e.body)
 vi.stubGlobal('setResponseStatus', (e: { status?: number }, s: number) => {
   e.status = s
 })
-vi.stubGlobal('useAppConfig', () => ({ checkoutPreview: { amount: AMOUNT } }))
+// 서버 카탈로그 대역 — 금액이 다른 옵션 2개(값의 원천 · shell D-60)
+const OPTION = 'FRA00U01D07V2'
+const OTHER_OPTION = 'CZE00U02D07V2'
+const OTHER_AMOUNT = 9100
+const opt = (code: string, finalWon: number) => ({
+  code,
+  cap: 1,
+  days: 7,
+  name1: 'a',
+  name2: 'b',
+  finalWon,
+})
+vi.stubGlobal('useCatalog', async () => ({
+  zones: [
+    { zone: 'FRA00', label: '프랑스', products: [{ kind: 'U', options: [opt(OPTION, AMOUNT)] }] },
+    {
+      zone: 'CZE00',
+      label: '체코',
+      products: [{ kind: 'U', options: [opt(OTHER_OPTION, OTHER_AMOUNT)] }],
+    },
+  ],
+}))
 vi.stubGlobal('useRuntimeConfig', () => config)
 const fetchMock = vi.fn()
 vi.stubGlobal('fetch', fetchMock)
@@ -25,6 +46,7 @@ const body = (over: Record<string, unknown> = {}) => ({
   paymentKey: 'tgen_test_key',
   orderId: ORDER_ID,
   amount: AMOUNT,
+  optionCode: OPTION,
   ...over,
 })
 const call = async (b: unknown) => {
@@ -137,5 +159,42 @@ describe('confirm.post', () => {
     expect(await call(body())).toEqual({ status: 502, res: { code: 'UPSTREAM' } })
     tossReply(500, { code: 'FAILED_INTERNAL_SYSTEM_PROCESSING', message: '내부 오류' })
     expect(await call(body())).toEqual({ status: 502, res: { code: 'UPSTREAM' } })
+  })
+
+  describe('옵션 코드로 찾은 카탈로그 금액 대조 (shell D-60)', () => {
+    const done = (amount: number) =>
+      tossReply(200, {
+        status: 'DONE',
+        orderId: ORDER_ID,
+        paymentKey: 'k',
+        approvedAt: 'x',
+        method: '카드',
+        totalAmount: amount,
+      })
+
+    it('다른 옵션이면 그 옵션 금액으로 승인한다', async () => {
+      done(OTHER_AMOUNT)
+      const { status } = await call(body({ optionCode: OTHER_OPTION, amount: OTHER_AMOUNT }))
+      expect(status).toBe(200)
+      expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toMatchObject({ amount: OTHER_AMOUNT })
+    })
+
+    it.each([
+      ['다른 옵션의 코드에 심사 품목 금액', { optionCode: OTHER_OPTION, amount: AMOUNT }],
+      ['조작한 금액', { amount: 100 }],
+      ['모르는 코드', { optionCode: 'XXX00U01D07V2' }],
+    ])('%s → 400 AMOUNT_MISMATCH · 토스 호출 0', async (_n, over) => {
+      const { status, res } = await call(body(over))
+      expect(status).toBe(400)
+      expect(res).toEqual({ code: 'AMOUNT_MISMATCH' })
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it('옵션 코드가 없으면 400 INVALID_REQUEST · 토스 호출 0', async () => {
+      const { status, res } = await call(body({ optionCode: undefined }))
+      expect(status).toBe(400)
+      expect(res).toEqual({ code: 'INVALID_REQUEST' })
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
   })
 })

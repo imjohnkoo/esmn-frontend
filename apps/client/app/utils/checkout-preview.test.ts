@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import { PREVIEW_OPTION_CODE, checkoutPreviewFromCatalog } from '#shared/catalog/preview'
+import {
+  PREVIEW_OPTION_CODE,
+  checkoutEntryRedirect,
+  checkoutPreviewFromCatalog,
+  checkoutUrl,
+} from '#shared/catalog/preview'
 import { ACTIVE_CATALOG_FILE, activeRaw, fixtureRaw, setFinalWon } from '#shared/catalog/test-data'
 import { parseCatalog } from '#shared/catalog/validate'
 import {
@@ -52,6 +57,7 @@ describe('상품 값 (PG 심사 요건 · catalog F-12)', () => {
       usage: '현지에서 처음 연결한 때부터 24시간 단위로 7일',
       quantity: 1,
       amount: 4900,
+      optionCode: 'FRA00U01D07V2',
       orderName: '프랑스 eSIM 무제한 · 매일 1GB · 7일',
     })
   })
@@ -312,5 +318,29 @@ describe('05-B 동의 모델(F-22) — 화면이 그리는 것은 이것뿐', ()
     ])
     for (const [key, line] of Object.entries(CHECKOUT_NOTICE))
       expect(shown.has(line) || shown.has(splitConsent(line).label), key).toBe(true)
+  })
+})
+
+describe('결제 주소 · 진입 판정 (shell D-60)', () => {
+  const LOOKUP = { item: PREVIEW_ITEM, zone: 'FRA00' }
+
+  it('checkoutUrl — 코드가 있으면 쿼리 · 없으면 심사 품목 주소 · 금액은 싣지 않는다', () => {
+    expect(checkoutUrl('CZE00U02D07V2')).toBe('/checkout-preview?option=CZE00U02D07V2')
+    expect(checkoutUrl()).toBe('/checkout-preview')
+  })
+
+  it.each([
+    ['test_gck_x', true, null],
+    ['test_gck_x', false, null],
+    ['', false, null],
+    ['', true, '/products/fra00'],
+    ['live_gck_x', true, '/products/fra00'],
+    ['live_gck_x', false, '/products/fra00'],
+  ])('키 %j · 쿼리 %s → %s', (key, hasOption, target) => {
+    expect(checkoutEntryRedirect(LOOKUP, key, hasOption)).toBe(target)
+  })
+
+  it('모르는 코드는 키와 상관없이 홈', () => {
+    expect(checkoutEntryRedirect(null, 'test_gck_x', true)).toBe('/')
   })
 })
