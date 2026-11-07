@@ -132,6 +132,8 @@ apps/client/
 │   ├── api/health.get.ts              # /api/health
 │   ├── api/v1/{verify,activate,withdraw-cancel}.post.ts
 │   ├── api/v1/checkout-preview/confirm.post.ts  # 테스트 체크아웃 토스 승인 1회 · 저장 0
+│   ├── api/v1/checkout-preview/item.get.ts      # 옵션 코드 → 결제 상품 값(서버 카탈로그 · shell D-60)
+│   ├── api/v1/checkout-preview/test-key.get.ts  # 런타임 키가 test_ 인가(불리언만 · shell D-60)
 │   ├── db/{index,schema}.ts           # Drizzle (order/esim/plan/plan-type)
 │   ├── middleware/{cors,auth}.ts      # cors: /api/** 화이트리스트(utils/cors-origins.ts), auth: placeholder (토큰 추출만)
 │   ├── routes/robots.txt.ts           # robots.txt (shared/utils/robots.ts 에서 생성)
@@ -162,7 +164,7 @@ apps/client/
 | `/api/health`             | GET    | `{ status: 'ok', app: 'nomacom-client', commit, timestamp }`                                                                                                                                                                                                           |
 | `/api/v1/verify`          | POST   | 수신자 대조 후 주문 상세 + esims + planType 반환. planTypes 는 `inArray` 일괄 조회 (N+1 없음). `productOrderId` 로 필터 가능                                                                                                                                           |
 | `/api/v1/activate`        | POST   | 동의(`consent` 판 · 해시) 검증 400 → 수신자 대조 (403) → provider `spark` 만(그 밖 400) → 새 eSIM 이 생길 요청이면 `consent_log` 1행 → 부족분만 Spark 발급(`utils/spark-issuance.ts` — 원장 · 동시성 규약). 전량 발급돼 있으면 기존 상태로 idempotent 성공(행 0). 같은 주문의 동시 요청은 in-flight lock 직렬화. Maya 분기 코드는 남아 있지만 닿지 않는다 |
-| `/api/v1/checkout-preview/confirm` | POST | 테스트 체크아웃 승인(shell D-59) — 본문 `{paymentKey ≤200, orderId(pv-…), amount 정수}` 검증 400 `INVALID_REQUEST` → 빌드 주입 금액과 다르면 400 `AMOUNT_MISMATCH` → 시크릿 없음 503 `NOT_CONFIGURED` → 토스 `POST /v1/payments/confirm`(Basic 시크릿: · 10초) → `{status, orderId, paymentKey, approvedAt, method, totalAmount}` 만(승인 금액 불일치 502) · 토스 4xx 는 같은 상태 `{code, message}` · 네트워크 · 5xx 502 `UPSTREAM`. 저장 0 |
+| `/api/v1/checkout-preview/confirm` | POST | 테스트 체크아웃 승인(shell D-59) — 본문 `{paymentKey ≤200, orderId(pv-…), amount 정수, optionCode}` 검증 400 `INVALID_REQUEST` → 옵션 코드의 서버 카탈로그 금액과 다르면(모르는 코드 포함) 400 `AMOUNT_MISMATCH` → 시크릿 없음 · 공개 키가 `test_` 아님 503 `NOT_CONFIGURED` → 토스 `POST /v1/payments/confirm`(Basic 시크릿: · 10초) → `{status, orderId, paymentKey, approvedAt, method, totalAmount}` 만(승인 금액 불일치 502) · 토스 4xx 는 같은 상태 `{code, message}` · 네트워크 · 5xx 502 `UPSTREAM`. 저장 0 |
 | `/api/v1/withdraw-cancel` | POST   | 수신자 대조 + 취소요청 상태 사전 체크 후 backend 내부 endpoint 에 위임(Naver 발송처리 · DB 갱신은 backend 소유). 내부 env 없으면 503                                                                                                                                   |
 
 ### activate 신뢰성 설계 (변경 시 유지할 불변식)
