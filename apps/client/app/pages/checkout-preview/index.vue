@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 테스트 체크아웃 (K9 · spec S-7 · D-59) — PG 심사 캡처 전용. 사이트 어디에서도 링크하지 않는다 · noindex.
+// 테스트 체크아웃 (K9 · spec S-7 · D-59) — PG 심사 캡처용. 사이트의 링크는 구매 시트 보조 버튼 하나뿐(테스트 키일 때만 · D-60) · noindex.
 // 결제창 = 토스페이먼츠 결제위젯 v2(주문서형). 주문 저장 · 발급 0 — 승인(confirm)은 복귀 화면 /checkout-preview/success 가 한 번 부른다.
 // 상품 값은 빌드 때 카탈로그(K1)에서 계산해 앱 설정으로 들어온다(catalog F-12 · modules/catalog.ts) — 이 페이지는 데이터 라우트를 부르지 않는다.
 // 키는 runtimeConfig.public.toss.clientKey(심사 기간 test_gck_*).

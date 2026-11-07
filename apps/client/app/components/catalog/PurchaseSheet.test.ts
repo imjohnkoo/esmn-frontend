@@ -14,6 +14,7 @@ const OPTION = '매일 2GB + 소진후 512kbps 무제한 · 7일'
 
 type Assign = (url: string | URL) => void
 let assign: ReturnType<typeof vi.fn<Assign>>
+const testKeyRoute = vi.fn<(url: string) => Promise<unknown>>()
 
 function host(initial = false) {
   const open = ref(initial)
@@ -46,11 +47,15 @@ beforeEach(() => {
   vi.useFakeTimers()
   assign = vi.fn<Assign>()
   vi.spyOn(window.location, 'assign').mockImplementation(assign)
+  testKeyRoute.mockReset()
+  testKeyRoute.mockResolvedValue({ testKey: false })
+  vi.stubGlobal('$fetch', testKeyRoute)
 })
 
 afterEach(() => {
   vi.useRealTimers()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
   document.body.innerHTML = ''
 })
 
@@ -228,5 +233,81 @@ describe('PurchaseSheet (S-5 · F-8 · K2)', () => {
     expect(open.value).toBe(false)
     expect(assign).toHaveBeenCalledTimes(1)
     w.unmount()
+  })
+
+  describe('보조 버튼 «카드 결제 테스트» (shell D-60)', () => {
+    const LABEL = '카드 결제 테스트'
+    const testKey = () => testKeyRoute.mockResolvedValue({ testKey: true })
+    const labels = () => [...document.querySelectorAll('button')].map((b) => b.textContent?.trim())
+
+    it('서버가 테스트 키라고 답하면 취소 아래 맨 끝에 보이고 스토어 두 버튼 순서는 그대로', async () => {
+      testKey()
+      const { w, open } = host()
+      await flushPromises()
+      await openSheet(open)
+      expect(testKeyRoute).toHaveBeenCalledWith('/api/v1/checkout-preview/test-key')
+      expect(labels().slice(-3)).toEqual(['지금 이동', '취소', LABEL])
+      w.unmount()
+    })
+
+    it.each([
+      ['라이브 · 빈 키', () => testKeyRoute.mockResolvedValue({ testKey: false })],
+      ['서버 오류', () => testKeyRoute.mockRejectedValue(new Error('500'))],
+      ['예상 밖 응답', () => testKeyRoute.mockResolvedValue('<html>')],
+    ])('%s → 버튼이 없고 3초 뒤 스토어로 한 번 간다', async (_name, reply) => {
+      reply()
+      const { w, open } = host()
+      await flushPromises()
+      await openSheet(open)
+      expect(text()).not.toContain(LABEL)
+      vi.advanceTimersByTime(3000)
+      expect(assign).toHaveBeenCalledTimes(1)
+      expect(assign).toHaveBeenCalledWith(NAVER_URL)
+      w.unmount()
+    })
+
+    it('누르면 /checkout-preview 로 한 번만 가고 시간이 지나도 스토어로 튕기지 않는다', async () => {
+      testKey()
+      const { w, open } = host()
+      await flushPromises()
+      await openSheet(open)
+      vi.advanceTimersByTime(2900)
+      button(LABEL).click()
+      await nextTick()
+      expect(text()).toContain('이동하고 있어요')
+      button(LABEL).click()
+      button('지금 이동').click()
+      vi.advanceTimersByTime(10_000)
+      expect(assign).toHaveBeenCalledTimes(1)
+      expect(assign).toHaveBeenCalledWith('/checkout-preview')
+      w.unmount()
+    })
+
+    it('버튼이 보여도 누르지 않으면 3초 뒤 스토어로 한 번 간다', async () => {
+      testKey()
+      const { w, open } = host()
+      await flushPromises()
+      await openSheet(open)
+      vi.advanceTimersByTime(3000)
+      expect(assign).toHaveBeenCalledTimes(1)
+      expect(assign).toHaveBeenCalledWith(NAVER_URL)
+      w.unmount()
+    })
+
+    it('결제 화면에서 bfcache 로 돌아오면 시트가 닫혀 있고 다시 열면 3초부터 센다', async () => {
+      testKey()
+      const { w, open } = host()
+      await flushPromises()
+      await openSheet(open)
+      button(LABEL).click()
+      const back = new Event('pageshow')
+      Object.defineProperty(back, 'persisted', { value: true })
+      window.dispatchEvent(back)
+      await nextTick()
+      expect(open.value).toBe(false)
+      await openSheet(open)
+      expect(text()).toContain('3초 뒤에 이동해요')
+      w.unmount()
+    })
   })
 })

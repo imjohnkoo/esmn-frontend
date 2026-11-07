@@ -1,7 +1,7 @@
 /**
  * 테스트 체크아웃 `/checkout-preview` 의 상품 값(shell D-13 · F-19 · catalog F-12) — PG 심사는 «표시 금액 = 라이브 판매가» 를 본다.
  * K1 의 `PREVIEW_OPTION_CODE` 옵션(프랑스 무제한 매일 1GB · 7일)에서 **빌드 때** 계산해 앱 설정으로 주입한다
- * (`modules/catalog.ts` — 페이지는 서버를 부르지 않는다 · 링크 0 · noindex 불변식 유지).
+ * (`modules/catalog.ts` — 페이지는 서버를 부르지 않는다 · noindex 불변식 유지).
  * 옵션명은 K1 두 칸 그대로(« · »). 카탈로그에 그 옵션이 없으면 throw — 빌드가 멈춘다(가짜 금액으로 대신하지 않는다).
  * 상품명에 «TEST» 금지 · 0원 금지 — 토스 심사 요건.
  */
@@ -15,6 +15,11 @@ export const PREVIEW_OPTION_CODE = 'FRA00U01D07V2'
  * 페이지 · 복귀 화면 · confirm 라우트가 같이 쓴다 — confirm 이 이 페이지가 만든 주문번호 꼴만 받게(같은 상점 키의 다른 결제 흐름 차단) 좁게 둔다
  */
 export const PAYMENT_ID_PATTERN = /^pv-\d{1,16}-[0-9a-f]{24}$/
+
+/** 토스 클라이언트 키가 테스트 키인가 — 빈 값 · `live_*` 는 아니다. 구매 시트 보조 버튼(서버 판정) · success 화면이 같이 쓴다(shell D-60) */
+export function isTestClientKey(key: string): boolean {
+  return key.startsWith('test_')
+}
 
 export interface PreviewItem {
   productName: string

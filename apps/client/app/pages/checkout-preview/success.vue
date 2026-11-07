@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// 테스트 체크아웃 결제 성공 복귀(spec F-19 · S-7 · D-59) — 링크 0 · noindex(/checkout-preview/**).
+// 테스트 체크아웃 결제 성공 복귀(spec F-19 · S-7 · D-59) — 복귀 전용(링크 0) · noindex(/checkout-preview/**).
 // 쿼리 paymentKey · orderId · amount → ① 이 탭이 만든 주문번호가 아니면 ② 금액이 다르면 안내만(서버 호출 0) ③ 맞으면 confirm 1회.
 // 쓴 주문번호(sessionStorage)는 confirm 을 부르기 전에 지운다 — 새로고침 · 뒤로 · 탭 복제로 confirm 을 다시 부르지 않는다.
 import { NButton } from '@imjohnkoo/design-vue'
-import type { PreviewItem } from '#shared/catalog/preview'
+import { isTestClientKey, type PreviewItem } from '#shared/catalog/preview'
 import {
   type ConfirmedPayment,
   CONFIRM_FALLBACK_MESSAGE,
@@ -74,7 +74,7 @@ onMounted(async () => {
 })
 
 // «청구되지 않아요» 는 테스트 키일 때만 — 같은 이름에 라이브 키가 들어가면 그리지 않는다(spec D-12)
-const isTestKey = useRuntimeConfig().public.toss.clientKey.startsWith('test_')
+const isTestKey = isTestClientKey(useRuntimeConfig().public.toss.clientKey)
 const retry = () => navigateTo('/checkout-preview')
 // 화면 제목(문서 title 은 «결제 결과» 그대로) — 디자인 리뷰 TOSSCK
 const heading = computed(() =>

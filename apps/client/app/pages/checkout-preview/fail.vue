@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 테스트 체크아웃 결제 실패 · 취소 복귀(spec F-19 · S-7 · D-59) — 링크 0 · noindex(/checkout-preview/**). 서버 호출 0.
+// 테스트 체크아웃 결제 실패 · 취소 복귀(spec F-19 · S-7 · D-59) — 복귀 전용(링크 0) · noindex(/checkout-preview/**). 서버 호출 0.
 // 쿼리 code · message(80자). 토스 취소(PAY_PROCESS_CANCELED)는 orderId 를 싣지 않아 주문번호로 대조할 수 없다 —
 // 이 탭이 결제를 시작했을 때(sessionStorage 에 주문번호가 있을 때)만 사유를 그린다(링크로 만든 임의 문구 차단). 그린 뒤 지운다.
 import { NButton } from '@imjohnkoo/design-vue'
