@@ -7,11 +7,12 @@ import { computed, onMounted, ref } from 'vue'
 import { checkoutPreviewFromCatalog } from '#shared/catalog/preview'
 import { fixtureRaw } from '#shared/catalog/test-data'
 import { parseCatalog } from '#shared/catalog/validate'
-import { PENDING_PAYMENT_KEY } from '~/utils/checkout-preview'
+import { PENDING_ITEM_KEY, PENDING_PAYMENT_KEY } from '~/utils/checkout-preview'
 import Fail from './fail.vue'
 import Success from './success.vue'
 
 const PREVIEW_ITEM = checkoutPreviewFromCatalog(parseCatalog(fixtureRaw()))
+const PENDING_ITEM = { optionCode: PREVIEW_ITEM.optionCode, amount: PREVIEW_ITEM.amount }
 const MINE = 'pv-1790105212345-abababababababababababab'
 const route: { query: Record<string, string> } = { query: {} }
 const $fetch = vi.fn()
@@ -24,7 +25,6 @@ Object.assign(globalThis, {
   definePageMeta: () => {},
   useHead: () => {},
   useRoute: () => route,
-  useAppConfig: () => ({ checkoutPreview: PREVIEW_ITEM }),
   useRuntimeConfig: () => ({ public: { toss } }),
   $fetch,
   navigateTo,
@@ -34,6 +34,8 @@ enableAutoUnmount(afterEach)
 beforeEach(() => {
   vi.clearAllMocks()
   sessionStorage.clear()
+  // 이 탭이 결제를 요청한 옵션(index.vue 가 적는다 · shell D-60)
+  sessionStorage.setItem(PENDING_ITEM_KEY, JSON.stringify(PENDING_ITEM))
   route.query = {}
   toss.clientKey = 'test_ck_test_only'
 })
@@ -102,7 +104,12 @@ describe('success 복귀', () => {
     expect($fetch).toHaveBeenCalledTimes(1)
     expect($fetch).toHaveBeenCalledWith('/api/v1/checkout-preview/confirm', {
       method: 'POST',
-      body: { paymentKey: 'tgen_test_key', orderId: MINE, amount: PREVIEW_ITEM.amount },
+      body: {
+        paymentKey: 'tgen_test_key',
+        orderId: MINE,
+        amount: PREVIEW_ITEM.amount,
+        optionCode: PREVIEW_ITEM.optionCode,
+      },
     })
     const rows = [...document.body.querySelectorAll('.pay-result__row')].map((r) =>
       [...r.children].map((c) => (c.textContent ?? '').trim()).join(' '),
@@ -263,7 +270,7 @@ describe('success 복귀 — 나머지 상태', () => {
         b.textContent?.includes('다시 결제하기'),
       )!
       retry.click()
-      expect(navigateTo).toHaveBeenCalledWith('/checkout-preview')
+      expect(navigateTo).toHaveBeenCalledWith(`/checkout-preview?option=${PREVIEW_ITEM.optionCode}`)
     },
   )
 })
@@ -295,5 +302,63 @@ describe('fail 복귀', () => {
     await render(Fail)
     expect(textOf()).toContain('이 창에서 시작한 결제가 아니에요. 다시 결제해 주세요.')
     expect(textOf()).not.toContain('가짜 안내 문구')
+  })
+})
+
+describe('고른 옵션 복귀 (shell D-60)', () => {
+  const OTHER = { optionCode: 'CZE00L10D30V2', amount: PREVIEW_ITEM.amount + 4200 }
+  const retryButton = () =>
+    [...document.querySelectorAll('button')].find((b) => b.textContent?.includes('다시 결제하기'))!
+
+  it('다른 옵션이면 그 금액 · 코드로 confirm 을 부른다', async () => {
+    sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
+    sessionStorage.setItem(PENDING_ITEM_KEY, JSON.stringify(OTHER))
+    route.query = successQuery({ amount: String(OTHER.amount) })
+    $fetch.mockResolvedValueOnce({
+      status: 'DONE',
+      orderId: MINE,
+      paymentKey: 'k',
+      approvedAt: '2026-11-07T00:00:00+09:00',
+      method: '카드',
+      totalAmount: OTHER.amount,
+    })
+    await render(Success)
+    expect($fetch.mock.calls[0]![1].body).toMatchObject(OTHER)
+    expect(textOf()).toContain('결제가 승인됐어요')
+  })
+
+  it('금액 쿼리가 이 탭이 요청한 금액과 다르면 confirm 호출 0', async () => {
+    sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
+    sessionStorage.setItem(PENDING_ITEM_KEY, JSON.stringify(OTHER))
+    route.query = successQuery()
+    await render(Success)
+    expect($fetch).not.toHaveBeenCalled()
+    expect(textOf()).toContain('결제 금액이 상품 금액과 달라 승인하지 않았어요.')
+  })
+
+  it.each([
+    ['없음', null],
+    ['깨진 값', '{"optionCode":1'],
+    ['타입이 틀린 값', '{"optionCode":1,"amount":4900}'],
+  ])('이 탭 옵션 기록이 %s → 승인하지 않는다 · confirm 호출 0', async (_n, stored) => {
+    sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
+    if (stored === null) sessionStorage.removeItem(PENDING_ITEM_KEY)
+    else sessionStorage.setItem(PENDING_ITEM_KEY, stored)
+    route.query = successQuery()
+    await render(Success)
+    expect($fetch).not.toHaveBeenCalled()
+    expect(textOf()).toContain('결제 금액이 상품 금액과 달라 승인하지 않았어요.')
+  })
+
+  it('fail 의 «다시 결제하기» 는 고른 옵션으로 돌아간다 · 기록이 없으면 심사 품목 주소', async () => {
+    sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
+    sessionStorage.setItem(PENDING_ITEM_KEY, JSON.stringify(OTHER))
+    route.query = { code: 'PAY_PROCESS_CANCELED', message: '취소' }
+    await render(Fail)
+    retryButton().click()
+    expect(navigateTo).toHaveBeenLastCalledWith('/checkout-preview?option=CZE00L10D30V2')
+    sessionStorage.removeItem(PENDING_ITEM_KEY)
+    retryButton().click()
+    expect(navigateTo).toHaveBeenLastCalledWith('/checkout-preview')
   })
 })

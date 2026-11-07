@@ -3,8 +3,8 @@ import { CHECKOUT_NOTICE } from '../content/legal/checkout-notice'
 import { PAYMENT_ID_PATTERN } from '#shared/catalog/preview'
 
 /**
- * 테스트 체크아웃 `/checkout-preview` (K9 · spec F-19 · D-59) — PG 심사 캡처 전용. 주문 저장 · 발급 없음 · 서버는 결제 confirm 1회.
- * 상품 값(금액 · 옵션명)은 `#shared/catalog/preview`(빌드 때 K1 에서 계산 · catalog F-12). 이 파일은 주문번호 · 복귀 쿼리 · 탭 기억.
+ * 테스트 체크아웃 `/checkout-preview` (K9 · spec F-19 · D-59 · D-60). 주문 저장 · 발급 없음 · 서버는 결제 confirm 1회.
+ * 상품 값(금액 · 옵션명)은 서버 카탈로그(`#shared/catalog/preview` · 미들웨어). 이 파일은 주문번호 · 복귀 쿼리 · 탭 기억.
  */
 
 export { PAYMENT_ID_PATTERN }
@@ -47,6 +47,30 @@ export function clearPendingPayment(): void {
   }
 }
 
+/** 이 탭이 결제를 요청한 옵션 — 복귀 화면의 금액 비교 · 다시 결제 · confirm 코드(shell D-60). 원천은 서버 카탈로그 · 최종 대조는 confirm */
+export const PENDING_ITEM_KEY = 'nomacom_checkout_preview_item'
+
+export interface PendingItem {
+  optionCode: string
+  amount: number
+}
+
+export function writePendingItem(item: PendingItem): void {
+  try {
+    sessionStorage.setItem(PENDING_ITEM_KEY, JSON.stringify(item))
+  } catch {
+    /* 저장이 막힌 브라우저 */
+  }
+}
+export function readPendingItem(): PendingItem | null {
+  try {
+    const item = JSON.parse(sessionStorage.getItem(PENDING_ITEM_KEY) ?? 'null')
+    return typeof item?.optionCode === 'string' && typeof item?.amount === 'number' ? item : null
+  } catch {
+    return null
+  }
+}
+
 const first = (value: unknown): unknown => (Array.isArray(value) ? value[0] : value)
 const text = (value: unknown): string | null =>
   typeof value === 'string' && value.trim() ? value.trim() : null
@@ -78,7 +102,7 @@ export function readSuccessReturn(query: Record<string, unknown>): SuccessReturn
 
 /**
  * success 화면 판정(spec F-19 · S-7) — ① 이 탭이 만든 주문번호가 아니면(쿼리 형식 오류 포함) `foreign`
- * ② 금액이 심사 품목 금액과 다르면 `amount` — 두 경우 서버를 부르지 않는다 ③ 둘 다 맞으면 `confirm`
+ * ② 금액이 이 탭이 요청한 금액과 다르면 `amount` — 두 경우 서버를 부르지 않는다 ③ 둘 다 맞으면 `confirm`
  */
 export function judgeSuccessReturn(
   ret: SuccessReturn | null,

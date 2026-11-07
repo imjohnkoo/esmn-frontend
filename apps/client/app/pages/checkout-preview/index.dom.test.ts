@@ -7,7 +7,7 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { CHECKOUT_NOTICE } from '~/content/legal/checkout-notice'
-import { PENDING_PAYMENT_KEY } from '~/utils/checkout-preview'
+import { PENDING_ITEM_KEY, PENDING_PAYMENT_KEY } from '~/utils/checkout-preview'
 import { checkoutPreviewFromCatalog } from '#shared/catalog/preview'
 import { fixtureRaw } from '#shared/catalog/test-data'
 import { parseCatalog } from '#shared/catalog/validate'
@@ -39,8 +39,10 @@ vi.mock('@tosspayments/tosspayments-sdk', () => ({
 const requestPayment = sdk.widgets.requestPayment
 
 const toss = { clientKey: 'test_ck_test_only' }
-// 상품 = 빌드 모듈이 앱 설정에 넣는 값(catalog F-12) — 여기서는 카탈로그 픽스처로 같은 함수를 돌린다
+// 상품 = 미들웨어가 서버 카탈로그에서 받아 넘기는 값(shell D-60) — 여기서는 카탈로그 픽스처로 같은 함수를 돌린다
 const PREVIEW_ITEM = checkoutPreviewFromCatalog(parseCatalog(fixtureRaw()))
+const itemState = { value: PREVIEW_ITEM }
+const definePageMeta = vi.fn()
 const navigateTo = vi.fn()
 const route: { query: Record<string, string> } = { query: {} }
 // Nuxt 자동 import 대신 — 페이지가 전역 이름으로 찾는다
@@ -49,11 +51,11 @@ Object.assign(globalThis, {
   computed,
   onMounted,
   onBeforeUnmount,
-  definePageMeta: () => {},
+  definePageMeta,
   useHead: () => {},
   useRoute: () => route,
   useRuntimeConfig: () => ({ public: { toss } }),
-  useAppConfig: () => ({ checkoutPreview: PREVIEW_ITEM }),
+  useState: () => itemState,
   navigateTo,
 })
 
@@ -65,6 +67,7 @@ beforeEach(() => {
   requestPayment.mockImplementation(async () => undefined)
   sessionStorage.clear()
   route.query = {}
+  itemState.value = PREVIEW_ITEM
   toss.clientKey = 'test_ck_test_only'
 })
 
@@ -491,5 +494,52 @@ describe('테스트 체크아웃 — 렌더된 동의 블록 글자 = 05-B(생�
       ['/privacy', '_blank'],
       ['/refund', '_blank'],
     ])
+  })
+
+  describe('고른 옵션 (shell D-60)', () => {
+    const OTHER = checkoutPreviewFromCatalog(parseCatalog(fixtureRaw()), 'CZE00L10D30V2')
+
+    it('다른 옵션이면 표시 금액 · 토스 setAmount · orderName 이 그 옵션 값이고 이 탭에 코드 · 금액을 적는다', async () => {
+      expect(OTHER.amount).not.toBe(PREVIEW_ITEM.amount)
+      itemState.value = OTHER
+      await render()
+      expect(document.body.textContent).toContain(OTHER.productName)
+      expect(payButton().textContent).toContain(`${OTHER.amount.toLocaleString('ko-KR')}원`)
+      expect(sdk.widgets.setAmount).toHaveBeenCalledWith({ currency: 'KRW', value: OTHER.amount })
+      await toggle(TERMS)
+      await toggle(AGE)
+      payButton().click()
+      await settle()
+      expect(requestPayment).toHaveBeenCalledTimes(1)
+      expect(requestPayment.mock.calls[0]![0]).toMatchObject({ orderName: OTHER.orderName })
+      expect(JSON.parse(sessionStorage.getItem(PENDING_ITEM_KEY)!)).toEqual({
+        optionCode: 'CZE00L10D30V2',
+        amount: OTHER.amount,
+      })
+    })
+  })
+
+  it('진입 판정 미들웨어가 이 페이지에 붙어 있다 — 키 · 모르는 코드 판정은 거기서만 한다(D-60)', async () => {
+    await render()
+    expect(definePageMeta).toHaveBeenCalledWith(
+      expect.objectContaining({ middleware: 'checkout-preview' }),
+    )
+  })
+
+  it('옵션 기록은 결제창을 열기 **전에** 이 탭에 적힌다(리디렉트는 돌아오지 않는다 — 뒤에 적으면 success 가 늘 «금액 다름»)', async () => {
+    let storedAtCall: string | null = null
+    requestPayment.mockImplementationOnce(async () => {
+      storedAtCall = sessionStorage.getItem(PENDING_ITEM_KEY)
+      return new Promise<undefined>(() => {}) // 페이지를 떠나는 중 — 끝나지 않는다
+    })
+    await render()
+    await toggle(TERMS)
+    await toggle(AGE)
+    payButton().click()
+    await settle()
+    expect(JSON.parse(storedAtCall!)).toEqual({
+      optionCode: PREVIEW_ITEM.optionCode,
+      amount: PREVIEW_ITEM.amount,
+    })
   })
 })
