@@ -5,7 +5,11 @@
 // ponytail: 저장 없는 금액 대조 — Wave 2 실주문은 결제 요청 전 저장 · 대조로 바꾼다(spec §6 비기능).
 // 로그에 시크릿 · 카드 정보를 남기지 않는다(이 핸들러는 아무것도 로그하지 않는다).
 import type { H3Event } from 'h3'
-import { PAYMENT_ID_PATTERN, previewLookup } from '../../../../shared/catalog/preview'
+import {
+  PAYMENT_ID_PATTERN,
+  isTestClientKey,
+  previewLookup,
+} from '../../../../shared/catalog/preview'
 
 const TOSS_CONFIRM_URL = 'https://api.tosspayments.com/v1/payments/confirm'
 const TIMEOUT_MS = 10_000
@@ -37,8 +41,11 @@ export default defineEventHandler(async (event) => {
   const lookup = previewLookup(await useCatalog(), optionCode)
   if (!lookup || amount !== lookup.item.amount) return fail(event, 400, 'AMOUNT_MISMATCH')
 
-  const secretKey = (useRuntimeConfig(event) as { tossSecretKey?: string }).tossSecretKey
-  if (!secretKey) return fail(event, 503, 'NOT_CONFIGURED')
+  // test_ 키일 때만 승인한다 — 발급이 없어 실청구가 나면 안 된다(shell D-60)
+  const config = useRuntimeConfig(event)
+  const secretKey = config.tossSecretKey
+  if (!secretKey || !isTestClientKey(config.public.toss.clientKey))
+    return fail(event, 503, 'NOT_CONFIGURED')
 
   let res: Response
   try {

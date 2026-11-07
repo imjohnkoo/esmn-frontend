@@ -42,6 +42,7 @@ const toss = { clientKey: 'test_ck_test_only' }
 // 상품 = 미들웨어가 서버 카탈로그에서 받아 넘기는 값(shell D-60) — 여기서는 카탈로그 픽스처로 같은 함수를 돌린다
 const PREVIEW_ITEM = checkoutPreviewFromCatalog(parseCatalog(fixtureRaw()))
 const itemState = { value: PREVIEW_ITEM }
+const definePageMeta = vi.fn()
 const navigateTo = vi.fn()
 const route: { query: Record<string, string> } = { query: {} }
 // Nuxt 자동 import 대신 — 페이지가 전역 이름으로 찾는다
@@ -50,7 +51,7 @@ Object.assign(globalThis, {
   computed,
   onMounted,
   onBeforeUnmount,
-  definePageMeta: () => {},
+  definePageMeta,
   useHead: () => {},
   useRoute: () => route,
   useRuntimeConfig: () => ({ public: { toss } }),
@@ -515,6 +516,30 @@ describe('테스트 체크아웃 — 렌더된 동의 블록 글자 = 05-B(생�
         optionCode: 'CZE00L10D30V2',
         amount: OTHER.amount,
       })
+    })
+  })
+
+  it('진입 판정 미들웨어가 이 페이지에 붙어 있다 — 키 · 모르는 코드 판정은 거기서만 한다(D-60)', async () => {
+    await render()
+    expect(definePageMeta).toHaveBeenCalledWith(
+      expect.objectContaining({ middleware: 'checkout-preview' }),
+    )
+  })
+
+  it('옵션 기록은 결제창을 열기 **전에** 이 탭에 적힌다(리디렉트는 돌아오지 않는다 — 뒤에 적으면 success 가 늘 «금액 다름»)', async () => {
+    let storedAtCall: string | null = null
+    requestPayment.mockImplementationOnce(async () => {
+      storedAtCall = sessionStorage.getItem(PENDING_ITEM_KEY)
+      return new Promise<undefined>(() => {}) // 페이지를 떠나는 중 — 끝나지 않는다
+    })
+    await render()
+    await toggle(TERMS)
+    await toggle(AGE)
+    payButton().click()
+    await settle()
+    expect(JSON.parse(storedAtCall!)).toEqual({
+      optionCode: PREVIEW_ITEM.optionCode,
+      amount: PREVIEW_ITEM.amount,
     })
   })
 })

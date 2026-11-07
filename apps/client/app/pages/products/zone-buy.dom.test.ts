@@ -3,7 +3,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Suspense, computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
-import { initialSelection, selectedOption } from '#shared/catalog/picker'
+import { initialSelection, selectedOption, withCap } from '#shared/catalog/picker'
 import { fixtureRaw } from '#shared/catalog/test-data'
 import { parseCatalog } from '#shared/catalog/validate'
 import Page from './[zone].vue'
@@ -61,6 +61,34 @@ describe('«구매하기» (D-60)', () => {
     expect(assign).toHaveBeenCalledTimes(1)
     expect(assign).toHaveBeenCalledWith(`/checkout-preview?option=${CODE}`)
     expect(sheetShown()).toBe(false)
+    expect($fetch).toHaveBeenCalledWith('/api/v1/checkout-preview/test-key', {
+      timeout: 3000,
+      retry: 0,
+    })
+    w.unmount()
+  })
+
+  it('다른 용량을 고르면 그 옵션 코드로 간다', async () => {
+    $fetch.mockResolvedValue({ testKey: true })
+    const w = await render()
+    const input = [...document.querySelectorAll<HTMLInputElement>('.plan-cards input')].find(
+      (el) => !el.checked,
+    )!
+    input.click()
+    await nextTick()
+    const picked = selectedOption(zone, withCap(zone, initialSelection(zone), Number(input.value)))!
+    expect(picked.code).not.toBe(CODE)
+    await press()
+    expect(assign).toHaveBeenCalledWith(`/checkout-preview?option=${picked.code}`)
+    w.unmount()
+  })
+
+  it('시트로 빠진 뒤 닫고 다시 누르면 다시 묻는다', async () => {
+    $fetch.mockResolvedValue({ testKey: false })
+    const w = await render()
+    await press()
+    await press()
+    expect($fetch).toHaveBeenCalledTimes(2)
     w.unmount()
   })
 

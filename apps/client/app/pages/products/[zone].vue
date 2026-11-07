@@ -102,6 +102,7 @@ async function buy() {
   asking = true
   const testKey = await $fetch<{ testKey: boolean }>(CHECKOUT_TEST_KEY_ROUTE, {
     timeout: 3000,
+    retry: 0, // 기본 재시도는 첫 시도의 제한 시간을 잃어 버튼이 멈출 수 있다
   }).then(
     (res) => res.testKey === true,
     () => false,

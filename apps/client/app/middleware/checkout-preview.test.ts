@@ -38,7 +38,9 @@ describe('checkout-preview 미들웨어 (D-60)', () => {
 
   it('쿼리가 없으면 코드 없이 묻는다(심사 URL)', async () => {
     expect(await middleware({ query: {} })).toBeUndefined()
+    expect($fetch.mock.calls[0]![0]).toBe('/api/v1/checkout-preview/item')
     expect($fetch.mock.calls[0]![1]).toEqual({ query: {} })
+    expect(state.value).toEqual(ITEM)
   })
 
   it('모르는 코드(404) → 홈 · 상품 값 없음', async () => {
@@ -56,6 +58,7 @@ describe('checkout-preview 미들웨어 (D-60)', () => {
     ['live_ + 고른 옵션', 'live_gck_x', OPTION],
     ['live_ + 쿼리 없음', 'live_gck_x', { query: {} }],
     ['빈 키 + 고른 옵션', '', OPTION],
+    ['빈 키 + 빈 옵션 쿼리', '', { query: { option: '' } }],
   ])('%s → 결제를 시작하지 않고 상품 화면으로', async (_n, key, to) => {
     toss.clientKey = key
     expect(await middleware(to)).toBe('redirect:/products/cze00')
@@ -65,5 +68,6 @@ describe('checkout-preview 미들웨어 (D-60)', () => {
   it('빈 키 + 쿼리 없음 → 기존 «결제 설정을 준비하고 있어요» 화면', async () => {
     toss.clientKey = ''
     expect(await middleware({ query: {} })).toBeUndefined()
+    expect(state.value).toEqual(ITEM)
   })
 })

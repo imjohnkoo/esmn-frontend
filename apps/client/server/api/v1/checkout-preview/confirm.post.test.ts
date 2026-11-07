@@ -3,7 +3,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const AMOUNT = 4900
-const config = { tossSecretKey: 'test_sk_test_only' }
+const config = {
+  tossSecretKey: 'test_sk_test_only',
+  public: { toss: { clientKey: 'test_ck_test_only' } },
+}
 vi.stubGlobal('defineEventHandler', (fn: unknown) => fn)
 vi.stubGlobal('readBody', async (e: { body: unknown }) => e.body)
 vi.stubGlobal('setResponseStatus', (e: { status?: number }, s: number) => {
@@ -60,6 +63,7 @@ const tossReply = (status: number, json: unknown) =>
 beforeEach(() => {
   fetchMock.mockReset()
   config.tossSecretKey = 'test_sk_test_only'
+  config.public.toss.clientKey = 'test_ck_test_only'
 })
 afterEach(() => vi.useRealTimers())
 
@@ -122,6 +126,8 @@ describe('confirm.post', () => {
         totalAmount: AMOUNT,
       },
     })
+    // 저장 · 발급 호출 0 — 승인 뒤에도 나가는 호출은 토스 confirm 하나뿐이다(spec F-19)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(url).toBe('https://api.tosspayments.com/v1/payments/confirm')
     expect(init.method).toBe('POST')
@@ -176,6 +182,7 @@ describe('confirm.post', () => {
       done(OTHER_AMOUNT)
       const { status } = await call(body({ optionCode: OTHER_OPTION, amount: OTHER_AMOUNT }))
       expect(status).toBe(200)
+      expect(fetchMock).toHaveBeenCalledTimes(1)
       expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toMatchObject({ amount: OTHER_AMOUNT })
     })
 
@@ -189,6 +196,17 @@ describe('confirm.post', () => {
       expect(res).toEqual({ code: 'AMOUNT_MISMATCH' })
       expect(fetchMock).not.toHaveBeenCalled()
     })
+
+    it.each([['live_ck_x'], ['']])(
+      '공개 키가 %j 면 승인하지 않는다 — 503 · 토스 호출 0',
+      async (key) => {
+        config.public.toss.clientKey = key
+        const { status, res } = await call(body())
+        expect(status).toBe(503)
+        expect(res).toEqual({ code: 'NOT_CONFIGURED' })
+        expect(fetchMock).not.toHaveBeenCalled()
+      },
+    )
 
     it('옵션 코드가 없으면 400 INVALID_REQUEST · 토스 호출 0', async () => {
       const { status, res } = await call(body({ optionCode: undefined }))

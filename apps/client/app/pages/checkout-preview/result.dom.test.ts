@@ -339,6 +339,7 @@ describe('고른 옵션 복귀 (shell D-60)', () => {
   it.each([
     ['없음', null],
     ['깨진 값', '{"optionCode":1'],
+    ['타입이 틀린 값', '{"optionCode":1,"amount":4900}'],
   ])('이 탭 옵션 기록이 %s → 승인하지 않는다 · confirm 호출 0', async (_n, stored) => {
     sessionStorage.setItem(PENDING_PAYMENT_KEY, MINE)
     if (stored === null) sessionStorage.removeItem(PENDING_ITEM_KEY)
@@ -346,6 +347,7 @@ describe('고른 옵션 복귀 (shell D-60)', () => {
     route.query = successQuery()
     await render(Success)
     expect($fetch).not.toHaveBeenCalled()
+    expect(textOf()).toContain('결제 금액이 상품 금액과 달라 승인하지 않았어요.')
   })
 
   it('fail 의 «다시 결제하기» 는 고른 옵션으로 돌아간다 · 기록이 없으면 심사 품목 주소', async () => {
