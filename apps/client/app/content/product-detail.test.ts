@@ -280,6 +280,11 @@ describe('히어로 문구 (S-4 — 고른 종류를 따른다)', () => {
     expect(USAGE_EXAMPLE_DAYS.L).toBe(30)
   })
 
+  it('이용 방법 첫 단계 — 이 사이트의 «구매하기» 로 결제한다(스마트스토어 결제를 말하지 않는다 · shell D-60)', () => {
+    expect(HOW_TO.steps[0]).toBe('구매하기를 눌러 바로 결제해요')
+    expect(HOW_TO.steps.join(' ')).not.toContain('스마트스토어')
+  })
+
   it('이용 방법 — 설치 가이드 흐름(미리 켜 두기 → 도착하면 한국 회선은 켠 채로 데이터만) + 요금 경고 두 줄(카피 규칙 3 · catalog D-23)', () => {
     expect(HOW_TO.steps.slice(-2)).toEqual([
       '출국 전에 설치하고, 이 회선을 켜고 이 회선의 데이터 로밍도 켜 두세요',
