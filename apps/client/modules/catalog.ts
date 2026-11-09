@@ -28,7 +28,10 @@ export default defineNuxtModule({
     const dir = join(nuxt.options.rootDir, CATALOG_DIR)
     const file = CATALOG_FILES.map((f) => join(dir, f)).find((f) => existsSync(f))
     if (!file) throw new Error(`카탈로그가 없다 — ${dir}/catalog.json 또는 catalog.fixture.json`)
-    const catalog = parseCatalog(JSON.parse(readFileSync(file, 'utf8')))
+    const catalog = parseCatalog(JSON.parse(readFileSync(file, 'utf8')), {
+      onStopped: (n) =>
+        console.info(`카탈로그: 사이트 판매 중지 기간(무제한 90일) 옵션 ${n}개를 걸렀다(NO90D)`),
+    })
     if (catalog.fixture) {
       console.warn(
         '⚠ FIXTURE 카탈로그(server/data/catalog.fixture.json · 표본 5 zone) — main 머지 전 W1-1 catalog.json 이 필요하다',

@@ -384,7 +384,46 @@ describe('parseCatalog — 어댑터(K1 → 화면 모델)', () => {
     expect(kindsOf(cze)).toEqual(['U', 'L'])
     const u = cze.products[0]!.options.map((o) => `${o.cap}/${o.days}`)
     expect(u.slice(0, 2)).toEqual(['1/1', '1/2'])
-    expect(u.at(-1)).toBe('3/90')
+    expect(u.at(-1)).toBe('3/60') // 90일은 사이트 판매 중지 — 걸러진다(NO90D)
+  })
+
+  it('90일 옵션이 든 export 도 검증을 통과하고 화면 모델에서는 무제한 90일만 빠진다(NO90D)', () => {
+    const raw = fresh()
+    const rawOptions = raw.zones.flatMap((z: any) => z.products.flatMap((p: any) => p.options))
+    const in90 = rawOptions.filter((o: any) => o.days === 90).length
+    expect(in90).toBeGreaterThan(0) // 표본 export 에 90일 옵션이 있다
+    expect(raw.meta.cellCount).toBe(rawOptions.length) // cellCount 는 거르기 전 export 기준 그대로
+    const counts: number[] = []
+    const cat = parseCatalog(raw, { onStopped: (n) => counts.push(n) })
+    expect(counts).toEqual([in90])
+    const view = cat.zones.flatMap((z) => z.products.flatMap((p) => p.options))
+    expect(view.filter((o) => o.days === 90)).toEqual([])
+    expect(view).toHaveLength(rawOptions.length - in90)
+    for (const z of cat.zones)
+      for (const p of z.products) {
+        const days = [...new Set(p.options.map((o) => o.days))].sort((a, b) => a - b)
+        if (p.kind === 'U')
+          expect(days, p.sku).toEqual([...Array.from({ length: 30 }, (_, i) => i + 1), 60])
+        else expect(days, p.sku).toEqual([30])
+      }
+  })
+
+  it('90일 옵션이 없는 export 도 통과하고 걸러진 수는 0(스토어에서 90일을 지운 뒤)', () => {
+    const raw = fresh()
+    let removed = 0
+    for (const z of raw.zones)
+      for (const p of z.products) {
+        const before = p.options.length
+        p.options = p.options.filter((o: any) => o.days !== 90)
+        removed += before - p.options.length
+      }
+    raw.meta.cellCount -= removed
+    const counts: number[] = []
+    const cat = parseCatalog(raw, { onStopped: (n) => counts.push(n) })
+    expect(counts).toEqual([0])
+    expect(cat.zones.flatMap((z) => z.products.flatMap((p) => p.options))).toHaveLength(
+      raw.meta.cellCount,
+    )
   })
 
   it('meta.fixture 가 없으면 실 카탈로그 · 설명 문자열이나 true 면 표본', () => {
@@ -466,12 +505,12 @@ describe('파생값', () => {
     expect(perGbWon(optionFor(cze, 'L', 3, 30)!)).toBe(2866) // 8,600 / 3 = 2,866.67
   })
 
-  it('용량은 큰 것부터, 기간은 1~30 · 60 · 90 오름차순', () => {
+  it('용량은 큰 것부터, 기간은 1~30 · 60 오름차순(90일 없음 — NO90D)', () => {
     expect(capsOf(cze.products[0]!)).toEqual([3, 2, 1])
     expect(capsOf(cze.products[1]!)).toEqual([30, 20, 10, 7, 5, 3, 1])
     const days = daysOf(cze.products[0]!)
-    expect(days).toHaveLength(32)
-    expect(days.slice(-3)).toEqual([30, 60, 90])
+    expect(days).toHaveLength(31)
+    expect(days.slice(-3)).toEqual([29, 30, 60])
   })
 
   it('옵션명은 스토어 두 칸을 « · » 로 잇는다', () => {

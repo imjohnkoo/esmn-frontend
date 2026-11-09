@@ -20,7 +20,7 @@ export function heroLead(zone: ZoneView, kind: Kind): string {
   return zone.subtitle ? `${zone.subtitle}, 한 번 설치로 ${n}개국` : `한 번 설치로 ${n}개국`
 }
 
-/** «1~30일 · 60·90일» — 1부터 이어지는 일수는 범위로, 그 뒤는 나열 */
+/** «1~30일 · 60일» — 1부터 이어지는 일수는 범위로, 그 뒤는 나열 */
 export function daysPhrase(days: number[]): string {
   const sorted = [...days].sort((a, b) => a - b)
   let end = 0
@@ -60,7 +60,7 @@ export function heroChecks(zone: ZoneView, kind: Kind): string[] {
 
 // ── 선택기 ──────────────────────────────────────────────────────────────
 
-/** 사용 기간 안내 — 그 상품의 실제 일수로 조립한다(S-4 · 검증기는 1~30일 + 60 · 90일 중 일부만 보장) */
+/** 사용 기간 안내 — 그 상품의 실제 일수로 조립한다(S-4 · 사이트 판매 기간은 1~30일 + 60일 — 90일은 로더가 거른다) */
 export function periodHint(kind: Kind, days: number[]): string {
   if (kind === 'L')
     return '하루 한도가 없고, 다 쓰면 사용이 끝나요. 30일은 처음 연결된 때부터 24시간 단위로 세요.'

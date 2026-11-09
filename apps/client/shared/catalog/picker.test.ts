@@ -43,8 +43,8 @@ describe('상세 선택기 (catalog spec D-3 · D-16 · E2E-13)', () => {
     expect(planCards(cze, s).find((c) => c.selected)!.option.code).toBe('CZE00U02D30V2')
   })
 
-  it('드롭다운 = 무제한 1~30 · 60 · 90일(32개) / 종량제 30일 한 칸', () => {
-    expect(periodOptions(cze, 'U')).toHaveLength(32)
+  it('드롭다운 = 무제한 1~30 · 60일(31개 — 90일 없음 · NO90D) / 종량제 30일 한 칸', () => {
+    expect(periodOptions(cze, 'U')).toEqual([...Array.from({ length: 30 }, (_, i) => i + 1), 60])
     expect(periodOptions(cze, 'L')).toEqual([30])
   })
 
@@ -133,13 +133,19 @@ describe(`전 zone × 전 옵션 — 카드 가격 = K1 최종가 (spec 불변�
     ),
   )
 
-  it('모든 옵션이 제 칸의 카드로 한 번씩 나오고 가격 · 코드가 원본과 같다', () => {
+  it('모든 옵션이 제 칸의 카드로 한 번씩 나오고 가격 · 코드가 원본과 같다 — 무제한 90일은 카드 0(NO90D)', () => {
     expect(rawOptions.length).toBeGreaterThan(0)
     const seen = new Set<string>()
+    let stopped = 0
     for (const { zone, kind, o } of rawOptions) {
       const z = zoneByCode(active, zone)!
       const cards = planCards(z, { kind, cap: o.cap, days: o.days })
       const card = cards.find((c) => c.cap === o.cap)
+      if (kind === 'U' && o.days === 90) {
+        expect(cards, o.code).toEqual([])
+        stopped++
+        continue
+      }
       expect(card, o.code).toBeDefined()
       expect([card!.option.code, card!.option.finalWon, card!.selected]).toEqual([
         o.code,
@@ -149,17 +155,18 @@ describe(`전 zone × 전 옵션 — 카드 가격 = K1 최종가 (spec 불변�
       expect(cards.filter((c) => c.selected)).toHaveLength(1)
       seen.add(card!.option.code)
     }
-    expect(seen.size).toBe(rawOptions.length)
+    expect(stopped).toBeGreaterThan(0)
+    expect(seen.size).toBe(rawOptions.length - stopped)
     if (active.fixture) expect(rawOptions).toHaveLength(494)
   })
 
-  it('드롭다운 기간은 짧은 것부터 · 무제한은 1~30 다음 60 · 90', () => {
+  it('드롭다운 기간은 짧은 것부터 · 무제한은 1~30 다음 60 · 어디에도 90일 없음(NO90D)', () => {
     for (const z of active.zones)
       for (const p of z.products) {
         const days = periodOptions(z, p.kind)
         expect(days).toEqual([...days].sort((a, b) => a - b))
         if (p.kind === 'U')
-          expect(days.slice(0, 30)).toEqual(Array.from({ length: 30 }, (_, i) => i + 1))
+          expect(days, z.zone).toEqual([...Array.from({ length: 30 }, (_, i) => i + 1), 60])
         else expect(days).toEqual([30])
       }
   })
@@ -170,11 +177,17 @@ describe(`구매 시트 값(S-5 · F-8) — K1 원본 대조 (${ACTIVE_CATALOG_F
   const active = parseCatalog(activeRaw())
   it('전 옵션(zone × 종류 × 용량 × 기간) — 가격 · 옵션명 · 링크 = K1 원본, 요약 = 라벨 · 용량 · 일수', () => {
     let checked = 0
+    let stopped = 0
     for (const rz of raw.zones) {
       const z = zoneByCode(active, rz.zone)!
       for (const rp of rz.products)
         for (const o of rp.options) {
           const got = purchaseSheetProps(z, { kind: rp.kind, cap: o.cap, days: o.days })
+          if (rp.kind === 'U' && o.days === 90) {
+            expect(got, o.code).toBeNull() // 90일권은 사이트 판매 중지(NO90D)
+            stopped++
+            continue
+          }
           expect(got, o.code).toEqual({
             summary: `${rz.nameKr} · ${rp.kind === 'U' ? '매일' : '총'} ${o.cap}GB · ${o.days}일`,
             price: `${o.finalWon.toLocaleString('en-US')}원`,
@@ -185,7 +198,8 @@ describe(`구매 시트 값(S-5 · F-8) — K1 원본 대조 (${ACTIVE_CATALOG_F
         }
     }
     // 건너뛴 칸 없음 — K1 meta.cellCount(검증기가 실제 칸 수와 같은지 본다)
-    expect(checked).toBe(raw.meta.cellCount)
+    expect(checked + stopped).toBe(raw.meta.cellCount)
+    expect(stopped).toBeGreaterThan(0)
     expect(checked).toBeGreaterThan(7000)
   })
 
