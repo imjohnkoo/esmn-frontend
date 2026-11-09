@@ -18,8 +18,13 @@ const ZONE_RE = /^[A-Z0-9]{5}$/
 const ISO3_RE = /^[A-Z]{3}$/
 const ISO2_RE = /^[A-Z]{2}$/
 const DAILY_DAYS = Array.from({ length: 30 }, (_, i) => i + 1)
-/** 무제한 판매 기간 — 1~30일 · 60 · 90일(D-3) */
+/** export(K1)가 실을 수 있는 무제한 기간 — 1~30일 · 60 · 90일(스토어 옵션 그대로) */
 const DAILY_ALLOWED = new Set([...DAILY_DAYS, 60, 90])
+/**
+ * 사이트에서 팔지 않는 무제한 기간 — 검증은 export 그대로 하고(cellCount 대조 포함) 화면 모델에서만 뺀다.
+ * 사이트 판매 기간 = 1~30일 · 60일(D-3 · 2026-11-09 NO90D hotfix — 스토어 옵션은 John 직접)
+ */
+export const SITE_STOPPED_DAYS: ReadonlySet<number> = new Set([90])
 const QUOTA_DAYS = 30
 /** K1 스키마 이름 — export 가 `meta.schema` 에 적는다(H-002). 바뀌면 어댑터를 먼저 맞춘다 */
 const SCHEMA = 'k1-v1'
@@ -186,12 +191,24 @@ function check(c: AdaptedCatalog, issues: string[]) {
   }
 }
 
-/** K1 을 검증하고 화면 모델로 바꾼다. 검증 전용 필드(판매 상태 · usable)는 버린다 */
-export function parseCatalog(raw: unknown): CatalogView {
+/**
+ * K1 을 검증하고 화면 모델로 바꾼다. 검증 전용 필드(판매 상태 · usable)는 버리고,
+ * 사이트에서 팔지 않는 무제한 기간(`SITE_STOPPED_DAYS`)의 옵션을 뺀다 — 뺀 수는 `onStopped` 로 알린다(빌드 로그)
+ */
+export function parseCatalog(
+  raw: unknown,
+  { onStopped }: { onStopped?: (count: number) => void } = {},
+): CatalogView {
   const issues: string[] = []
   const adapted = adaptCatalog(raw, issues)
   check(adapted, issues)
   if (issues.length > 0) throw new CatalogValidationError(issues)
+  const isStopped = (kind: string, days: number) => kind === 'U' && SITE_STOPPED_DAYS.has(days)
+  onStopped?.(
+    adapted.zones
+      .flatMap((z) => z.products)
+      .reduce((n, p) => n + p.options.filter((o) => isStopped(p.kind, o.days)).length, 0),
+  )
   return {
     generatedAt: adapted.generatedAt,
     fixture: adapted.fixture,
@@ -208,7 +225,9 @@ export function parseCatalog(raw: unknown): CatalogView {
             ...p
           }) => ({
             ...p,
-            options: options.map(({ usable: _u, optionPriceWon: _o, ...o }) => o),
+            options: options
+              .filter((o) => !isStopped(p.kind, o.days))
+              .map(({ usable: _u, optionPriceWon: _o, ...o }) => o),
           }),
         ),
       }),
