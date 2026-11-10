@@ -162,7 +162,8 @@ describe('개인정보처리방침 — 구조 · 확정 문장 · 자리표시�
     expect(DOC_RULES.privacy.fills).toBeUndefined() // v0.2.8 — 정본이 그 글자라 값 채움 규칙 0(LEGAL-CI)
   })
   it('본인인증(휴대전화) — 수집 항목에 «암호화된 이용자 확인값(CI)» · 옛 «본인 확인(OTP)» 행 없음 · 12장 개정 내용(LEGAL-CI · John Q-20261110-14)', () => {
-    expect(text).toContain('암호화된 이용자 확인값(CI)')
+    const s1 = PRIVACY_DOC.markdown.split(/^## 2\./m)[0]!.split('\n')
+    expect(s1.filter((l) => l.startsWith('| 본인인증(휴대전화) |') && l.includes('암호화된 이용자 확인값(CI)'))).toHaveLength(1)
     expect(text).not.toContain('본인 확인(OTP)')
     expect(text).toContain('개정 내용(2026년 11월)')
   })
