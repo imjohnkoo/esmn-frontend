@@ -681,11 +681,11 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
     for (const r of all)
       for (const h of [...r.notes, ...r.placeholders]) expect(h).toMatch(/^[0-9a-f]{64}$/)
   })
-  it('게시 수정 줄은 sha256 · 수정은 결정된 문서 · 조각에만(terms 1건 D-33 · privacy 4건 D-54 솔라피 + D-31 흐름 쿠키 2줄 + D-57 10장 이메일 · refund 1건 D-41 · business 3건 D-40 · D-57 이메일 · D-58 영문 상호)', () => {
+  it('게시 수정 줄은 sha256 · 수정은 결정된 문서 · 조각에만(terms 1건 D-33 · privacy 0건 — 정본 역반영 LEGAL-CI · refund 1건 D-41 · business 3건 D-40 · D-57 이메일 · D-58 영문 상호)', () => {
     for (const r of all) for (const e of r.edits ?? []) expect(e.line).toMatch(/^[0-9a-f]{64}$/)
     expect(Object.fromEntries(Object.entries(DOC_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
       terms: 1,
-      privacy: 4,
+      privacy: 0,
       refund: 1,
     })
     expect(Object.fromEntries(Object.entries(BLOCK_RULES).map(([k, r]) => [k, r.edits?.length ?? 0]))).toEqual({
@@ -694,11 +694,11 @@ describe('규칙 파일 — 공개 리포에 내부 검토 메모 글자가 없�
       'checkout-notice': 0,
     })
   })
-  it('값 채움은 결정된 자리에만(D-54 — privacy AWS · 솔라피 칸 · business 호스팅 AWS) · 다른 문서 · 조각 0', () => {
+  it('값 채움은 결정된 자리에만(D-54 — business 호스팅 AWS · privacy 는 정본 역반영으로 0) · 다른 문서 · 조각 0', () => {
     const fills = (r: { fills?: Readonly<Record<number, string>> }) => r.fills ?? {}
     expect(Object.fromEntries(Object.entries(DOC_RULES).map(([k, r]) => [k, fills(r)]))).toEqual({
       terms: {},
-      privacy: { 0: 'AWS', 1: '' },
+      privacy: {},
       refund: {},
     })
     expect(Object.fromEntries(Object.entries(BLOCK_RULES).map(([k, r]) => [k, fills(r)]))).toEqual({
@@ -746,8 +746,7 @@ describe('moduleSource · blockModuleSource — 생성 모듈', () => {
     expect(refund).toMatch(/^\/\/ 게시 수정 1건 — /m)
     expect(refund).not.toMatch(/값 채움/)
     const privacy = moduleSource('privacy', posting, '02_x.md · legal-pages @abc1234', 'P')
-    expect(privacy).toMatch(/^\/\/ 값 채움 2건 — /m)
-    expect(privacy).toMatch(/^\/\/ 게시 수정 4건 — /m)
+    expect(privacy).not.toMatch(/값 채움|게시 수정/)
     const block = { lines: { a: 'x' }, pendingCount: 0 }
     const business = blockModuleSource('business', block, '04_x.md ## 1. · legal-pages @abc1234', 'P')
     expect(business).toMatch(/^\/\/ 값 채움 1건 — /m)
