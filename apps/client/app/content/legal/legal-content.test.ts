@@ -159,7 +159,17 @@ describe('개인정보처리방침 — 구조 · 확정 문장 · 자리표시�
     expect(text).toContain('AWS (Amazon Web Services 서울 리전) | 서비스 인프라·데이터 보관')
     expect(text).toMatch(/(^|\n)솔라피\(주\) \| 알림톡·문자 발송 \| 현행/)
     expect(text).not.toContain('누리고')
-    expect(DOC_RULES.privacy.fills).toEqual({ 0: 'AWS', 1: '' })
+    expect(DOC_RULES.privacy.fills).toBeUndefined() // v0.2.8 — 정본이 그 글자라 값 채움 규칙 0(LEGAL-CI)
+  })
+  it('본인인증(휴대전화) — 수집 항목에 «암호화된 이용자 확인값(CI)» · 옛 «본인 확인(OTP)» 행 없음 · 12장 개정 내용(LEGAL-CI · John Q-20261110-14)', () => {
+    const s1 = PRIVACY_DOC.markdown.split(/^## 2\./m)[0]!.split('\n')
+    expect(s1.filter((l) => l.startsWith('| 본인인증(휴대전화) |') && l.includes('암호화된 이용자 확인값(CI)'))).toHaveLength(1)
+    expect(text).not.toContain('본인 확인(OTP)')
+    expect(text).toContain('개정 내용(2026년 11월)')
+  })
+  it('10장 개인정보 보호책임자 전자우편 = help@nomacom.net(D-57 — 정본 역반영) · 옛 주소 0', () => {
+    expect(text).toContain('전자우편 help@nomacom.net')
+    expect(text).not.toContain('esimmany@naver.com')
   })
 })
 
@@ -232,18 +242,13 @@ describe('취소·환불 정책(03) — 구조 · 확정 문장(D-28 공제 그�
       '- 문제가 생기면 eSIM을 **삭제하지 말고** 그 상태 그대로 고객센터(카카오톡 채널 @이심마니)에 연락해 주세요. 대부분은 설정 안내로 바로 해결됩니다. 운영 시간(평일 09:00–18:00) 외에는 카카오톡 채널에 남겨 주시면 남기신 시각을 접수 시각으로 봅니다.',
     ])
   })
-  it('게시 수정 = 결정된 것 그대로(D-41 전화번호 · D-33 자정 예시 괄호 — 다른 수정 0)', () => {
+  it('게시 수정 = 결정된 것 그대로(D-41 전화번호 · D-33 자정 예시 괄호 — privacy 0 · 다른 수정 0)', () => {
     expect(DOC_RULES.refund.edits).toEqual([
       { line: '5ccceaa412d5bbe591a837489e87a66b1905fb249d602496ca6adb7080ace3b7', from: ' · 070-8064-5232', to: '' },
     ])
     expect(DOC_RULES.terms.edits).toEqual([{ line: 'fbf7c3835a588a2040eb24b5d6b6249ba9df6a3002e3feefc5e13fd76eb54549', from: '(예: 한국시간 자정 기준)', to: '' }])
-    expect(DOC_RULES.privacy.edits?.map((e) => e.line)).toEqual([
-      '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', // D-54 솔라피
-      '357c59c7a3e6de6021f376c2b7fb02291d79a54f1c67e1a3335eb395aec8bc7a', // D-31 1장 발급 행
-      '6fa32529429fd9304adf05649670af702b36f2ebea2b2e146dd449bc3521802c', // D-31 9장①
-      '186cb96abb02a3f18804d1be56210d755d086d302042bf6846ff87870f595b45', // D-57 10장 책임자 전자우편
-    ])
-    expect(DOC_RULES.privacy.edits?.[0]).toEqual({ line: '71f1b4a4514644500026a644d11134b60e01059ed8474ffbd929dd5819151304', from: '(주)누리고(Solapi)', to: '솔라피(주)' })
+    // privacy — D-54 솔라피 · D-31 흐름 쿠키 2줄 · D-57 10장 전자우편은 정본 v0.2.6 · v0.2.8 이 역반영해 규칙 0(LEGAL-CI)
+    expect(DOC_RULES.privacy.edits).toBeUndefined()
     expect(BLOCK_RULES.business.edits).toEqual([
       { line: 'f71a51520585665b3445cb4cd65f00ed0f47d05d9046ce297b748a7cf32934dc', from: '1950 호', to: '1950 호 (경기도 광주시)' }, // D-40
       { line: '7ae9879dc035cc7df9502875b589d0c2a10e7d9c12926edab0beb1a745f78901', from: 'esimmany@naver.com', to: 'help@nomacom.net' }, // D-57
