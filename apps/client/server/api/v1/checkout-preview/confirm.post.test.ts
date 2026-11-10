@@ -216,3 +216,169 @@ describe('confirm.post', () => {
     })
   })
 })
+
+// TOSSCK-LOG — 운영 확인(M · V2)이 CloudWatch 로 결과별 건수 · DONE 건수를 센다(client-shell F-19)
+describe('confirm.post 로그 한 줄 CHECKOUT_CONFIRM', () => {
+  const PAYMENT_KEY = 'tgen_pk_must_not_be_logged'
+  const TOSS_MESSAGE = '토스 원문 메시지는 로그 금지'
+  const spies = () => ({
+    log: vi.spyOn(console, 'log').mockImplementation(() => {}),
+    warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
+    error: vi.spyOn(console, 'error').mockImplementation(() => {}),
+  })
+  let s: ReturnType<typeof spies>
+  beforeEach(() => {
+    s = spies()
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  const allArgs = () =>
+    [s.log, s.warn, s.error].flatMap((sp) => sp.mock.calls.flat()).map((a) => String(a))
+  const lines = () =>
+    (['log', 'warn', 'error'] as const).flatMap((lvl) =>
+      s[lvl].mock.calls
+        .map((c) => {
+          try {
+            return { lvl, line: JSON.parse(String(c[0])) as Record<string, unknown> }
+          } catch {
+            return null
+          }
+        })
+        .filter((x) => x?.line.event === 'CHECKOUT_CONFIRM'),
+    ) as { lvl: 'log' | 'warn' | 'error'; line: Record<string, unknown> }[]
+
+  const doneReply = (totalAmount = AMOUNT) =>
+    tossReply(200, {
+      status: 'DONE',
+      orderId: ORDER_ID,
+      paymentKey: PAYMENT_KEY,
+      approvedAt: '2026-11-10T10:00:00+09:00',
+      method: '카드',
+      totalAmount,
+      card: { number: '43301234****123*' },
+      receipt: { url: 'https://example.invalid/receipt' },
+      customerEmail: 'x@example.invalid',
+    })
+
+  it.each<
+    [
+      string,
+      () => void,
+      Record<string, unknown>,
+      { console: 'log' | 'warn' | 'error'; level: string; httpStatus: number },
+      Record<string, unknown>,
+    ]
+  >([
+    [
+      '성공(DONE)',
+      () => doneReply(),
+      {},
+      { console: 'log', level: 'info', httpStatus: 200 },
+      { result: 'DONE', upstreamStatus: 200, optionCode: OPTION, amount: AMOUNT },
+    ],
+    [
+      'INVALID_REQUEST',
+      () => {},
+      { paymentKey: '' },
+      { console: 'warn', level: 'warn', httpStatus: 400 },
+      { result: 'INVALID_REQUEST', amount: AMOUNT },
+    ],
+    [
+      'AMOUNT_MISMATCH(카탈로그)',
+      () => {},
+      { amount: AMOUNT + 100 },
+      { console: 'warn', level: 'warn', httpStatus: 400 },
+      { result: 'AMOUNT_MISMATCH', optionCode: OPTION, amount: AMOUNT + 100 },
+    ],
+    [
+      'AMOUNT_MISMATCH(모르는 코드 — optionCode 를 남기지 않는다)',
+      () => {},
+      { optionCode: 'XXX00U01D07V2' },
+      { console: 'warn', level: 'warn', httpStatus: 400 },
+      { result: 'AMOUNT_MISMATCH', amount: AMOUNT },
+    ],
+    [
+      'NOT_CONFIGURED',
+      () => {
+        config.tossSecretKey = ''
+      },
+      {},
+      { console: 'error', level: 'error', httpStatus: 503 },
+      { result: 'NOT_CONFIGURED', optionCode: OPTION, amount: AMOUNT },
+    ],
+    [
+      'UPSTREAM(네트워크)',
+      () => fetchMock.mockRejectedValueOnce(new DOMException('timeout', 'TimeoutError')),
+      {},
+      { console: 'error', level: 'error', httpStatus: 502 },
+      { result: 'UPSTREAM', optionCode: OPTION, amount: AMOUNT },
+    ],
+    [
+      'UPSTREAM(토스 5xx)',
+      () => tossReply(500, { code: 'FAILED_INTERNAL_SYSTEM_PROCESSING', message: TOSS_MESSAGE }),
+      {},
+      { console: 'error', level: 'error', httpStatus: 502 },
+      { result: 'UPSTREAM', upstreamStatus: 500, optionCode: OPTION, amount: AMOUNT },
+    ],
+    [
+      'UPSTREAM(200 · 본문 없음)',
+      () => fetchMock.mockResolvedValueOnce(new Response('<html>oops</html>', { status: 200 })),
+      {},
+      { console: 'error', level: 'error', httpStatus: 502 },
+      { result: 'UPSTREAM', upstreamStatus: 200, optionCode: OPTION, amount: AMOUNT },
+    ],
+    [
+      '토스 4xx 코드',
+      () => tossReply(404, { code: 'NOT_FOUND_PAYMENT_SESSION', message: TOSS_MESSAGE }),
+      {},
+      { console: 'warn', level: 'warn', httpStatus: 404 },
+      {
+        result: 'NOT_FOUND_PAYMENT_SESSION',
+        upstreamStatus: 404,
+        optionCode: OPTION,
+        amount: AMOUNT,
+      },
+    ],
+    [
+      '승인 금액 불일치',
+      () => doneReply(AMOUNT + 1),
+      {},
+      { console: 'error', level: 'error', httpStatus: 502 },
+      { result: 'AMOUNT_MISMATCH', upstreamStatus: 200, optionCode: OPTION, amount: AMOUNT },
+    ],
+  ])('%s → 정확히 한 줄 · 정해진 필드만 · 금지 값 0', async (_n, setup, over, want, fields) => {
+    setup()
+    const { status } = await call(body({ paymentKey: PAYMENT_KEY, ...over }))
+    expect(status).toBe(want.httpStatus)
+
+    const got = lines()
+    expect(got).toHaveLength(1)
+    const { lvl, line } = got[0]!
+    expect(lvl).toBe(want.console)
+    const { ms, ...rest } = line
+    expect(rest).toEqual({
+      event: 'CHECKOUT_CONFIRM',
+      level: want.level,
+      message: 'checkout confirm',
+      httpStatus: want.httpStatus,
+      ...fields,
+    })
+    expect(typeof ms).toBe('number')
+    expect(ms as number).toBeGreaterThanOrEqual(0)
+
+    const text = allArgs().join('\n')
+    for (const banned of [
+      PAYMENT_KEY,
+      ORDER_ID,
+      config.public.toss.clientKey,
+      'test_sk_test_only',
+      Buffer.from('test_sk_test_only:').toString('base64'),
+      TOSS_MESSAGE,
+      '43301234',
+      'receipt',
+      'example.invalid',
+      '카드',
+    ])
+      expect(text).not.toContain(banned)
+  })
+})
