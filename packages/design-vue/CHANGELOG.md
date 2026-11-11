@@ -2,13 +2,17 @@
 
 `@imjohnkoo/design-vue` 변경 사항. Semantic-ish. 날짜는 한국 시각 기준.
 
-## 0.8.1 — 2026-11-12
+## 0.9.0 — 2026-11-12
+
+### Changed — breaking (레이아웃)
+
+- `NPinInput` — 이제 `inline-flex` 가 아니라 그릇 폭을 채우는 블록(`display: flex; width: 100%` · 최대 폭에서 멈춤)이다. 다른 요소와 한 줄에 놓거나 부모 `text-align: center` 로 가운데 두던 곳은 그릇 쪽에서 배치해야 한다(지금 소비처 — client 가입 2단계 · 데모 — 는 블록 맥락이라 영향 없음).
 
 ### Fixed
 
-- `NPinInput` — 작은 폰에서 넘치던 것(칸 44px 고정 · 6칸 304px > 320px 폰 그릇 272px → 가로 스크롤). 그릇은 `display: flex; width: 100%`, `max-width` = 칸 수 × 48px + 간격, 칸은 `flex: 1 1 0` · 36~48px · 정사각(`aspect-ratio: 1`). 넓은 화면은 칸 48px(전 44px), 좁은 화면에서만 칸이 줄어든다. 이제 `inline-flex` 가 아니라 그릇 폭을 채우는 블록이다(최대 폭에서 멈춤).
+- `NPinInput` — 작은 폰에서 넘치던 것(칸 44px 고정 · 6칸 304px > 320px 폰 그릇 272px → 가로 스크롤). 그릇 `max-width` = 칸 수 × 48px + 간격, 칸은 `flex: 1 1 0` · 36~48px · 정사각(`aspect-ratio: 1`). 넓은 화면은 칸 48px(전 44px), 좁은 화면에서만 칸이 줄어든다. 그릇이 256px(6칸 × 36 + 간격)보다 좁으면 여전히 넘친다.
 - `NPinInput` — 칸 이름이 라이브러리 영어 기본값(«pin input 1 of 6»)이던 것 → «코드 6자리 중 1번째». 묶음은 `role="group"` · `aria-label`(기본 «코드 입력» — 화면이 넘긴 `aria-label` 이 이긴다).
-- `NAlertDialog` · `NConfirmDialog` · `NLoaderDialog` — 제목 · 본문이 어절 중간에서 끊기던 것. 제목 `word-break: keep-all; overflow-wrap: break-word; text-wrap: balance`, 본문 같은 규칙 + `text-wrap: pretty`(긴 이메일 · URL 은 `break-word` 로 박스 안에서 끊긴다).
+- `NAlertDialog` · `NConfirmDialog` · `NLoaderDialog` — 제목 · 본문이 어절 중간에서 끊기던 것. 제목 `word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance`, 본문 같은 규칙 + `text-wrap: pretty`. `anywhere` 인 까닭: 제목 · 본문이 가운데 정렬 flex 항목이라 `break-word` 로는 공백 없는 긴 이메일 · URL 이 박스를 뚫었다(61자 이메일 제목 554px / 대화상자 280px) — `anywhere` 는 min-content 를 줄여 박스 안에서 끊는다. 한국어 어절은 `keep-all` 로 그대로 지킨다.
 
 ### Added
 

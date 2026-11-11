@@ -211,7 +211,7 @@ function onSubmit() {
         <h2 class="font-semibold text-(--ui-text-highlighted)">NPinInput</h2>
       </template>
       <div class="space-y-4">
-        <NPinInput v-model="pinVal" :length="6" placeholder="○" @complete="() => alert('완료!')" />
+        <NPinInput v-model="pinVal" :length="6" placeholder="○" @complete="() => console.info('완료!')" />
         <p class="text-xs text-(--ui-text-muted)">입력: {{ pinVal.join('') || '없음' }}</p>
         <!-- 오류 상태 — 묶음에 aria-invalid · 4칸 -->
         <NPinInput v-model="pinVal4" :length="4" type="number" placeholder="" invalid />

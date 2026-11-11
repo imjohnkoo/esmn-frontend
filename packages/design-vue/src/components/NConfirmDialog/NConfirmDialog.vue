@@ -155,7 +155,7 @@ function handleCancel() {
   color: var(--n-color-neutral-900, #171717);
   line-height: 1.4;
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   text-wrap: balance;
 }
 
@@ -165,7 +165,7 @@ function handleCancel() {
   color: var(--n-color-neutral-500, #737373);
   line-height: 1.5;
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   text-wrap: pretty;
 }
 

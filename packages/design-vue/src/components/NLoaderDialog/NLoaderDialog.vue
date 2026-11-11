@@ -104,7 +104,7 @@ const open = defineModel<boolean>({ default: false })
   font-weight: 600;
   color: var(--n-color-neutral-900, #171717);
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   text-wrap: balance;
 }
 
@@ -113,7 +113,7 @@ const open = defineModel<boolean>({ default: false })
   font-size: 12px;
   color: var(--n-color-neutral-500, #737373);
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   text-wrap: pretty;
 }
 

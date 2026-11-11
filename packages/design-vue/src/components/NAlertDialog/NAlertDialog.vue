@@ -244,7 +244,7 @@ const open = defineModel<boolean>({ default: false })
   color: var(--n-color-neutral-900, #171717);
   line-height: 1.4;
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   text-wrap: balance;
 }
 
@@ -254,7 +254,7 @@ const open = defineModel<boolean>({ default: false })
   color: var(--n-color-neutral-500, #737373);
   line-height: 1.55;
   word-break: keep-all;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   text-wrap: pretty;
 }
 

@@ -16,8 +16,9 @@ const rule = (sel: string) =>
     new RegExp(`(^|\\n)${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`),
   )?.[2] ?? ''
 const decl = (sel: string, prop: string) =>
-  rule(sel)
-    .match(new RegExp(`(?:^|\\n)\\s*${prop}:\\s*([^;]+);`))?.[1]
+  // 같은 규칙 안 뒤 선언이 이긴다 — 마지막 것을 읽는다
+  [...rule(sel).matchAll(new RegExp(`(?:^|\\n)\\s*${prop}:\\s*([^;]+);`, 'g'))]
+    .at(-1)?.[1]
     ?.replace(/\s+/g, ' ')
     .trim()
 
