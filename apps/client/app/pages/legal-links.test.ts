@@ -616,7 +616,7 @@ describe('발급기 법정 링크(F-20)', () => {
   })
 
   it('/my 고객센터 — 새 창으로 여는 링크(http)에는 낭독기 «(새 창)» 이 같은 조건으로 붙는다', () => {
-    const tpl = parse(read('./my.vue')).descriptor.template!.ast! as unknown as TNode
+    const tpl = parse(read('./my/index.vue')).descriptor.template!.ast! as unknown as TNode
     const a = find(tpl, (n) => n.tag === 'a' && dir(n, 'v-if') === 'channel.href')!
     expect(dir(a, ':target')).toBe("channel.href.startsWith('http') ? '_blank' : undefined")
     const sr = find(a, (n) => cls(n) === 'sr-only')!
