@@ -28,7 +28,8 @@ export default defineConfig({
       // @nuxt/kit·vue-chrts 는 optional peer — 각각 Nuxt 앱 / 차트 소비자에서만
       // 해석되면 된다. vue-chrts 는 `vue-chrts/enums` 서브패스로도 import 하므로
       // 정규식을 함께 둔다 (문자열 external 은 정확히 일치하는 id 만 잡는다).
-      external: ['vue', '@nuxt/kit', 'vue-chrts', /^vue-chrts\//],
+      // dotlottie-vue 는 NLottie 가 마운트 뒤 동적 import 한다 — 소비자 번들러가 따로 쪼개게 둔다.
+      external: ['vue', '@nuxt/kit', 'vue-chrts', /^vue-chrts\//, '@lottiefiles/dotlottie-vue'],
       output: {
         globals: {
           vue: 'Vue',

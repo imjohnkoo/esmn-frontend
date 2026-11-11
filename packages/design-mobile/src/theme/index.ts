@@ -4,6 +4,7 @@ import spacing from '@imjohnkoo/design-tokens/src/spacing.json'
 import shadows from '@imjohnkoo/design-tokens/src/shadows.json'
 import base from '@imjohnkoo/design-tokens/src/base.json'
 import components from '@imjohnkoo/design-tokens/src/components.json'
+import motion from '@imjohnkoo/design-tokens/src/motion.json'
 
 function remToNumber(rem: string): number {
   const match = rem.match(/^([\d.]+)rem$/)
@@ -93,6 +94,18 @@ export const theme = {
       wide: remToNumber(components.dialog.width.wide),
     },
     viewportRatio: parseFloat(components.dialog['viewport-ratio']) / 100,
+  },
+
+  /**
+   * 모션 — design-vue `--n-motion-*` 와 같은 토큰(`motion.json`), 숫자 그대로.
+   * `withTiming(v, { duration: theme.motion.duration.fast, easing: Easing.bezier(...theme.motion.easing.out) })`
+   * · `withSpring(v, theme.motion.spring.sheet)`
+   */
+  motion: motion as {
+    duration: Record<keyof typeof motion.duration, number>
+    easing: Record<keyof typeof motion.easing, [number, number, number, number]>
+    spring: Record<keyof typeof motion.spring, { duration: number; dampingRatio: number }>
+    stagger: Record<keyof typeof motion.stagger, number>
   },
 } as const
 

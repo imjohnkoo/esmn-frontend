@@ -78,6 +78,28 @@
       </div>
     </div>
 
+    <!-- NLottie -->
+    <div class="showcase-section">
+      <h2 class="showcase-section__title">NLottie</h2>
+      <p class="showcase-section__desc">
+        결과 · 축하 · 온보딩 일러스트 연출입니다. UI 상태(버튼 · 토글 · 진행 막대)에는 쓰지 않습니다.
+        OS «동작 줄이기»를 켜면 재생하지 않고 정지 프레임(기본 last-frame)을 보여 줍니다.
+      </p>
+      <div class="showcase-card">
+        <div class="showcase-card__title">발급 완료 체크 · reducedMotion="last-frame"</div>
+        <div class="showcase-row">
+          <NLottie :key="replay" :src="checkSuccess" label="발급 완료" @complete="completed++" />
+          <div class="showcase-stack" style="gap: 8px;">
+            <span data-testid="reduced-state" style="font-size: 14px; color: var(--n-color-neutral-600);">
+              동작 줄이기: {{ reduced ? '켬 — 정지 프레임' : '끔 — 재생' }}
+            </span>
+            <span style="font-size: 12px; color: var(--n-color-neutral-400);">complete {{ completed }}회</span>
+            <NButton size="sm" variant="outline" @click="replay++">다시 재생</NButton>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- NSkeleton -->
     <div class="showcase-section">
       <h2 class="showcase-section__title">NSkeleton</h2>
@@ -101,9 +123,18 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import {
   NSpinner,
   NProgress,
   NSkeleton,
+  NLottie,
+  NButton,
+  useReducedMotion,
 } from '@imjohnkoo/design-vue'
+import checkSuccess from '@imjohnkoo/design-assets/lottie/check-success.json?url'
+
+const reduced = useReducedMotion()
+const replay = ref(0)
+const completed = ref(0)
 </script>

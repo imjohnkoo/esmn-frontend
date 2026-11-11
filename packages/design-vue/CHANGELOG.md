@@ -2,6 +2,14 @@
 
 `@imjohnkoo/design-vue` 변경 사항. Semantic-ish. 날짜는 한국 시각 기준.
 
+## 0.8.1 — 2026-11-12
+
+### Added
+
+- `NLottie` — 일러스트 연출(결과 · 축하 · 온보딩 · 로딩 일러스트) 표준 부품. props `src` · `autoplay`(true) · `loop`(false) · `size`(120px) · `reducedMotion: 'last-frame' | 'first-frame' | 'hide'`(기본 last-frame) · `label`(있으면 `role="img"` · 없으면 `aria-hidden`) · `@complete`. 플레이어 `@lottiefiles/dotlottie-vue` 는 **마운트 뒤 동적 import**(서버 렌더 · 첫 화면 번들에 안 들어감 · lib 빌드 external). 화면 밖이면 dotlottie-web 기본(`freezeOnOffscreen`)이 멈춘다. OS «동작 줄이기» 켬이면 재생하지 않고 정지 프레임을 보여 준 뒤 `complete` 를 바로 낸다(hide 는 그리지 않음). UI 상태(버튼 · 토글 · 진행 막대)에는 쓰지 않는다.
+- `useReducedMotion()` — `prefers-reduced-motion` 을 반응형으로 읽는다(matchMedia + change 구독 · 컴포넌트 안에서는 마운트 뒤에 읽어 하이드레이션과 어긋나지 않음 · 서버는 false).
+- 의존성 `@lottiefiles/dotlottie-vue` ~0.11.28. WASM 은 dotlottie-web 기본대로 CDN(jsdelivr → unpkg)에서 받는다.
+
 ## 0.8.0 — 2026-11-12
 
 ### Changed — breaking

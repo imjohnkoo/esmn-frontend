@@ -8,7 +8,8 @@
  * 제품 흐름에서 이 라우트로 가는 링크는 없다 (내부 확인용).
  */
 import { useState } from 'react'
-import { ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 
 import {
   NAlert,
@@ -29,6 +30,7 @@ import {
   NInput,
   NLinkCard,
   NLoaderDialog,
+  NLottie,
   NPageHeading,
   NSkeleton,
   NStatusPill,
@@ -38,8 +40,10 @@ import {
   NText,
   NTrustNote,
   theme,
+  useReducedMotion,
   type CalDate,
 } from '@imjohnkoo/design-mobile'
+import checkSuccess from '@imjohnkoo/design-assets/lottie/check-success.json'
 
 function Section({ title, meta, children }: { title: string; meta?: string; children: React.ReactNode }) {
   return (
@@ -50,6 +54,23 @@ function Section({ title, meta, children }: { title: string; meta?: string; chil
       </View>
       <View style={styles.sectionBody}>{children}</View>
     </View>
+  )
+}
+
+/** Reanimated 4 + theme.motion — 누름 scale .97 · press · out. 줄이기 켬이면 Reanimated 가 스스로 건너뛴다(ReduceMotion.System) */
+function PressDemo() {
+  const scale = useSharedValue(1)
+  const timing = { duration: theme.motion.duration.press, easing: Easing.bezier(...theme.motion.easing.out) }
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
+  return (
+    <Pressable
+      onPressIn={() => (scale.value = withTiming(0.97, timing))}
+      onPressOut={() => (scale.value = withTiming(1, timing))}
+    >
+      <Animated.View style={[styles.pressDemo, style]}>
+        <Text style={styles.pressDemoText}>눌러 보기 (Reanimated)</Text>
+      </Animated.View>
+    </Pressable>
   )
 }
 
@@ -67,6 +88,9 @@ export default function Showcase() {
   const [dialog, setDialog] = useState<null | 'primary' | 'warning' | 'error'>(null)
   const [loaderOpen, setLoaderOpen] = useState(false)
   const [calDate, setCalDate] = useState<CalDate | null>(null)
+  const reduced = useReducedMotion()
+  const [replay, setReplay] = useState(0)
+  const [completed, setCompleted] = useState(0)
 
   const showLoader = () => {
     setLoaderOpen(true)
@@ -162,6 +186,24 @@ export default function Showcase() {
 
       <Section title="NLoaderDialog" meta="1.6초 뒤 자동 닫힘">
         <NButton size="sm" variant="outline" onPress={showLoader}>로더 띄우기</NButton>
+      </Section>
+
+      <Section title="NLottie" meta="결과 일러스트 · 동작 줄이기 켬 = 정지 프레임(last-frame)">
+        <Row>
+          <NLottie
+            key={replay}
+            source={checkSuccess}
+            label="발급 완료"
+            onComplete={() => setCompleted((n) => n + 1)}
+          />
+          <View style={{ gap: 8 }}>
+            <Text style={styles.sectionMeta}>동작 줄이기: {reduced ? '켬 — 정지 프레임' : '끔 — 재생'}</Text>
+            <Text style={styles.sectionMeta}>complete {completed}회</Text>
+            <NButton size="sm" variant="outline" onPress={() => setReplay((n) => n + 1)}>다시 재생</NButton>
+          </View>
+        </Row>
+        <View style={styles.gap} />
+        <PressDemo />
       </Section>
 
       <Section title="NCodeRow" meta="mono value + 복사 (onCopy 콜백)">
@@ -492,5 +534,16 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 11,
     color: '#94a3b8',
+  },
+  pressDemo: {
+    alignSelf: 'flex-start',
+    paddingVertical: theme.spacing[3],
+    paddingHorizontal: theme.spacing[4],
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.primary[50],
+  },
+  pressDemoText: {
+    color: theme.colors.primary[700],
+    fontSize: theme.fontSize.sm,
   },
 })

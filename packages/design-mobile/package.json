@@ -1,6 +1,6 @@
 {
   "name": "@imjohnkoo/design-mobile",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Nomacom React Native component library",
   "license": "UNLICENSED",
   "repository": {
@@ -31,11 +31,13 @@
     "@imjohnkoo/design-tokens": "workspace:*"
   },
   "peerDependencies": {
+    "lottie-react-native": ">=7.3.0",
     "react": ">=19.0.0",
     "react-native": ">=0.83.0"
   },
   "devDependencies": {
-    "@types/react": "~19.2.10"
+    "@types/react": "~19.2.10",
+    "lottie-react-native": "~7.3.4"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

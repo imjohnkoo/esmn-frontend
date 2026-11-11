@@ -2,6 +2,15 @@
 
 `@imjohnkoo/design-mobile` 변경 사항. Semantic-ish (0.x: breaking = minor / 그 외 = patch). 날짜는 한국 시각 기준.
 
+## 0.4.1 — 2026-11-12
+
+### Added
+
+- `theme.motion` — design-tokens `motion.json` 숫자 그대로(`duration` ms · `easing` cubic-bezier 4숫자 → `Easing.bezier(...)` · `spring` → Reanimated `withSpring` · `stagger` ms). 웹 `--n-motion-*` 와 같은 값.
+- `NLottie` — design-vue 와 같은 규칙(`source` · `autoplay` · `loop` · `size` · `reducedMotion` · `label` · `onComplete`). `lottie-react-native` 위 · OS «동작 줄이기»(`AccessibilityInfo` + `reduceMotionChanged`)면 `progress` 0/1 정지 프레임 · hide 는 null · 정지 즉시 `onComplete`. 화면 밖 일시정지는 없음(RN 가시성 API 부재 — loop 연출을 스크롤 목록에 넣을 때 추가).
+- `useReducedMotion()` — 위 판정 훅.
+- peer `lottie-react-native` >=7.3.0(Expo SDK 55 = ~7.3.4 · Expo Go 포함).
+
 ## 0.4.0 — 2026-11-12
 
 ### Changed — breaking

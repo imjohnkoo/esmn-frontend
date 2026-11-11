@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@imjohnkoo/design-assets": "workspace:*",
     "@imjohnkoo/design-tokens": "workspace:*",
     "@imjohnkoo/design-vue": "workspace:*",
     "vue": "^3.5.0",
