@@ -59,9 +59,10 @@ async function submit() {
   busy.value = true
   try {
     await authPost('password-reset/confirm', { token: token.value, password: password.value })
-    useMemberFlash().value = 'e11'
-    await loadAuthSession(true)
-    await navigateTo('/login')
+    // 다른 계정으로 로그인한 채 바꿨으면 /login 이 /my 로 보낸다 — 그 화면엔 «모든 기기에서 로그아웃» 안내를 띄우지 않는다
+    const s = await loadAuthSession(true)
+    if (!s.user) useMemberFlash().value = 'e11'
+    await navigateTo(s.user ? '/my' : '/login')
   } catch (e) {
     const c = (e as AuthApiError).code
     if (c === 'TOKEN_INVALID') state.value = 'invalid'

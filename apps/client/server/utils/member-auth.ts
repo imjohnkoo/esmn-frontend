@@ -288,7 +288,7 @@ export async function login(
   }
   return db.transaction(async (tx) => {
     // D-25 — 검증 뒤 재설정 · 정지 · 탈퇴가 끼어들었으면 세션을 내지 않는다. 잠금 순서는 탈퇴 · 정지와 같게
-    // service_user → identity(반대면 교착). 정지 · 탈퇴는 service_user 를, 재설정 confirm 은 identity 를 먼저 잡으므로
+    // service_user → identity(반대면 교착). 정지 · 탈퇴 · 재설정 confirm 도 service_user 를 먼저 잡으므로
     // 어느 쪽이든 먼저 커밋한 결과를 보고 해시 · 상태를 다시 대조한다
     const [user] = await tx
       .select({ status: U.status })

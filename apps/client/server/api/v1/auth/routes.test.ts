@@ -340,6 +340,16 @@ describe('예상 밖 오류(D-24 · I-1)', () => {
     expect(JSON.stringify(logEvent.mock.calls)).not.toContain('SECRET-HASH-PARAM')
   })
 
+  it('session · withdraw GET 응답은 Cache-Control no-store(F-17 — 사용자별 응답을 캐시하지 않는다)', async () => {
+    svc.memberSummary.mockResolvedValueOnce({ emailMasked: 'wa***@example.com' })
+    svc.unissuedOrderCount.mockResolvedValueOnce(0)
+    for (const h of [R.session, R.withdrawGet]) {
+      const e = withUser(makeEvent())
+      await call(h, e)
+      expect(String(e.node.res.getHeader('cache-control'))).toMatch(/no-store/)
+    }
+  })
+
   it('세션 조회 DB 실패는 AUTH_SESSION_LOOKUP_FAILED(키 사고로 기록하지 않는다) · 비로그인으로', async () => {
     svc.memberSummary.mockRejectedValueOnce(
       Object.assign(new Error('Failed query'), { cause: { message: 'timeout' } }),

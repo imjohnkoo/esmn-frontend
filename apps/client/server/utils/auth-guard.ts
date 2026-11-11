@@ -6,11 +6,6 @@ import { logEvent } from './issuance-log'
 
 // 요청 경계의 판정 둘(spec F-14 · F-16 · I-7 · I-11)
 
-/** Bearer 로 인증하는 요청(앱) — 쿠키를 쓰지 않으므로 CSRF 판정 대상이 아니다 */
-export function isBearerRequest(event: H3Event): boolean {
-  return getRequestHeader(event, 'authorization')?.startsWith('Bearer ') === true
-}
-
 /** 쿠키로 로그인 상태를 바꾸는 요청을 받아도 되는 출처 — 사이트 두 호스트 + walk · 환경 추가분(CORS_EXTRA_ORIGINS).
  *  CORS 목록(cors-origins.ts)을 쓰지 않는다 — 그 목록의 Expo LAN 패턴(`http://<IP>:8081`)은 공인 IP 도 통과시켜 로그인 CSRF 가 된다.
  *  개발 서버(localhost:3000)는 production 이 아닐 때만 */

@@ -525,6 +525,24 @@ describe('QA ⑥ 2회차 회귀(잠금 순서 · F-6 순서)', () => {
     expect(await pending).toMatchObject({ ok: true })
   })
 
+  it('탈퇴도 service_user 를 먼저 잡는다(D-27 — 로그인 · 재설정과 같은 순서)', async () => {
+    const made = await signUp()
+    let pending: Promise<unknown> = Promise.resolve()
+    let done = false
+    await client.begin(async (tx) => {
+      await tx`SELECT 1 FROM service_user WHERE service_user_id = ${made.serviceUserId} FOR UPDATE`
+      pending = withdrawMember(db, made.serviceUserId).then((r) => ((done = true), r))
+      await new Promise((r) => setTimeout(r, 150))
+      expect(done).toBe(false)
+      const free =
+        await client`SELECT 1 FROM service_user_identity WHERE service_user_id = ${made.serviceUserId} FOR UPDATE NOWAIT`
+          .then(() => true)
+          .catch(() => false)
+      expect(free).toBe(true)
+    })
+    expect(await pending).toMatchObject({ ok: true })
+  })
+
   it('본인 탈퇴 — 옛 비밀번호로 검증한 사이 재설정이 끝나면 탈퇴하지 않는다(D-27)', async () => {
     const made = await signUp()
     const reset = await requestPasswordReset(db, keys, EMAIL)

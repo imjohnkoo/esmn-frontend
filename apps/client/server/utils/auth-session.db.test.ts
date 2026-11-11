@@ -42,6 +42,18 @@ describe('resolveRequestAuth — 쿠키', () => {
     expect(setCookieLines(e)[0]).toMatch(new RegExp(`^${SESSION_COOKIE}=;.*Max-Age=0`))
   })
 
+  it('세션이 살아 있어도 회원이 active 가 아니면(정지 · 탈퇴) user null · 쿠키 삭제', async () => {
+    for (const status of ['suspended', 'withdrawn']) {
+      await resetMemberTables(client)
+      const id = await member()
+      const { token } = await issueSession(db, id, 'web')
+      await client`UPDATE service_user SET status = ${status}`
+      const e = makeEvent({ url: '/my', headers: { cookie: `${SESSION_COOKIE}=${token}` } })
+      expect((await resolveRequestAuth(e, () => db)).user).toBeNull()
+      expect(setCookieLines(e)[0]).toMatch(new RegExp(`^${SESSION_COOKIE}=;.*Max-Age=0`))
+    }
+  })
+
   it('Bearer 는 갱신 · 무효여도 쿠키를 쓰지 않는다', async () => {
     const id = await member()
     const { token } = await issueSession(db, id, 'web')
