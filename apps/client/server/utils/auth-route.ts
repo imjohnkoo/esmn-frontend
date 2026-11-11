@@ -1,12 +1,41 @@
-import { createError, getRequestHeader, readBody, setResponseHeader, type H3Event } from 'h3'
+import {
+  createError,
+  defineEventHandler,
+  getRequestHeader,
+  isError,
+  readBody,
+  setResponseHeader,
+  type H3Event,
+} from 'h3'
 import { useDB } from '../db'
 import { assertSameOrigin } from './auth-guard'
 import { requireAuthEnabled } from './auth-flags'
 import { hashIp, viewerIp } from './issue-consent'
 import { logEvent } from './issuance-log'
 import { loadMemberKeys, MemberKeysUnavailable, type MemberKeys } from './member-pii'
+import { dbCause } from './auth-session'
 
 // /api/v1/auth/* 라우트 공용 경계(member-client-auth F-15 · F-16 · I-6 · I-7 · I-8) — 순서: 플래그(404) → Origin(403) → 키(503)
+
+/**
+ * auth · 내부 라우트 공용 래퍼(spec D-24 · I-1) — 의도한 h3 오류는 그대로 통과, 그 밖(DB 등)은 원인 한 줄만 로그하고 500.
+ * drizzle 오류 message 는 쿼리 파라미터(이메일 해시 · UA · ip_hash · 암호문)를 싣는다 — Nitro 기본 오류 로그로 새지 않게 여기서 끊는다.
+ */
+export function defineMemberHandler<T>(fn: (event: H3Event) => Promise<T>) {
+  return defineEventHandler(async (event) => {
+    try {
+      return await fn(event)
+    } catch (e) {
+      if (isError(e)) throw e
+      logEvent('AUTH_INTERNAL_ERROR', 'error', dbCause(e), { path: event.path.split('?')[0] })
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Internal Server Error',
+        data: { code: 'INTERNAL' },
+      })
+    }
+  })
+}
 
 export function authFail(statusCode: number, code: string): never {
   throw createError({ statusCode, statusMessage: code, data: { code } })

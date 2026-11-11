@@ -3,6 +3,7 @@
 // 숫자는 spec §4.2 와 같다 — 코드 10분 · 재발송 60초 · 재설정 링크 30분 · 잠금 15분.
 
 export const MEMBER_MIN_PASSWORD = 8
+export const MEMBER_MAX_PASSWORD = 128
 export const RESEND_SECONDS = 60
 
 /** 대화상자 문안 — { title, body } */
@@ -40,6 +41,7 @@ export const MEMBER_FIELD = {
   e6: '코드 입력 시간이 지났어요. 새 코드를 받아 주세요.',
   e7: '여러 번 틀려서 이 코드는 쓸 수 없어요. 새 코드를 받아 주세요.',
   e8: '8자 이상으로 정해 주세요.',
+  e8max: '128자 이하로 정해 주세요.',
   e16: '비밀번호가 맞지 않아요.',
 } as const
 
@@ -75,3 +77,11 @@ export function maskEmailForView(email: string): string {
 }
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** 새 비밀번호 칸 오류 — 길이는 코드 포인트(서버 parsePassword 와 같은 셈). 통과면 빈 문자열 */
+export function passwordError(pw: string): string {
+  const n = [...pw].length
+  if (n < MEMBER_MIN_PASSWORD) return MEMBER_FIELD.e8
+  if (n > MEMBER_MAX_PASSWORD) return MEMBER_FIELD.e8max
+  return ''
+}

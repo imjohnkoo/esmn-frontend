@@ -1,5 +1,5 @@
 // POST /api/v1/auth/password-reset {email} — 늘 202(F-9 · I-2). 계정 확인 · 토큰 · 발송은 응답 뒤에 — 시간 차로 가입 여부가 드러나지 않게
-import { authFail, memberPost } from '../../../../utils/auth-route'
+import { authFail, defineMemberHandler, memberPost } from '../../../../utils/auth-route'
 import { authConfig } from '../../../../utils/auth-flags'
 import { logEvent } from '../../../../utils/issuance-log'
 import { requestPasswordReset } from '../../../../utils/member-auth'
@@ -7,7 +7,7 @@ import { parseEmail } from '../../../../utils/member-pii'
 import { sendMemberEmail } from '../../../../utils/notify-email'
 import { dbCause } from '../../../../utils/auth-session'
 
-export default defineEventHandler(async (event) => {
+export default defineMemberHandler(async (event) => {
   const { keys, db, body } = await memberPost(event)
   const email = parseEmail(body.email)
   if (!email) return authFail(400, 'INVALID_EMAIL')

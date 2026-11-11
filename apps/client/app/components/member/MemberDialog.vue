@@ -3,7 +3,7 @@
 import { NAlertDialog, NButton } from '@imjohnkoo/design-vue'
 
 const open = defineModel<boolean>({ default: false })
-defineProps<{ title: string; body: string; secondary?: string }>()
+defineProps<{ title: string; body: string; secondary?: string; confirmLabel?: string }>()
 const emit = defineEmits<{ confirm: []; secondary: [] }>()
 
 function close(kind: 'confirm' | 'secondary') {
@@ -20,7 +20,9 @@ function close(kind: 'confirm' | 'secondary') {
       <NButton v-if="secondary" variant="outline" full-width @click="close('secondary')">{{
         secondary
       }}</NButton>
-      <NButton variant="primary" full-width @click="close('confirm')">확인</NButton>
+      <NButton variant="primary" full-width @click="close('confirm')">{{
+        confirmLabel ?? '확인'
+      }}</NButton>
     </template>
   </NAlertDialog>
 </template>

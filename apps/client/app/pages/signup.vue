@@ -1,14 +1,7 @@
 <script setup lang="ts">
 // S-3a ~ c 가입(member-client-auth ⑤ · 패킷 M-3a ~ c · 디자인 리뷰 R2 · R5) — 이메일 → 코드 6자리 → 비밀번호 · 동의.
 // 단계 상태는 페이지 메모리만(이메일 · 코드를 URL · 저장소에 두지 않는다 · 단계마다 history 를 쌓지 않는다). 계정은 3단계에서 만든다(K-A3).
-import {
-  NButton,
-  NCheckbox,
-  NInput,
-  NLoaderDialog,
-  NPinInput,
-  NTrustNote,
-} from '@imjohnkoo/design-vue'
+import { NButton, NCheckbox, NInput, NPinInput, NTrustNote } from '@imjohnkoo/design-vue'
 import MemberShell from '~/components/member/MemberShell.vue'
 import MemberDialog from '~/components/member/MemberDialog.vue'
 import PasswordField from '~/components/member/PasswordField.vue'
@@ -17,7 +10,9 @@ import {
   EMAIL_PATTERN,
   MEMBER_DIALOG,
   MEMBER_FIELD,
+  MEMBER_MAX_PASSWORD,
   MEMBER_MIN_PASSWORD,
+  passwordError,
   PURCHASE_LOGIN_NOTE,
   RESEND_SECONDS,
   codeSentText,
@@ -79,6 +74,7 @@ function toStep1() {
 
 async function sendCode(): Promise<boolean> {
   busy.value = true
+  codeErr.value = ''
   try {
     await authPost('signup/code', { email: email.value })
     startCooldown()
@@ -119,12 +115,17 @@ async function verifyCode() {
   } finally {
     busy.value = false
   }
+  // 틀리면 칸을 비우고 첫 칸으로(states.md M-3b) — 남은 포커스가 6번째 칸에 있으면 다시 친 코드가 완성되지 않는다
+  if (step.value === 2) {
+    await nextTick()
+    document.querySelector<HTMLInputElement>('#signup-pin input')?.focus()
+  }
 }
 
 const canSignUp = computed(() => agreeTerms.value && agreeAge.value && !busy.value)
 
 async function submitSignup() {
-  pwErr.value = [...password.value].length >= MEMBER_MIN_PASSWORD ? '' : MEMBER_FIELD.e8
+  pwErr.value = passwordError(password.value)
   if (pwErr.value || !canSignUp.value) return
   busy.value = true
   try {
@@ -135,12 +136,13 @@ async function submitSignup() {
       consent: SIGNUP_CONSENT,
       age14: true,
     })
-    useMemberFlash().value = 'e10'
+    // E-10 은 그것을 그리는 /my 로 갈 때만(D-22) — 구매 경로로 돌아가면 안내 없이(남겨 두면 나중에 엉뚱한 화면에 뜬다)
+    if (next.value === '/my') useMemberFlash().value = 'e10'
     await loadAuthSession(true)
     await navigateTo(next.value)
   } catch (e) {
     const c = (e as AuthApiError).code
-    if (c === 'WEAK_PASSWORD') pwErr.value = MEMBER_FIELD.e8
+    if (c === 'WEAK_PASSWORD') pwErr.value = passwordError(password.value) || MEMBER_FIELD.e8
     else if (c === 'EMAIL_TAKEN') dialog.value = 'e31'
     else if (c === 'CODE_EXPIRED') dialog.value = 'c2'
     else if (c === 'CODE_MISMATCH') dialog.value = 'codeMismatch'
@@ -210,15 +212,20 @@ const heading = computed(() =>
     <template v-else-if="step === 2">
       <form id="signup-form" class="member-form" novalidate @submit.prevent="verifyCode">
         <div>
+          <!-- otp → 칸마다 autocomplete="one-time-code"(메일 앱 코드 채움) · 붙여넣기 6자리는 reka PinInput 이 받는다 -->
           <NPinInput
+            id="signup-pin"
             v-model="pin"
             :length="6"
             type="number"
             placeholder=""
+            otp
+            role="group"
             aria-label="인증 코드 6자리"
+            :aria-describedby="codeErr ? 'signup-pin-err' : undefined"
             @complete="verifyCode"
           />
-          <p v-if="codeErr" class="member-err" role="alert">{{ codeErr }}</p>
+          <p v-if="codeErr" id="signup-pin-err" class="member-err" role="alert">{{ codeErr }}</p>
         </div>
       </form>
       <div class="signup__resend">
@@ -240,6 +247,7 @@ const heading = computed(() =>
           v-model="password"
           input-id="signup-password"
           autocomplete="new-password"
+          :maxlength="MEMBER_MAX_PASSWORD"
           :error="pwErr"
           :hint="`${MEMBER_MIN_PASSWORD}자 이상`"
         />
@@ -313,7 +321,6 @@ const heading = computed(() =>
     </template>
   </MemberShell>
 
-  <NLoaderDialog :model-value="busy && step === 2" title="코드를 확인하고 있어요" />
   <MemberDialog
     v-if="dialog === 'c1'"
     :model-value="true"
@@ -330,9 +337,8 @@ const heading = computed(() =>
     v-if="dialog === 'e31'"
     :model-value="true"
     v-bind="MEMBER_DIALOG.e31"
-    secondary="비밀번호 재설정"
-    @confirm="navigateTo('/login')"
-    @secondary="navigateTo('/password/reset')"
+    confirm-label="로그인"
+    @confirm="navigateTo(route.query.next ? `/login?next=${encodeURIComponent(next)}` : '/login')"
   />
   <MemberDialog
     v-if="dialog === 'c2' || dialog === 'codeMismatch' || dialog === 'codeLocked'"

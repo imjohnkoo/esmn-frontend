@@ -1,12 +1,12 @@
 // POST /api/v1/auth/login {email, password} — 로그인(F-7 · I-2 · I-12 · I-14). 없는 계정 · 틀림 · 정지 · 탈퇴 = 같은 401
-import { authFail, memberPost } from '../../../utils/auth-route'
+import { authFail, defineMemberHandler, memberPost } from '../../../utils/auth-route'
 import { setSessionCookie } from '../../../utils/auth-session'
 import { logEvent } from '../../../utils/issuance-log'
 import { login } from '../../../utils/member-auth'
 import { parseEmail } from '../../../utils/member-pii'
 import { PASSWORD_MAX } from '../../../utils/password'
 
-export default defineEventHandler(async (event) => {
+export default defineMemberHandler(async (event) => {
   const { keys, db, body } = await memberPost(event)
   const email = parseEmail(body.email)
   const password = body.password

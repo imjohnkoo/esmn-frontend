@@ -5,7 +5,13 @@ import { NButton, NLoaderDialog } from '@imjohnkoo/design-vue'
 import MemberShell from '~/components/member/MemberShell.vue'
 import MemberDialog from '~/components/member/MemberDialog.vue'
 import PasswordField from '~/components/member/PasswordField.vue'
-import { MEMBER_DIALOG, MEMBER_FIELD, MEMBER_MIN_PASSWORD } from '~/content/member'
+import {
+  MEMBER_DIALOG,
+  MEMBER_FIELD,
+  MEMBER_MAX_PASSWORD,
+  MEMBER_MIN_PASSWORD,
+  passwordError,
+} from '~/content/member'
 
 definePageMeta({ layout: 'flow', middleware: 'member' })
 useHead({ title: '새 비밀번호' })
@@ -19,8 +25,11 @@ const failed = ref(false)
 
 onMounted(async () => {
   token.value = window.location.hash.slice(1)
-  // 주소창 · 방문 기록에서 토큰을 지운다
-  if (window.location.hash) history.replaceState(history.state, '', window.location.pathname)
+  // 주소창 · 방문 기록 · 라우터 상태에서 토큰을 지운다(vue-router 의 history.state.current 도 프래그먼트를 들고 있다)
+  if (window.location.hash) {
+    const path = window.location.pathname
+    history.replaceState({ ...(history.state ?? {}), current: path }, '', path)
+  }
   if (!/^[A-Za-z0-9_-]{43}$/.test(token.value)) {
     state.value = 'invalid'
     return
@@ -28,13 +37,18 @@ onMounted(async () => {
   try {
     await authPost('password-reset/check', { token: token.value })
     state.value = 'form'
-  } catch {
-    state.value = 'invalid'
+  } catch (e) {
+    // 410 만 «시간이 지났어요» — 네트워크 · 5xx 는 링크를 버리게 하지 않는다(E-30 · 제출 때 서버가 다시 본다)
+    if ((e as AuthApiError).code === 'TOKEN_INVALID') state.value = 'invalid'
+    else {
+      state.value = 'form'
+      failed.value = true
+    }
   }
 })
 
 async function submit() {
-  pwErr.value = [...password.value].length >= MEMBER_MIN_PASSWORD ? '' : MEMBER_FIELD.e8
+  pwErr.value = passwordError(password.value)
   if (pwErr.value) return
   busy.value = true
   try {
@@ -45,7 +59,7 @@ async function submit() {
   } catch (e) {
     const c = (e as AuthApiError).code
     if (c === 'TOKEN_INVALID') state.value = 'invalid'
-    else if (c === 'WEAK_PASSWORD') pwErr.value = MEMBER_FIELD.e8
+    else if (c === 'WEAK_PASSWORD') pwErr.value = passwordError(password.value) || MEMBER_FIELD.e8
     else failed.value = true
   } finally {
     busy.value = false
@@ -85,6 +99,7 @@ async function submit() {
         v-model="password"
         input-id="reset-new-password"
         autocomplete="new-password"
+        :maxlength="MEMBER_MAX_PASSWORD"
         :error="pwErr"
         :hint="`${MEMBER_MIN_PASSWORD}자 이상`"
       />

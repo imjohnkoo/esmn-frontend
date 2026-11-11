@@ -48,4 +48,20 @@ describe('decideMemberRoute', () => {
       expect(decideMemberRoute(p, p, undefined, ANON)).toEqual({ action: 'continue' })
     }
   })
+
+  it('D-23 — 로그인 상태로 재설정 화면(메일 링크)을 열어도 그대로 — /my 로 튕기며 프래그먼트 토큰을 끌고 가지 않는다', () => {
+    for (const p of ['/password/reset', '/password/reset/new']) {
+      expect(decideMemberRoute(p, p, undefined, USER)).toEqual({ action: 'continue' })
+    }
+  })
+
+  it('끝 / 로 가드를 비켜 가지 못한다', () => {
+    expect(decideMemberRoute('/my/withdraw/', '/my/withdraw/', undefined, ANON)).toMatchObject({
+      action: 'redirect',
+    })
+    expect(decideMemberRoute('/login/', '/login/', undefined, USER)).toEqual({
+      action: 'redirect',
+      to: '/my',
+    })
+  })
 })

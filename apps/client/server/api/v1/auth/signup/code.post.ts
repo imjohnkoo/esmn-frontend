@@ -1,11 +1,11 @@
 // POST /api/v1/auth/signup/code {email} — 가입 코드 발송(F-4 · D-9 · I-2). 가입 여부와 상관없이 같은 판정 · 202
-import { authFail, memberPost } from '../../../../utils/auth-route'
+import { authFail, defineMemberHandler, memberPost } from '../../../../utils/auth-route'
 import { logEvent } from '../../../../utils/issuance-log'
-import { requestSignupCode } from '../../../../utils/member-auth'
+import { discardSignupCode, requestSignupCode } from '../../../../utils/member-auth'
 import { parseEmail } from '../../../../utils/member-pii'
 import { emailConfigured, sendMemberEmail } from '../../../../utils/notify-email'
 
-export default defineEventHandler(async (event) => {
+export default defineMemberHandler(async (event) => {
   const { keys, db, body } = await memberPost(event)
   const email = parseEmail(body.email)
   if (!email) return authFail(400, 'INVALID_EMAIL')
@@ -23,6 +23,7 @@ export default defineEventHandler(async (event) => {
   }
   const sent = await sendMemberEmail('signup_code', email, { code: r.code })
   if (!sent.ok) {
+    await discardSignupCode(db, r.challengeId)
     logEvent('AUTH_EMAIL_SEND_FAILED', 'error', 'signup code send failed', {
       kind: 'signup_code',
       upstreamStatus: sent.upstreamStatus,

@@ -44,10 +44,14 @@ async function withTargetLock<T>(
 }
 
 /** challenge INSERT + 정리(D-6 · I-13) — 만료된 지 1시간 넘은 행만 지운다(15분 잠금 창 · 1시간 재발송 창 안의 행은 남는다) */
-async function insertChallenge(tx: Executor, row: PgInsertValue<typeof C>): Promise<void> {
-  await tx.insert(C).values(row)
-  // ponytail: 전 표 DELETE — expires_at 인덱스 없음. 행이 수만을 넘으면 인덱스 또는 주기 잡
-  await tx.delete(C).where(lt(C.expiresAt, HOUR_AGO))
+async function insertChallenge(tx: Executor, row: PgInsertValue<typeof C>): Promise<number> {
+  const [inserted] = await tx.insert(C).values(row).returning({ id: C.serviceUserChallengeId })
+  // 잠긴 행은 건너뛴다(SKIP LOCKED) — 대상별 UPDATE · DELETE(재설정 confirm · 탈퇴)와 다른 순서로 같은 행을 잡아 교착하지 않게.
+  // ponytail: 전 표 스캔 — expires_at 인덱스 없음. 행이 수만을 넘으면 인덱스 또는 주기 잡
+  await tx.execute(
+    sql`DELETE FROM service_user_challenge WHERE service_user_challenge_id IN (SELECT service_user_challenge_id FROM service_user_challenge WHERE expires_at < now() - interval '1 hour' FOR UPDATE SKIP LOCKED)`,
+  )
+  return inserted!.id
 }
 
 async function recentCount(
@@ -77,7 +81,8 @@ export async function requestSignupCode(
   keys: MemberKeys,
   email: string,
 ): Promise<
-  { ok: true; code: string } | (Fail<'TOO_MANY_REQUESTS'> & { reason: 'COOLDOWN' | 'HOURLY' })
+  | { ok: true; code: string; challengeId: number }
+  | (Fail<'TOO_MANY_REQUESTS'> & { reason: 'COOLDOWN' | 'HOURLY' })
 > {
   const target = piiHmac(email, keys)
   return withTargetLock(db, 'email_signup_code', target, async (tx) => {
@@ -86,14 +91,21 @@ export async function requestSignupCode(
     if (n >= HOURLY_SEND_LIMIT)
       return { ok: false, code: 'TOO_MANY_REQUESTS', reason: 'HOURLY' } as const
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0')
-    await insertChallenge(tx, {
+    const challengeId = await insertChallenge(tx, {
       kind: 'email_signup_code',
       targetHash: target,
       secretHash: secretHash('email_signup_code', code, keys),
       expiresAt: CODE_TTL,
     })
-    return { ok: true, code } as const
+    return { ok: true, code, challengeId } as const
   })
+}
+
+/** 발송에 실패한 코드 행을 지운다 — 보내지 못한 코드가 재발송 60초 · 1시간 5통 한도를 쓰지 않게 */
+export async function discardSignupCode(db: Executor, challengeId: number): Promise<void> {
+  await db
+    .delete(C)
+    .where(and(eq(C.serviceUserChallengeId, challengeId), eq(C.kind, 'email_signup_code')))
 }
 
 export type CodeFailure = 'CODE_EXPIRED' | 'CODE_LOCKED' | 'CODE_MISMATCH'
@@ -110,12 +122,7 @@ export async function checkSignupCode(
 ): Promise<{ ok: true; challengeId: number } | Fail<CodeFailure>> {
   const target = piiHmac(email, keys)
   const [latest] = await db
-    .select({
-      id: C.serviceUserChallengeId,
-      consumed: sql<boolean>`${C.consumedAt} IS NOT NULL`,
-      live: sql<boolean>`${C.expiresAt} > now()`,
-      attempts: C.attemptCount,
-    })
+    .select({ id: C.serviceUserChallengeId })
     .from(C)
     .where(and(eq(C.kind, 'email_signup_code'), eq(C.targetHash, target)))
     .orderBy(desc(C.createdAt), desc(C.serviceUserChallengeId))
@@ -134,7 +141,12 @@ export async function checkSignupCode(
     )
     .returning({ secretHash: C.secretHash, attempts: C.attemptCount })
   if (!reserved) {
-    return { ok: false, code: latest.consumed || !latest.live ? 'CODE_EXPIRED' : 'CODE_LOCKED' }
+    // 사유는 지금 행 상태로(읽은 뒤 다른 요청이 소비 · 소진했을 수 있다) — 소비 · 만료면 EXPIRED, 남은 건 시도 소진뿐
+    const [state] = await db
+      .select({ gone: sql<boolean>`${C.consumedAt} IS NOT NULL OR ${C.expiresAt} <= now()` })
+      .from(C)
+      .where(eq(C.serviceUserChallengeId, latest.id))
+    return { ok: false, code: !state || state.gone ? 'CODE_EXPIRED' : 'CODE_LOCKED' }
   }
   if (!hexEqual(reserved.secretHash ?? '', secretHash('email_signup_code', code, keys))) {
     return { ok: false, code: reserved.attempts >= MAX_ATTEMPTS ? 'CODE_LOCKED' : 'CODE_MISMATCH' }
@@ -280,6 +292,17 @@ export async function login(
     return { ok: false, code: 'INVALID_CREDENTIALS' }
   }
   return db.transaction(async (tx) => {
+    // D-25 — 검증 뒤 재설정 · 탈퇴가 끼어들었으면 세션을 내지 않는다. identity 를 잠그고 해시 · 상태를 다시 대조한다
+    // (재설정 confirm 은 같은 행을 UPDATE 하므로 이 잠금과 직렬화된다 — 먼저 커밋한 쪽 결과를 본다)
+    const [still] = await tx
+      .select({ hash: I.passwordHash, status: U.status })
+      .from(I)
+      .innerJoin(U, eq(U.serviceUserId, I.serviceUserId))
+      .where(eq(I.serviceUserIdentityId, row!.identityId))
+      .for('update', { of: I })
+    if (!still || still.hash !== row!.hash || still.status !== 'active') {
+      return { ok: false, code: 'INVALID_CREDENTIALS' } as const
+    }
     await clearLoginFailures(tx, target)
     await tx
       .update(U)

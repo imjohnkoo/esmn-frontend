@@ -8,6 +8,7 @@ import {
   checkResetToken,
   checkSignupCode,
   confirmPasswordReset,
+  discardSignupCode,
   createAccount,
   login,
   memberSummary,
@@ -260,7 +261,9 @@ describe('세션(F-3 · AC-6.3)', () => {
     const s = await resolveSession(db, made.token)
     expect(s?.renewedUntil).toBeInstanceOf(Date)
     const [row] = await client`SELECT expires_at, last_seen_at FROM service_user_session`
-    expect(new Date(row!.expires_at as string).getTime() - Date.now()).toBeGreaterThan(29.9 * 86_400_000)
+    expect(new Date(row!.expires_at as string).getTime() - Date.now()).toBeGreaterThan(
+      29.9 * 86_400_000,
+    )
     expect(row!.last_seen_at).not.toBeNull()
     expect((await resolveSession(db, made.token))?.renewedUntil).toBeNull()
   })
@@ -402,6 +405,76 @@ describe('탈퇴 · 정지(F-12 ~ F-14)', () => {
       emailMasked: 'wa***@example.com',
       providers: ['email'],
     })
+  })
+})
+
+describe('QA ⑥ 1회차 회귀(D-25 · F-6 · F-4)', () => {
+  it('D-25 · I-4 — 옛 비밀번호 로그인이 재설정과 겹쳐도 재설정 뒤 살아 있는 세션 0', async () => {
+    await signUp()
+    for (let round = 0; round < 3; round++) {
+      const reset = await requestPasswordReset(db, keys, EMAIL)
+      if (!reset.token) throw new Error('no token')
+      const newHash = await hashPassword(`correct-horse-${round + 10}`)
+      const pw = round === 0 ? PW : `correct-horse-${round + 9}`
+      // 로그인(옛 비밀번호 · Argon2 진행 중)과 재설정 confirm 을 겹친다
+      const racing = login(db, keys, EMAIL, pw)
+      await new Promise((r) => setTimeout(r, 10))
+      const done = await confirmPasswordReset(db, keys, reset.token, newHash)
+      expect(done.ok).toBe(true)
+      const r = await racing
+      if (r.ok) expect(await resolveSession(db, r.token)).toBeNull()
+      expect(await count('service_user_session', 'revoked_at IS NULL')).toBe(0)
+      await client`DELETE FROM service_user_challenge WHERE kind = 'login_failure'`
+    }
+  })
+
+  it('F-6 — 같은 코드로 동시에 두 번 가입 → 하나 성공 · 다른 하나 CODE_EXPIRED(잠김 아님)', async () => {
+    const req = await requestSignupCode(db, keys, EMAIL)
+    if (!req.ok) throw new Error()
+    const input = {
+      email: EMAIL,
+      code: req.code,
+      passwordHash: await passwordHash(),
+      ipHash: null,
+      userAgent: null,
+    }
+    const r = await Promise.all([createAccount(db, keys, input), createAccount(db, keys, input)])
+    expect(r.filter((x) => x.ok)).toHaveLength(1)
+    expect(r.filter((x) => !x.ok).map((x) => (x as { code: string }).code)).toEqual([
+      'CODE_EXPIRED',
+    ])
+    expect(await count('service_user')).toBe(1)
+  })
+
+  it('F-6 — 확인 뒤 다른 연결이 같은 이메일 identity 를 먼저 커밋하면 23505 → EMAIL_TAKEN · 회원 행 0', async () => {
+    const req = await requestSignupCode(db, keys, EMAIL)
+    if (!req.ok) throw new Error()
+    const [u] =
+      await client`INSERT INTO service_user (status, age14_confirmed_at) VALUES ('active', now()) RETURNING service_user_id`
+    const other = client.begin(async (tx) => {
+      await tx`INSERT INTO service_user_identity (service_user_id, provider, provider_subject) VALUES (${u!.service_user_id}, 'email', ${piiHmac(EMAIL, keys)})`
+      await new Promise((r) => setTimeout(r, 300))
+    })
+    await new Promise((r) => setTimeout(r, 50))
+    const mine = await createAccount(db, keys, {
+      email: EMAIL,
+      code: req.code,
+      passwordHash: await passwordHash(),
+      ipHash: null,
+      userAgent: null,
+    })
+    await other
+    expect(mine).toEqual({ ok: false, code: 'EMAIL_TAKEN' })
+    expect(await count('service_user')).toBe(1) // 미리 넣은 행 하나만
+    expect(await count('consent_log')).toBe(0)
+  })
+
+  it('F-4 — 발송 실패로 지운 코드는 재발송 한도를 쓰지 않는다', async () => {
+    const a = await requestSignupCode(db, keys, EMAIL)
+    if (!a.ok) throw new Error()
+    await discardSignupCode(db, a.challengeId)
+    expect(await count('service_user_challenge')).toBe(0)
+    expect((await requestSignupCode(db, keys, EMAIL)).ok).toBe(true)
   })
 })
 

@@ -1,11 +1,11 @@
 // POST /api/v1/auth/withdraw {password} — 화면 안 탈퇴(F-12 · K-A6 · 법 38조④) · 204
-import { authFail, memberPost, requireUser } from '../../../utils/auth-route'
+import { authFail, defineMemberHandler, memberPost, requireUser } from '../../../utils/auth-route'
 import { clearSessionCookie } from '../../../utils/auth-session'
 import { logEvent } from '../../../utils/issuance-log'
 import { withdrawWithPassword } from '../../../utils/member-auth'
 import { PASSWORD_MAX } from '../../../utils/password'
 
-export default defineEventHandler(async (event) => {
+export default defineMemberHandler(async (event) => {
   const { db, body } = await memberPost(event)
   const user = requireUser(event)
   const password = body.password

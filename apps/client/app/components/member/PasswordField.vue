@@ -9,6 +9,7 @@ defineProps<{
   error?: string
   hint?: string
   inputId: string
+  maxlength?: number
 }>()
 const shown = ref(false)
 </script>
@@ -23,6 +24,7 @@ const shown = ref(false)
         :label="label ?? '비밀번호'"
         :type="shown ? 'text' : 'password'"
         :autocomplete="autocomplete"
+        :maxlength="maxlength"
         :error="!!error"
         :aria-invalid="error ? 'true' : undefined"
         :aria-describedby="error || hint ? `${inputId}-desc` : undefined"

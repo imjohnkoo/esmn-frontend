@@ -32,6 +32,22 @@ export default async function setup(project: TestProject) {
   const dir = join(wiki, 'wiki/backend/migrations')
   const sqls = FILES.map((f) => readFileSync(join(dir, f), 'utf8'))
 
+  // docker 대상 = 이 기계의 데몬(unix 소켓)만 — client-walk-db.sh check_docker 와 같은 판정
+  const dockerHost = process.env.DOCKER_HOST ?? ''
+  const endpoint = execFileSync('docker', [
+    'context',
+    'inspect',
+    '--format',
+    '{{.Endpoints.docker.Host}}',
+  ])
+    .toString()
+    .trim()
+  if ((dockerHost && !dockerHost.startsWith('unix://')) || !endpoint.startsWith('unix://')) {
+    throw new Error(
+      `docker daemon is not local (DOCKER_HOST=${dockerHost || '-'} · context=${endpoint}) — refusing`,
+    )
+  }
+
   const inContainer = execFileSync('docker', [
     'exec',
     CONTAINER,

@@ -22,8 +22,8 @@ const busy = ref(false)
 const dialog = ref<'e3w' | 'e30' | null>(null)
 
 async function submit() {
-  pwErr.value = password.value ? '' : MEMBER_FIELD.e16
-  if (pwErr.value) return
+  if (!password.value) return
+  pwErr.value = ''
   busy.value = true
   try {
     await authPost('withdraw', { password: password.value })
@@ -72,7 +72,7 @@ async function submit() {
         variant="danger"
         size="xl"
         full-width
-        :disabled="busy"
+        :disabled="busy || !password"
         >탈퇴하기</NButton
       >
     </template>

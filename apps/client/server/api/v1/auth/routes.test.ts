@@ -6,6 +6,7 @@ import { makeEvent, setCookieLines } from '../../../testing/h3-event'
 
 const svc = vi.hoisted(() => ({
   requestSignupCode: vi.fn(),
+  discardSignupCode: vi.fn(),
   checkSignupCode: vi.fn(),
   createAccount: vi.fn(),
   login: vi.fn(),
@@ -151,12 +152,14 @@ describe('가입', () => {
       reason: 'COOLDOWN',
     })
     expect((await call(R.code, post({ email: 'walker+1@example.com' }))).status).toBe(429)
-    svc.requestSignupCode.mockResolvedValue({ ok: true, code: '123456' })
+    svc.requestSignupCode.mockResolvedValue({ ok: true, code: '123456', challengeId: 55 })
     send.mockResolvedValueOnce({ ok: false, upstreamStatus: 502, ms: 3 })
     expect(await call(R.code, post({ email: 'walker+1@example.com' }))).toEqual({
       status: 502,
       body: { code: 'EMAIL_SEND_FAILED' },
     })
+    // 보내지 못한 코드 행은 지운다 — 한도를 쓰지 않게(QA ⑥ 1회차)
+    expect(svc.discardSignupCode).toHaveBeenCalledWith({ db: 'stub' }, 55)
     send.mockResolvedValueOnce({ ok: true, result: 'STUBBED', ms: 3 })
     expect(await call(R.code, post({ email: ' Walker+1@Example.com ' }))).toEqual({
       status: 202,
@@ -262,14 +265,65 @@ describe('재설정(I-2 · D-8)', () => {
     expect((await call(R.confirm, post({ token: 'a'.repeat(43), password: 'short' }))).status).toBe(
       400,
     )
+    svc.checkResetToken.mockResolvedValueOnce({ challengeId: 1, target: 'x', serviceUserId: 7 })
     svc.confirmPasswordReset.mockResolvedValueOnce({
       ok: true,
       serviceUserId: 7,
       revokedSessions: 2,
     })
+    const ok = post({ token: 'a'.repeat(43), password: 'correct-horse-2' })
+    expect((await call(R.confirm, ok)).status).toBe(204)
+    // 재설정 성공은 이 브라우저의 쿠키도 지운다
+    expect(setCookieLines(ok)[0]).toMatch(/^nomacom_session=;.*Max-Age=0/)
+  })
+
+  it('confirm — 무효 토큰이면 Argon2 · 서비스 소비 없이 410(QA ⑥ 1회차)', async () => {
+    svc.checkResetToken.mockResolvedValueOnce(null)
     expect(
-      (await call(R.confirm, post({ token: 'a'.repeat(43), password: 'correct-horse-2' }))).status,
-    ).toBe(204)
+      (await call(R.confirm, post({ token: 'b'.repeat(43), password: 'correct-horse-2' }))).status,
+    ).toBe(410)
+    expect(svc.confirmPasswordReset).not.toHaveBeenCalled()
+  })
+
+  it('I-2 — 재설정 요청은 계정 확인 · 발송을 기다리지 않고 202(시간 차 0)', async () => {
+    svc.requestPasswordReset.mockReturnValueOnce(new Promise(() => {}))
+    const res = await Promise.race([
+      call(R.reset, post({ email: 'walker+1@example.com' })),
+      new Promise((resolve) => setTimeout(() => resolve('timeout'), 500)),
+    ])
+    expect(res).toEqual({ status: 202, body: {} })
+  })
+})
+
+describe('예상 밖 오류(D-24 · I-1)', () => {
+  it('DB 오류는 500 + 원인 한 줄만 — drizzle message 의 쿼리 · 파라미터는 로그 0', async () => {
+    const err = Object.assign(
+      new Error('Failed query: select … params: login_failure,SECRET-HASH-PARAM'),
+      {
+        cause: { message: 'connection refused' },
+      },
+    )
+    svc.login.mockRejectedValueOnce(err)
+    expect(await call(R.login, post({ email: 'walker+1@example.com', password: 'p' }))).toEqual({
+      status: 500,
+      body: { code: 'INTERNAL' },
+    })
+    expect(logEvent).toHaveBeenCalledWith('AUTH_INTERNAL_ERROR', 'error', 'connection refused', {
+      path: '/api/v1/auth/x',
+    })
+    expect(JSON.stringify(logEvent.mock.calls)).not.toContain('SECRET-HASH-PARAM')
+  })
+
+  it('세션 조회 DB 실패는 AUTH_SESSION_LOOKUP_FAILED(키 사고로 기록하지 않는다) · 비로그인으로', async () => {
+    svc.memberSummary.mockRejectedValueOnce(
+      Object.assign(new Error('Failed query'), { cause: { message: 'timeout' } }),
+    )
+    expect(await call(R.session, withUser(makeEvent()))).toEqual({
+      status: 200,
+      body: { methods: ['email'], user: null },
+    })
+    expect(logEvent).toHaveBeenCalledWith('AUTH_SESSION_LOOKUP_FAILED', 'error', 'timeout')
+    expect(logEvent.mock.calls.some((c) => c[0] === 'AUTH_KEYS_UNAVAILABLE')).toBe(false)
   })
 })
 
@@ -284,9 +338,9 @@ describe('탈퇴', () => {
     svc.withdrawWithPassword.mockResolvedValueOnce({ ok: false, code: 'LOGIN_LOCKED' })
     expect((await call(R.withdraw, withUser(post({ password: 'p' })))).status).toBe(429)
     svc.withdrawWithPassword.mockResolvedValueOnce({ ok: true, revokedSessions: 1 })
-    expect((await call(R.withdraw, withUser(post({ password: 'correct-horse-1' })))).status).toBe(
-      204,
-    )
+    const done = withUser(post({ password: 'correct-horse-1' }))
+    expect((await call(R.withdraw, done)).status).toBe(204)
+    expect(setCookieLines(done)[0]).toMatch(/^nomacom_session=;.*Max-Age=0/)
     svc.unissuedOrderCount.mockResolvedValueOnce(2)
     expect(await call(R.withdrawGet, withUser(makeEvent()))).toEqual({
       status: 200,
@@ -325,6 +379,10 @@ describe('운영 조치 내부 endpoint(AC-5.1 · AC-5.3 · I-11 · 플래그 �
     })
     svc.suspendMember.mockResolvedValueOnce({ ok: false, code: 'ALREADY_WITHDRAWN' })
     expect((await call(R.suspend, ops('7', h))).status).toBe(409)
+    svc.suspendMember.mockResolvedValueOnce({ ok: false, code: 'NOT_FOUND' })
+    expect((await call(R.suspend, ops('8', h))).status).toBe(404)
+    svc.withdrawMember.mockResolvedValueOnce({ ok: false, code: 'NOT_FOUND' })
+    expect((await call(R.opsWithdraw, ops('8', h))).status).toBe(404)
     svc.withdrawMember.mockResolvedValueOnce({ ok: true, status: 'withdrawn', revokedSessions: 0 })
     expect(await call(R.opsWithdraw, ops('7', h))).toEqual({
       status: 200,

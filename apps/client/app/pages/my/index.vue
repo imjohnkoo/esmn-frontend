@@ -23,7 +23,7 @@ const { data: session, refresh } = await useAsyncData(
 const memberOn = computed(() => session.value.methods.length > 0)
 
 const flash = useMemberFlash()
-const notice = ref(flash.value ? MEMBER_FLASH[flash.value] : null)
+const notice = ref<string | null>(flash.value ? MEMBER_FLASH[flash.value] : null)
 flash.value = null
 
 const loggingOut = ref(false)
@@ -33,7 +33,8 @@ async function logout() {
     await authPost('logout')
     notice.value = MEMBER_FLASH.e13
   } catch {
-    // 로그아웃 실패 — 화면은 서버 상태를 다시 읽어 그대로 그린다
+    // 로그아웃 실패 — 알리고, 화면은 서버 상태를 다시 읽어 그린다
+    notice.value = '잠시 후 다시 시도해 주세요. 연결이 원활하지 않아요.'
   } finally {
     await refresh()
     loggingOut.value = false

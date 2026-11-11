@@ -1,14 +1,14 @@
 // POST /api/v1/auth/signup {email, code, password, consent, age14} — 계정 생성 · 로그인(F-6 · I-9 · D-17)
 import { getRequestHeader } from 'h3'
 import { SIGNUP_CONSENT } from '../../../../shared/consent/signup-consent'
-import { authFail, memberPost, requestIpHash } from '../../../utils/auth-route'
+import { authFail, defineMemberHandler, memberPost, requestIpHash } from '../../../utils/auth-route'
 import { setSessionCookie } from '../../../utils/auth-session'
 import { logEvent } from '../../../utils/issuance-log'
 import { createAccount } from '../../../utils/member-auth'
 import { parseEmail } from '../../../utils/member-pii'
 import { hashPassword, parsePassword } from '../../../utils/password'
 
-export default defineEventHandler(async (event) => {
+export default defineMemberHandler(async (event) => {
   const { keys, db, body } = await memberPost(event)
   const email = parseEmail(body.email)
   if (!email) return authFail(400, 'INVALID_EMAIL')
