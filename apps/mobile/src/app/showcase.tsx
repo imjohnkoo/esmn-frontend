@@ -152,7 +152,7 @@ export default function Showcase() {
         </Text>
       </Section>
 
-      <Section title="NAlertDialog" meta="color 별 · actions 슬롯">
+      <Section title="NAlertDialog" meta="color 별 · actions 슬롯 · primary 는 size wide">
         <Row>
           <NButton size="sm" onPress={() => setDialog('primary')}>primary</NButton>
           <NButton size="sm" variant="secondary" onPress={() => setDialog('warning')}>warning</NButton>
@@ -351,6 +351,7 @@ export default function Showcase() {
         title="이 내용으로 발급할까요?"
         color="primary"
         closable={false}
+        size="wide"
         actions={<NButton variant="primary" fullWidth onPress={() => setDialog(null)}>확인</NButton>}
       >
         {'발급 후에는 취소와 환불이 불가해요.'}

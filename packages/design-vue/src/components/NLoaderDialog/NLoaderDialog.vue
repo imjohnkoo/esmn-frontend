@@ -59,7 +59,7 @@ const open = defineModel<boolean>({ default: false })
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: var(--n-z-index-modal, 1050);
-  width: 280px;
+  width: min(var(--n-dialog-viewport-ratio, 90vw), var(--n-dialog-width-default, 17.5rem));
   /* NAlertDialog 와 동일한 상하 대칭 리듬 (36px) */
   padding: 36px 24px 36px;
   border-radius: var(--n-radius-3xl, 1.5rem);

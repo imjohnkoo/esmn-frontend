@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, Modal, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native'
 import { theme } from '../../theme'
 
 export interface NAlertDialogProps {
@@ -13,7 +13,8 @@ export interface NAlertDialogProps {
   children?: React.ReactNode
   /** 하단 버튼 영역 */
   actions?: React.ReactNode
-  width?: number
+  /** 폭 — 토큰 `dialog.width` 변형(design-vue 와 같다). default 280 · wide 340(요약 · 필수 동의 체크처럼 내용이 많은 확인만) */
+  size?: 'default' | 'wide'
 }
 
 const glyphMap = { primary: 'i', success: '✓', warning: '!', error: '!', info: 'i' } as const
@@ -34,9 +35,11 @@ export function NAlertDialog({
   onClose,
   children,
   actions,
-  width = 300,
+  size = 'default',
 }: NAlertDialogProps) {
   const c = colorMap[color]
+  const { width: screenWidth } = useWindowDimensions()
+  const width = Math.min(theme.dialog.width[size], screenWidth * theme.dialog.viewportRatio)
   const handleBackdrop = () => {
     if (closable) onClose?.()
   }

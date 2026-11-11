@@ -2,6 +2,13 @@
 
 `@imjohnkoo/design-vue` 변경 사항. Semantic-ish. 날짜는 한국 시각 기준.
 
+## 0.8.0 — 2026-11-12
+
+### Changed — breaking
+
+- `NAlertDialog` — `width` prop 을 없애고 `size: 'default' | 'wide'`(기본 `default`)로 바꿨다. 폭은 화면에서 숫자로 넣지 않고 토큰 변형 둘 중에서 고른다 — `default` 280px · `wide` 340px(요약 표 · 필수 동의 체크처럼 내용이 많은 확인만). 옛 `:width="340"` → `size="wide"`(같은 폭). 그보다 큰 내용은 `NModal` · `NBottomSheet`.
+- `NAlertDialog` · `NConfirmDialog` · `NLoaderDialog` — 폭을 직접 값(`max-width: 280px` · `width: 280px`) 대신 토큰 `--n-dialog-width-{default,wide}` · `--n-dialog-viewport-ratio`(design-tokens 0.5.1)로 읽는다: `width: min(90vw, 17.5rem)`. 루트 글자 크기 16px 에서 전과 같은 폭이다. `NConfirmDialog` 도 `size` 를 받는다. `NLoaderDialog` 는 이제 화면 폭 90% 를 넘지 않는다(311px 보다 좁은 화면에서만 차이).
+
 ## 0.7.3 — 2026-10-18
 
 ### Added

@@ -322,7 +322,7 @@ export default function SelectDateScreen() {
         title="이 내용으로 발급할까요?"
         color="primary"
         closable={false}
-        width={340}
+        size="wide"
         actions={
           <View style={styles.confirmActions}>
             <View style={styles.confirmBack}>

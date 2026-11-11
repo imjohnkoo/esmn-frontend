@@ -5,7 +5,10 @@
         <DialogOverlay v-if="open" class="n-confirm__overlay" />
       </Transition>
       <Transition name="n-confirm-content">
-        <DialogContent v-if="open" class="n-confirm__content">
+        <DialogContent
+          v-if="open"
+          :class="['n-confirm__content', { 'n-confirm__content--wide': size === 'wide' }]"
+        >
           <div class="n-confirm__body">
             <div :class="['n-confirm__icon', `n-confirm__icon--${variant}`]">
               <svg v-if="variant === 'danger'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -54,6 +57,8 @@ export interface NConfirmDialogProps {
   cancelText?: string
   variant?: 'default' | 'danger'
   modelValue?: boolean
+  /** 폭 — 토큰 `dialog.width` 변형(NAlertDialog 와 같다). default 280 · wide 340 */
+  size?: 'default' | 'wide'
 }
 
 withDefaults(defineProps<NConfirmDialogProps>(), {
@@ -63,6 +68,7 @@ withDefaults(defineProps<NConfirmDialogProps>(), {
   cancelText: '취소',
   variant: 'default',
   modelValue: undefined,
+  size: 'default',
 })
 
 const emit = defineEmits<{
@@ -99,13 +105,16 @@ function handleCancel() {
   transform: translate(-50%, -50%);
   z-index: var(--n-z-index-modal, 1050);
   /* NAlertDialog 와 동일 사이즈·리듬 (john 피드백 2026-08-20) */
-  width: 90vw;
-  max-width: 280px;
+  width: min(var(--n-dialog-viewport-ratio, 90vw), var(--n-dialog-width-default, 17.5rem));
   border-radius: var(--n-radius-3xl, 1.5rem);
   background-color: var(--n-color-neutral-0, #ffffff);
   box-shadow: var(--n-shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1));
   font-family: var(--n-font-family-sans, 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', 'Noto Sans KR', sans-serif);
   overflow: hidden;
+}
+
+.n-confirm__content--wide {
+  width: min(var(--n-dialog-viewport-ratio, 90vw), var(--n-dialog-width-wide, 21.25rem));
 }
 
 .n-confirm__content:focus { outline: none; }

@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, Modal, ActivityIndicator, StyleSheet } from 'react-native'
+import { View, Text, Modal, ActivityIndicator, StyleSheet, useWindowDimensions } from 'react-native'
 import { theme } from '../../theme'
 
 export interface NLoaderDialogProps {
@@ -10,10 +10,12 @@ export interface NLoaderDialogProps {
 
 /** 백드롭 + 흰 카드 + 브랜드 스피너. 닫기 인터랙션 없음 (진행 중 표시 전용). */
 export function NLoaderDialog({ visible, title, description }: NLoaderDialogProps) {
+  const { width: screenWidth } = useWindowDimensions()
+  const width = Math.min(theme.dialog.width.default, screenWidth * theme.dialog.viewportRatio)
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
-        <View style={styles.card}>
+        <View style={[styles.card, { width }]}>
           <ActivityIndicator size="large" color={theme.colors.primary[500]} />
           {title && <Text style={styles.title}>{title}</Text>}
           {description && <Text style={styles.description}>{description}</Text>}
@@ -32,7 +34,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing[6],
   },
   card: {
-    minWidth: 220,
+    maxWidth: '100%',
     backgroundColor: theme.colors.white,
     borderRadius: theme.radius['3xl'],
     paddingVertical: theme.spacing[8],

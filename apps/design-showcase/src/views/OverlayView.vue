@@ -74,7 +74,10 @@
       <!-- NAlertDialog with actions -->
       <div class="showcase-card">
         <div class="showcase-card__title">NAlertDialog + 액션 버튼</div>
-        <NButton size="sm" variant="outline" @click="alertWithActionOpen = true">서버 오류 알림</NButton>
+        <div class="showcase-stack">
+          <NButton size="sm" variant="outline" @click="alertWithActionOpen = true">서버 오류 알림</NButton>
+          <NButton size="sm" variant="outline" @click="alertWideOpen = true">size="wide" (340)</NButton>
+        </div>
 
         <NAlertDialog
           v-model="alertWithActionOpen"
@@ -84,6 +87,19 @@
         >
           <template #actions>
             <NButton size="sm" @click="alertWithActionOpen = false">확인</NButton>
+          </template>
+        </NAlertDialog>
+
+        <!-- size="wide" — 요약 표 · 필수 동의 체크처럼 내용이 많은 확인만(토큰 dialog.width.wide) -->
+        <NAlertDialog
+          v-model="alertWideOpen"
+          color="primary"
+          size="wide"
+          title="이 내용으로 발급할까요?"
+          description="요약 · 동의 체크가 들어가는 확인은 wide(340) 를 쓴다."
+        >
+          <template #actions>
+            <NButton size="sm" @click="alertWideOpen = false">확인</NButton>
           </template>
         </NAlertDialog>
       </div>
@@ -140,6 +156,7 @@ const alertErrorOpen = ref(false)
 const alertSuccessOpen = ref(false)
 const alertWarningOpen = ref(false)
 const alertWithActionOpen = ref(false)
+const alertWideOpen = ref(false)
 
 const confirmDefaultOpen = ref(false)
 const confirmDangerOpen = ref(false)

@@ -507,7 +507,7 @@ const noticeSheet = (href: string) => (href === '/supported-devices' ? () => ope
       title="이 내용으로 발급할까요?"
       color="primary"
       :closable="false"
-      :width="340"
+      size="wide"
     >
       <!-- 요약 · 안내만 스크롤 — 필수 동의 체크 · «뒤로 · 발급하기» 는 늘 화면 안(팝업은 페이지 스크롤을 잠근다).
            높이는 열릴 때 실제 크기로 맞춘다(글자 확대 · 작은 화면) · 아래에 더 있으면 흐림 표시 -->

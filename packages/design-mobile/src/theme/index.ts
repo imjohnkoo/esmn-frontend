@@ -3,6 +3,7 @@ import typography from '@imjohnkoo/design-tokens/src/typography.json'
 import spacing from '@imjohnkoo/design-tokens/src/spacing.json'
 import shadows from '@imjohnkoo/design-tokens/src/shadows.json'
 import base from '@imjohnkoo/design-tokens/src/base.json'
+import components from '@imjohnkoo/design-tokens/src/components.json'
 
 function remToNumber(rem: string): number {
   const match = rem.match(/^([\d.]+)rem$/)
@@ -84,6 +85,15 @@ export const theme = {
       ]
     }),
   ),
+
+  /** 대화상자 폭 — design-vue 와 같은 토큰(`dialog.width` · `dialog.viewport-ratio`). 화면 폭 × 비율이 상한 */
+  dialog: {
+    width: {
+      default: remToNumber(components.dialog.width.default),
+      wide: remToNumber(components.dialog.width.wide),
+    },
+    viewportRatio: parseFloat(components.dialog['viewport-ratio']) / 100,
+  },
 } as const
 
 export type Theme = typeof theme
