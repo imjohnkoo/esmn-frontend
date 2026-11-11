@@ -7,6 +7,10 @@ export interface NPinInputProps {
   type?: 'text' | 'number'
   disabled?: boolean
   placeholder?: string
+  /** 오류 상태 — 묶음(role=group)에 aria-invalid="true" */
+  invalid?: boolean
+  /** 칸 이름 — position 은 1부터. 기본 «코드 6자리 중 1번째» */
+  fieldLabel?: (position: number, length: number) => string
 }
 
 withDefaults(defineProps<NPinInputProps>(), {
@@ -15,6 +19,8 @@ withDefaults(defineProps<NPinInputProps>(), {
   type: 'text',
   disabled: false,
   placeholder: '○',
+  invalid: false,
+  fieldLabel: (position: number, length: number) => `코드 ${length}자리 중 ${position}번째`,
 })
 
 const emit = defineEmits<{
@@ -37,6 +43,10 @@ function handleComplete(value: string[]) {
     :disabled="disabled"
     :type="type"
     :placeholder="placeholder"
+    role="group"
+    aria-label="코드 입력"
+    :aria-invalid="invalid ? 'true' : undefined"
+    :style="{ '--n-pin-input-length': length }"
     :class="[
       'n-pin-input',
       { 'n-pin-input--disabled': disabled },
@@ -48,6 +58,7 @@ function handleComplete(value: string[]) {
       v-for="(_, index) in length"
       :key="index"
       :index="index"
+      :aria-label="fieldLabel(index + 1, length)"
       class="n-pin-input__field"
     />
   </PinInputRoot>
@@ -55,7 +66,12 @@ function handleComplete(value: string[]) {
 
 <style scoped>
 .n-pin-input {
-  display: inline-flex;
+  /* 넓은 화면은 칸 48px, 좁은 화면(320px 폰)에서만 칸이 36px 까지 줄어든다 */
+  display: flex;
+  width: 100%;
+  max-width: calc(
+    var(--n-pin-input-length) * 48px + (var(--n-pin-input-length) - 1) * var(--n-spacing-2)
+  );
   gap: var(--n-spacing-2);
 }
 
@@ -65,8 +81,12 @@ function handleComplete(value: string[]) {
 }
 
 .n-pin-input__field {
-  width: 44px;
-  height: 44px;
+  flex: 1 1 0;
+  min-width: 36px;
+  max-width: 48px;
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  padding: 0;
   text-align: center;
   font-family: var(--n-font-family-sans);
   font-size: var(--n-font-size-lg);

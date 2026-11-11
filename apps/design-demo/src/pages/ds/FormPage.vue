@@ -33,6 +33,7 @@ const radioVal = ref('option1')
 const sliderVal = ref([40])
 const selectVal = ref('')
 const pinVal = ref<string[]>([])
+const pinVal4 = ref<string[]>([])
 const numberVal = ref(5)
 const tagsVal = ref(['Vue', 'TypeScript'])
 const inputMenuVal = ref('')
@@ -210,8 +211,14 @@ function onSubmit() {
         <h2 class="font-semibold text-(--ui-text-highlighted)">NPinInput</h2>
       </template>
       <div class="space-y-4">
-        <NPinInput v-model="pinVal" :length="6" placeholder="○" @complete="() => alert('완료!')" />
+        <NPinInput v-model="pinVal" :length="6" placeholder="○" @complete="() => console.info('완료!')" />
         <p class="text-xs text-(--ui-text-muted)">입력: {{ pinVal.join('') || '없음' }}</p>
+        <!-- 오류 상태 — 묶음에 aria-invalid · 4칸 -->
+        <NPinInput v-model="pinVal4" :length="4" type="number" placeholder="" invalid />
+        <!-- 320px 폰 그릇(화면 − 좌우 24px = 272px) — 6칸이 36~48px 로 줄어 한 줄에 든다 -->
+        <div style="width: 272px; outline: 1px dashed var(--ui-border)">
+          <NPinInput v-model="pinVal" :length="6" placeholder="" />
+        </div>
       </div>
     </UCard>
 

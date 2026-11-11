@@ -243,6 +243,9 @@ const open = defineModel<boolean>({ default: false })
   font-weight: var(--n-font-weight-bold, 700);
   color: var(--n-color-neutral-900, #171717);
   line-height: 1.4;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .n-alert-dialog__description {
@@ -250,6 +253,9 @@ const open = defineModel<boolean>({ default: false })
   font-size: 13px;
   color: var(--n-color-neutral-500, #737373);
   line-height: 1.55;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
 }
 
 .n-alert-dialog__actions {

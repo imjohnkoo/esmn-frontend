@@ -154,6 +154,9 @@ function handleCancel() {
   font-weight: var(--n-font-weight-semibold, 600);
   color: var(--n-color-neutral-900, #171717);
   line-height: 1.4;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .n-confirm__message {
@@ -161,6 +164,9 @@ function handleCancel() {
   font-size: var(--n-font-size-sm, 0.875rem);
   color: var(--n-color-neutral-500, #737373);
   line-height: 1.5;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
 }
 
 .n-confirm__actions {
