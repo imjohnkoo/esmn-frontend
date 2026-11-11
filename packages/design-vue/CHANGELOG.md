@@ -2,6 +2,18 @@
 
 `@imjohnkoo/design-vue` 변경 사항. Semantic-ish. 날짜는 한국 시각 기준.
 
+## 0.8.1 — 2026-11-12
+
+### Fixed
+
+- `NPinInput` — 작은 폰에서 넘치던 것(칸 44px 고정 · 6칸 304px > 320px 폰 그릇 272px → 가로 스크롤). 그릇은 `display: flex; width: 100%`, `max-width` = 칸 수 × 48px + 간격, 칸은 `flex: 1 1 0` · 36~48px · 정사각(`aspect-ratio: 1`). 넓은 화면은 칸 48px(전 44px), 좁은 화면에서만 칸이 줄어든다. 이제 `inline-flex` 가 아니라 그릇 폭을 채우는 블록이다(최대 폭에서 멈춤).
+- `NPinInput` — 칸 이름이 라이브러리 영어 기본값(«pin input 1 of 6»)이던 것 → «코드 6자리 중 1번째». 묶음은 `role="group"` · `aria-label`(기본 «코드 입력» — 화면이 넘긴 `aria-label` 이 이긴다).
+- `NAlertDialog` · `NConfirmDialog` · `NLoaderDialog` — 제목 · 본문이 어절 중간에서 끊기던 것. 제목 `word-break: keep-all; overflow-wrap: break-word; text-wrap: balance`, 본문 같은 규칙 + `text-wrap: pretty`(긴 이메일 · URL 은 `break-word` 로 박스 안에서 끊긴다).
+
+### Added
+
+- `NPinInput` — `invalid`(묶음에 `aria-invalid="true"`) · `fieldLabel(position, length)`(칸 이름 바꾸기, position 은 1부터). 제안 문서의 `ariaLabel` 이름은 Vue 가 `aria-label` 속성을 같은 prop 으로 받아 화면이 넘긴 묶음 이름 문자열과 부딪혀 `fieldLabel` 로 했다.
+
 ## 0.8.0 — 2026-11-12
 
 ### Changed — breaking

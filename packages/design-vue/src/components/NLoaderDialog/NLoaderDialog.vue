@@ -103,12 +103,18 @@ const open = defineModel<boolean>({ default: false })
   font-size: 15px;
   font-weight: 600;
   color: var(--n-color-neutral-900, #171717);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-wrap: balance;
 }
 
 .n-loader-dialog__desc {
   margin: 0;
   font-size: 12px;
   color: var(--n-color-neutral-500, #737373);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
 }
 
 /* Transitions */
