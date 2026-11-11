@@ -10,6 +10,7 @@ import {
   MEMBER_FIELD,
   MEMBER_FLASH,
   PURCHASE_LOGIN_NOTE,
+  isPurchaseNext,
 } from '~/content/member'
 import { safeNext } from '#shared/utils/safe-next'
 
@@ -18,7 +19,7 @@ useHead({ title: '로그인' })
 
 const route = useRoute()
 const next = computed(() => safeNext(route.query.next))
-const fromPurchase = computed(() => /^\/(products|checkout)(\/|$|\?)/.test(next.value))
+const fromPurchase = computed(() => isPurchaseNext(next.value))
 const flash = useMemberFlash()
 const notice = ref(flash.value ? MEMBER_FLASH[flash.value] : null)
 flash.value = null
@@ -26,6 +27,7 @@ flash.value = null
 const email = ref('')
 const password = ref('')
 const emailError = ref('')
+const passwordError = ref('')
 const busy = ref(false)
 const { key: dialogKey, open: dialogOpen, show } = useMemberDialog<'e1' | 'e3' | 'e30'>('e30')
 const dialogView = computed(() =>
@@ -36,7 +38,8 @@ const dialogView = computed(() =>
 
 async function submit() {
   emailError.value = EMAIL_PATTERN.test(email.value.trim()) ? '' : MEMBER_FIELD.e2
-  if (emailError.value || !password.value) return
+  passwordError.value = password.value ? '' : MEMBER_FIELD.pwEmpty
+  if (emailError.value || passwordError.value) return
   busy.value = true
   try {
     await authPost('login', { email: email.value, password: password.value })
@@ -75,7 +78,12 @@ const withNext = (path: string) =>
         />
         <p v-if="emailError" id="login-email-err" class="member-err">{{ emailError }}</p>
       </div>
-      <PasswordField v-model="password" input-id="login-password" autocomplete="current-password" />
+      <PasswordField
+        v-model="password"
+        input-id="login-password"
+        autocomplete="current-password"
+        :error="passwordError"
+      />
     </form>
     <div class="member-links">
       <NuxtLink to="/password/reset">비밀번호를 잊었어요</NuxtLink>

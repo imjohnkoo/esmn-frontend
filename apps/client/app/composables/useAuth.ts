@@ -12,14 +12,20 @@ export function useAuthSession() {
 
 /** 세션 상태 불러오기 — force 면 다시(로그인 · 로그아웃 뒤). 실패하면 꺼짐 쪽(진입점 숨김)으로 */
 export async function loadAuthSession(force = false): Promise<AuthSessionView> {
+  return (await fetchAuthSession(force)) ?? EMPTY
+}
+
+/** 같은 일 — 조회가 실패하면 null(가드는 404 로 덮지 않고 화면을 연다 — spec D-29) */
+export async function fetchAuthSession(force = false): Promise<AuthSessionView | null> {
   const state = useAuthSession()
   if (state.value && !force) return state.value
   try {
     state.value = await useRequestFetch()<AuthSessionView>('/api/v1/auth/session')
+    return state.value
   } catch {
     state.value = EMPTY
+    return null
   }
-  return state.value
 }
 
 /** 도착 화면에 한 번 보이는 안내(토스트 대신) — 보여 준 화면이 지운다 */

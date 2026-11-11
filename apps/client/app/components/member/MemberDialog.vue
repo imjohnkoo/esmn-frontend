@@ -7,15 +7,28 @@ defineProps<{ title: string; body: string; secondary?: string; confirmLabel?: st
 const emit = defineEmits<{ confirm: []; secondary: [] }>()
 
 function close(kind: 'confirm' | 'secondary') {
+  if (!open.value) return
   open.value = false
   if (kind === 'confirm') emit('confirm')
   else emit('secondary')
 }
+
+// Escape · 바깥 누름으로 닫혀도 [확인] 과 같은 동작(spec D-28) — closable=false 는 닫기 버튼만 숨긴다
+function onModel(v: unknown) {
+  if (!v) close('confirm')
+}
 </script>
 
 <template>
-  <NAlertDialog v-model="open" :title="title" color="warning" :closable="false">
-    <p class="member-dialog__body">{{ body }}</p>
+  <!-- 본문은 description(DialogDescription · aria-describedby) — 스크린리더가 안내를 읽게(D-28) -->
+  <NAlertDialog
+    :model-value="open"
+    :title="title"
+    :description="body"
+    color="warning"
+    :closable="false"
+    @update:model-value="onModel($event)"
+  >
     <template #actions>
       <NButton v-if="secondary" variant="outline" full-width @click="close('secondary')">{{
         secondary

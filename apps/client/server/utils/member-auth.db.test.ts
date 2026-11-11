@@ -491,14 +491,50 @@ describe('QA ⑥ 2회차 회귀(잠금 순서 · F-6 순서)', () => {
     expect(await pending).toMatchObject({ ok: true })
   })
 
-  it('로그인 ↔ 정지를 겹쳐도 정지 회원에게 revoke 안 된 세션 0(I-4)', async () => {
-    for (let round = 0; round < 6; round++) {
-      await resetMemberTables(client)
-      const made = await signUp()
-      await client`UPDATE service_user_session SET revoked_at = now()`
-      await Promise.all([login(db, keys, EMAIL, PW), suspendMember(db, made.serviceUserId)])
-      expect(await count('service_user_session', 'revoked_at IS NULL')).toBe(0)
-    }
+  it('로그인 사전 조회 뒤 · 세션 트랜잭션 전에 정지되면 세션 0(D-25 · D-27 상태 재대조 · I-4)', async () => {
+    const made = await signUp()
+    await client`UPDATE service_user_session SET revoked_at = now()`
+    // 로그인이 회원을 active 로 본 뒤 Argon2 를 도는 동안(수십 ms) 정지가 커밋된다
+    const racing = login(db, keys, EMAIL, PW)
+    await new Promise((r) => setTimeout(r, 10))
+    expect(await suspendMember(db, made.serviceUserId)).toMatchObject({ ok: true })
+    expect(await racing).toEqual({ ok: false, code: 'INVALID_CREDENTIALS' })
+    expect(await count('service_user_session', 'revoked_at IS NULL')).toBe(0)
+  })
+
+  it('재설정 confirm 도 service_user 를 먼저 잡는다(D-27 — 탈퇴와 겹쳐도 교착 0)', async () => {
+    const made = await signUp()
+    const reset = await requestPasswordReset(db, keys, EMAIL)
+    if (!reset.token) throw new Error()
+    const newHash = await hashPassword('correct-horse-9')
+    let pending: Promise<unknown> = Promise.resolve()
+    let done = false
+    await client.begin(async (tx) => {
+      await tx`SELECT 1 FROM service_user WHERE service_user_id = ${made.serviceUserId} FOR UPDATE`
+      pending = confirmPasswordReset(db, keys, reset.token!, newHash).then(
+        (r) => ((done = true), r),
+      )
+      await new Promise((r) => setTimeout(r, 150))
+      expect(done).toBe(false)
+      const free =
+        await client`SELECT 1 FROM service_user_identity WHERE service_user_id = ${made.serviceUserId} FOR UPDATE NOWAIT`
+          .then(() => true)
+          .catch(() => false)
+      expect(free).toBe(true)
+    })
+    expect(await pending).toMatchObject({ ok: true })
+  })
+
+  it('본인 탈퇴 — 옛 비밀번호로 검증한 사이 재설정이 끝나면 탈퇴하지 않는다(D-27)', async () => {
+    const made = await signUp()
+    const reset = await requestPasswordReset(db, keys, EMAIL)
+    if (!reset.token) throw new Error()
+    const newHash = await hashPassword('correct-horse-9')
+    const racing = withdrawWithPassword(db, made.serviceUserId, PW)
+    await new Promise((r) => setTimeout(r, 10))
+    expect(await confirmPasswordReset(db, keys, reset.token, newHash)).toMatchObject({ ok: true })
+    expect(await racing).toEqual({ ok: false, code: 'PASSWORD_MISMATCH' })
+    expect((await client`SELECT status FROM service_user`)[0]!.status).toBe('active')
   })
 
   it('F-6 — 이미 가입이면 코드는 소비되고 409 · 같은 코드 재제출은 CODE_EXPIRED', async () => {

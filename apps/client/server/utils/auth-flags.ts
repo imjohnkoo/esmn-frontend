@@ -30,6 +30,12 @@ export function authMethods(event: H3Event): AuthMethod[] {
 
 /** 회원 기능이 꺼져 있으면 404 — auth API 가 있다는 사실도 드러내지 않는다(spec I-6) */
 export function requireAuthEnabled(event: H3Event): void {
-  if (authMethods(event).length === 0)
-    throw createError({ statusCode: 404, statusMessage: 'Page Not Found' })
+  // Nitro 의 «없는 라우트» 404 와 같은 모양 — 꺼져 있을 때 경로가 있다는 사실도 드러내지 않게(I-6)
+  if (authMethods(event).length === 0) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: `Page not found: ${event.path}`,
+      data: { path: event.path },
+    })
+  }
 }

@@ -26,7 +26,10 @@ describe('assertSameOrigin', () => {
     [{ origin: 'https://esimmany.com', 'content-type': 'application/x-www-form-urlencoded' }, 403],
     [{ origin: 'https://esimmany.com', 'content-type': 'text/plain' }, 403],
     [{ origin: 'https://esimmany.com' }, 403],
-    [{ authorization: 'Bearer t' }, 200], // 앱 Bearer 는 쿠키를 쓰지 않는다
+    // Bearer 면제 없음(F-16 · QA ⑥ 3회차) — Bearer 를 붙여도 출처 · JSON 검사는 그대로
+    [{ authorization: 'Bearer t' }, 403],
+    [{ authorization: 'Bearer t', origin: 'http://203.0.113.9:8081', ...J }, 403],
+    [{ authorization: 'Bearer t', origin: 'https://esimmany.com', ...J }, 200],
   ])('%j → %i', (headers, code) => {
     expect(
       status(() =>

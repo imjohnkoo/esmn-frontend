@@ -28,10 +28,10 @@ export function siteOrigins(env: Record<string, string | undefined> = process.en
 /**
  * 쿠키 경로의 상태 변경 요청(spec F-16 · I-7) — ① 사이트 출처의 Origin 필수(헤더 없음 = 거부) ② 본문은 JSON 만
  * (교차 출처 폼 · text/plain 은 preflight 없이 오지만 JSON 은 preflight 가 CORS 에 막힌다). SameSite=Lax 가 세 번째 층.
- * Bearer(앱)는 쿠키를 쓰지 않으므로 대상이 아니다.
+ * Bearer 면제 없음(spec F-16) — A2 는 앱 토큰을 발급하지 않는다. Bearer 헤더를 붙이면 LAN 패턴 출처의 preflight 가 통과해
+ * 출처 검사를 건너뛰고 쿠키를 받던 길이 있었다. 면제는 B1 이 쿠키를 다루지 않는 라우트에 한해 다시 정한다
  */
 export function assertSameOrigin(event: H3Event): void {
-  if (isBearerRequest(event)) return
   const origin = getRequestHeader(event, 'origin')
   const json = /^application\/json\b/i.test(getRequestHeader(event, 'content-type') ?? '')
   const isPost = event.method === 'POST'

@@ -43,6 +43,7 @@ export const MEMBER_FIELD = {
   e8: '8자 이상으로 정해 주세요.',
   e8max: '128자 이하로 정해 주세요.',
   e16: '비밀번호가 맞지 않아요.',
+  pwEmpty: '비밀번호를 입력해 주세요.',
 } as const
 
 /** 도착 화면에 한 번 보이는 안내(토스트 대신 상태 줄 — plan as-built) */
@@ -85,3 +86,12 @@ export function passwordError(pw: string): string {
   if (n > MEMBER_MAX_PASSWORD) return MEMBER_FIELD.e8max
   return ''
 }
+
+/** E-0 — 구매하기에서 로그인으로 왔는가(spec S-2): `/products/…` 또는 `/checkout`(그 자체 · `/checkout/…` · `?…` — `/checkout-preview` 는 아님) */
+export function isPurchaseNext(next: string): boolean {
+  return /^\/(products\/|checkout(\/|$|\?))/.test(next)
+}
+
+/** C-5 — 탈퇴 경고 재료를 받지 못했을 때(D-29) */
+export const UNISSUED_UNKNOWN =
+  'QR 코드를 받지 않은 주문이 있는지 확인하지 못했어요. 탈퇴하기 전에 내 주문을 확인해 주세요.'

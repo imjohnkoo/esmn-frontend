@@ -11,11 +11,12 @@ import {
   MEMBER_DIALOG,
   MEMBER_FIELD,
   MEMBER_MIN_PASSWORD,
-  passwordError,
   PURCHASE_LOGIN_NOTE,
   RESEND_SECONDS,
   codeSentText,
+  isPurchaseNext,
   maskEmailForView,
+  passwordError,
 } from '~/content/member'
 import { SIGNUP_CONSENT, SIGNUP_CONSENT_LINES } from '#shared/consent/signup-consent'
 import { safeNext } from '#shared/utils/safe-next'
@@ -26,7 +27,7 @@ useHead({ title: '회원가입' })
 const route = useRoute()
 const router = useRouter()
 const next = computed(() => safeNext(route.query.next))
-const fromPurchase = computed(() => /^\/(products|checkout)(\/|$|\?)/.test(next.value))
+const fromPurchase = computed(() => isPurchaseNext(next.value))
 
 const step = ref<1 | 2 | 3>(1)
 const email = ref('')
@@ -165,6 +166,8 @@ async function submitSignup() {
 }
 
 function back() {
+  // 코드 확인이 도는 동안에는 뒤로 가지 않는다 — 늦게 온 성공이 빈 코드로 3단계를 열지 않게
+  if (busy.value) return
   if (step.value === 1) {
     if (window.history.length > 1) router.back()
     else navigateTo('/my')

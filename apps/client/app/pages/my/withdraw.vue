@@ -5,12 +5,17 @@ import { NButton, NLoaderDialog } from '@imjohnkoo/design-vue'
 import MemberShell from '~/components/member/MemberShell.vue'
 import MemberDialog from '~/components/member/MemberDialog.vue'
 import PasswordField from '~/components/member/PasswordField.vue'
-import { MEMBER_DIALOG, MEMBER_FIELD, unissuedWarningTitle } from '~/content/member'
+import {
+  MEMBER_DIALOG,
+  MEMBER_FIELD,
+  UNISSUED_UNKNOWN,
+  unissuedWarningTitle,
+} from '~/content/member'
 
 definePageMeta({ layout: 'flow', middleware: 'member' })
 useHead({ title: '회원 탈퇴' })
 
-const { data } = await useFetch<{ unissuedOrderCount: number }>('/api/v1/auth/withdraw', {
+const { data, error } = await useFetch<{ unissuedOrderCount: number }>('/api/v1/auth/withdraw', {
   key: 'withdraw-info',
   default: () => ({ unissuedOrderCount: 0 }),
 })
@@ -52,7 +57,12 @@ async function submit() {
     :title="`탈퇴하기 전에\n확인해 주세요`"
     @back="navigateTo('/my')"
   >
-    <div v-if="unissued > 0" class="withdraw__warn" role="alert">
+    <!-- 경고 재료를 못 받으면 «0건» 으로 숨기지 않는다(C-5 · D-29) -->
+    <div v-if="error" class="withdraw__warn" role="alert">
+      <p class="withdraw__warn-body">{{ UNISSUED_UNKNOWN }}</p>
+      <NuxtLink to="/my-esim" class="withdraw__warn-link">주문 보기</NuxtLink>
+    </div>
+    <div v-else-if="unissued > 0" class="withdraw__warn" role="alert">
       <p class="withdraw__warn-title">{{ unissuedWarningTitle(unissued) }}</p>
       <p class="withdraw__warn-body">탈퇴하면 이 주문을 다시 찾을 수 없어요.</p>
       <NuxtLink to="/my-esim" class="withdraw__warn-link">주문 보기</NuxtLink>

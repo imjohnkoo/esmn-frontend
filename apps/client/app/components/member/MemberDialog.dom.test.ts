@@ -69,4 +69,18 @@ describe('MemberDialog — 열고 닫기를 되풀이해도 고아 오버레이 
     }
     expect(confirms).toEqual(['a', 'b', 'a', 'b', 'a'])
   })
+
+  it('Escape 로 닫아도 [확인] 과 같은 동작(D-28) · 본문은 aria-describedby 로 묶인다', async () => {
+    const { state, confirms } = await host()
+    state.show('b')
+    await settle()
+    const dialog = dialogs()[0] as HTMLElement
+    const describedBy = dialog.getAttribute('aria-describedby')
+    expect(describedBy && document.getElementById(describedBy)?.textContent).toContain(VIEW.b.body)
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await settle()
+    expect(state.open.value).toBe(false)
+    expect(confirms).toEqual(['b'])
+    expect(overlays()).toHaveLength(0)
+  })
 })

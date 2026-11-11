@@ -384,6 +384,13 @@ export async function confirmPasswordReset(
   const found = await checkResetToken(db, keys, token)
   if (!found) return { ok: false, code: 'TOKEN_INVALID' }
   return db.transaction(async (tx) => {
+    // D-27 — 회원 행을 먼저 잡는다(탈퇴 · 정지 · 로그인과 같은 순서 · 같은 회원의 confirm 끼리도 여기서 줄 선다)
+    const [user] = await tx
+      .select({ status: U.status })
+      .from(U)
+      .where(eq(U.serviceUserId, found.serviceUserId))
+      .for('update')
+    if (user?.status !== 'active') return { ok: false, code: 'TOKEN_INVALID' } as const
     const [consumed] = await tx
       .update(C)
       .set({ consumedAt: sql`now()` })
@@ -421,7 +428,12 @@ export async function confirmPasswordReset(
 export async function withdrawMember(
   db: Db,
   serviceUserId: number,
-): Promise<{ ok: true; status: 'withdrawn'; revokedSessions: number } | Fail<'NOT_FOUND'>> {
+  /** 본인 탈퇴 — 검증한 비밀번호 해시. 회원 행을 잡은 뒤 그대로인지 다시 본다(D-27 · 재설정과 겹친 옛 비밀번호 탈퇴 차단) */
+  verifiedHash?: string,
+): Promise<
+  | { ok: true; status: 'withdrawn'; revokedSessions: number }
+  | Fail<'NOT_FOUND' | 'PASSWORD_CHANGED'>
+> {
   return db.transaction(async (tx) => {
     const [user] = await tx
       .select({ status: U.status, emailHash: U.emailHash })
@@ -431,6 +443,16 @@ export async function withdrawMember(
     if (!user) return { ok: false, code: 'NOT_FOUND' } as const
     if (user.status === 'withdrawn')
       return { ok: true, status: 'withdrawn', revokedSessions: 0 } as const
+    if (verifiedHash !== undefined) {
+      const [still] = await tx
+        .select({ hash: I.passwordHash })
+        .from(I)
+        .where(and(eq(I.serviceUserId, serviceUserId), eq(I.provider, 'email')))
+        .for('update')
+      if (!still || still.hash !== verifiedHash || user.status !== 'active') {
+        return { ok: false, code: 'PASSWORD_CHANGED' } as const
+      }
+    }
     // 끊은 세션 수 = 지우기 전 살아 있던 것(DB now() 기준 — 앱 시계를 쓰지 않는다)
     const [live] = await tx
       .select({ n: sql<number>`count(*)::int` })
@@ -482,8 +504,9 @@ export async function withdrawWithPassword(
   if (!row?.emailHash) return { ok: false, code: 'PASSWORD_MISMATCH' }
   if (!(await reserveLoginAttempt(db, row.emailHash))) return { ok: false, code: 'LOGIN_LOCKED' }
   if (!(await verifyPassword(row.hash, password))) return { ok: false, code: 'PASSWORD_MISMATCH' }
-  const done = await withdrawMember(db, serviceUserId)
-  return { ok: true, revokedSessions: done.ok ? done.revokedSessions : 0 }
+  const done = await withdrawMember(db, serviceUserId, row.hash ?? '')
+  if (!done.ok) return { ok: false, code: 'PASSWORD_MISMATCH' }
+  return { ok: true, revokedSessions: done.revokedSessions }
 }
 
 /** F-14 정지 — active → suspended + 세션 전부 revoke(한 트랜잭션). 이미 suspended 면 같은 응답 · withdrawn 이면 거부 */

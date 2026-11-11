@@ -117,10 +117,12 @@ describe('플래그 off(I-6 · AC-7.1)', () => {
 })
 
 describe('경계(I-7 · I-8)', () => {
-  it('Origin 없음 · 남의 출처 → 403 · Bearer 는 Origin 없이 통과', async () => {
+  it('Origin 없음 · 남의 출처 → 403 · Bearer 를 붙여도 면제 없음(F-16 · QA ⑥ 3회차)', async () => {
     expect((await call(R.login, post({}, {}))).status).toBe(403)
     expect((await call(R.login, post({}, { origin: 'https://evil.example' }))).status).toBe(403)
-    expect((await call(R.login, post({}, { authorization: 'Bearer t' }))).status).toBe(401)
+    const bearer = post({}, { authorization: 'Bearer t', origin: 'http://203.0.113.9:8081' })
+    expect((await call(R.login, bearer)).status).toBe(403)
+    expect(setCookieLines(bearer)).toEqual([])
   })
 
   it('상태를 바꾸는 auth 라우트 전부 — 남의 출처 · LAN 패턴 출처 · 폼 본문은 403 · 서비스 0(F-16 · QA ⑥ 2회차)', async () => {
