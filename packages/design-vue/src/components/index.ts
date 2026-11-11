@@ -214,6 +214,9 @@ export type { NFooterColumnsProps } from './NFooterColumns'
 export { NSpinner } from './NSpinner'
 export type { NSpinnerProps } from './NSpinner'
 
+export { NLottie } from './NLottie'
+export type { NLottieProps } from './NLottie'
+
 export { NAlertDialog } from './NAlertDialog'
 export type { NAlertDialogProps } from './NAlertDialog'
 

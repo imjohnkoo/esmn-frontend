@@ -1,0 +1,13 @@
+{
+  "name": "@imjohnkoo/design-assets",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nomacom shared design assets (Lottie) — read by design-vue and design-mobile consumers",
+  "license": "UNLICENSED",
+  "exports": {
+    "./lottie/*": "./lottie/*"
+  },
+  "files": [
+    "lottie"
+  ]
+}

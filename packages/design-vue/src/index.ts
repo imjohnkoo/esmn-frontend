@@ -15,6 +15,7 @@ export type { UseCopyToClipboardOptions } from './composables'
 export { usePhoneFormat } from './composables'
 export { useConfirm } from './composables'
 export type { ConfirmOptions } from './composables'
+export { useReducedMotion } from './composables'
 
 // Types
 export type { NSize, NColor, NVariant, NOrientation } from './types/common'

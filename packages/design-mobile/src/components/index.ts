@@ -84,3 +84,7 @@ export type { NCodeRowProps } from './NCodeRow'
 
 export { NLinkCard } from './NLinkCard'
 export type { NLinkCardProps } from './NLinkCard'
+
+// Motion
+export { NLottie, useReducedMotion } from './NLottie'
+export type { NLottieProps } from './NLottie'

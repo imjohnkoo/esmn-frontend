@@ -17,6 +17,9 @@ export {
   // Feedback
   NAlert,
   NSkeleton,
+  // Motion
+  NLottie,
+  useReducedMotion,
   // Navigation
   NTabBar,
   NBottomSheet,
@@ -53,6 +56,7 @@ export type {
   // Feedback
   NAlertProps,
   NSkeletonProps,
+  NLottieProps,
   // Navigation
   NTabBarProps,
   NTabBarItem,

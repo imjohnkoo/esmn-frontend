@@ -74,6 +74,7 @@
 | `vitest`     | onmax/nuxt-skills@00fb59d | Vitest 테스트 패턴, mocking, coverage             |
 | `vueuse`     | onmax/nuxt-skills@00fb59d | VueUse composables 카탈로그 (268개)               |
 | `ts-library` | onmax/nuxt-skills@00fb59d | TS library publishing (`@imjohnkoo/design-*`)     |
+| `expo-animation` | expo/skills@a9e5bd3fa0 (MIT) | 앱(Expo · Reanimated 4) 애니메이션 작업 기준 — 고정 복사 · 업스트림 추종 0 · 출처 `SOURCE.md` (DS-MOTION 2026-11-12) |
 
 ## Vendoring 정책 (외부 출처)
 
@@ -89,3 +90,4 @@
 - `.claude/rules/deployment.md` — CodeDeploy 배포 흐름 + path filter
 - `.claude/rules/ssm-paths.md` — SSM 경로 + Secret naming
 - `.claude/rules/design-system-publish.md` — GitHub Packages publish + 버전 bump
+- `.claude/rules/motion.md` — 모션 토큰만 · Reanimated llms.txt
