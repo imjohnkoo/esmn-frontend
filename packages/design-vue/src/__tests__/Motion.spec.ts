@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick } from 'vue'
+import { defineComponent, effectScope, h, nextTick } from 'vue'
 import { motion as builtMotion } from '@imjohnkoo/design-tokens'
 import motionJson from '@imjohnkoo/design-tokens/src/motion.json'
 import { useReducedMotion } from '../composables/useReducedMotion'
@@ -193,6 +193,17 @@ describe('useReducedMotion', () => {
     expect(mm.listeners.size).toBe(0)
   })
 
+  it('컴포넌트 밖(effectScope)에서도 바로 읽고, scope 를 멈추면 구독을 푼다', () => {
+    const mm = installMatchMedia(true)
+    const scope = effectScope()
+    const reduced = scope.run(() => useReducedMotion())!
+    expect(reduced.value).toBe(true)
+    mm.set(false)
+    expect(reduced.value).toBe(false)
+    scope.stop()
+    expect(mm.listeners.size).toBe(0)
+  })
+
   it('matchMedia 가 없으면 false', () => {
     vi.stubGlobal('matchMedia', undefined)
     expect(mount(Probe).text()).toBe('false')
@@ -286,16 +297,15 @@ describe('NLottie', () => {
     expect(dl.setFrame).not.toHaveBeenCalled()
   })
 
-  it('hide 로 complete 를 낸 뒤 설정을 끄면 다시 그리지만 complete 는 마운트당 1회', async () => {
+  it('hide 로 숨긴 장식은 설정을 다시 꺼도 숨긴 채 · complete 는 1회', async () => {
     const mm = installMatchMedia(true)
     const w = await mountLottie({ reducedMotion: 'hide' })
     expect(w.emitted('complete')).toHaveLength(1)
     mm.set(false)
     await flushPromises()
     await nextTick()
-    const dl = players.at(-1)!
-    dl.fire('load')
-    dl.fire('complete')
+    expect(w.html()).toBe('<!--v-if-->')
+    expect(players).toHaveLength(0)
     expect(w.emitted('complete')).toHaveLength(1)
   })
 

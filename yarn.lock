@@ -3650,6 +3650,7 @@ __metadata:
   resolution: "@imjohnkoo/design-mobile@workspace:packages/design-mobile"
   dependencies:
     "@imjohnkoo/design-tokens": "workspace:*"
+    "@lottiefiles/dotlottie-react": "npm:~0.13.5"
     "@types/react": "npm:~19.2.10"
     happy-dom: "npm:^20.9.0"
     lottie-react-native: "npm:~7.3.4"
@@ -3657,9 +3658,13 @@ __metadata:
     react-dom: "npm:19.2.0"
     vitest: "npm:^4.1.6"
   peerDependencies:
+    "@lottiefiles/dotlottie-react": ">=0.13.5"
     lottie-react-native: ">=7.3.0"
     react: ">=19.0.0"
     react-native: ">=0.83.0"
+  peerDependenciesMeta:
+    "@lottiefiles/dotlottie-react":
+      optional: true
   languageName: unknown
   linkType: soft
 

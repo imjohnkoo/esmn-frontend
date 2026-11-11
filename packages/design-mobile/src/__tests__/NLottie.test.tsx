@@ -38,9 +38,11 @@ vi.mock('react-native', () => ({
 }))
 
 const finishers = vi.hoisted(() => [] as Array<(cancelled: boolean) => void>)
+const failures = vi.hoisted(() => [] as Array<() => void>)
 vi.mock('lottie-react-native', () => ({
   default: (p: Record<string, unknown>) => {
     if (typeof p.onAnimationFinish === 'function') finishers.push(p.onAnimationFinish as never)
+    if (typeof p.onAnimationFailure === 'function') failures.push(p.onAnimationFailure as never)
     return createElement('i', {
       'data-testid': 'lottie',
       'data-autoplay': String(p.autoPlay),
@@ -59,6 +61,7 @@ beforeEach(() => {
   host = document.createElement('div')
   root = createRoot(host)
   finishers.length = 0
+  failures.length = 0
 })
 afterEach(() => {
   act(() => root.unmount())
@@ -162,5 +165,34 @@ describe('NLottie (앱)', () => {
     act(() => a11y.emit(true))
     expect(other.querySelector('[data-testid="lottie"]')?.getAttribute('data-progress')).toBe('1')
     act(() => otherRoot.unmount())
+  })
+
+  it('첫 응답보다 변경 이벤트가 먼저 오면 늦게 온 첫 응답(옛 값)으로 덮지 않는다', async () => {
+    render({ loop: true })
+    act(() => a11y.emit(true))
+    await settle(false)
+    expect(lottie()?.getAttribute('data-autoplay')).toBe('false')
+    expect(lottie()?.getAttribute('data-progress')).toBe('1')
+  })
+
+  it('first-frame · hide 는 줄이기로 정지 · 숨긴 뒤 설정을 다시 꺼도 그 모양 그대로', async () => {
+    render({ reducedMotion: 'first-frame' })
+    await settle(true)
+    act(() => a11y.emit(false))
+    expect(lottie()?.getAttribute('data-progress')).toBe('0')
+    act(() => root.unmount())
+    root = createRoot(host)
+    render({ reducedMotion: 'hide' })
+    await settle(true)
+    act(() => a11y.emit(false))
+    expect(host.innerHTML).toBe('')
+  })
+
+  it('로드 실패(onAnimationFailure)도 onComplete 로 풀어 준다', async () => {
+    const onComplete = vi.fn()
+    render({ onComplete })
+    await settle(false)
+    act(() => failures.at(-1)!())
+    expect(onComplete).toHaveBeenCalledTimes(1)
   })
 })

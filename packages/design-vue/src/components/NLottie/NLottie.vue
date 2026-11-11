@@ -13,7 +13,7 @@
       ref="playerRef"
       class="n-lottie__player"
       :src="src"
-      :autoplay="autoplay && !reduced"
+      :autoplay="autoplay && !still"
       :loop="loop"
     />
   </div>
@@ -63,7 +63,10 @@ function finish() {
 }
 
 const reduced = useReducedMotion()
-const hidden = computed(() => reduced.value && props.reducedMotion === 'hide')
+// 줄이기로 한 번 정지 · 숨김이 된 연출은 설정을 다시 꺼도 그 모양 그대로(처음부터 다시 돌지 않는다)
+const settled = ref(false)
+const still = computed(() => reduced.value || settled.value)
+const hidden = computed(() => still.value && props.reducedMotion === 'hide')
 
 // 플레이어(WASM 포함)는 마운트 뒤에만 불러온다 — 서버 번들 · 첫 화면 번들에 들어가지 않는다.
 const player = shallowRef<Component | null>(null)
@@ -79,10 +82,12 @@ onMounted(async () => {
 /**
  * 플레이어를 설정에 맞춘다. 줄이기 켬 = 재생하지 않고 정해진 프레임에 멈춘 뒤 끝난 것으로 친다.
  * 끔 = 아직 안 끝난 연출이면 autoplay 대로 재생(플레이어는 만들 때의 autoplay 만 읽는다).
+ * 한 번 정지한 뒤에는 설정을 다시 꺼도 정지 그대로다(still).
  */
 function sync(dl: DotLottie) {
   if (!dl.isLoaded) return
-  if (reduced.value) {
+  if (still.value) {
+    settled.value = true
     dl.pause()
     dl.setFrame(props.reducedMotion === 'first-frame' ? 0 : Math.max(dl.totalFrames - 1, 0))
     finish()
@@ -113,11 +118,13 @@ watch(
 )
 
 watch(hidden, (h) => {
-  if (h) finish()
+  if (!h) return
+  settled.value = true
+  finish()
 })
 
 // 보는 중에 설정이 바뀌면 따라간다
-watch(reduced, () => {
+watch(still, () => {
   const dl = playerRef.value?.getDotLottieInstance()
   if (dl) sync(dl)
 })
