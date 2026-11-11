@@ -1,6 +1,6 @@
 {
   "name": "@imjohnkoo/design-mobile",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Nomacom React Native component library",
   "license": "UNLICENSED",
   "repository": {
@@ -25,19 +25,33 @@
     "clean": "rm -rf dist",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@imjohnkoo/design-tokens": "workspace:*"
   },
   "peerDependencies": {
+    "@lottiefiles/dotlottie-react": ">=0.13.5",
+    "lottie-react-native": ">=7.3.0",
     "react": ">=19.0.0",
     "react-native": ">=0.83.0"
   },
   "devDependencies": {
-    "@types/react": "~19.2.10"
+    "@lottiefiles/dotlottie-react": "~0.13.5",
+    "@types/react": "~19.2.10",
+    "happy-dom": "^20.9.0",
+    "lottie-react-native": "~7.3.4",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "vitest": "^4.1.6"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
+  },
+  "peerDependenciesMeta": {
+    "@lottiefiles/dotlottie-react": {
+      "optional": true
+    }
   }
 }

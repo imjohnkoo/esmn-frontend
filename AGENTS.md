@@ -98,6 +98,8 @@ monorepo 공유 도메인/운영 룰은 `.claude/rules/` 아래에 분리:
 - `.claude/rules/deployment.md` — CodeDeploy 배포 흐름, path filter, 브랜치 전략 **((b) 확정 2026-09-02: `dev` 개발·DS publish / `prod` 배포 — 2026-10-04 `main` → `dev` 이름 변경, `main` 브랜치 없음)**
 - `.claude/rules/ssm-paths.md` — SSM Parameter Store 경로 + Secret naming 원칙 **(확정)**
 
+- `.claude/rules/motion.md` — 모션 값은 `motion.*` 토큰만 · Reanimated 설치 버전 문서(llms.txt) · 앱 애니메이션 스킬 `expo-animation` (DS-MOTION 2026-11-12)
+
 - `.claude/rules/design-system-publish.md` — `@imjohnkoo/design-*` GitHub Packages publish 흐름 + 버전 bump 정책 **(C-2 완료 — 0.4.0 첫 publish 성공 2026-08-18)**
 
 m8-frontend 에서 미포팅: `notion-workflow.md` (nomacom 개발 워크플로우는 Notion 비사용으로 결정).

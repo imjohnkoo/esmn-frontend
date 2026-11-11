@@ -36,6 +36,7 @@ export const NUXT_COMPONENTS = [
   'NProgress',
   'NSeparator',
   'NSpinner',
+  'NLottie',
 
   // Form
   'NFieldGroup',

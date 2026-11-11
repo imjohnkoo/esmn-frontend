@@ -45,6 +45,7 @@
   "dependencies": {
     "@imjohnkoo/design-tokens": "workspace:*",
     "@internationalized/date": "^3.11.0",
+    "@lottiefiles/dotlottie-vue": "~0.11.28",
     "reka-ui": "^2.8.2"
   },
   "peerDependencies": {
