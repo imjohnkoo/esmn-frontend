@@ -232,17 +232,21 @@ printf '%s\n' consent_log esim service_user service_user_identity service_user_o
 [[ "$(run schema)" == 0 ]] && ok || ng "schema(위키 표가 더 있음) — 같은 집합으로 보고 건너뜀"
 grep -q -- '-q -c' <<<"$(calls)" && ng "schema(위키 표가 더 있음) — 넣으면 안 됨" || ok
 
-# ── consent-sql — 위키 SQL 2개를 순서대로 컨테이너 안 psql 표준 입력으로 · 검증 쿼리 · 그 밖의 호출 0
+# ── consent-sql — 위키 SQL 3개(셋째 A1 앞에 master_order 최소 표)를 순서대로 컨테이너 안 psql 표준 입력으로 · 검증 쿼리 · 그 밖의 호출 0
 MIG="$FAKE/migrations"
 mkdir -p "$MIG"
 printf 'BEGIN;\nCREATE TABLE IF NOT EXISTS consent_log (x int);\nCOMMIT;\n' >"$MIG/2026-10-01-consent-log-migration.sql"
 printf 'BEGIN;\nALTER TABLE consent_log ALTER COLUMN x DROP NOT NULL;\nCOMMIT;\n' >"$MIG/2026-10-15-member-account-migration.sql"
+printf 'CREATE TABLE IF NOT EXISTS web_order (x int);\n' >"$MIG/2026-11-11-member-web-order-migration.sql"
 reset_state
 [[ "$(run consent-sql "$MIG")" == 0 ]] && ok || ng "consent-sql — exit 0"
 expect_calls "consent-sql" "docker port nomacom-walk-pg 5432/tcp
 $P -q
 $P -q
+$P -q -c <SQL>
+$P -q
 $P -At -c SELECT column_name, data_type, character_maximum_length, is_nullable FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'consent_log' ORDER BY ordinal_position"
+[[ "$(cat "$FAKE/applied.sql")" == "CREATE TABLE IF NOT EXISTS master_order (master_order_id BIGSERIAL PRIMARY KEY)" ]] && ok || ng "consent-sql — A1 앞 master_order 최소 표"
 reset_state
 [[ "$(run consent-sql)" == 2 ]] && ok || ng "consent-sql(폴더 없음) — exit 2"
 expect_calls "consent-sql(폴더 없음)" "docker port nomacom-walk-pg 5432/tcp"

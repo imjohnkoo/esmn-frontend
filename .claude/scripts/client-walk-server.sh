@@ -21,6 +21,10 @@
 #     읽는다 — 메인 클론 파일은 영향이 없어 보지 않는다(워크트리의 .env.local 심링크는 그 링크만 지운다 · 원본 금지).
 #  5. 토스 테스트 키 NUXT_PUBLIC_TOSS_CLIENT_KEY · NUXT_TOSS_SECRET_KEY 만 호출자 환경에서 받는다 — E2E-6 용(shell D-59 ·
 #     docs.tosspayments.com 문서 공개 테스트 키 — 토스 테스트 환경은 출금 없음). test_ 로 시작하지 않는 값(live_*)은 거부.
+#  6. 회원 walk(member-client-auth E2E-0) — WALK_MEMBER=1 이고 WALK_MAIL_PORT=<목 메일 서버 포트>(dev 만)일 때만 회원 플래그를 켠다.
+#     넣는 값은 **전부 고정 테스트 값** — PII 키 = member-core §4.3 테스트 벡터 키(배포 키 아님) · 메일 위임 = http://127.0.0.1:<목 포트>
+#     (.claude/scripts/walk-mail-mock.mjs — 받은 본문을 스크래치 파일에만 쓴다 · 실제 발송 0) · 내부 비밀 · 운영 조치 비밀 = walk 고정 글자.
+#     호출자 환경의 PII_* · ESIM_MANAGER_INTERNAL_* · NOMACOM_MEMBER_OPS_SECRET 는 여전히 넘기지 않는다(취소철회도 목 서버로 가서 404 → 502).
 #
 # 사용:  bash .claude/scripts/client-walk-server.sh dev  <port> [합성 DB url]   # nuxt dev(dev 는 DB ssl:false → 합성 DB 가능)
 #        bash .claude/scripts/client-walk-server.sh prod <port>                 # .output 빌드 · DB 없음(헤더 · noindex 확인용)
@@ -80,6 +84,20 @@ for key in NUXT_PUBLIC_TOSS_CLIENT_KEY NUXT_TOSS_SECRET_KEY; do
     ALLOW+=("$key=${!key}")
   fi
 done
+
+if [[ -n "${WALK_MEMBER:-}" ]]; then
+  [[ "$MODE" == dev ]] || refuse "회원 walk(WALK_MEMBER)는 dev 모드만"
+  [[ "${WALK_MAIL_PORT:-}" =~ ^[1-9][0-9]{3,4}$ && "$WALK_MAIL_PORT" != "$PORT" ]] || refuse "WALK_MAIL_PORT 는 목 메일 서버 포트(숫자 4~5자리 · walk 포트와 다르게)"
+  ALLOW+=(
+    "NUXT_AUTH_EMAIL_ENABLED=true"
+    "NUXT_AUTH_LINK_ORIGIN=http://127.0.0.1:$PORT"
+    "PII_HMAC_KEY=AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+    "PII_ENCRYPTION_KEY=ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8="
+    "ESIM_MANAGER_INTERNAL_ENDPOINT=http://127.0.0.1:$WALK_MAIL_PORT"
+    "ESIM_MANAGER_INTERNAL_SECRET=walk-internal-secret"
+    "NOMACOM_MEMBER_OPS_SECRET=walk-ops-secret"
+  )
+fi
 
 if [[ -n "${WALK_DRY_RUN:-}" ]]; then
   printf '%s\n' "${ALLOW[@]}" | sed -E 's/^(NUXT_PUBLIC_TOSS_CLIENT_KEY|NUXT_TOSS_SECRET_KEY)=.*/\1=***/'

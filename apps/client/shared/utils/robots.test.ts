@@ -60,7 +60,7 @@ describe('buildRobotsRouteRules', () => {
     expect(Object.keys(rules)).toHaveLength(NOINDEX_ROUTES.length)
   })
 
-  it('4-step 경로만 no-store — 나머지 noindex 경로는 캐시 헤더를 건드리지 않는다', () => {
+  it('4-step · 회원 경로만 no-store — 나머지 noindex 경로는 캐시 헤더를 건드리지 않는다', () => {
     for (const pattern of NOINDEX_ROUTES) {
       const expected = (NO_STORE_ROUTES as readonly string[]).includes(pattern)
         ? 'no-store'
@@ -76,8 +76,15 @@ describe('buildRobotsRouteRules', () => {
         'Cache-Control': 'no-store',
       })
     }
-    for (const pattern of ['/my', '/my/**', '/my-esim', '/checkout-preview', '/search']) {
+    for (const pattern of ['/my-esim', '/checkout-preview', '/search']) {
       expect(rules[pattern]?.headers).toEqual({ 'X-Robots-Tag': 'noindex, nofollow' })
+    }
+    // 회원 화면 — 로그인 상태를 SSR 한다(member-client-auth F-17 · K-A7 «회원 데이터 SSR 경로 no-store»)
+    for (const pattern of ['/my', '/my/**', '/login', '/signup', '/password/**']) {
+      expect(rules[pattern]?.headers).toEqual({
+        'X-Robots-Tag': 'noindex, nofollow',
+        'Cache-Control': 'no-store',
+      })
     }
   })
 
@@ -89,7 +96,7 @@ describe('buildRobotsRouteRules', () => {
 })
 
 describe('robots.txt', () => {
-  it('Disallow 는 접두가 겹치지 않는 7줄', () => {
+  it('Disallow 는 접두가 겹치지 않는 10줄', () => {
     expect(robotsDisallowPrefixes()).toEqual([
       '/verify/',
       '/details/',
@@ -98,6 +105,9 @@ describe('robots.txt', () => {
       '/my',
       '/checkout-preview',
       '/search',
+      '/login',
+      '/signup',
+      '/password/',
     ])
   })
 
@@ -114,6 +124,10 @@ describe('robots.txt', () => {
       '/checkout-preview',
       '/checkout-preview/success',
       '/search',
+      '/login',
+      '/signup',
+      '/password/reset',
+      '/password/reset/new',
     ]
     for (const path of samples) {
       expect(prefixes.some((prefix) => path.startsWith(prefix))).toBe(true)
@@ -123,7 +137,7 @@ describe('robots.txt', () => {
   it('본문 형식', () => {
     const txt = buildRobotsTxt()
     expect(txt).toContain('User-agent: *\n')
-    expect(txt.match(/^Disallow: /gm)).toHaveLength(7)
+    expect(txt.match(/^Disallow: /gm)).toHaveLength(10)
     expect(txt).toContain('\nSitemap: https://esimmany.com/sitemap.xml\n')
     expect(txt.endsWith('\n')).toBe(true)
   })

@@ -96,6 +96,17 @@ out="$(NUXT_PUBLIC_TOSS_CLIENT_KEY=test_ck_x WALK_DRY_RUN=1 bash "$S" prod 3099 
 has "$out" 'NUXT_PUBLIC_TOSS_CLIENT_KEY=***' "토스 클라이언트 키 통로(마스킹)"
 lacks "$out" 'test_ck_x' "토스 키 값 노출(dry-run)"
 lacks "$out" 'NUXT_TOSS_SECRET_KEY' "안 준 키가 생김"
+# 회원 walk(6) — 고정 테스트 값만 · 호출자 env 의 PII · 내부 비밀은 넘기지 않는다 · dev 만 · 메일 포트 필수
+out="$(PII_HMAC_KEY=REAL ESIM_MANAGER_INTERNAL_SECRET=REAL WALK_MEMBER=1 WALK_MAIL_PORT=3098 WALK_DRY_RUN=1 bash "$S" dev 3099 2>&1)" || ng "회원 walk dry-run 실패"
+has "$out" 'NUXT_AUTH_EMAIL_ENABLED=true' "회원 플래그"
+has "$out" 'ESIM_MANAGER_INTERNAL_ENDPOINT=http://127.0.0.1:3098' "목 메일 루프백"
+has "$out" 'PII_HMAC_KEY=AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=' "테스트 벡터 키"
+lacks "$out" 'REAL' "호출자 env 값이 새어 들어감"
+out="$(WALK_DRY_RUN=1 bash "$S" dev 3099 2>&1)" || ng "기본 dry-run 실패"
+lacks "$out" 'NUXT_AUTH_EMAIL_ENABLED' "WALK_MEMBER 없이 회원 플래그가 켜짐"
+lacks "$out" 'PII_' "WALK_MEMBER 없이 PII 키"
+if WALK_MEMBER=1 WALK_MAIL_PORT=3098 WALK_DRY_RUN=1 bash "$S" prod 3099 >/dev/null 2>&1; then ng "회원 walk prod 모드 허용"; else ok; fi
+if WALK_MEMBER=1 WALK_DRY_RUN=1 bash "$S" dev 3099 >/dev/null 2>&1; then ng "메일 포트 없이 회원 walk 허용"; else ok; fi
 out="$(NUXT_TOSS_SECRET_KEY=test_sk_x WALK_DRY_RUN=1 bash "$S" prod 3099 2>&1)" || ng "토스 시크릿 dry-run 실패"
 has "$out" 'NUXT_TOSS_SECRET_KEY=***' "토스 시크릿 키 통로(마스킹)"
 lacks "$out" 'test_sk_x' "토스 시크릿 값 노출(dry-run)"

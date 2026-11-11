@@ -44,8 +44,12 @@ psql_in() {
 isready_in() { docker exec "$NAME" env -i PATH=/usr/local/bin:/usr/bin:/bin pg_isready -h 127.0.0.1 -p 5432 -U walk -d walk; }
 NODE="$(command -v node || true)"
 # 위키 마이그레이션 SQL 이 만드는 표 — schema(Drizzle export)는 만들지 않고 표 집합 대조에서도 뺀다(consent-sql 이 만든다)
-WIKI_TABLES='consent_log service_user service_user_identity service_user_order_link service_user_session'
-CONSENT_SQL_FILES='2026-10-01-consent-log-migration.sql 2026-10-15-member-account-migration.sql'
+# + MEMBER A1(2026-11-11) web_order · service_user_challenge · 그 FK 대상 master_order(로컬은 최소 표 — 아래 MASTER_ORDER_STUB)
+WIKI_TABLES='consent_log service_user service_user_identity service_user_order_link service_user_session service_user_challenge web_order master_order'
+A1_SQL='2026-11-11-member-web-order-migration.sql'
+CONSENT_SQL_FILES="2026-10-01-consent-log-migration.sql 2026-10-15-member-account-migration.sql $A1_SQL"
+# A1 SQL 의 web_order FK 대상 — prod 는 backend L 트랙 표(채널 · 스토어 · 연락처 열)지만 로컬 walk 는 PK 하나면 된다(client 는 이 표를 읽지도 쓰지도 않는다 — member-client-auth)
+MASTER_ORDER_STUB='CREATE TABLE IF NOT EXISTS master_order (master_order_id BIGSERIAL PRIMARY KEY)'
 
 # docker 대상 = 이 기계의 데몬(unix 소켓)만 — 원격 데몬이면 컨테이너 · 가짜 행이 남의 기계에 생긴다
 check_docker() {
@@ -163,8 +167,11 @@ SQL
       [[ -f "$dir/$f" ]] || refuse "$dir/$f 가 없다"
       ! grep -qE '^[[:space:]]*\\' "$dir/$f" || refuse "$f 에 psql 메타 명령(\\ 줄)이 있다"
     done
-    # 순서대로 — 둘째 파일의 가드 ①이 consent_log 선행을 검사한다 · 파일마다 BEGIN/COMMIT · IF NOT EXISTS 라 다시 돌려도 무해
-    for f in $CONSENT_SQL_FILES; do psql_in -q <"$dir/$f" >/dev/null; done
+    # 순서대로 — 둘째 파일의 가드 ①이 consent_log 선행을, 셋째(A1)는 service_user · esim_issuance(schema 가 만든다) · master_order(최소 표)를 전제한다 · 파일마다 BEGIN/COMMIT · IF NOT EXISTS 라 다시 돌려도 무해
+    for f in $CONSENT_SQL_FILES; do
+      [[ "$f" == "$A1_SQL" ]] && psql_in -q -c "$MASTER_ORDER_STUB" >/dev/null
+      psql_in -q <"$dir/$f" >/dev/null
+    done
     # SQL 파일 검증 쿼리 1 — 14컬럼(이름 · 형 · 길이 · NULL)
     psql_in -At -c "SELECT column_name, data_type, character_maximum_length, is_nullable FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'consent_log' ORDER BY ordinal_position"
     ;;

@@ -24,7 +24,8 @@ export default defineConfig({
       'app/**/*.{test,spec}.ts',
       'shared/**/*.{test,spec}.ts',
     ],
-    exclude: ['**/node_modules/**', '**/.nuxt/**', '**/.output/**'],
+    // *.db.test.ts = 로컬 전용 DB 통합 테스트(vitest.db.config.ts · test:db) — CI 에는 DB 가 없다
+    exclude: ['**/node_modules/**', '**/.nuxt/**', '**/.output/**', '**/*.db.test.ts'],
     // client 는 server · app · shared 순수 로직 테스트가 있다(2026-09-23 W1-3 873건 — 컴포넌트 8종 · 파일 9 포함).
     // 0건이 되면 «테스트가 사라진 것» 이므로 실패시킨다.
     passWithNoTests: false,

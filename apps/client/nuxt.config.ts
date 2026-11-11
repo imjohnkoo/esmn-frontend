@@ -45,6 +45,17 @@ export default defineNuxtConfig({
     // 토스 시크릿 키 — 서버 전용(confirm 라우트). SSM /nomacom/client/NUXT_TOSS_SECRET_KEY(SecureString · after_deploy.sh 가
     // --with-decryption 으로 읽는다) → env NUXT_TOSS_SECRET_KEY 가 런타임에 덮는다. 심사 기간 test_gsk_* · 계약 뒤 live_gsk_*(코드 0)
     tossSecretKey: '',
+    // 회원 로그인 수단 플래그(member-client-auth F-15 · D-1 · D-2) — 서버 전용 · 기본 전부 off(값 없음 = 꺼짐).
+    // 켜기 = SSM /nomacom/client/NUXT_AUTH_EMAIL_ENABLED=true + 재배포(after_deploy.sh 가 env 로 굽는다). 화면은 GET /api/v1/auth/session 으로만 판정 —
+    // 공개 runtimeConfig 에 두지 않는다(프리렌더 페이지는 빌드 값으로 굳는다). google · naver · kakao 는 키만(A2-b)
+    // linkOrigin = 재설정 메일 링크의 출처(요청 Host 를 믿지 않는다) — 로컬 walk 는 NUXT_AUTH_LINK_ORIGIN 으로 자기 포트
+    auth: {
+      emailEnabled: false,
+      googleEnabled: false,
+      naverEnabled: false,
+      kakaoEnabled: false,
+      linkOrigin: 'https://esimmany.com',
+    },
     public: {
       apiBase: '/api/v1',
       // 게스트 발급 호스트(K3) — 판매 사이트의 주문번호 조회가 이 호스트의 /verify/{주문번호} 로 보낸다.

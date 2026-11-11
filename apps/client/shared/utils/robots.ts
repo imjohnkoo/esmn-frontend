@@ -26,10 +26,24 @@ export const NOINDEX_ROUTES = [
   '/checkout-preview/**',
   // 국가 검색 — 입력으로 그리는 얇은 페이지(catalog spec D-12). 국가 · 상품 페이지가 색인 대상이다
   '/search',
+  // 회원 화면(member-client-auth F-17) — 로그인 · 가입 · 재설정. 마이(/my · /my/**)는 위 줄
+  '/login',
+  '/signup',
+  '/password/**',
 ] as const
 
-/** noindex 중에서 응답 캐시까지 금지할 경로 — 고객 주문 정보를 렌더하는 4-step */
-export const NO_STORE_ROUTES = ['/verify/**', '/details/**', '/select-date/**', '/view/**'] as const
+/** noindex 중에서 응답 캐시까지 금지할 경로 — 고객 주문 정보를 렌더하는 4-step + 로그인 상태를 SSR 하는 회원 화면(member-client-auth F-17 · K-A7) */
+export const NO_STORE_ROUTES = [
+  '/verify/**',
+  '/details/**',
+  '/select-date/**',
+  '/view/**',
+  '/my',
+  '/my/**',
+  '/login',
+  '/signup',
+  '/password/**',
+] as const
 
 const ROBOTS_VALUE = 'noindex, nofollow'
 

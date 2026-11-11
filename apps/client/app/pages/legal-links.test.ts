@@ -616,7 +616,7 @@ describe('발급기 법정 링크(F-20)', () => {
   })
 
   it('/my 고객센터 — 새 창으로 여는 링크(http)에는 낭독기 «(새 창)» 이 같은 조건으로 붙는다', () => {
-    const tpl = parse(read('./my.vue')).descriptor.template!.ast! as unknown as TNode
+    const tpl = parse(read('./my/index.vue')).descriptor.template!.ast! as unknown as TNode
     const a = find(tpl, (n) => n.tag === 'a' && dir(n, 'v-if') === 'channel.href')!
     expect(dir(a, ':target')).toBe("channel.href.startsWith('http') ? '_blank' : undefined")
     const sr = find(a, (n) => cls(n) === 'sr-only')!
@@ -769,15 +769,19 @@ describe('방침 9장① · 1장 발급 행 = 흐름 쿠키 실제(D-31)', () =>
       g.useCookie = before
     }
   })
-  it('쿠키를 만드는 길은 흐름 쿠키 하나 — 앱 · 서버 · shared · modules 코드(.vue · .ts · .tsx · .js · .mjs · .cjs) · nuxt.config 의 useCookie · document.cookie · setCookie · Set-Cookie 는 useFlowSession 에만', () => {
+  it('쿠키를 만드는 길은 둘 — 흐름 쿠키(useFlowSession) + 로그인 쿠키(server/utils/auth-session.ts · 방침 9장① «회원 서비스 개시일부터» · member-client-auth F-3) — 앱 · 서버 · shared · modules 코드(.vue · .ts · .tsx · .js · .mjs · .cjs) · nuxt.config 의 useCookie · document.cookie · setCookie · Set-Cookie 는 그 둘에만(테스트 전용 server/testing 제외)', () => {
     const SHARED = fileURLToPath(new URL('../../shared', import.meta.url))
     const CONFIG = fileURLToPath(new URL('../../nuxt.config.ts', import.meta.url))
     const MODULES = fileURLToPath(new URL('../../modules', import.meta.url))
     const scripts = (dir: string) =>
       walk(dir).filter((f) => /\.(vue|ts|tsx|js|mjs|cjs)$/.test(f) && !/\.(test|spec)\.ts$/.test(f))
-    const makers = [...scripts(APP), ...scripts(SERVER), ...scripts(SHARED), ...scripts(MODULES), CONFIG].filter((f) =>
+    const TESTING = fileURLToPath(new URL('../../server/testing', import.meta.url))
+    const ROOT = fileURLToPath(new URL('../..', import.meta.url))
+    const makers = [...scripts(APP), ...scripts(SERVER).filter((f) => !f.startsWith(TESTING)), ...scripts(SHARED), ...scripts(MODULES), CONFIG].filter((f) =>
       /useCookie|document\.cookie|cookieStore|setCookie\b|set-cookie/i.test(codeOnly(readFileSync(f, 'utf8'))),
     )
-    expect(makers.map((f) => f.slice(APP.length))).toEqual(['composables/useFlowSession.ts'])
+    expect(makers.map((f) => f.slice(ROOT.length)).sort()).toEqual(['app/composables/useFlowSession.ts', 'server/utils/auth-session.ts'])
+    // 로그인 쿠키는 방침 9장①이 «회원 서비스 개시일부터» 로 이미 알린다 — 문장이 빠지면 로그인 쿠키 코드도 함께 다시 본다
+    expect(PRIVACY_DOC.markdown).toMatch(/로그인 상태 유지를 위한 쿠키는 회원 서비스 개시일부터 사용합니다/)
   })
 })
