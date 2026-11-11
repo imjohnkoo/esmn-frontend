@@ -63,7 +63,8 @@ function finish() {
 }
 
 const reduced = useReducedMotion()
-// 줄이기로 한 번 정지 · 숨김이 된 연출은 설정을 다시 꺼도 그 모양 그대로(처음부터 다시 돌지 않는다)
+// 줄이기로 한 번 정지 · 숨김이 된 연출은 설정을 다시 꺼도 그 모양 그대로(처음부터 다시 돌지 않는다).
+// loop 연출(로딩 등)은 끝이 없으니 설정을 끄면 다시 돈다.
 const settled = ref(false)
 const still = computed(() => reduced.value || settled.value)
 const hidden = computed(() => still.value && props.reducedMotion === 'hide')
@@ -87,7 +88,7 @@ onMounted(async () => {
 function sync(dl: DotLottie) {
   if (!dl.isLoaded) return
   if (still.value) {
-    settled.value = true
+    if (!props.loop) settled.value = true
     dl.pause()
     dl.setFrame(props.reducedMotion === 'first-frame' ? 0 : Math.max(dl.totalFrames - 1, 0))
     finish()
@@ -119,7 +120,7 @@ watch(
 
 watch(hidden, (h) => {
   if (!h) return
-  settled.value = true
+  if (!props.loop) settled.value = true
   finish()
 })
 

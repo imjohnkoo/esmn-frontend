@@ -285,6 +285,20 @@ describe('NLottie', () => {
     expect(w.emitted('complete')).toHaveLength(1)
   })
 
+  it('loop 연출은 줄이기를 켰다 끄면 다시 돈다(끝이 없으니 정지로 남기지 않는다)', async () => {
+    const mm = installMatchMedia(false)
+    await mountLottie({ loop: true })
+    const dl = players.at(-1)!
+    dl.fire('load')
+    mm.set(true)
+    await nextTick()
+    expect(dl.pause).toHaveBeenCalled()
+    dl.isPlaying = false
+    mm.set(false)
+    await nextTick()
+    expect(dl.play).toHaveBeenCalledTimes(1)
+  })
+
   it('로드 전에 줄이기를 끄면 load 때 autoplay 대로 재생한다', async () => {
     const mm = installMatchMedia(true)
     await mountLottie()

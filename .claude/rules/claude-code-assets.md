@@ -90,3 +90,4 @@
 - `.claude/rules/deployment.md` — CodeDeploy 배포 흐름 + path filter
 - `.claude/rules/ssm-paths.md` — SSM 경로 + Secret naming
 - `.claude/rules/design-system-publish.md` — GitHub Packages publish + 버전 bump
+- `.claude/rules/motion.md` — 모션 토큰만 · Reanimated llms.txt

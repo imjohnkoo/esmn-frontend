@@ -195,4 +195,26 @@ describe('NLottie (앱)', () => {
     act(() => failures.at(-1)!())
     expect(onComplete).toHaveBeenCalledTimes(1)
   })
+
+  it('loop 연출은 줄이기를 켰다 끄면 다시 돈다', async () => {
+    render({ loop: true })
+    await settle(false)
+    act(() => a11y.emit(true))
+    expect(lottie()?.getAttribute('data-progress')).toBe('1')
+    act(() => a11y.emit(false))
+    expect(lottie()?.getAttribute('data-autoplay')).toBe('true')
+    expect(lottie()?.getAttribute('data-progress')).toBeNull()
+  })
+
+  it('구독이 끝난 뒤 늦게 온 첫 응답은 버린다 — 다음 부품은 자기 응답 전까지 그리지 않는다', async () => {
+    render()
+    const stale = a11y.resolve!
+    act(() => root.unmount())
+    await act(async () => stale(false))
+    root = createRoot(host)
+    render()
+    expect(lottie()).toBeNull()
+    await settle(true)
+    expect(lottie()?.getAttribute('data-autoplay')).toBe('false')
+  })
 })

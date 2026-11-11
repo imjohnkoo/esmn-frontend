@@ -7,6 +7,7 @@ import type { LottieViewProps } from 'lottie-react-native'
 // 여러 개를 달면 한쪽 remove 가 다른 쪽을 지운다.
 let current: boolean | null = null
 let heardEvent = false
+let generation = 0
 const listeners = new Set<() => void>()
 let sub: { remove: () => void } | null = null
 
@@ -19,14 +20,15 @@ function set(v: boolean) {
 function subscribe(listener: () => void) {
   listeners.add(listener)
   if (!sub) {
+    const gen = ++generation
     heardEvent = false
     sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (v) => {
       heardEvent = true
       set(v)
     })
-    // 첫 응답이 변경 이벤트보다 늦게 오면 옛 값이다 — 덮어쓰지 않는다
+    // 첫 응답이 변경 이벤트보다 늦게 오거나 이미 끝난 구독의 것이면 옛 값이다 — 덮어쓰지 않는다
     const initial = (v: boolean) => {
-      if (!heardEvent) set(v)
+      if (!heardEvent && gen === generation && sub) set(v)
     }
     AccessibilityInfo.isReduceMotionEnabled().then(initial, () => initial(false))
   }
@@ -88,7 +90,7 @@ export function useLottieState({ autoplay = true, loop = false, onComplete }: NL
   }
   useEffect(() => {
     if (reduced !== true) return
-    setSettled(true)
+    if (!loop) setSettled(true) // loop 연출(로딩 등)은 끝이 없으니 설정을 끄면 다시 돈다
     finish()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 설정이 켜질 때만
   }, [reduced])
