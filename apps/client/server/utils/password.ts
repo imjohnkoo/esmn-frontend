@@ -1,13 +1,14 @@
-import { Algorithm, hash, verify } from '@node-rs/argon2'
+import { hash, verify, type Options } from '@node-rs/argon2'
 
 // 비밀번호 — Argon2id(OWASP 최소 m=19MiB · t=2 · p=1) PHC 문자열 · 8 ~ 128자 · 조합 규칙 없음(spec D-7 · K-A3)
 
-const PARAMS = {
-  algorithm: Algorithm.Argon2id,
+// algorithm 2 = Argon2id — const enum 은 isolatedModules 에서 값으로 import 할 수 없다(PHC 접두 테스트가 고정)
+const PARAMS: Options = {
+  algorithm: 2,
   memoryCost: 19456,
   timeCost: 2,
   parallelism: 1,
-} as const
+}
 
 export const PASSWORD_MIN = 8
 export const PASSWORD_MAX = 128

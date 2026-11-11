@@ -8,11 +8,10 @@
 /** Client 식별 — middleware 에서 헤더(X-Client-Platform) 또는 User-Agent 로 추정 */
 export type ClientPlatform = 'web' | 'mobile' | 'unknown'
 
-/** 인증 컨텍스트 — middleware/auth.ts 가 event.context.user 에 채움. 본 PR 은 항상 null */
+/** 인증 컨텍스트 — server/middleware/auth.ts 가 event.context.auth 에 채운다(member-client-auth F-3). PII 를 싣지 않는다 */
 export interface AuthUser {
-  id: number
-  name: string
-  phone: string
+  serviceUserId: number
+  sessionId: number
 }
 
 export interface AuthContext {
