@@ -29,6 +29,7 @@
     "@heroicons/vue": "^2.2.0",
     "@imjohnkoo/design-tokens": "workspace:*",
     "@imjohnkoo/design-vue": "workspace:*",
+    "@node-rs/argon2": "^2.2.2",
     "@pinia/nuxt": "^0.11.3",
     "@tosspayments/tosspayments-sdk": "^2.10.0",
     "@vueuse/nuxt": "^14.1.0",
