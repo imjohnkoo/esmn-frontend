@@ -21,6 +21,10 @@ describe('safeNext', () => {
     '/\n/evil.example',
     '/%09/evil.example',
     '/%5Cevil.example',
+    '/..//evil.example',
+    '/.//evil.example',
+    '/a/../..//evil.example',
+    '/%2E%2E//evil.example',
     '/%E0%A4%A', // 깨진 퍼센트 인코딩
     '',
     null,

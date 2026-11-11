@@ -11,7 +11,9 @@ export function safeNext(raw: unknown, fallback = '/my', origin = SITE_ORIGIN): 
     if (BAD.test(decodeURIComponent(raw))) return fallback
     const base = new URL(origin)
     const url = new URL(raw, base)
-    return url.origin === base.origin ? `${url.pathname}${url.search}${url.hash}` : fallback
+    const out = `${url.pathname}${url.search}${url.hash}`
+    // 점 구간 정규화(`/..//evil.example` → `//evil.example`)가 프로토콜 상대 주소를 만들 수 있다 — 결과도 `//` 로 시작하면 거부
+    return url.origin === base.origin && !out.startsWith('//') ? out : fallback
   } catch {
     return fallback
   }
