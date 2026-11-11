@@ -4,7 +4,7 @@ import { Socket } from 'node:net'
 import { createEvent, type H3Event } from 'h3'
 
 export function makeEvent(
-  opts: { method?: string; url?: string; headers?: Record<string, string> } = {},
+  opts: { method?: string; url?: string; headers?: Record<string, string>; body?: unknown } = {},
 ): H3Event {
   const req = new IncomingMessage(new Socket())
   req.method = opts.method ?? 'GET'
@@ -12,6 +12,13 @@ export function makeEvent(
   req.headers = Object.fromEntries(
     Object.entries(opts.headers ?? {}).map(([k, v]) => [k.toLowerCase(), v]),
   )
+  if (opts.body !== undefined) {
+    const raw = JSON.stringify(opts.body)
+    req.headers['content-type'] ??= 'application/json'
+    req.headers['content-length'] = String(Buffer.byteLength(raw))
+    req.push(raw)
+    req.push(null)
+  }
   return createEvent(req, new ServerResponse(req))
 }
 
