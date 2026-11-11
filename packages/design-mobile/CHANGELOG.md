@@ -7,8 +7,9 @@
 ### Added
 
 - `theme.motion` — design-tokens `motion.json` 숫자 그대로(`duration` ms · `easing` cubic-bezier 4숫자 → `Easing.bezier(...)` · `spring` → Reanimated `withSpring` · `stagger` ms). 웹 `--n-motion-*` 와 같은 값.
-- `NLottie` — design-vue 와 같은 규칙(`source` · `autoplay` · `loop` · `size` · `reducedMotion` · `label` · `onComplete`). `lottie-react-native` 위 · OS «동작 줄이기»(`AccessibilityInfo` + `reduceMotionChanged`)면 `progress` 0/1 정지 프레임 · hide 는 null · 정지 즉시 `onComplete`. 화면 밖 일시정지는 없음(RN 가시성 API 부재 — loop 연출을 스크롤 목록에 넣을 때 추가).
-- `useReducedMotion()` — 위 판정 훅.
+- `NLottie` — design-vue 와 같은 규칙(`source` · `autoplay` · `loop` · `size` · `reducedMotion` · `label` · `onComplete`). `lottie-react-native` 위 · OS «동작 줄이기»면 `progress` 0/1 정지 프레임 · hide 는 null. 설정을 아직 모르는 첫 응답 전에는 플레이어를 그리지 않는다(켬 기기에서 첫 프레임이 재생되지 않게). `onComplete` 는 마운트당 1회(loop · autoplay=false 는 없음) — 줄이기 켬이면 정지 즉시. 끝난 연출은 설정을 다시 꺼도 처음부터 돌지 않는다. 화면 밖 일시정지는 없음(RN 가시성 API 부재 — loop 연출을 스크롤 목록에 넣을 때 추가). `dev:web` 미리 보기에서는 lottie-react-native 웹 구현이 `progress` 를 무시해 정지 프레임이 첫 프레임으로 보인다(네이티브 무관).
+- `useReducedMotion()` — `AccessibilityInfo` 구독 하나를 앱 전체가 공유(`useSyncExternalStore`) · `null` = 아직 모름.
+- 테스트 러너 — vitest + happy-dom(`src/__tests__/NLottie.test.tsx` — react-native · lottie-react-native 대역).
 - peer `lottie-react-native` >=7.3.0(Expo SDK 55 = ~7.3.4 · Expo Go 포함).
 
 ## 0.4.0 — 2026-11-12

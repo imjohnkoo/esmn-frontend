@@ -25,7 +25,8 @@
     "clean": "rm -rf dist",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@imjohnkoo/design-tokens": "workspace:*"
@@ -37,7 +38,11 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.10",
-    "lottie-react-native": "~7.3.4"
+    "happy-dom": "^20.9.0",
+    "lottie-react-native": "~7.3.4",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "vitest": "^4.1.6"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

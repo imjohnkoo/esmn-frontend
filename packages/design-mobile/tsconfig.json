@@ -4,8 +4,18 @@
     "strict": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["react", "react-native"]
+    "types": [
+      "react",
+      "react-native"
+    ]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/__tests__"
+  ]
 }

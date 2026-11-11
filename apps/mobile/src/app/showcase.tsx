@@ -197,7 +197,7 @@ export default function Showcase() {
             onComplete={() => setCompleted((n) => n + 1)}
           />
           <View style={{ gap: 8 }}>
-            <Text style={styles.sectionMeta}>동작 줄이기: {reduced ? '켬 — 정지 프레임' : '끔 — 재생'}</Text>
+            <Text style={styles.sectionMeta}>동작 줄이기: {reduced === null ? '확인 중' : reduced ? '켬 — 정지 프레임' : '끔 — 재생'}</Text>
             <Text style={styles.sectionMeta}>complete {completed}회</Text>
             <NButton size="sm" variant="outline" onPress={() => setReplay((n) => n + 1)}>다시 재생</NButton>
           </View>

@@ -27,6 +27,7 @@ import { useReducedMotion } from '../../composables/useReducedMotion'
 /**
  * 일러스트 연출 전용(결제 · 발급 완료 · 축하 · 온보딩 · 로딩 일러스트).
  * UI 상태(버튼 · 토글 · 진행 막대)에는 쓰지 않는다.
+ * 로딩 일러스트로 쓸 때 줄이기 켬 처리(정지 아이콘 + 문구 + aria-busy)는 감싸는 화면 몫이다.
  */
 export interface NLottieProps {
   /** Lottie `.json` URL */
@@ -49,8 +50,17 @@ const props = withDefaults(defineProps<NLottieProps>(), {
   label: undefined,
 })
 
-/** 한 번 재생이 끝났을 때(loop=false). 줄이기 켬이면 정지 프레임을 보여 준 즉시 */
+/**
+ * 한 번 재생이 끝났을 때(loop=false · autoplay) — 마운트당 한 번만.
+ * 줄이기 켬(정지 프레임 · hide) · 플레이어 로드 실패에도 «끝난 상태» 로 바로 낸다 — 기다리는 호출자가 멈추지 않게.
+ */
 const emit = defineEmits<{ complete: [] }>()
+let finished = false
+function finish() {
+  if (finished || props.loop || !props.autoplay) return
+  finished = true
+  emit('complete')
+}
 
 const reduced = useReducedMotion()
 const hidden = computed(() => reduced.value && props.reducedMotion === 'hide')
@@ -59,14 +69,26 @@ const hidden = computed(() => reduced.value && props.reducedMotion === 'hide')
 const player = shallowRef<Component | null>(null)
 const playerRef = ref<DotLottieVueInstance | null>(null)
 onMounted(async () => {
-  player.value = (await import('@lottiefiles/dotlottie-vue')).DotLottieVue
+  try {
+    player.value = (await import('@lottiefiles/dotlottie-vue')).DotLottieVue
+  } catch {
+    finish() // 청크 로드 실패 — 빈 자리로 두고 기다리는 쪽만 풀어 준다
+  }
 })
 
-/** 줄이기 켬이면 재생하지 않고 정해진 프레임에 멈춘다 */
-function freeze(dl: DotLottie) {
-  if (!reduced.value || !dl.isLoaded) return
-  dl.pause()
-  dl.setFrame(props.reducedMotion === 'first-frame' ? 0 : Math.max(dl.totalFrames - 1, 0))
+/**
+ * 플레이어를 설정에 맞춘다. 줄이기 켬 = 재생하지 않고 정해진 프레임에 멈춘 뒤 끝난 것으로 친다.
+ * 끔 = 아직 안 끝난 연출이면 autoplay 대로 재생(플레이어는 만들 때의 autoplay 만 읽는다).
+ */
+function sync(dl: DotLottie) {
+  if (!dl.isLoaded) return
+  if (reduced.value) {
+    dl.pause()
+    dl.setFrame(props.reducedMotion === 'first-frame' ? 0 : Math.max(dl.totalFrames - 1, 0))
+    finish()
+  } else if (props.autoplay && !finished && !dl.isPlaying) {
+    dl.play()
+  }
 }
 
 // 템플릿 ref 는 자식 onMounted(인스턴스 생성) 뒤에 잡히도록 post flush
@@ -75,33 +97,29 @@ watch(
   (p, _, onCleanup) => {
     const dl = p?.getDotLottieInstance()
     if (!dl) return
-    const onLoad = () => {
-      freeze(dl)
-      // 줄이기 켬이면 재생이 없으니 «끝난 상태» 를 바로 알린다 — complete 를 기다리는 호출자가 멈추지 않게
-      if (reduced.value && !props.loop) emit('complete')
-    }
-    const onComplete = () => emit('complete')
+    const onLoad = () => sync(dl)
+    // loadError — WASM(CDN) · JSON 을 못 받으면 load · complete 가 오지 않는다
     dl.addEventListener('load', onLoad)
-    dl.addEventListener('complete', onComplete)
+    dl.addEventListener('complete', finish)
+    dl.addEventListener('loadError', finish)
     onCleanup(() => {
       dl.removeEventListener('load', onLoad)
-      dl.removeEventListener('complete', onComplete)
+      dl.removeEventListener('complete', finish)
+      dl.removeEventListener('loadError', finish)
     })
-    freeze(dl)
+    sync(dl)
   },
   { flush: 'post' },
 )
 
 watch(hidden, (h) => {
-  if (h && !props.loop) emit('complete')
+  if (h) finish()
 })
 
-// 재생 중에 설정이 바뀌면 따라간다 — 끔으로 돌아오면 autoplay 대로 다시 재생
-watch(reduced, (r) => {
+// 보는 중에 설정이 바뀌면 따라간다
+watch(reduced, () => {
   const dl = playerRef.value?.getDotLottieInstance()
-  if (!dl) return
-  if (r) freeze(dl)
-  else if (props.autoplay && dl.isLoaded) dl.play()
+  if (dl) sync(dl)
 })
 </script>
 

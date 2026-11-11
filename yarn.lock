@@ -3651,7 +3651,11 @@ __metadata:
   dependencies:
     "@imjohnkoo/design-tokens": "workspace:*"
     "@types/react": "npm:~19.2.10"
+    happy-dom: "npm:^20.9.0"
     lottie-react-native: "npm:~7.3.4"
+    react: "npm:19.2.0"
+    react-dom: "npm:19.2.0"
+    vitest: "npm:^4.1.6"
   peerDependencies:
     lottie-react-native: ">=7.3.0"
     react: ">=19.0.0"

@@ -44,6 +44,8 @@ function makeFakeDotLottie() {
     isPlaying: false,
     totalFrames: 60,
     props: {} as Record<string, unknown>,
+    /** 실제 DotLottieVue 는 autoplay 를 만들 때 한 번만 읽는다(prop 변경을 watch 하지 않음) */
+    autoplayAtCreate: false,
     pause: vi.fn(),
     play: vi.fn(),
     setFrame: vi.fn(),
@@ -55,7 +57,11 @@ function makeFakeDotLottie() {
       handlers.get(t)?.delete(cb)
     },
     fire(t: string) {
-      if (t === 'load') this.isLoaded = true
+      if (t === 'load') {
+        // 실제 플레이어처럼 만들 때 받은 autoplay 대로 load 직후 재생 중이 된다
+        this.isLoaded = true
+        this.isPlaying = this.autoplayAtCreate
+      }
       for (const cb of handlers.get(t) ?? []) cb()
     },
   }
@@ -66,6 +72,7 @@ vi.mock('@lottiefiles/dotlottie-vue', () => ({
     setup(props, { expose }) {
       const dl = makeFakeDotLottie()
       dl.props = props
+      dl.autoplayAtCreate = props.autoplay === true
       players.push(dl)
       expose({ getDotLottieInstance: () => dl })
       return () => h('canvas')
@@ -117,7 +124,11 @@ describe('토큰 motion.json — 수치형', () => {
   })
 
   describe('빌드된 CSS', () => {
-    const css = readFileSync(`${process.cwd()}/../design-tokens/dist/css/tokens.css`, 'utf8')
+    const css = readFileSync(
+      // 빌드 산출물을 본다 — turbo test 는 build(^build) 뒤에 돈다. vitest 만 돌릴 땐 design-tokens 를 먼저 build
+      `${import.meta.dirname}/../../../design-tokens/dist/css/tokens.css`,
+      'utf8',
+    )
     const vars = (prefix: string) =>
       css.match(new RegExp(`--n-${prefix}[a-z-]*: [^;]+;`, 'g')) ?? []
 
@@ -245,17 +256,60 @@ describe('NLottie', () => {
     expect(w.emitted('complete')).toBeUndefined()
   })
 
-  it('보는 중에 설정이 바뀌면 따라간다 — 켬이면 멈춤 · 끔이면 다시 재생', async () => {
+  it('재생 중에 줄이기를 켜면 그 자리에서 정지 프레임 + complete 1회, 다시 꺼도 재생 · complete 반복 없음', async () => {
     const mm = installMatchMedia(false)
-    await mountLottie()
+    const w = await mountLottie()
     const dl = players.at(-1)!
     dl.fire('load')
     mm.set(true)
     await nextTick()
     expect(dl.pause).toHaveBeenCalled()
     expect(dl.setFrame).toHaveBeenLastCalledWith(59)
+    expect(w.emitted('complete')).toHaveLength(1)
+    dl.isPlaying = false
     mm.set(false)
     await nextTick()
+    expect(dl.play).not.toHaveBeenCalled()
+    dl.fire('complete')
+    expect(w.emitted('complete')).toHaveLength(1)
+  })
+
+  it('로드 전에 줄이기를 끄면 load 때 autoplay 대로 재생한다', async () => {
+    const mm = installMatchMedia(true)
+    await mountLottie()
+    const dl = players.at(-1)!
+    expect(dl.props.autoplay).toBe(false)
+    mm.set(false)
+    await nextTick()
+    dl.fire('load')
     expect(dl.play).toHaveBeenCalledTimes(1)
+    expect(dl.setFrame).not.toHaveBeenCalled()
+  })
+
+  it('hide 로 complete 를 낸 뒤 설정을 끄면 다시 그리지만 complete 는 마운트당 1회', async () => {
+    const mm = installMatchMedia(true)
+    const w = await mountLottie({ reducedMotion: 'hide' })
+    expect(w.emitted('complete')).toHaveLength(1)
+    mm.set(false)
+    await flushPromises()
+    await nextTick()
+    const dl = players.at(-1)!
+    dl.fire('load')
+    dl.fire('complete')
+    expect(w.emitted('complete')).toHaveLength(1)
+  })
+
+  it('플레이어 로드 실패(loadError — WASM · JSON)도 complete 로 풀어 준다', async () => {
+    installMatchMedia(false)
+    const w = await mountLottie()
+    players.at(-1)!.fire('loadError')
+    expect(w.emitted('complete')).toHaveLength(1)
+  })
+
+  it('autoplay=false 면 줄이기 켬이어도 complete 를 내지 않는다(재생할 것이 없었다)', async () => {
+    installMatchMedia(true)
+    const w = await mountLottie({ autoplay: false })
+    players.at(-1)!.fire('load')
+    expect(w.emitted('complete')).toBeUndefined()
   })
 })
