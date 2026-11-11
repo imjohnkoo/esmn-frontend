@@ -47,6 +47,9 @@ describe('부품 CSS — 직접 숫자 없이 토큰만 읽는다', () => {
       expect(widthOf(src, base)).toBe(DEFAULT)
       expect(widthOf(src, wide)).toBe(WIDE)
       expect(rule(src, base)).not.toMatch(/max-width|280px|340px/)
+      // 우선순위가 같은 두 선택자 — --wide 가 뒤에 있어야 size="wide" 가 실제로 이긴다
+      expect(src.indexOf(`\n${wide} {`)).toBeGreaterThan(src.indexOf(`\n${base} {`))
+      expect(src.indexOf(`\n${base} {`)).toBeGreaterThanOrEqual(0)
     },
   )
 
