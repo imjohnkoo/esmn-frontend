@@ -18,6 +18,7 @@
     "catalog:assets": "tsx scripts/catalog-assets.ts",
     "legal:import": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/legal-import.mjs",
     "test": "vitest run",
+    "test:db": "vitest run --config vitest.db.config.ts",
     "test:watch": "vitest",
     "typecheck": "bash ../../.github/scripts/typecheck-gate.sh client",
     "lint": "eslint .",
