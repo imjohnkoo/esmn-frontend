@@ -2,6 +2,14 @@
 
 `@imjohnkoo/design-mobile` 변경 사항. Semantic-ish (0.x: breaking = minor / 그 외 = patch). 날짜는 한국 시각 기준.
 
+## 0.4.0 — 2026-11-12
+
+### Changed — breaking
+
+- `NAlertDialog` — `width` prop(기본 300) 을 없애고 `size: 'default' | 'wide'`(기본 `default`)로 바꿨다. 폭은 design-vue 와 같은 토큰 `dialog.width`(default 280 · wide 340)와 `dialog.viewport-ratio`(화면 폭 90% 상한)로 정한다 — **기본 폭 300 → 280**(웹과 통일). 옛 `width={340}` → `size="wide"`.
+- `NLoaderDialog` — `minWidth: 220` → 토큰 default 폭(280) 고정 · 화면 폭 90% 상한.
+- `theme.dialog` — `components.json` 의 `dialog` 토큰(`width.default` · `width.wide` px 숫자 · `viewportRatio` 0~1).
+
 ## 0.3.1 — 2026-08-19
 
 mobile 4-step 발급 흐름 (weekly B 트랙) 을 위한 **design-vue 0.4.0 "토스풍 세트" 의 RN 포팅**. 전부 additive — breaking 없음.

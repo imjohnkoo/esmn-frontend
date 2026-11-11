@@ -7,8 +7,7 @@
       <Transition name="n-alert-dialog-content">
         <DialogContent
           v-if="open"
-          class="n-alert-dialog__content"
-          :style="width ? { maxWidth: typeof width === 'number' ? `${width}px` : width } : undefined"
+          :class="['n-alert-dialog__content', { 'n-alert-dialog__content--wide': size === 'wide' }]"
         >
           <DialogClose v-if="closable" class="n-alert-dialog__close" aria-label="Close">
             <svg
@@ -110,8 +109,8 @@ export interface NAlertDialogProps {
   color?: NColor
   closable?: boolean
   modelValue?: boolean
-  /** content max-width 오버라이드 (px 숫자 또는 CSS 길이). 기본 280px */
-  width?: number | string
+  /** 폭 — 토큰 `dialog.width` 변형. default 280 · wide 340(요약 표 · 필수 동의 체크처럼 내용이 많은 확인만) */
+  size?: 'default' | 'wide'
 }
 
 withDefaults(defineProps<NAlertDialogProps>(), {
@@ -120,7 +119,7 @@ withDefaults(defineProps<NAlertDialogProps>(), {
   color: 'info',
   closable: true,
   modelValue: undefined,
-  width: undefined,
+  size: 'default',
 })
 
 defineEmits<{
@@ -146,13 +145,16 @@ const open = defineModel<boolean>({ default: false })
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: var(--n-z-index-modal, 1050);
-  width: 90vw;
-  max-width: 280px;
+  width: min(var(--n-dialog-viewport-ratio, 90vw), var(--n-dialog-width-default, 17.5rem));
   border-radius: var(--n-radius-3xl, 1.5rem);
   background-color: var(--n-color-neutral-0, #ffffff);
   box-shadow: var(--n-shadow-modal, 0 30px 60px -20px rgba(17, 17, 17, 0.25));
   font-family: var(--n-font-family-sans, 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', 'Noto Sans KR', sans-serif);
   overflow: hidden;
+}
+
+.n-alert-dialog__content--wide {
+  width: min(var(--n-dialog-viewport-ratio, 90vw), var(--n-dialog-width-wide, 21.25rem));
 }
 
 .n-alert-dialog__content:focus {

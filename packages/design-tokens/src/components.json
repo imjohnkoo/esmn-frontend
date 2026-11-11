@@ -47,6 +47,13 @@
       "lg": "50rem"
     }
   },
+  "dialog": {
+    "width": {
+      "default": "17.5rem",
+      "wide": "21.25rem"
+    },
+    "viewport-ratio": "90vw"
+  },
   "toast": {
     "border-radius": "var(--n-radius-xl)",
     "min-width": "18.75rem",

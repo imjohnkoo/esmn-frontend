@@ -114,7 +114,7 @@
             brand 그림자
           </div>
           <div>
-            <span class="showcase-code">NAlertDialog</span> — 24px radius / 280px / blur backdrop /
+            <span class="showcase-code">NAlertDialog</span> — 24px radius / 280px(size wide 340 · 토큰 dialog.width) / blur backdrop /
             64px icon-wrap
           </div>
           <div><span class="showcase-code">NSeparator</span> — 라벨 포함 구분선 (이전 추가)</div>
