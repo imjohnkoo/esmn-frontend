@@ -41,6 +41,24 @@ describe('가입 동의 화면 글자(D-17)', () => {
     expect(labels).toEqual(['SIGNUP_CONSENT_LINES[0]', 'SIGNUP_CONSENT_LINES[1]'])
   })
 
+  it('AC-1.4 — 두 체크는 조건 없이 늘 그려지고(v-if · v-show 0) 각자 다른 상태에 묶이며, 가입 버튼은 둘 다 켜져야 열린다', () => {
+    for (const b of boxes) {
+      const dirs = (b.props ?? []).filter((p) => p.type === 7).map((p) => p.name)
+      expect(dirs).not.toContain('if')
+      expect(dirs).not.toContain('show')
+    }
+    const models = boxes.map(
+      (b) => (b.props ?? []).find((p) => p.type === 7 && p.name === 'model')?.exp?.content,
+    )
+    expect(models).toEqual(['agreeTerms', 'agreeAge'])
+    expect(descriptor.scriptSetup!.content).toMatch(
+      /const canSignUp = computed\(\(\) => agreeTerms\.value && agreeAge\.value && !busy\.value\)/,
+    )
+    expect(descriptor.scriptSetup!.content).toMatch(
+      /if \(pwErr\.value \|\| !canSignUp\.value\) return/,
+    )
+  })
+
   it('라벨 상수와 보내는 판 · 해시는 같은 파일에서 온다 · 가입 요청은 그 상수를 그대로 보낸다', () => {
     const script = descriptor.scriptSetup!.content
     expect(script).toMatch(

@@ -27,7 +27,12 @@ const email = ref('')
 const password = ref('')
 const emailError = ref('')
 const busy = ref(false)
-const dialog = ref<'e1' | 'e3' | 'e30' | null>(null)
+const { key: dialogKey, open: dialogOpen, show } = useMemberDialog<'e1' | 'e3' | 'e30'>('e30')
+const dialogView = computed(() =>
+  dialogKey.value === 'e3'
+    ? { ...MEMBER_DIALOG.e3, secondary: '비밀번호 재설정' }
+    : MEMBER_DIALOG[dialogKey.value],
+)
 
 async function submit() {
   emailError.value = EMAIL_PATTERN.test(email.value.trim()) ? '' : MEMBER_FIELD.e2
@@ -39,7 +44,7 @@ async function submit() {
     await navigateTo(next.value)
   } catch (e) {
     const code = (e as AuthApiError).code
-    dialog.value = code === 'INVALID_CREDENTIALS' ? 'e1' : code === 'LOGIN_LOCKED' ? 'e3' : 'e30'
+    show(code === 'INVALID_CREDENTIALS' ? 'e1' : code === 'LOGIN_LOCKED' ? 'e3' : 'e30')
   } finally {
     busy.value = false
   }
@@ -60,6 +65,7 @@ const withNext = (path: string) =>
           v-model="email"
           variant="underline"
           label="이메일"
+          aria-label="이메일"
           type="email"
           autocomplete="email"
           inputmode="email"
@@ -92,24 +98,8 @@ const withNext = (path: string) =>
   </MemberShell>
 
   <MemberDialog
-    v-if="dialog === 'e1'"
-    :model-value="true"
-    v-bind="MEMBER_DIALOG.e1"
-    @confirm="dialog = null"
-  />
-  <MemberDialog
-    v-if="dialog === 'e3'"
-    :model-value="true"
-    v-bind="MEMBER_DIALOG.e3"
-    secondary="비밀번호 재설정"
-    @confirm="dialog = null"
+    v-model="dialogOpen"
+    v-bind="dialogView"
     @secondary="navigateTo('/password/reset')"
   />
-  <MemberDialog
-    v-if="dialog === 'e30'"
-    :model-value="true"
-    v-bind="MEMBER_DIALOG.e30"
-    @confirm="dialog = null"
-  />
 </template>
-

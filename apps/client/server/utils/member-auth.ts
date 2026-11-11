@@ -5,7 +5,7 @@ import * as schema from '../db/schema'
 import { SIGNUP_CONSENT } from '../../shared/consent/signup-consent'
 import { issueSession, revokeAllSessions, type Executor, type Tx, type Db } from './auth-session'
 import { decryptV1, encryptV1, maskEmail, piiHmac, secretHash, type MemberKeys } from './member-pii'
-import { verifyPassword } from './password'
+import { hashPassword, verifyPassword } from './password'
 
 // 회원 서비스(member-client-auth spec F-4 ~ F-14 · §4.2 · §4.3 · D-6 · D-19 · I-2 · I-4 · I-9 · I-13 · I-14).
 // h3 를 모른다 — 입력은 경계에서 검증된 값(정규화 이메일 · 정책 통과 비밀번호 해시), 결과는 판별 유니온. 라우트가 상태 코드 · 문구 · 로그로 바꾼다.
@@ -81,8 +81,7 @@ export async function requestSignupCode(
   keys: MemberKeys,
   email: string,
 ): Promise<
-  | { ok: true; code: string; challengeId: number }
-  | (Fail<'TOO_MANY_REQUESTS'> & { reason: 'COOLDOWN' | 'HOURLY' })
+  { ok: true; code: string } | (Fail<'TOO_MANY_REQUESTS'> & { reason: 'COOLDOWN' | 'HOURLY' })
 > {
   const target = piiHmac(email, keys)
   return withTargetLock(db, 'email_signup_code', target, async (tx) => {
@@ -91,21 +90,14 @@ export async function requestSignupCode(
     if (n >= HOURLY_SEND_LIMIT)
       return { ok: false, code: 'TOO_MANY_REQUESTS', reason: 'HOURLY' } as const
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0')
-    const challengeId = await insertChallenge(tx, {
+    await insertChallenge(tx, {
       kind: 'email_signup_code',
       targetHash: target,
       secretHash: secretHash('email_signup_code', code, keys),
       expiresAt: CODE_TTL,
     })
-    return { ok: true, code, challengeId } as const
+    return { ok: true, code } as const
   })
-}
-
-/** 발송에 실패한 코드 행을 지운다 — 보내지 못한 코드가 재발송 60초 · 1시간 5통 한도를 쓰지 않게 */
-export async function discardSignupCode(db: Executor, challengeId: number): Promise<void> {
-  await db
-    .delete(C)
-    .where(and(eq(C.serviceUserChallengeId, challengeId), eq(C.kind, 'email_signup_code')))
 }
 
 export type CodeFailure = 'CODE_EXPIRED' | 'CODE_LOCKED' | 'CODE_MISMATCH'
@@ -157,7 +149,7 @@ export async function checkSignupCode(
 export interface CreateAccountInput {
   email: string
   code: string
-  passwordHash: string
+  password: string
   ipHash: string | null
   userAgent: string | null
 }
@@ -176,15 +168,12 @@ export async function createAccount(
 > {
   const check = await checkSignupCode(db, keys, input.email, input.code)
   if (!check.ok) return check
+  // Argon2(19MiB)는 코드가 맞은 뒤에만 — 아무 6자리로 비싼 해시를 반복 유발하지 못하게
+  const passwordHash = await hashPassword(input.password)
   const target = piiHmac(input.email, keys)
   try {
     return await db.transaction(async (tx) => {
-      const [taken] = await tx
-        .select({ id: I.serviceUserIdentityId })
-        .from(I)
-        .where(and(eq(I.provider, 'email'), eq(I.providerSubject, target)))
-        .limit(1)
-      if (taken) return { ok: false, code: 'EMAIL_TAKEN' } as const
+      // spec F-6 순서: 코드 소비 → 이미 가입이면 409(소비는 커밋 — 같은 코드로 E-31 을 반복해 받지 않게)
       const [consumed] = await tx
         .update(C)
         .set({ consumedAt: sql`now()` })
@@ -197,6 +186,12 @@ export async function createAccount(
         )
         .returning({ id: C.serviceUserChallengeId })
       if (!consumed) return { ok: false, code: 'CODE_EXPIRED' } as const
+      const [taken] = await tx
+        .select({ id: I.serviceUserIdentityId })
+        .from(I)
+        .where(and(eq(I.provider, 'email'), eq(I.providerSubject, target)))
+        .limit(1)
+      if (taken) return { ok: false, code: 'EMAIL_TAKEN' } as const
       const now = sql`now()`
       const [user] = await tx
         .insert(U)
@@ -214,7 +209,7 @@ export async function createAccount(
         serviceUserId,
         provider: 'email',
         providerSubject: target,
-        passwordHash: input.passwordHash,
+        passwordHash,
         lastUsedAt: now,
       })
       await tx.insert(schema.consentLog).values({
@@ -292,15 +287,20 @@ export async function login(
     return { ok: false, code: 'INVALID_CREDENTIALS' }
   }
   return db.transaction(async (tx) => {
-    // D-25 — 검증 뒤 재설정 · 탈퇴가 끼어들었으면 세션을 내지 않는다. identity 를 잠그고 해시 · 상태를 다시 대조한다
-    // (재설정 confirm 은 같은 행을 UPDATE 하므로 이 잠금과 직렬화된다 — 먼저 커밋한 쪽 결과를 본다)
+    // D-25 — 검증 뒤 재설정 · 정지 · 탈퇴가 끼어들었으면 세션을 내지 않는다. 잠금 순서는 탈퇴 · 정지와 같게
+    // service_user → identity(반대면 교착). 정지 · 탈퇴는 service_user 를, 재설정 confirm 은 identity 를 먼저 잡으므로
+    // 어느 쪽이든 먼저 커밋한 결과를 보고 해시 · 상태를 다시 대조한다
+    const [user] = await tx
+      .select({ status: U.status })
+      .from(U)
+      .where(eq(U.serviceUserId, row!.serviceUserId))
+      .for('update')
     const [still] = await tx
-      .select({ hash: I.passwordHash, status: U.status })
+      .select({ hash: I.passwordHash })
       .from(I)
-      .innerJoin(U, eq(U.serviceUserId, I.serviceUserId))
       .where(eq(I.serviceUserIdentityId, row!.identityId))
-      .for('update', { of: I })
-    if (!still || still.hash !== row!.hash || still.status !== 'active') {
+      .for('update')
+    if (!user || !still || still.hash !== row!.hash || user.status !== 'active') {
       return { ok: false, code: 'INVALID_CREDENTIALS' } as const
     }
     await clearLoginFailures(tx, target)
@@ -431,13 +431,20 @@ export async function withdrawMember(
     if (!user) return { ok: false, code: 'NOT_FOUND' } as const
     if (user.status === 'withdrawn')
       return { ok: true, status: 'withdrawn', revokedSessions: 0 } as const
-    const live = await tx
+    // 끊은 세션 수 = 지우기 전 살아 있던 것(DB now() 기준 — 앱 시계를 쓰지 않는다)
+    const [live] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(schema.serviceUserSession)
+      .where(
+        and(
+          eq(schema.serviceUserSession.serviceUserId, serviceUserId),
+          isNull(schema.serviceUserSession.revokedAt),
+          gt(schema.serviceUserSession.expiresAt, sql`now()`),
+        ),
+      )
+    await tx
       .delete(schema.serviceUserSession)
       .where(eq(schema.serviceUserSession.serviceUserId, serviceUserId))
-      .returning({
-        revokedAt: schema.serviceUserSession.revokedAt,
-        expiresAt: schema.serviceUserSession.expiresAt,
-      })
     await tx.delete(I).where(eq(I.serviceUserId, serviceUserId))
     await tx
       .delete(schema.serviceUserOrderLink)
@@ -456,9 +463,7 @@ export async function withdrawMember(
         marketingKakaoAgreedAt: null,
       })
       .where(eq(U.serviceUserId, serviceUserId))
-    const now = Date.now()
-    const revokedSessions = live.filter((s) => !s.revokedAt && s.expiresAt.getTime() > now).length
-    return { ok: true, status: 'withdrawn', revokedSessions } as const
+    return { ok: true, status: 'withdrawn', revokedSessions: live!.n } as const
   })
 }
 

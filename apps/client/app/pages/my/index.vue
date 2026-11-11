@@ -67,7 +67,9 @@ async function logout() {
     </section>
 
     <section v-else class="my-page__account" aria-labelledby="my-account-title">
-      <h2 id="my-account-title" class="my-page__account-email">{{ session.user.emailMasked }}</h2>
+      <h2 id="my-account-title" class="my-page__account-email">
+        {{ session.user.emailMasked ?? '이메일 계정' }}
+      </h2>
       <p class="my-page__account-method">이메일로 로그인</p>
       <ul class="my-page__links">
         <li>

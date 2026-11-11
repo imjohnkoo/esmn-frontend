@@ -6,7 +6,7 @@ import { setSessionCookie } from '../../../utils/auth-session'
 import { logEvent } from '../../../utils/issuance-log'
 import { createAccount } from '../../../utils/member-auth'
 import { parseEmail } from '../../../utils/member-pii'
-import { hashPassword, parsePassword } from '../../../utils/password'
+import { parsePassword } from '../../../utils/password'
 
 export default defineMemberHandler(async (event) => {
   const { keys, db, body } = await memberPost(event)
@@ -26,7 +26,7 @@ export default defineMemberHandler(async (event) => {
   const r = await createAccount(db, keys, {
     email,
     code: body.code,
-    passwordHash: await hashPassword(password),
+    password,
     ipHash: requestIpHash(event),
     userAgent: getRequestHeader(event, 'user-agent') ?? null,
   })

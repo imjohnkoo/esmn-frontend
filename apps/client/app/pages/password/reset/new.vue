@@ -5,13 +5,7 @@ import { NButton, NLoaderDialog } from '@imjohnkoo/design-vue'
 import MemberShell from '~/components/member/MemberShell.vue'
 import MemberDialog from '~/components/member/MemberDialog.vue'
 import PasswordField from '~/components/member/PasswordField.vue'
-import {
-  MEMBER_DIALOG,
-  MEMBER_FIELD,
-  MEMBER_MAX_PASSWORD,
-  MEMBER_MIN_PASSWORD,
-  passwordError,
-} from '~/content/member'
+import { MEMBER_DIALOG, MEMBER_FIELD, MEMBER_MIN_PASSWORD, passwordError } from '~/content/member'
 
 definePageMeta({ layout: 'flow', middleware: 'member' })
 useHead({ title: '새 비밀번호' })
@@ -23,17 +17,20 @@ const pwErr = ref('')
 const busy = ref(false)
 const failed = ref(false)
 
-onMounted(async () => {
-  token.value = window.location.hash.slice(1)
-  // 주소창 · 방문 기록 · 라우터 상태에서 토큰을 지운다(vue-router 의 history.state.current 도 프래그먼트를 들고 있다)
-  if (window.location.hash) {
-    const path = window.location.pathname
-    history.replaceState({ ...(history.state ?? {}), current: path }, '', path)
-  }
+const route = useRoute()
+const router = useRouter()
+
+// 프래그먼트의 토큰을 읽고 주소 · 라우터 상태에서 지운 뒤 서버에 유효 여부를 묻는다.
+// 지우기는 라우터로(replace) — history.replaceState 만 쓰면 vue-router 의 현재 위치(route.hash · fullPath)와
+// 다음 방문 기록의 state.back 에 토큰이 남는다(QA ⑥ 2회차)
+async function readToken(hash: string) {
+  token.value = hash.replace(/^#/, '')
+  if (hash) await router.replace({ path: route.path, query: route.query, hash: '' })
   if (!/^[A-Za-z0-9_-]{43}$/.test(token.value)) {
     state.value = 'invalid'
     return
   }
+  state.value = 'checking'
   try {
     await authPost('password-reset/check', { token: token.value })
     state.value = 'form'
@@ -45,7 +42,16 @@ onMounted(async () => {
       failed.value = true
     }
   }
-})
+}
+
+onMounted(() => readToken(window.location.hash))
+// 같은 탭에서 새 링크를 열면(프래그먼트만 바뀌는 이동) 화면이 다시 마운트되지 않는다 — 새 토큰으로 다시 묻는다
+watch(
+  () => route.hash,
+  (h) => {
+    if (h) readToken(h)
+  },
+)
 
 async function submit() {
   pwErr.value = passwordError(password.value)
@@ -99,7 +105,6 @@ async function submit() {
         v-model="password"
         input-id="reset-new-password"
         autocomplete="new-password"
-        :maxlength="MEMBER_MAX_PASSWORD"
         :error="pwErr"
         :hint="`${MEMBER_MIN_PASSWORD}자 이상`"
       />
@@ -120,10 +125,5 @@ async function submit() {
   </MemberShell>
 
   <NLoaderDialog :model-value="state === 'checking'" title="링크를 확인하고 있어요" />
-  <MemberDialog
-    v-if="failed"
-    :model-value="true"
-    v-bind="MEMBER_DIALOG.e30"
-    @confirm="failed = false"
-  />
+  <MemberDialog v-model="failed" v-bind="MEMBER_DIALOG.e30" />
 </template>

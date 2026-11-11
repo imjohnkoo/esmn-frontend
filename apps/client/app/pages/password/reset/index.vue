@@ -45,6 +45,7 @@ async function submit() {
           v-model="email"
           variant="underline"
           label="이메일"
+          aria-label="이메일"
           type="email"
           autocomplete="email"
           inputmode="email"
@@ -84,10 +85,5 @@ async function submit() {
     </template>
   </MemberShell>
 
-  <MemberDialog
-    v-if="failed"
-    :model-value="true"
-    v-bind="MEMBER_DIALOG.e30"
-    @confirm="failed = false"
-  />
+  <MemberDialog v-model="failed" v-bind="MEMBER_DIALOG.e30" />
 </template>

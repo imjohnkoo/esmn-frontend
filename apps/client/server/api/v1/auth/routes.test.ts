@@ -6,7 +6,6 @@ import { makeEvent, setCookieLines } from '../../../testing/h3-event'
 
 const svc = vi.hoisted(() => ({
   requestSignupCode: vi.fn(),
-  discardSignupCode: vi.fn(),
   checkSignupCode: vi.fn(),
   createAccount: vi.fn(),
   login: vi.fn(),
@@ -124,6 +123,33 @@ describe('경계(I-7 · I-8)', () => {
     expect((await call(R.login, post({}, { authorization: 'Bearer t' }))).status).toBe(401)
   })
 
+  it('상태를 바꾸는 auth 라우트 전부 — 남의 출처 · LAN 패턴 출처 · 폼 본문은 403 · 서비스 0(F-16 · QA ⑥ 2회차)', async () => {
+    const routes = [
+      R.code,
+      R.verify,
+      R.signup,
+      R.login,
+      R.logout,
+      R.reset,
+      R.check,
+      R.confirm,
+      R.withdraw,
+    ]
+    const bad: Record<string, string>[] = [
+      { origin: 'https://evil.example' },
+      { origin: 'http://203.0.113.9:8081' },
+      { origin: 'https://esimmany.com', 'content-type': 'application/x-www-form-urlencoded' },
+    ]
+    for (const h of routes) {
+      for (const headers of bad) {
+        const e = makeEvent({ method: 'POST', url: '/api/v1/auth/x', headers })
+        expect((await call(h, withUser(e))).status).toBe(403)
+      }
+    }
+    expect(Object.values(svc).every((f) => f.mock.calls.length === 0)).toBe(true)
+    expect(revokeSession).not.toHaveBeenCalled()
+  })
+
   it('키 없음 → 503 MEMBER_KEYS_UNAVAILABLE · 서비스 0', async () => {
     delete process.env.PII_HMAC_KEY
     expect(await call(R.code, post({ email: 'walker+1@example.com' }))).toEqual({
@@ -152,14 +178,12 @@ describe('가입', () => {
       reason: 'COOLDOWN',
     })
     expect((await call(R.code, post({ email: 'walker+1@example.com' }))).status).toBe(429)
-    svc.requestSignupCode.mockResolvedValue({ ok: true, code: '123456', challengeId: 55 })
+    svc.requestSignupCode.mockResolvedValue({ ok: true, code: '123456' })
     send.mockResolvedValueOnce({ ok: false, upstreamStatus: 502, ms: 3 })
     expect(await call(R.code, post({ email: 'walker+1@example.com' }))).toEqual({
       status: 502,
       body: { code: 'EMAIL_SEND_FAILED' },
     })
-    // 보내지 못한 코드 행은 지운다 — 한도를 쓰지 않게(QA ⑥ 1회차)
-    expect(svc.discardSignupCode).toHaveBeenCalledWith({ db: 'stub' }, 55)
     send.mockResolvedValueOnce({ ok: true, result: 'STUBBED', ms: 3 })
     expect(await call(R.code, post({ email: ' Walker+1@Example.com ' }))).toEqual({
       status: 202,

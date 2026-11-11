@@ -147,7 +147,10 @@ export async function revokeAllSessions(db: Executor, serviceUserId: number): Pr
 /** 로그용 DB 오류 원인 한 줄 — drizzle message(쿼리 · 파라미터) 대신 드라이버 cause 만 */
 export function dbCause(e: unknown): string {
   const cause = (e as { cause?: { message?: string } }).cause?.message
-  return cause ? cause.split('\n')[0]! : 'unknown db error'
+  if (cause) return cause.split('\n')[0]!
+  // drizzle 이 감싼 오류(«Failed query: … params: …»)는 cause 가 없어도 message 를 쓰지 않는다 — 그 밖(설정 누락 등)은 첫 줄
+  const msg = e instanceof Error ? e.message : ''
+  return msg && !/^Failed query/i.test(msg) ? msg.split('\n')[0]!.slice(0, 200) : 'unknown db error'
 }
 
 // 정적 자산 — 쿠키가 실려 와도 세션을 조회하지 않는다
@@ -171,7 +174,11 @@ export async function resolveRequestAuth(
   if (!found) return { user: null, platform }
   try {
     const s = await resolveSession(getDb(), found.token)
-    if (!s) return { user: null, platform }
+    if (!s) {
+      // 만료 · 폐기 · 모르는 쿠키는 지운다 — 요청마다 같은 조회를 되풀이하지 않게
+      if (found.via === 'cookie') clearSessionCookie(event)
+      return { user: null, platform }
+    }
     if (s.renewedUntil && found.via === 'cookie')
       setSessionCookie(event, found.token, s.renewedUntil)
     return { user: { serviceUserId: s.serviceUserId, sessionId: s.sessionId }, platform }

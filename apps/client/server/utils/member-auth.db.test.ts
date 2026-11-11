@@ -8,7 +8,6 @@ import {
   checkResetToken,
   checkSignupCode,
   confirmPasswordReset,
-  discardSignupCode,
   createAccount,
   login,
   memberSummary,
@@ -47,7 +46,7 @@ async function signUp(email = EMAIL) {
   const made = await createAccount(db, keys, {
     email,
     code: req.code,
-    passwordHash: await passwordHash(),
+    password: PW,
     ipHash: null,
     userAgent: 'vitest',
   })
@@ -105,7 +104,7 @@ describe('가입(F-4 ~ F-6)', () => {
     const again = await createAccount(db, keys, {
       email: EMAIL,
       code: req.code,
-      passwordHash: await passwordHash(),
+      password: PW,
       ipHash: null,
       userAgent: null,
     })
@@ -122,7 +121,7 @@ describe('가입(F-4 ~ F-6)', () => {
     const in6 = await createAccount(db, keys, {
       email: EMAIL,
       code: bad,
-      passwordHash: await passwordHash(),
+      password: PW,
       ipHash: null,
       userAgent: null,
     })
@@ -130,7 +129,7 @@ describe('가입(F-4 ~ F-6)', () => {
     const fifth = await createAccount(db, keys, {
       email: EMAIL,
       code: bad,
-      passwordHash: await passwordHash(),
+      password: PW,
       ipHash: null,
       userAgent: null,
     })
@@ -434,7 +433,7 @@ describe('QA ⑥ 1회차 회귀(D-25 · F-6 · F-4)', () => {
     const input = {
       email: EMAIL,
       code: req.code,
-      passwordHash: await passwordHash(),
+      password: PW,
       ipHash: null,
       userAgent: null,
     }
@@ -459,7 +458,7 @@ describe('QA ⑥ 1회차 회귀(D-25 · F-6 · F-4)', () => {
     const mine = await createAccount(db, keys, {
       email: EMAIL,
       code: req.code,
-      passwordHash: await passwordHash(),
+      password: PW,
       ipHash: null,
       userAgent: null,
     })
@@ -468,13 +467,48 @@ describe('QA ⑥ 1회차 회귀(D-25 · F-6 · F-4)', () => {
     expect(await count('service_user')).toBe(1) // 미리 넣은 행 하나만
     expect(await count('consent_log')).toBe(0)
   })
+})
 
-  it('F-4 — 발송 실패로 지운 코드는 재발송 한도를 쓰지 않는다', async () => {
-    const a = await requestSignupCode(db, keys, EMAIL)
-    if (!a.ok) throw new Error()
-    await discardSignupCode(db, a.challengeId)
-    expect(await count('service_user_challenge')).toBe(0)
-    expect((await requestSignupCode(db, keys, EMAIL)).ok).toBe(true)
+describe('QA ⑥ 2회차 회귀(잠금 순서 · F-6 순서)', () => {
+  it('잠금 순서 — 로그인은 service_user 를 먼저 잡는다(탈퇴 · 정지와 같은 순서 · 반대면 교착 40P01)', async () => {
+    const made = await signUp()
+    let loginDone = false
+    let pending: Promise<unknown> = Promise.resolve()
+    // 탈퇴 · 정지처럼 회원 행을 먼저 잡고 있는 동안
+    await client.begin(async (tx) => {
+      await tx`SELECT 1 FROM service_user WHERE service_user_id = ${made.serviceUserId} FOR UPDATE`
+      pending = login(db, keys, EMAIL, PW).then((r) => ((loginDone = true), r))
+      await new Promise((r) => setTimeout(r, 400)) // Argon2 뒤 세션 트랜잭션의 첫 잠금까지
+      expect(loginDone).toBe(false) // 로그인은 회원 행에서 기다린다
+      // 로그인이 identity 를 먼저 쥐었다면 여기서 NOWAIT 가 실패한다(= 탈퇴의 identity DELETE 와 교착)
+      const free =
+        await client`SELECT 1 FROM service_user_identity WHERE service_user_id = ${made.serviceUserId} FOR UPDATE NOWAIT`
+          .then(() => true)
+          .catch(() => false)
+      expect(free).toBe(true)
+    })
+    // 잠금을 풀면 로그인이 끝난다 — 다음 테스트가 표를 비우기 전에 기다린다
+    expect(await pending).toMatchObject({ ok: true })
+  })
+
+  it('로그인 ↔ 정지를 겹쳐도 정지 회원에게 revoke 안 된 세션 0(I-4)', async () => {
+    for (let round = 0; round < 6; round++) {
+      await resetMemberTables(client)
+      const made = await signUp()
+      await client`UPDATE service_user_session SET revoked_at = now()`
+      await Promise.all([login(db, keys, EMAIL, PW), suspendMember(db, made.serviceUserId)])
+      expect(await count('service_user_session', 'revoked_at IS NULL')).toBe(0)
+    }
+  })
+
+  it('F-6 — 이미 가입이면 코드는 소비되고 409 · 같은 코드 재제출은 CODE_EXPIRED', async () => {
+    await signUp()
+    await client`UPDATE service_user_challenge SET created_at = now() - interval '2 minutes'`
+    const req = await requestSignupCode(db, keys, EMAIL)
+    if (!req.ok) throw new Error()
+    const input = { email: EMAIL, code: req.code, password: PW, ipHash: null, userAgent: null }
+    expect(await createAccount(db, keys, input)).toEqual({ ok: false, code: 'EMAIL_TAKEN' })
+    expect(await createAccount(db, keys, input)).toEqual({ ok: false, code: 'CODE_EXPIRED' })
   })
 })
 

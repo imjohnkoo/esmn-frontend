@@ -10,7 +10,6 @@ import {
   EMAIL_PATTERN,
   MEMBER_DIALOG,
   MEMBER_FIELD,
-  MEMBER_MAX_PASSWORD,
   MEMBER_MIN_PASSWORD,
   passwordError,
   PURCHASE_LOGIN_NOTE,
@@ -40,7 +39,19 @@ const codeErr = ref('')
 const pwErr = ref('')
 const busy = ref(false)
 type Dialog = 'c1' | 'c2' | 'e30' | 'e31' | 'codeMismatch' | 'codeLocked'
-const dialog = ref<Dialog | null>(null)
+const { key: dialogKey, open: dialogOpen, show } = useMemberDialog<Dialog>('e30')
+const dialogView = computed(() =>
+  dialogKey.value === 'e31'
+    ? { ...MEMBER_DIALOG.e31, confirmLabel: '로그인' }
+    : MEMBER_DIALOG[dialogKey.value],
+)
+// 대화상자 [확인] — 코드가 무효면 1단계로(이메일 채운 채 · R2) · E-31 은 로그인으로(next 그대로)
+function onDialogConfirm() {
+  const k = dialogKey.value
+  if (k === 'e31')
+    navigateTo(route.query.next ? `/login?next=${encodeURIComponent(next.value)}` : '/login')
+  else if (k === 'c2' || k === 'codeMismatch' || k === 'codeLocked') toStep1()
+}
 const sheet = ref<DocSheetKey | null>(null)
 
 const code = computed(() => pin.value.join(''))
@@ -82,7 +93,7 @@ async function sendCode(): Promise<boolean> {
   } catch (e) {
     const err = e as AuthApiError
     if (err.code === 'INVALID_EMAIL') emailErr.value = MEMBER_FIELD.e2
-    else dialog.value = err.code === 'TOO_MANY_REQUESTS' ? 'c1' : 'e30'
+    else show(err.code === 'TOO_MANY_REQUESTS' ? 'c1' : 'e30')
     return false
   } finally {
     busy.value = false
@@ -110,7 +121,7 @@ async function verifyCode() {
     if (c === 'CODE_MISMATCH') codeErr.value = MEMBER_FIELD.e5
     else if (c === 'CODE_EXPIRED') codeErr.value = MEMBER_FIELD.e6
     else if (c === 'CODE_LOCKED') codeErr.value = MEMBER_FIELD.e7
-    else dialog.value = 'e30'
+    else show('e30')
     pin.value = []
   } finally {
     busy.value = false
@@ -143,20 +154,14 @@ async function submitSignup() {
   } catch (e) {
     const c = (e as AuthApiError).code
     if (c === 'WEAK_PASSWORD') pwErr.value = passwordError(password.value) || MEMBER_FIELD.e8
-    else if (c === 'EMAIL_TAKEN') dialog.value = 'e31'
-    else if (c === 'CODE_EXPIRED') dialog.value = 'c2'
-    else if (c === 'CODE_MISMATCH') dialog.value = 'codeMismatch'
-    else if (c === 'CODE_LOCKED') dialog.value = 'codeLocked'
-    else dialog.value = 'e30'
+    else if (c === 'EMAIL_TAKEN') show('e31')
+    else if (c === 'CODE_EXPIRED') show('c2')
+    else if (c === 'CODE_MISMATCH') show('codeMismatch')
+    else if (c === 'CODE_LOCKED') show('codeLocked')
+    else show('e30')
   } finally {
     busy.value = false
   }
-}
-
-// 3단계에서 코드가 무효 → 1단계(이메일 채운 채 · R2)
-function restart() {
-  dialog.value = null
-  toStep1()
 }
 
 function back() {
@@ -197,6 +202,7 @@ const heading = computed(() =>
             v-model="email"
             variant="underline"
             label="이메일"
+            aria-label="이메일"
             type="email"
             autocomplete="email"
             inputmode="email"
@@ -220,6 +226,7 @@ const heading = computed(() =>
             type="number"
             placeholder=""
             otp
+            :disabled="busy"
             role="group"
             aria-label="인증 코드 6자리"
             :aria-describedby="codeErr ? 'signup-pin-err' : undefined"
@@ -247,7 +254,6 @@ const heading = computed(() =>
           v-model="password"
           input-id="signup-password"
           autocomplete="new-password"
-          :maxlength="MEMBER_MAX_PASSWORD"
           :error="pwErr"
           :hint="`${MEMBER_MIN_PASSWORD}자 이상`"
         />
@@ -321,31 +327,7 @@ const heading = computed(() =>
     </template>
   </MemberShell>
 
-  <MemberDialog
-    v-if="dialog === 'c1'"
-    :model-value="true"
-    v-bind="MEMBER_DIALOG.c1"
-    @confirm="dialog = null"
-  />
-  <MemberDialog
-    v-if="dialog === 'e30'"
-    :model-value="true"
-    v-bind="MEMBER_DIALOG.e30"
-    @confirm="dialog = null"
-  />
-  <MemberDialog
-    v-if="dialog === 'e31'"
-    :model-value="true"
-    v-bind="MEMBER_DIALOG.e31"
-    confirm-label="로그인"
-    @confirm="navigateTo(route.query.next ? `/login?next=${encodeURIComponent(next)}` : '/login')"
-  />
-  <MemberDialog
-    v-if="dialog === 'c2' || dialog === 'codeMismatch' || dialog === 'codeLocked'"
-    :model-value="true"
-    v-bind="MEMBER_DIALOG[dialog]"
-    @confirm="restart"
-  />
+  <MemberDialog v-model="dialogOpen" v-bind="dialogView" @confirm="onDialogConfirm" />
 </template>
 
 <style scoped>

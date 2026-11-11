@@ -118,3 +118,23 @@ describe('enabledMethods(F-15)', () => {
     expect(enabledMethods(cfg)).toEqual(out)
   })
 })
+
+describe('dbCause — 로그 한 줄(I-1)', () => {
+  it('드라이버 cause 첫 줄 · drizzle «Failed query» message 는 쓰지 않는다 · 그 밖 오류는 첫 줄', async () => {
+    const { dbCause } = await import('./auth-session')
+    expect(
+      dbCause(
+        Object.assign(new Error('Failed query: x params: SECRET'), {
+          cause: { message: 'timeout\nmore' },
+        }),
+      ),
+    ).toBe('timeout')
+    expect(dbCause(new Error('Failed query: select … params: login_failure,SECRET'))).toBe(
+      'unknown db error',
+    )
+    expect(dbCause(new Error('DATABASE_URL is not configured\nstack'))).toBe(
+      'DATABASE_URL is not configured',
+    )
+    expect(dbCause('weird')).toBe('unknown db error')
+  })
+})

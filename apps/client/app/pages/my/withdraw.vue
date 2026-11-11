@@ -19,7 +19,12 @@ const unissued = computed(() => data.value?.unissuedOrderCount ?? 0)
 const password = ref('')
 const pwErr = ref('')
 const busy = ref(false)
-const dialog = ref<'e3w' | 'e30' | null>(null)
+const { key: dialogKey, open: dialogOpen, show } = useMemberDialog<'e3w' | 'e30'>('e30')
+const dialogView = computed(() =>
+  dialogKey.value === 'e3w'
+    ? { ...MEMBER_DIALOG.e3w, secondary: '비밀번호 재설정' }
+    : MEMBER_DIALOG.e30,
+)
 
 async function submit() {
   if (!password.value) return
@@ -34,7 +39,7 @@ async function submit() {
     const c = (e as AuthApiError).code
     if (c === 'PASSWORD_MISMATCH') pwErr.value = MEMBER_FIELD.e16
     else if (c === 'UNAUTHENTICATED') await navigateTo('/login?next=%2Fmy%2Fwithdraw')
-    else dialog.value = c === 'LOGIN_LOCKED' ? 'e3w' : 'e30'
+    else show(c === 'LOGIN_LOCKED' ? 'e3w' : 'e30')
   } finally {
     busy.value = false
   }
@@ -84,18 +89,9 @@ async function submit() {
     description="잠시만 기다려 주세요."
   />
   <MemberDialog
-    v-if="dialog === 'e3w'"
-    :model-value="true"
-    v-bind="MEMBER_DIALOG.e3w"
-    secondary="비밀번호 재설정"
-    @confirm="dialog = null"
+    v-model="dialogOpen"
+    v-bind="dialogView"
     @secondary="navigateTo('/password/reset')"
-  />
-  <MemberDialog
-    v-if="dialog === 'e30'"
-    :model-value="true"
-    v-bind="MEMBER_DIALOG.e30"
-    @confirm="dialog = null"
   />
 </template>
 
