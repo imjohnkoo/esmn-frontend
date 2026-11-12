@@ -81,12 +81,14 @@ describe('MemberStatus(5-7)', () => {
     vi.useRealTimers()
   })
 
-  it('글이 없어도 그릇은 있다', () => {
-    expect(
-      mount(MemberStatus, { props: { text: null } })
-        .find('[role="status"]')
-        .exists(),
-    ).toBe(true)
+  it('글이 없어도 그릇은 있다 · 빈 그릇은 흐름 밖(부모 flex gap 을 받지 않게 — QA ⑥ major)', () => {
+    const box = mount(MemberStatus, { props: { text: null }, attachTo: document.body }).get(
+      '[role="status"]',
+    )
+    expect(box.classes()).not.toContain('member-status--shown')
+    // 테스트 환경은 SFC CSS 를 싣지 않는다 — 규칙은 소스에서 본다
+    const css = readFileSync(resolve(__dirname, 'MemberStatus.vue'), 'utf8')
+    expect(css).toMatch(/\.member-status:not\(\.member-status--shown\) \{[^}]*position: absolute/)
   })
 })
 

@@ -22,6 +22,15 @@ watch(
   margin: 0;
 }
 
+/* 빈 그릇은 흐름 밖으로 — 높이 0 인 자식도 부모 flex gap 을 받아 평소 화면에 빈 간격이 생긴다(QA ⑥ major) */
+.member-status:not(.member-status--shown) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
 .member-status--shown {
   padding: 12px 14px;
   border-radius: 12px;
