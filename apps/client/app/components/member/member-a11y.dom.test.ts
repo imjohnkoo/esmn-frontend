@@ -10,7 +10,7 @@ import { NPinInput } from '@imjohnkoo/design-vue'
 Object.assign(globalThis, { ref, computed, watch, onMounted, nextTick })
 enableAutoUnmount(afterEach)
 
-const { focusFirstInvalid, PIN_FIELD } = await import('~/utils/member-a11y')
+const { focusFirstInvalid, focusWhenEnabled, PIN_FIELD } = await import('~/utils/member-a11y')
 const MemberShell = (await import('./MemberShell.vue')).default
 const MemberStatus = (await import('./MemberStatus.vue')).default
 const PasswordField = (await import('./PasswordField.vue')).default
@@ -47,6 +47,19 @@ describe('focusFirstInvalid(5-5)', () => {
     expect(first.matches(PIN_FIELD)).toBe(true)
     expect(first.getAttribute('aria-label')).toBe('인증 코드 6자리 중 1번째')
     expect(document.activeElement).toBe(first)
+  })
+})
+
+describe('focusWhenEnabled(키보드 walk major — 틀린 코드 뒤 첫 칸)', () => {
+  it('검증 중 disabled 였던 칸이 다시 켜진 뒤에 포커스한다', async () => {
+    document.body.innerHTML = `<div id="pin"><input class="n-pin-input__field" disabled></div>`
+    const el = document.querySelector('input')!
+    const p = focusWhenEnabled('#pin .n-pin-input__field')
+    await nextTick()
+    expect(document.activeElement).not.toBe(el)
+    el.disabled = false
+    expect(await p).toBe(true)
+    expect(document.activeElement).toBe(el)
   })
 })
 

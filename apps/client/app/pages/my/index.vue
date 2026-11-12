@@ -25,7 +25,10 @@ const memberOn = computed(() => session.value.methods.length > 0)
 
 const flash = useMemberFlash()
 const notice = ref<string | null>(flash.value ? MEMBER_FLASH[flash.value] : null)
-flash.value = null
+// 화면을 떠날 때 지운다 — 도착 직후 다시 마운트돼도(레이아웃 전환 · Suspense) 안내를 잃지 않게(키보드 walk minor)
+onBeforeRouteLeave(() => {
+  flash.value = null
+})
 
 const loggingOut = ref(false)
 async function logout() {

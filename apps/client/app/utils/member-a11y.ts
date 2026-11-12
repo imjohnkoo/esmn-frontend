@@ -13,6 +13,20 @@ export function focusFirstInvalid(root: ParentNode | null | undefined): HTMLElem
   return target
 }
 
+/** 칸이 다시 켜질 때까지(검증 중 disabled → 브라우저가 포커스를 body 로 뺀다) 몇 프레임 기다렸다가 포커스 — 성공하면 true */
+export async function focusWhenEnabled(selector: string, frames = 5): Promise<boolean> {
+  for (let i = 0; i < frames; i++) {
+    await nextTick()
+    const el = document.querySelector<HTMLInputElement>(selector)
+    if (el && !el.disabled) {
+      el.focus()
+      if (document.activeElement === el) return true
+    }
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  return false
+}
+
 /** 다음 렌더 뒤 그 폼의 첫 오류 칸으로 */
 export async function focusFirstInvalidIn(formId: string): Promise<void> {
   await nextTick()

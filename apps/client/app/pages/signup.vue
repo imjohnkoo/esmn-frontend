@@ -131,10 +131,8 @@ async function verifyCode() {
     busy.value = false
   }
   // 틀리면 칸을 비우고 첫 칸으로(states.md M-3b) — 남은 포커스가 6번째 칸에 있으면 다시 친 코드가 완성되지 않는다
-  if (step.value === 2) {
-    await nextTick()
-    document.querySelector<HTMLInputElement>(`#signup-pin ${PIN_FIELD}`)?.focus()
-  }
+  // 검증 중에는 칸이 disabled 라 포커스가 body 로 빠진다 — 칸이 다시 켜진 뒤에 옮긴다(키보드 walk major)
+  if (step.value === 2) await focusWhenEnabled(`#signup-pin ${PIN_FIELD}`)
 }
 
 const canSignUp = computed(() => agreeTerms.value && agreeAge.value && !busy.value)
