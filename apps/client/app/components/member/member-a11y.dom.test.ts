@@ -41,6 +41,9 @@ describe('focusFirstInvalid(5-5)', () => {
       { attachTo: document.body },
     )
     await nextTick()
+    // id 는 묶음이 아니라 reka 의 숨은 input 에 붙는다 — 화면 코드가 #id 로 칸을 찾으면 늘 0개(키보드 walk major 원인)
+    expect(w.element.querySelector('#pin')?.getAttribute('aria-hidden')).toBe('true')
+    expect(w.element.querySelectorAll('#pin .n-pin-input__field')).toHaveLength(0)
     const group = w.element.querySelector('[role="group"]')!
     expect(group.getAttribute('aria-invalid')).toBe('true')
     const first = focusFirstInvalid(w.element)!
@@ -132,7 +135,7 @@ describe('가입 화면 소스(5-8 · PM ① ②)', () => {
   })
   it('코드 칸에 invalid 를 넘기고 · 첫 칸 포커스는 숨은 input 이 아니라 보이는 칸', () => {
     expect(src).toContain(':invalid="!!codeErr"')
-    expect(src).not.toContain("'#signup-pin input'")
-    expect(src).toContain('`#signup-pin ${PIN_FIELD}`')
+    expect(src).not.toContain('#signup-pin')
+    expect(src).toContain('`#signup-form ${PIN_FIELD}`')
   })
 })
