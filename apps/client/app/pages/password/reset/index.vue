@@ -16,14 +16,16 @@ const failed = ref(false)
 
 async function submit() {
   emailErr.value = EMAIL_PATTERN.test(email.value.trim()) ? '' : MEMBER_FIELD.e2
-  if (emailErr.value) return
+  if (emailErr.value) return focusFirstInvalidIn('reset-form')
   busy.value = true
   try {
     await authPost('password-reset', { email: email.value })
     sent.value = true
   } catch (e) {
-    if ((e as AuthApiError).code === 'INVALID_EMAIL') emailErr.value = MEMBER_FIELD.e2
-    else failed.value = true
+    if ((e as AuthApiError).code === 'INVALID_EMAIL') {
+      emailErr.value = MEMBER_FIELD.e2
+      focusFirstInvalidIn('reset-form')
+    } else failed.value = true
   } finally {
     busy.value = false
   }
@@ -32,13 +34,16 @@ async function submit() {
 
 <template>
   <MemberShell
-    v-if="!sent"
     eyebrow="비밀번호 재설정"
-    :title="`가입한 이메일을\n입력해 주세요`"
-    description="비밀번호를 바꿀 수 있는 링크를 보내 드려요."
+    :title="sent ? '메일을 확인해 주세요' : `가입한 이메일을\n입력해 주세요`"
+    :description="
+      sent
+        ? '가입한 이메일이라면 비밀번호를 바꿀 수 있는 링크가 도착해요. 링크는 30분 동안 쓸 수 있어요.'
+        : '비밀번호를 바꿀 수 있는 링크를 보내 드려요.'
+    "
     @back="navigateTo('/login')"
   >
-    <form id="reset-form" class="member-form" novalidate @submit.prevent="submit">
+    <form v-if="!sent" id="reset-form" class="member-form" novalidate @submit.prevent="submit">
       <div>
         <NInput
           id="reset-email"
@@ -53,11 +58,12 @@ async function submit() {
           :aria-invalid="emailErr ? 'true' : undefined"
           :aria-describedby="emailErr ? 'reset-email-err' : undefined"
         />
-        <p v-if="emailErr" id="reset-email-err" class="member-err">{{ emailErr }}</p>
+        <p v-if="emailErr" id="reset-email-err" class="member-err" role="alert">{{ emailErr }}</p>
       </div>
     </form>
     <template #cta>
       <NButton
+        v-if="!sent"
         type="submit"
         form="reset-form"
         variant="primary"
@@ -68,18 +74,7 @@ async function submit() {
       >
         링크 받기
       </NButton>
-    </template>
-  </MemberShell>
-
-  <MemberShell
-    v-else
-    eyebrow="비밀번호 재설정"
-    title="메일을 확인해 주세요"
-    description="가입한 이메일이라면 비밀번호를 바꿀 수 있는 링크가 도착해요. 링크는 30분 동안 쓸 수 있어요."
-    @back="navigateTo('/login')"
-  >
-    <template #cta>
-      <NButton variant="primary" size="xl" full-width @click="navigateTo('/login')"
+      <NButton v-else variant="primary" size="xl" full-width @click="navigateTo('/login')"
         >로그인으로 돌아가기</NButton
       >
     </template>

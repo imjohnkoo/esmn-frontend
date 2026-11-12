@@ -55,7 +55,7 @@ watch(
 
 async function submit() {
   pwErr.value = passwordError(password.value)
-  if (pwErr.value) return
+  if (pwErr.value) return focusFirstInvalidIn('reset-new-form')
   busy.value = true
   try {
     await authPost('password-reset/confirm', { token: token.value, password: password.value })
@@ -66,8 +66,10 @@ async function submit() {
   } catch (e) {
     const c = (e as AuthApiError).code
     if (c === 'TOKEN_INVALID') state.value = 'invalid'
-    else if (c === 'WEAK_PASSWORD') pwErr.value = passwordError(password.value) || MEMBER_FIELD.e8
-    else failed.value = true
+    else if (c === 'WEAK_PASSWORD') {
+      pwErr.value = passwordError(password.value) || MEMBER_FIELD.e8
+      focusFirstInvalidIn('reset-new-form')
+    } else failed.value = true
   } finally {
     busy.value = false
   }
@@ -125,6 +127,10 @@ async function submit() {
     </template>
   </MemberShell>
 
-  <NLoaderDialog :model-value="state === 'checking'" title="링크를 확인하고 있어요" />
+  <NLoaderDialog
+    :model-value="state === 'checking'"
+    title="링크를 확인하고 있어요"
+    description="잠시만 기다려 주세요."
+  />
   <MemberDialog v-model="failed" v-bind="MEMBER_DIALOG.e30" />
 </template>

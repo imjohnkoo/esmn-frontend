@@ -7,6 +7,7 @@ import { ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { NButton } from '@imjohnkoo/design-vue'
 import { supportRows } from '~/content/support'
 import { MEMBER_FLASH } from '~/content/member'
+import MemberStatus from '~/components/member/MemberStatus.vue'
 import { LEGAL_LINKS } from '~/utils/shell-nav'
 
 useHead({ title: '마이' })
@@ -24,7 +25,10 @@ const memberOn = computed(() => session.value.methods.length > 0)
 
 const flash = useMemberFlash()
 const notice = ref<string | null>(flash.value ? MEMBER_FLASH[flash.value] : null)
-flash.value = null
+// 화면을 떠날 때 지운다 — 도착 직후 다시 마운트돼도(레이아웃 전환 · Suspense) 안내를 잃지 않게(키보드 walk minor)
+onBeforeRouteLeave(() => {
+  flash.value = null
+})
 
 const loggingOut = ref(false)
 async function logout() {
@@ -46,7 +50,7 @@ async function logout() {
   <div class="my-page">
     <h1 class="my-page__title">마이</h1>
 
-    <p v-if="notice" class="my-page__notice" role="status">{{ notice }}</p>
+    <MemberStatus :text="notice" />
 
     <section v-if="!memberOn" class="my-page__login" aria-labelledby="my-login-title">
       <h2 id="my-login-title" class="my-page__login-title">로그인은 준비 중이에요</h2>
@@ -195,16 +199,6 @@ async function logout() {
   color: var(--n-color-neutral-600, #525252);
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-.my-page__notice {
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--n-color-primary-50, #f1edff);
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--n-color-neutral-800, #262626);
 }
 
 .my-page__account {

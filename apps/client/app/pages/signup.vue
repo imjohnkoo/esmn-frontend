@@ -20,6 +20,7 @@ import {
 } from '~/content/member'
 import { SIGNUP_CONSENT, SIGNUP_CONSENT_LINES } from '#shared/consent/signup-consent'
 import { safeNext } from '#shared/utils/safe-next'
+import { PIN_FIELD } from '~/utils/member-a11y'
 
 definePageMeta({ layout: 'flow', middleware: 'member' })
 useHead({ title: '회원가입' })
@@ -93,8 +94,10 @@ async function sendCode(): Promise<boolean> {
     return true
   } catch (e) {
     const err = e as AuthApiError
-    if (err.code === 'INVALID_EMAIL') emailErr.value = MEMBER_FIELD.e2
-    else show(err.code === 'TOO_MANY_REQUESTS' ? 'c1' : 'e30')
+    if (err.code === 'INVALID_EMAIL') {
+      emailErr.value = MEMBER_FIELD.e2
+      focusFirstInvalidIn('signup-form')
+    } else show(err.code === 'TOO_MANY_REQUESTS' ? 'c1' : 'e30')
     return false
   } finally {
     busy.value = false
@@ -103,7 +106,7 @@ async function sendCode(): Promise<boolean> {
 
 async function submitEmail() {
   emailErr.value = EMAIL_PATTERN.test(email.value.trim()) ? '' : MEMBER_FIELD.e2
-  if (emailErr.value) return
+  if (emailErr.value) return focusFirstInvalidIn('signup-form')
   if (await sendCode()) {
     pin.value = []
     step.value = 2
@@ -128,17 +131,18 @@ async function verifyCode() {
     busy.value = false
   }
   // 틀리면 칸을 비우고 첫 칸으로(states.md M-3b) — 남은 포커스가 6번째 칸에 있으면 다시 친 코드가 완성되지 않는다
-  if (step.value === 2) {
-    await nextTick()
-    document.querySelector<HTMLInputElement>('#signup-pin input')?.focus()
-  }
+  // 검증 중에는 칸이 disabled 라 포커스가 body 로 빠진다 — 칸이 다시 켜진 뒤에 옮긴다(키보드 walk major).
+  // ⚠️ id="signup-pin" 은 reka 가 숨은 input 에 붙인다(묶음이 아니다) — 그래서 폼 기준으로 찾는다
+  // 대화상자(E-30)가 열렸으면 그쪽이 포커스를 가진다 — 칸 오류일 때만 옮긴다
+  if (step.value === 2 && codeErr.value) await focusWhenEnabled(`#signup-form ${PIN_FIELD}`)
 }
 
 const canSignUp = computed(() => agreeTerms.value && agreeAge.value && !busy.value)
 
 async function submitSignup() {
   pwErr.value = passwordError(password.value)
-  if (pwErr.value || !canSignUp.value) return
+  if (pwErr.value) return focusFirstInvalidIn('signup-form')
+  if (!canSignUp.value) return
   busy.value = true
   try {
     await authPost('signup', {
@@ -154,8 +158,10 @@ async function submitSignup() {
     await navigateTo(next.value)
   } catch (e) {
     const c = (e as AuthApiError).code
-    if (c === 'WEAK_PASSWORD') pwErr.value = passwordError(password.value) || MEMBER_FIELD.e8
-    else if (c === 'EMAIL_TAKEN') show('e31')
+    if (c === 'WEAK_PASSWORD') {
+      pwErr.value = passwordError(password.value) || MEMBER_FIELD.e8
+      focusFirstInvalidIn('signup-form')
+    } else if (c === 'EMAIL_TAKEN') show('e31')
     else if (c === 'CODE_EXPIRED') show('c2')
     else if (c === 'CODE_MISMATCH') show('codeMismatch')
     else if (c === 'CODE_LOCKED') show('codeLocked')
@@ -213,7 +219,9 @@ const heading = computed(() =>
             :aria-invalid="emailErr ? 'true' : undefined"
             :aria-describedby="emailErr ? 'signup-email-err' : undefined"
           />
-          <p v-if="emailErr" id="signup-email-err" class="member-err">{{ emailErr }}</p>
+          <p v-if="emailErr" id="signup-email-err" class="member-err" role="alert">
+            {{ emailErr }}
+          </p>
         </div>
       </form>
     </template>
@@ -230,7 +238,8 @@ const heading = computed(() =>
             placeholder=""
             otp
             :disabled="busy"
-            role="group"
+            :invalid="!!codeErr"
+            :field-label="(p: number, l: number) => `인증 코드 ${l}자리 중 ${p}번째`"
             aria-label="인증 코드 6자리"
             :aria-describedby="codeErr ? 'signup-pin-err' : undefined"
             @complete="verifyCode"
@@ -268,6 +277,7 @@ const heading = computed(() =>
               target="_blank"
               rel="noopener"
               aria-haspopup="dialog"
+              aria-label="이용약관 보기"
               @click.exact.prevent="sheet = 'terms'"
               >보기</a
             >
@@ -282,6 +292,7 @@ const heading = computed(() =>
               target="_blank"
               rel="noopener"
               aria-haspopup="dialog"
+              aria-label="개인정보 수집·이용 안내 보기"
               @click.exact.prevent="sheet = 'privacy'"
               >보기</a
             >

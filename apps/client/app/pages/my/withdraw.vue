@@ -32,7 +32,10 @@ const dialogView = computed(() =>
 )
 
 async function submit() {
-  if (!password.value) return
+  if (!password.value) {
+    pwErr.value = MEMBER_FIELD.pwEmpty
+    return focusFirstInvalidIn('withdraw-form')
+  }
   pwErr.value = ''
   busy.value = true
   try {
@@ -42,8 +45,10 @@ async function submit() {
     await navigateTo('/my')
   } catch (e) {
     const c = (e as AuthApiError).code
-    if (c === 'PASSWORD_MISMATCH') pwErr.value = MEMBER_FIELD.e16
-    else if (c === 'UNAUTHENTICATED') await navigateTo('/login?next=%2Fmy%2Fwithdraw')
+    if (c === 'PASSWORD_MISMATCH') {
+      pwErr.value = MEMBER_FIELD.e16
+      focusFirstInvalidIn('withdraw-form')
+    } else if (c === 'UNAUTHENTICATED') await navigateTo('/login?next=%2Fmy%2Fwithdraw')
     else show(c === 'LOGIN_LOCKED' ? 'e3w' : 'e30')
   } finally {
     busy.value = false
@@ -87,7 +92,7 @@ async function submit() {
         variant="danger"
         size="xl"
         full-width
-        :disabled="busy || !password"
+        :disabled="busy"
         >탈퇴하기</NButton
       >
     </template>

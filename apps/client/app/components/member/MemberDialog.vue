@@ -39,13 +39,3 @@ function onModel(v: unknown) {
     </template>
   </NAlertDialog>
 </template>
-
-<style scoped>
-.member-dialog__body {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--n-color-neutral-600, #525252);
-  word-break: keep-all;
-}
-</style>

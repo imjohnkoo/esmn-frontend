@@ -54,9 +54,7 @@ describe('가입 동의 화면 글자(D-17)', () => {
     expect(descriptor.scriptSetup!.content).toMatch(
       /const canSignUp = computed\(\(\) => agreeTerms\.value && agreeAge\.value && !busy\.value\)/,
     )
-    expect(descriptor.scriptSetup!.content).toMatch(
-      /if \(pwErr\.value \|\| !canSignUp\.value\) return/,
-    )
+    expect(descriptor.scriptSetup!.content).toMatch(/if \(!canSignUp\.value\) return/)
   })
 
   it('라벨 상수와 보내는 판 · 해시는 같은 파일에서 온다 · 가입 요청은 그 상수를 그대로 보낸다', () => {
