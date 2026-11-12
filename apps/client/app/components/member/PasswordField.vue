@@ -33,15 +33,17 @@ const shown = ref(false)
         type="button"
         class="password-field__toggle"
         :aria-pressed="shown"
+        :aria-label="`${label ?? '비밀번호'} 보기`"
         @click="shown = !shown"
       >
-        {{ shown ? '숨기기' : '보기' }}
+        보기
       </button>
     </div>
     <p
       v-if="error || hint"
       :id="`${inputId}-desc`"
       :class="error ? 'password-field__err' : 'password-field__hint'"
+      :role="error ? 'alert' : undefined"
     >
       {{ error || hint }}
     </p>
@@ -68,6 +70,11 @@ const shown = ref(false)
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.password-field__toggle[aria-pressed='true'] {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .password-field__err,

@@ -2,7 +2,7 @@
 // 회원 화면 공용 틀(member-client-auth ⑤ · 디자인 리뷰 R1 — flow 레이아웃 안: 뒤로 버튼 · 머리 · 본문 · 아래 붙은 버튼)
 import { NPageHeading, NStepProgress } from '@imjohnkoo/design-vue'
 
-defineProps<{
+const props = defineProps<{
   eyebrow?: string
   title: string
   description?: string
@@ -11,6 +11,21 @@ defineProps<{
   stepLabel?: string
 }>()
 const emit = defineEmits<{ back: [] }>()
+
+// 단계 · 상태가 바뀌어 제목이 바뀌면 새 제목으로 포커스(design-qa 5-6 · states.md §4 · spec D-31) — body 로 떨어지지 않게.
+// 첫 진입에서는 옮기지 않는다(페이지 이동의 포커스는 라우터 몫)
+const heading = ref<HTMLElement | null>(null)
+const titleEl = () => heading.value?.querySelector<HTMLElement>('h1') ?? null
+onMounted(() => titleEl()?.setAttribute('tabindex', '-1'))
+watch(
+  () => props.title,
+  async () => {
+    await nextTick()
+    const el = titleEl()
+    el?.setAttribute('tabindex', '-1')
+    el?.focus()
+  },
+)
 </script>
 
 <template>
@@ -39,7 +54,7 @@ const emit = defineEmits<{ back: [] }>()
         class="member-shell__progress"
       />
     </div>
-    <div class="member-shell__heading">
+    <div ref="heading" class="member-shell__heading">
       <NPageHeading :eyebrow="eyebrow" :title="title" :description="description" />
     </div>
     <div class="member-shell__body">
@@ -57,7 +72,7 @@ const emit = defineEmits<{ back: [] }>()
   flex-direction: column;
   min-height: 100vh;
   padding: 12px 24px 16px;
-  background: #ffffff;
+  background: var(--n-color-neutral-0, #ffffff);
   word-break: keep-all;
   overflow-wrap: break-word;
 }
@@ -107,11 +122,15 @@ const emit = defineEmits<{ back: [] }>()
   position: sticky;
   bottom: 0;
   padding: 16px 0 8px;
-  background: #ffffff;
+  background: var(--n-color-neutral-0, #ffffff);
 }
 </style>
 
 <style>
+.member-shell__heading h1:focus {
+  outline: none;
+}
+
 /* 회원 화면 공용 글자 — 이 틀을 쓰는 화면(login · signup · password · withdraw)이 같이 쓴다(전역 · member- 접두 · 틀과 함께 실린다) */
 .member-form {
   display: flex;
@@ -138,15 +157,5 @@ const emit = defineEmits<{ back: [] }>()
   color: var(--n-color-neutral-600, #525252);
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-.member-notice {
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--n-color-primary-50, #f1edff);
-  color: var(--n-color-neutral-800, #262626);
-  font-size: 14px;
-  line-height: 1.6;
 }
 </style>

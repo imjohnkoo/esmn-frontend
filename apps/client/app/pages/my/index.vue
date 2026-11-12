@@ -7,6 +7,7 @@ import { ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { NButton } from '@imjohnkoo/design-vue'
 import { supportRows } from '~/content/support'
 import { MEMBER_FLASH } from '~/content/member'
+import MemberStatus from '~/components/member/MemberStatus.vue'
 import { LEGAL_LINKS } from '~/utils/shell-nav'
 
 useHead({ title: '마이' })
@@ -46,7 +47,7 @@ async function logout() {
   <div class="my-page">
     <h1 class="my-page__title">마이</h1>
 
-    <p v-if="notice" class="my-page__notice" role="status">{{ notice }}</p>
+    <MemberStatus :text="notice" />
 
     <section v-if="!memberOn" class="my-page__login" aria-labelledby="my-login-title">
       <h2 id="my-login-title" class="my-page__login-title">로그인은 준비 중이에요</h2>
@@ -195,16 +196,6 @@ async function logout() {
   color: var(--n-color-neutral-600, #525252);
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-.my-page__notice {
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--n-color-primary-50, #f1edff);
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--n-color-neutral-800, #262626);
 }
 
 .my-page__account {

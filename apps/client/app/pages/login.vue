@@ -3,6 +3,7 @@
 import { NButton, NInput, NTrustNote } from '@imjohnkoo/design-vue'
 import MemberShell from '~/components/member/MemberShell.vue'
 import MemberDialog from '~/components/member/MemberDialog.vue'
+import MemberStatus from '~/components/member/MemberStatus.vue'
 import PasswordField from '~/components/member/PasswordField.vue'
 import {
   EMAIL_PATTERN,
@@ -18,10 +19,11 @@ definePageMeta({ layout: 'flow', middleware: 'member' })
 useHead({ title: '로그인' })
 
 const route = useRoute()
+const router = useRouter()
 const next = computed(() => safeNext(route.query.next))
 const fromPurchase = computed(() => isPurchaseNext(next.value))
 const flash = useMemberFlash()
-const notice = ref(flash.value ? MEMBER_FLASH[flash.value] : null)
+const notice = flash.value ? MEMBER_FLASH[flash.value] : null
 flash.value = null
 
 const email = ref('')
@@ -39,7 +41,7 @@ const dialogView = computed(() =>
 async function submit() {
   emailError.value = EMAIL_PATTERN.test(email.value.trim()) ? '' : MEMBER_FIELD.e2
   passwordError.value = password.value ? '' : MEMBER_FIELD.pwEmpty
-  if (emailError.value || passwordError.value) return
+  if (emailError.value || passwordError.value) return focusFirstInvalidIn('login-form')
   busy.value = true
   try {
     await authPost('login', { email: email.value, password: password.value })
@@ -53,13 +55,19 @@ async function submit() {
   }
 }
 
+// 뒤로 — 구매하기(next)에서 온 고객은 온 곳으로(design-qa 3-11) · 그 밖은 마이
+function back() {
+  if (route.query.next && window.history.length > 1) router.back()
+  else navigateTo('/my')
+}
+
 const withNext = (path: string) =>
   route.query.next ? `${path}?next=${encodeURIComponent(next.value)}` : path
 </script>
 
 <template>
-  <MemberShell eyebrow="로그인" :title="`이메일로\n로그인해요`" @back="navigateTo('/my')">
-    <p v-if="notice" class="member-notice" role="status">{{ notice }}</p>
+  <MemberShell eyebrow="로그인" :title="`이메일로\n로그인해요`" @back="back">
+    <MemberStatus :text="notice" />
     <NTrustNote v-if="fromPurchase">{{ PURCHASE_LOGIN_NOTE }}</NTrustNote>
     <form id="login-form" class="member-form" novalidate @submit.prevent="submit">
       <div>
@@ -76,7 +84,9 @@ const withNext = (path: string) =>
           :aria-invalid="emailError ? 'true' : undefined"
           :aria-describedby="emailError ? 'login-email-err' : undefined"
         />
-        <p v-if="emailError" id="login-email-err" class="member-err">{{ emailError }}</p>
+        <p v-if="emailError" id="login-email-err" class="member-err" role="alert">
+          {{ emailError }}
+        </p>
       </div>
       <PasswordField
         v-model="password"
